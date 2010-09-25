@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Hajime Nakagami<nakagami@da2.so-net.ne.jp>
+ * Copyright (c) 2009,2010 Hajime Nakagami<nakagami@gmail.com>
  * All rights reserved.
  * Licensed under the New BSD License
  * (http://www.freebsd.org/copyright/freebsd-license.html)
