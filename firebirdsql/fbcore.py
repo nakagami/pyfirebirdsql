@@ -215,7 +215,7 @@ def bint_to_bytes(val, nbytes): # Convert int value to big endian bytes.
             if b[nbytes -i -1] == 256:
                 b[nbytes -i -1] = 0
                 b[nbytes -i -2] += 1
-    return bytes(b)
+    return bs(b)
 
 def int_to_bytes(val, nbytes):  # Convert int value to little endian bytes.
     v = abs(val)
@@ -230,7 +230,7 @@ def int_to_bytes(val, nbytes):  # Convert int value to little endian bytes.
             if b[i] == 256:
                 b[i] = 0
                 b[i+1] += 1
-    return bytes(b)
+    return bs(b)
 
 def convert_date(v):  # Convert datetime.date to BLR format data
     i = v.month + 9
@@ -717,16 +717,16 @@ class BaseConnect:
     def _op_create(self, page_size=4096):
         dpb = bs([1])
         s = self.str_to_bytes(self.charset)
-        dpb += bytes([68, len(s)]) + s
-        dpb += bytes([48, len(s)]) + s
+        dpb += bs([68, len(s)]) + s
+        dpb += bs([48, len(s)]) + s
         s = self.str_to_bytes(self.user)
-        dpb += bytes([28, len(s)]) + s
+        dpb += bs([28, len(s)]) + s
         s = self.str_to_bytes(self.password)
-        dpb += bytes([29, len(s)]) + s
-        dpb += bytes([63, 4]) + int_to_bytes(3, 4) # isc_dpb_sql_dialect = 3
-        dpb += bytes([24, 4]) + bint_to_bytes(1, 4) # isc_dpb_force_write = 1
-        dpb += bytes([54, 4]) + bint_to_bytes(1, 4) # isc_dpb_overwirte = 1
-        dpb += bytes([4, 4]) + bint_to_bytes(page_size, 4)
+        dpb += bs([29, len(s)]) + s
+        dpb += bs([63, 4]) + int_to_bytes(3, 4) # isc_dpb_sql_dialect = 3
+        dpb += bs([24, 4]) + bint_to_bytes(1, 4) # isc_dpb_force_write = 1
+        dpb += bs([54, 4]) + bint_to_bytes(1, 4) # isc_dpb_overwirte = 1
+        dpb += bs([4, 4]) + bint_to_bytes(page_size, 4)
         p = xdrlib.Packer()
         p.pack_int(self.op_create)
         p.pack_int(0)                       # Database Object ID
@@ -749,13 +749,13 @@ class BaseConnect:
 
     @wire_operation
     def _op_attach(self):
-        dpb = bytes([1])
+        dpb = bs([1])
         s = self.str_to_bytes(self.charset)
-        dpb += bytes([48, len(s)]) + s
+        dpb += bs([48, len(s)]) + s
         s = self.str_to_bytes(self.user)
-        dpb += bytes([28, len(s)]) + s
+        dpb += bs([28, len(s)]) + s
         s = self.str_to_bytes(self.password)
-        dpb += bytes([29, len(s)]) + s
+        dpb += bs([29, len(s)]) + s
         p = xdrlib.Packer()
         p.pack_int(self.op_attach)
         p.pack_int(0)                       # Database Object ID
@@ -765,9 +765,9 @@ class BaseConnect:
 
     @wire_operation
     def _op_service_attach(self):
-        dpb = bytes([2,2])
+        dpb = bs([2,2])
         s = self.str_to_bytes(self.user)
-        dpb += bytes([28, len(s)]) + s
+        dpb += bs([28, len(s)]) + s
         s = self.str_to_bytes(self.password)
         dpb += bs([29, len(s)]) + s
         dpb += bs([0x3a,0x04,0x78,0x0a,0x00,0x00])  # isc_dpb_dummy_packet_interval
@@ -883,7 +883,7 @@ class BaseConnect:
         p.pack_int(self.trans_handle)
 
         if len(params) == 0:
-            p.pack_bytes(bytes())
+            p.pack_bytes(bs([]))
             p.pack_int(0)
             p.pack_int(0)
             send_channel(self.sock, p.get_buffer())
@@ -1083,7 +1083,7 @@ class BaseConnect:
     def info_database(self, info_names):
         if info_names[-1] != 'isc_info_end':
             info_names.append('isc_info_end')
-        b = bytes([isc_info_names.index(s)  for s in info_names])
+        b = bs([isc_info_names.index(s)  for s in info_names])
         self._op_info_database(b)
         (h, oid, buf) = self._op_response()
         i = 0
@@ -1130,7 +1130,7 @@ class service_mgr(BaseConnect):
         self.db_handle = h
 
     def backup_database(self, backup_filename, f=None):
-        spb = bytes([1])
+        spb = bs([1])
         s = self.str_to_bytes(self.filename)
         spb += bs([0x6a]) + int_to_bytes(len(s), 2) + s
         s = self.str_to_bytes(backup_filename)
@@ -1149,7 +1149,7 @@ class service_mgr(BaseConnect):
             (f if f else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
 
     def restore_database(self, restore_filename, f=None):
-        spb = bytes([2])
+        spb = bs([2])
         s = self.str_to_bytes(restore_filename)
         spb += bs([0x05]) + int_to_bytes(len(s), 2) + s
         s = self.str_to_bytes(self.filename)
