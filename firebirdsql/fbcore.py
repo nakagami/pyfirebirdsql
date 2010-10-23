@@ -1089,7 +1089,10 @@ class BaseConnect:
         i = 0
         r = []
         while i < len(buf):
-            s = isc_info_names[buf[i]]
+            if PYTHON_MAIN_VER==3:
+                s = isc_info_names[buf[i]]
+            else:
+                s = isc_info_names[ord(buf[i])]
             if s == 'isc_info_end':
                 break
             l = bytes_to_int(buf[i+1:i+3])
