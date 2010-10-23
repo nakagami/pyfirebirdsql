@@ -381,7 +381,7 @@ def calc_blr(xsqlda):
     blr += [255, 76]    # [blr_end, blr_eoc]
 
     # x.sqlscale value shoud be negative, so b convert to range(0, 256)
-    return bytes([256 + b if b < 0 else b for b in blr])
+    return bs([256 + b if b < 0 else b for b in blr])
 
 
 
@@ -389,7 +389,10 @@ class cursor:
     def _parse_select_items(self, buf):
         index = 0
         i = 0
-        item = isc_info_sql_names[buf[i]]
+        if PYTHON_MAIN_VER==3:
+            item = isc_info_sql_names[buf[i]]
+        else:
+            item = isc_info_sql_names[ord(buf[i])]
         while item != 'isc_info_end':
             if item == 'isc_info_sql_sqlda_seq':
                 l = bytes_to_int(buf[i+1:i+3])
@@ -444,7 +447,10 @@ class cursor:
             else:
                 print('\t', item, 'Invalid item [%02x] ! i=%d' % (buf[i], i))
                 i = i + 1
-            item = isc_info_sql_names[buf[i]]
+            if PYTHON_MAIN_VER==3:
+                item = isc_info_sql_names[buf[i]]
+            else:
+                item = isc_info_sql_names[ord(buf[i])]
         return -1   # no more info
 
     def __init__(self, conn):
@@ -466,7 +472,9 @@ class cursor:
         (h, oid, buf) = self.connection._op_response()
 
         for i in range(len(params)):    # Convert bytes parameter to blob id
-            if type(params[i]) != bytes:
+            if PYTHON_MAIN_VER==3 and type(params[i]) != bytes:
+                continue
+            elif PYTHON_MAIN_VER==2 and type(params[i]) != str:
                 continue
             self.connection._op_create_blob2()
             (blob_handle, blob_id, buf2) = self.connection._op_response()
@@ -647,7 +655,7 @@ class BaseConnect:
     def params_to_blr(self, params):
         "Convert parameter array to BLR and values format."
         ln = len(params) * 2
-        blr = bytes([5, 2, 4, 0, ln & 255, ln >> 8])
+        blr = bs([5, 2, 4, 0, ln & 255, ln >> 8])
         values = bs([])
         for p in params:
             t = type(p)
@@ -656,7 +664,7 @@ class BaseConnect:
                 nbytes = len(v)
                 pad_length = ((4-nbytes) & 3)
                 v += bs([0]) * pad_length
-                blr += bytes([14, nbytes & 255, nbytes >> 8])
+                blr += bs([14, nbytes & 255, nbytes >> 8])
             elif t == bytes:
                 v = p
                 blr += bytes([9, 0])
@@ -690,7 +698,7 @@ class BaseConnect:
                 v = bs([0]) * 8
                 blr += bytes([9, 0])
             values += v
-            blr += bytes([7, 0])
+            blr += bs([7, 0])
             values += bs([0]) * 4 if p != None else bs([0xff,0xff,0x34,0x8c])
         blr += bs([255, 76])    # [blr_end, blr_eoc]
         return blr, values
