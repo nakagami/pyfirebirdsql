@@ -10,6 +10,13 @@ import sys, os, socket
 import xdrlib, ctypes, time, datetime, decimal
 from firebirdsql.fberrmsgs import messages
 
+PYTHON_MAIN_VER = sys.version_info[0]
+
+def bs(byte_array):
+    if PYTHON_MAIN_VER==3:
+        return bytes(byte_array)
+    return ''.join([chr(c) for c in byte_array])
+
 DEBUG = False
 __version__ = '0.1.0'
 apilevel = '2.0'
@@ -88,9 +95,9 @@ SQL_TYPE_TIME = 560
 SQL_TYPE_DATE = 570
 SQL_TYPE_INT64 = 580
 
-INFO_SQL_STMT_TYPE = b'\x15'
-INFO_SQL_SQLDA_START = b'\x14\x02'
-INFO_SQL_SELECT_DESCRIBE_VARS = b'\x04\x07\x09\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x08'
+INFO_SQL_STMT_TYPE = bs([0x15])
+INFO_SQL_SQLDA_START = bs([0x14,0x02])
+INFO_SQL_SELECT_DESCRIBE_VARS = bs([0x04,0x07,0x09,0x0b,0x0c,0x0d,0x0e,0x0f,0x10,0x11,0x12,0x13,0x08])
 
 def Date(year, month, day):
     return datetime.date(year, month, day)
@@ -116,7 +123,10 @@ class DBAPITypeObject:
         else:
             return -1
 STRING = DBAPITypeObject(str)
-BINARY = DBAPITypeObject(bytes)
+if PYTHON_MAIN_VER==3:
+    BINARY = DBAPITypeObject(bytes)
+else:
+    BINARY = DBAPITypeObject(str)
 NUMBER = DBAPITypeObject(int, decimal.Decimal)
 DATETIME = DBAPITypeObject(datetime.datetime, datetime.date, datetime.time)
 ROWID = DBAPITypeObject()
@@ -152,7 +162,7 @@ def recv_channel(sock, nbytes, word_alignment=False):
     n = nbytes
     if word_alignment and (n % 4):
         n += 4 - nbytes % 4  # 4 bytes word alignment
-    r = bytes()
+    r = bs([])
     while n:
         b = sock.recv(n)
         r += b
@@ -458,10 +468,10 @@ class cursor:
             assert blob_id == oid4
             params[i] = blob_id
 
-        assert buf[:3] == b'\x15\x04\x00' # isc_info_sql_stmt_type (4 bytes)
+        assert buf[:3] == bs([0x15,0x04,0x00]) # isc_info_sql_stmt_type (4 bytes)
         stmt_type = bytes_to_int(buf[3:7])
         if stmt_type == 1:  # isc_info_sql_stmt_select
-            assert buf[7:9] == b'\x04\x07'
+            assert buf[7:9] == bs([0x04,0x07])
             l = bytes_to_int(buf[9:11])
             col_len = bytes_to_int(buf[11:11+l])
             self._xsqlda = [None] * col_len
@@ -471,7 +481,7 @@ class cursor:
                             INFO_SQL_SQLDA_START + int_to_bytes(next_index, 2) 
                             + INFO_SQL_SELECT_DESCRIBE_VARS)
                 (h, oid, buf) = self.connection._op_response()
-                assert buf[:2] == b'\x04\x07'
+                assert buf[:2] == bs([0x04,0x07])
                 l = bytes_to_int(buf[2:4])
                 assert bytes_to_int(buf[4:4+l]) == col_len
                 next_index = self._parse_select_items(buf[4+l:])
@@ -498,7 +508,7 @@ class cursor:
                             continue
                         self.connection._op_open_blob(r[i])
                         (h, oid, buf) = self.connection._op_response()
-                        v = b''
+                        v = bs([])
                         n = 1   # 1:mora data 2:no more data
                         while n == 1:
                             self.connection._op_get_segment(h)
@@ -618,21 +628,21 @@ class BaseConnect:
         else:
             user = os.environ['USER']
             hostname = os.environ.get('HOSTNAME', '')
-        return bytes([1] + [len(user)] + [ord(c) for c in user] 
+        return bs([1] + [len(user)] + [ord(c) for c in user] 
                 + [4] + [len(hostname)] + [ord(c) for c in hostname] + [6, 0])
 
     def params_to_blr(self, params):
         "Convert parameter array to BLR and values format."
         ln = len(params) * 2
         blr = bytes([5, 2, 4, 0, ln & 255, ln >> 8])
-        values = b''
+        values = bs([])
         for p in params:
             t = type(p)
             if t == str:
                 v = self.str_to_bytes(p)
                 nbytes = len(v)
                 pad_length = ((4-nbytes) & 3)
-                v += b'\0' * pad_length
+                v += bs([0]) * pad_length
                 blr += bytes([14, nbytes & 255, nbytes >> 8])
             elif t == bytes:
                 v = p
@@ -664,12 +674,12 @@ class BaseConnect:
                 v = convert_timestamp(p)
                 blr += bytes([35])
             elif p == None:
-                v = b'\0' * 8
+                v = bs([0]) * 8
                 blr += bytes([9, 0])
             values += v
             blr += bytes([7, 0])
-            values += b'\0\0\0\0' if p != None else b'\xff\xff\x34\x8c'
-        blr += bytes([255, 76])    # [blr_end, blr_eoc]
+            values += bs([0]) * 4 if p != None else bs([0xff,0xff,0x34,0x8c])
+        blr += bs([255, 76])    # [blr_end, blr_eoc]
         return blr, values
 
 
@@ -746,8 +756,8 @@ class BaseConnect:
         s = self.str_to_bytes(self.user)
         dpb += bytes([28, len(s)]) + s
         s = self.str_to_bytes(self.password)
-        dpb += bytes([29, len(s)]) + s
-        dpb += b'\x3a\x04\x78\x0a\x00\x00'  # isc_dpb_dummy_packet_interval
+        dpb += bs([29, len(s)]) + s
+        dpb += bs([0x3a,0x04,0x78,0x0a,0x00,0x00])  # isc_dpb_dummy_packet_interval
         p = xdrlib.Packer()
         p.pack_int(self.op_service_attach)
         p.pack_int(0)
@@ -902,7 +912,7 @@ class BaseConnect:
                 else:
                     ln = x.io_length()
                 raw_value = recv_channel(self.sock, ln, True)
-                if recv_channel(self.sock, 4) == b'\0\0\0\0': # Not NULL
+                if recv_channel(self.sock, 4) == bs([0]) * 4: # Not NULL
                     r[i] = x.value(raw_value)
             rows.append(r)
             b = recv_channel(self.sock, 12)
@@ -954,7 +964,7 @@ class BaseConnect:
         p.pack_int(ln + 2)
         pad_length = ((4-(ln+2)) & 3)
         send_channel(self.sock, p.get_buffer() 
-                + int_to_bytes(ln, 2) + seg_data + b'\0'*pad_length)
+                + int_to_bytes(ln, 2) + seg_data + bs([0])*pad_length)
 
     @wire_operation
     def _op_close_blob(self, blob_handle):
@@ -1011,7 +1021,7 @@ class BaseConnect:
         self.cursor_set.add(c)
         return c
 
-    def begin(self, tpb = b'\x03\x09\x06\x0f\x11'):
+    def begin(self, tpb = bs([0x03,0x09,0x06,0x0f,0x11])):
         # tpb=(isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version)
         if not hasattr(self, "db_handle"):
             raise InternalError
@@ -1109,18 +1119,18 @@ class service_mgr(BaseConnect):
     def backup_database(self, backup_filename, f=None):
         spb = bytes([1])
         s = self.str_to_bytes(self.filename)
-        spb += b'\x6a' + int_to_bytes(len(s), 2) + s
+        spb += bs([0x6a]) + int_to_bytes(len(s), 2) + s
         s = self.str_to_bytes(backup_filename)
-        spb += b'\x05' + int_to_bytes(len(s), 2) + s
+        spb += bs([0x05]) + int_to_bytes(len(s), 2) + s
         if f:
-            spb += b'\x6b'
+            spb += bs([0x6b])
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
         while True:
-            self._op_service_info(b'\x02', b'\x3e')
+            self._op_service_info(bs([0x02]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == b'\x3e\x00\x00\x01':
+            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
                 break
             ln = bytes_to_int(buf[1:2])
             (f if f else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
@@ -1128,19 +1138,19 @@ class service_mgr(BaseConnect):
     def restore_database(self, restore_filename, f=None):
         spb = bytes([2])
         s = self.str_to_bytes(restore_filename)
-        spb += b'\x05' + int_to_bytes(len(s), 2) + s
+        spb += bs([0x05]) + int_to_bytes(len(s), 2) + s
         s = self.str_to_bytes(self.filename)
-        spb += b'\x6a' + int_to_bytes(len(s), 2) + s
+        spb += bs([0x6a]) + int_to_bytes(len(s), 2) + s
         if f:
-            spb += b'\x6b'
-        spb += b'\x09\x00\x08\x00\x00\x0a\x00\x10\x00\x00\x6c\x00\x30\x00\x00'
+            spb += bs([0x6b])
+        spb += bs([0x09,0x00,0x08,0x00,0x00,0x0a,0x00,0x10,0x00,0x00,0x6c,0x00,0x30,0x00,0x00])
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
         while True:
-            self._op_service_info(b'\x02', b'\x3e')
+            self._op_service_info(bs([0x02]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == b'\x3e\x00\x00\x01':
+            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
                 break
             ln = bytes_to_int(buf[1:2])
             (f if f else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
