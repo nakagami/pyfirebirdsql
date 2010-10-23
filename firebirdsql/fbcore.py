@@ -135,7 +135,7 @@ class DatabaseError(Error):
     pass
 class InternalError(DatabaseError):
     def __init__(self):
-        super().__init__('InternalError')
+        DatabaseError.__init__(self, 'InternalError')
 class OperationalError(DatabaseError):
     pass
 class ProgrammingError(DatabaseError):
@@ -146,7 +146,7 @@ class DataError(DatabaseError):
     pass
 class NotSupportedError(DatabaseError):
     def __init__(self):
-        super().__init__('NotSupportedError')
+        NotSupportedError.__init__(self, 'NotSupportedError')
 
 def recv_channel(sock, nbytes, word_alignment=False):
     n = nbytes
@@ -1080,7 +1080,7 @@ class BaseConnect:
 
 class connect(BaseConnect):
     def __init__(self, dsn, user, password, charset='UNICODE_FSS', port=3050):
-        super().__init__(dsn, user, password, charset, port)
+        BaseConnect.__init__(self, dsn, user, password, charset, port)
         self._op_connect()
         self._op_accept()
         self._op_attach()
@@ -1092,7 +1092,7 @@ class create_database(BaseConnect):
     def __init__(self, dsn, user, password, charset='UNICODE_FSS', port=3050,
                                                             page_size = 4096):
         self.page_size = page_size
-        super().__init__(dsn, user, password, charset, port)
+        BaseConnect.__init__(self, dsn, user, password, charset, port)
         self._op_connect()
         self._op_accept()
         self._op_create(self.page_size)
@@ -1101,7 +1101,7 @@ class create_database(BaseConnect):
 
 class service_mgr(BaseConnect):
     def __init__(self, dsn, user, password, charset='UNICODE_FSS', port=3050):
-        super().__init__(dsn, user, password, charset, port)
+        BaseConnect.__init__(self, dsn, user, password, charset, port)
         self._op_service_attach()
         (h, oid, buf) = self._op_response()
         self.db_handle = h
