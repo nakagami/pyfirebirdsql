@@ -4,7 +4,7 @@
 # Licensed under the New BSD License
 # (http://www.freebsd.org/copyright/freebsd-license.html)
 #
-# Python 3.x DB-API 2.0 module for Firebird. 
+# Python DB-API 2.0 module for Firebird. 
 ##############################################################################
 import sys, os, socket
 import xdrlib, ctypes, time, datetime, decimal
@@ -18,7 +18,7 @@ def bs(byte_array):
     return ''.join([chr(c) for c in byte_array])
 
 DEBUG = False
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
