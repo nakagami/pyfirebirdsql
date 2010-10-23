@@ -1106,13 +1106,13 @@ class service_mgr(BaseConnect):
         (h, oid, buf) = self._op_response()
         self.db_handle = h
 
-    def backup_database(self, backup_filename, file=None):
+    def backup_database(self, backup_filename, f=None):
         spb = bytes([1])
         s = self.str_to_bytes(self.filename)
         spb += b'\x6a' + int_to_bytes(len(s), 2) + s
         s = self.str_to_bytes(backup_filename)
         spb += b'\x05' + int_to_bytes(len(s), 2) + s
-        if file:
+        if f:
             spb += b'\x6b'
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
@@ -1123,15 +1123,15 @@ class service_mgr(BaseConnect):
             if buf[:4] == b'\x3e\x00\x00\x01':
                 break
             ln = bytes_to_int(buf[1:2])
-            print(self.bytes_to_str(buf[3:3+ln]), file=file)
+            (f if f else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
 
-    def restore_database(self, restore_filename, file=None):
+    def restore_database(self, restore_filename, f=None):
         spb = bytes([2])
         s = self.str_to_bytes(restore_filename)
         spb += b'\x05' + int_to_bytes(len(s), 2) + s
         s = self.str_to_bytes(self.filename)
         spb += b'\x6a' + int_to_bytes(len(s), 2) + s
-        if file:
+        if f:
             spb += b'\x6b'
         spb += b'\x09\x00\x08\x00\x00\x0a\x00\x10\x00\x00\x6c\x00\x30\x00\x00'
         self._op_service_start(spb)
@@ -1143,7 +1143,7 @@ class service_mgr(BaseConnect):
             if buf[:4] == b'\x3e\x00\x00\x01':
                 break
             ln = bytes_to_int(buf[1:2])
-            print(self.bytes_to_str(buf[3:3+ln]), file=file)
+            (f if f else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
 
     def close(self):
         if not hasattr(self, "db_handle"):
