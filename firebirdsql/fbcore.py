@@ -174,19 +174,32 @@ def send_channel(sock, b):
 
 def bytes_to_bint(b):           # Read as big endian
     val = 0
-    n = len(b)
-    for i in range(n):
-        val += b[i] << (8 * (n - i -1))
-    if b[0] & 128:              # First byte MSB eq 1 means negative.
-        val = ctypes.c_int(val).value
+    if PYTHON_MAIN_VER==3:
+        n = len(b)
+        for i in range(n):
+            val += b[i] << (8 * (n - i -1))
+        if b[0] & 128:              # First byte MSB eq 1 means negative.
+            val = ctypes.c_int(val).value
+    else:
+        n = len(b)
+        for i in range(n):
+            val += ord(b[i]) << (8 * (n - i -1))
+        if ord(b[0]) & 128:              # First byte MSB eq 1 means negative.
+            val = ctypes.c_int(val).value
     return val
 
 def bytes_to_int(b):            # Read as little endian.
     val = 0
-    for i in range(len(b)):
-        val += b[i] << (8 * i)
-    if (b[-1] & 128):           # Last byte MSB eq 1 means negative.
-        val = ctypes.c_int(val).value
+    if PYTHON_MAIN_VER==3:
+        for i in range(len(b)):
+            val += b[i] << (8 * i)
+        if (b[-1] & 128):           # Last byte MSB eq 1 means negative.
+            val = ctypes.c_int(val).value
+    else:
+        for i in range(len(b)):
+            val += ord(b[i]) << (8 * i)
+        if (ord(b[-1]) & 128):           # Last byte MSB eq 1 means negative.
+            val = ctypes.c_int(val).value
     return val
 
 def bint_to_bytes(val, nbytes): # Convert int value to big endian bytes.
@@ -702,7 +715,7 @@ class BaseConnect:
 
     @wire_operation
     def _op_create(self, page_size=4096):
-        dpb = bytes([1])
+        dpb = bs([1])
         s = self.str_to_bytes(self.charset)
         dpb += bytes([68, len(s)]) + s
         dpb += bytes([48, len(s)]) + s
