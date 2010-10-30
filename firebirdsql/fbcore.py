@@ -1217,16 +1217,17 @@ if __name__ == '__main__':
             f TIMESTAMP DEFAULT '1967-08-11 23:45:01',
             g TIME DEFAULT '23:45:01',
             h BLOB SUB_TYPE 0, 
+            i DOUBLE PRECISION DEFAULT 0.0,
             PRIMARY KEY (a),
             CONSTRAINT CHECK_A CHECK (a <> 0)
         )
     ''')
     conn.commit()
     conn.cursor().execute("insert into foo(a, b, c) values (1, 'a', 'b')")
-    conn.cursor().execute("""insert into foo(a, b, c, e, g) 
-        values (2, 'A', 'B', '1999-01-25', '00:00:01')""")
-    conn.cursor().execute("""insert into foo(a, b, c, e, g) 
-        values (3, 'X', 'Y', '2001-07-05', '00:01:02')""")
+    conn.cursor().execute("""insert into foo(a, b, c, e, g, i) 
+        values (2, 'A', 'B', '1999-01-25', '00:00:01', 0.1)""")
+    conn.cursor().execute("""insert into foo(a, b, c, e, g, i) 
+        values (3, 'X', 'Y', '2001-07-05', '00:01:02', 0.2)""")
     conn.commit()
     conn.cursor().execute("update foo set c='Hajime' where a=1")
     conn.cursor().execute("update foo set c=? where a=2", ['Nakagami'])
