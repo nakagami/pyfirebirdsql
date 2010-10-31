@@ -10,10 +10,10 @@ import sys, os, socket
 import xdrlib, ctypes, time, datetime, decimal, struct
 from firebirdsql.fberrmsgs import messages
 
-PYTHON_MAIN_VER = sys.version_info[0]
+PYTHON_MAJOR_VER = sys.version_info[0]
 
 def bs(byte_array):
-    if PYTHON_MAIN_VER==3:
+    if PYTHON_MAJOR_VER==3:
         return bytes(byte_array)
     return ''.join([chr(c) for c in byte_array])
 
@@ -123,7 +123,7 @@ class DBAPITypeObject:
         else:
             return -1
 STRING = DBAPITypeObject(str)
-if PYTHON_MAIN_VER==3:
+if PYTHON_MAJOR_VER==3:
     BINARY = DBAPITypeObject(bytes)
 else:
     BINARY = DBAPITypeObject(str)
@@ -174,7 +174,7 @@ def send_channel(sock, b):
 
 def bytes_to_bint(b):           # Read as big endian
     val = 0
-    if PYTHON_MAIN_VER==3:
+    if PYTHON_MAJOR_VER==3:
         n = len(b)
         for i in range(n):
             val += b[i] << (8 * (n - i -1))
@@ -190,7 +190,7 @@ def bytes_to_bint(b):           # Read as big endian
 
 def bytes_to_int(b):            # Read as little endian.
     val = 0
-    if PYTHON_MAIN_VER==3:
+    if PYTHON_MAJOR_VER==3:
         for i in range(len(b)):
             val += b[i] << (8 * i)
         if (b[-1] & 128):           # Last byte MSB eq 1 means negative.
@@ -391,7 +391,7 @@ class cursor:
     def _parse_select_items(self, buf):
         index = 0
         i = 0
-        if PYTHON_MAIN_VER==3:
+        if PYTHON_MAJOR_VER==3:
             item = isc_info_sql_names[buf[i]]
         else:
             item = isc_info_sql_names[ord(buf[i])]
@@ -449,7 +449,7 @@ class cursor:
             else:
                 print('\t', item, 'Invalid item [%02x] ! i=%d' % (buf[i], i))
                 i = i + 1
-            if PYTHON_MAIN_VER==3:
+            if PYTHON_MAJOR_VER==3:
                 item = isc_info_sql_names[buf[i]]
             else:
                 item = isc_info_sql_names[ord(buf[i])]
@@ -474,9 +474,9 @@ class cursor:
         (h, oid, buf) = self.connection._op_response()
 
         for i in range(len(params)):    # Convert bytes parameter to blob id
-            if PYTHON_MAIN_VER==3 and type(params[i]) != bytes:
+            if PYTHON_MAJOR_VER==3 and type(params[i]) != bytes:
                 continue
-            elif PYTHON_MAIN_VER==2 and type(params[i]) != str:
+            elif PYTHON_MAJOR_VER==2 and type(params[i]) != str:
                 continue
             self.connection._op_create_blob2()
             (blob_handle, blob_id, buf2) = self.connection._op_response()
@@ -1099,7 +1099,7 @@ class BaseConnect:
         i = 0
         r = []
         while i < len(buf):
-            if PYTHON_MAIN_VER==3:
+            if PYTHON_MAJOR_VER==3:
                 s = isc_info_names[buf[i]]
             else:
                 s = isc_info_names[ord(buf[i])]
