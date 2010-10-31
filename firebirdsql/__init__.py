@@ -1,1 +1,2 @@
-from firebirdsql.fbcore import *
+from firebirdsql.fbcore import (__version__, apilevel, threadsafety, paramstyle,
+    cursor, connect, create_database,)
