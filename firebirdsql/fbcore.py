@@ -7,7 +7,7 @@
 # Python DB-API 2.0 module for Firebird. 
 ##############################################################################
 import sys, os, socket
-import xdrlib, ctypes, time, datetime, decimal
+import xdrlib, ctypes, time, datetime, decimal, struct
 from firebirdsql.fberrmsgs import messages
 
 PYTHON_MAIN_VER = sys.version_info[0]
@@ -18,7 +18,7 @@ def bs(byte_array):
     return ''.join([chr(c) for c in byte_array])
 
 DEBUG = False
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
@@ -341,6 +341,8 @@ class XSQLVAR:
             yyyy, mm, dd = self._parse_date(raw_value[:4])
             h, m, s, ms = self._parse_time(raw_value[4:])
             return datetime.datetime(yyyy, mm, dd, h, m, s, ms)
+        elif self.sqltype == SQL_TYPE_DOUBLE:
+            return struct.unpack('!d', raw_value)[0]
         else:
             return raw_value
 
