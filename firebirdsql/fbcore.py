@@ -1017,7 +1017,7 @@ class BaseConnect:
                 gds_code = bytes_to_bint(recv_channel(self.sock, 4))
                 if gds_code:
                     gds_codes.add(gds_code)
-                    message += messages[gds_code]
+                    message += messages.get(gds_code, '@1')
                     num_arg = 0
             elif s == 'isc_arg_number':
                 num = bytes_to_bint(recv_channel(self.sock, 4))
