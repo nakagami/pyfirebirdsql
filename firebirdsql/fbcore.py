@@ -9,7 +9,7 @@
 import sys, os, socket
 import xdrlib, ctypes, time, datetime, decimal, struct
 from firebirdsql.fberrmsgs import messages
-from firebirdsql.exceptions import (DatabaseError, InternalError,
+from firebirdsql import (DatabaseError, InternalError,
     OperationalError, ProgrammingError, IntegrityError, DataError,
     NotSupportedError,
 )
