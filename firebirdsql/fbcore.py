@@ -9,6 +9,10 @@
 import sys, os, socket
 import xdrlib, ctypes, time, datetime, decimal, struct
 from firebirdsql.fberrmsgs import messages
+from firebirdsql.exceptions import (DatabaseError, InternalError,
+    OperationalError, ProgrammingError, IntegrityError, DataError,
+    NotSupportedError,
+)
 
 DEFAULT_CHARSET='UNICODE_FSS'
 PYTHON_MAJOR_VER = sys.version_info[0]
@@ -131,33 +135,6 @@ else:
 NUMBER = DBAPITypeObject(int, decimal.Decimal)
 DATETIME = DBAPITypeObject(datetime.datetime, datetime.date, datetime.time)
 ROWID = DBAPITypeObject()
-
-class Error(Exception):
-    def __init__(self, message, sql_code=0):
-        self.message = message
-        self.sql_code = sql_code
-    def __str__(self):
-        return self.message
-class Warning(Exception):
-    pass
-class InterfaceError(Error):
-    pass
-class DatabaseError(Error):
-    pass
-class InternalError(DatabaseError):
-    def __init__(self):
-        DatabaseError.__init__(self, 'InternalError')
-class OperationalError(DatabaseError):
-    pass
-class ProgrammingError(DatabaseError):
-    pass
-class IntegrityError(DatabaseError):
-    pass
-class DataError(DatabaseError):
-    pass
-class NotSupportedError(DatabaseError):
-    def __init__(self):
-        NotSupportedError.__init__(self, 'NotSupportedError')
 
 def recv_channel(sock, nbytes, word_alignment=False):
     n = nbytes
