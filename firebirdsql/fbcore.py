@@ -10,6 +10,7 @@ import sys, os, socket
 import xdrlib, ctypes, time, datetime, decimal, struct
 from firebirdsql.fberrmsgs import messages
 
+DEFAULT_CHARSET='UNICODE_FSS'
 PYTHON_MAJOR_VER = sys.version_info[0]
 
 def bs(byte_array):
@@ -1071,7 +1072,7 @@ class BaseConnect:
         (h, oid, buf) = self._op_response()
         delattr(self, "db_handle")
 
-    def __init__(self, dsn, user, password, charset='UNICODE_FSS', port=3050):
+    def __init__(self, dsn, user, password, charset=DEFAULT_CHARSET, port=3050):
         i = dsn.find(':')
         if i < 0:
             self.hostname = ''
@@ -1113,7 +1114,7 @@ class BaseConnect:
             self.close()
 
 class connect(BaseConnect):
-    def __init__(self, dsn, user, password, charset='UNICODE_FSS', port=3050):
+    def __init__(self, dsn, user, password, charset=DEFAULT_CHARSET , port=3050):
         BaseConnect.__init__(self, dsn, user, password, charset, port)
         self._op_connect()
         self._op_accept()
@@ -1123,7 +1124,7 @@ class connect(BaseConnect):
 
 
 class create_database(BaseConnect):
-    def __init__(self, dsn, user, password, charset='UNICODE_FSS', port=3050,
+    def __init__(self, dsn, user, password, charset=DEFAULT_CHARSET , port=3050,
                                                             page_size = 4096):
         self.page_size = page_size
         BaseConnect.__init__(self, dsn, user, password, charset, port)
@@ -1134,7 +1135,7 @@ class create_database(BaseConnect):
         self.db_handle = h
 
 class service_mgr(BaseConnect):
-    def __init__(self, dsn, user, password, charset='UNICODE_FSS', port=3050):
+    def __init__(self, dsn, user, password, charset=DEFAULT_CHARSET , port=3050):
         BaseConnect.__init__(self, dsn, user, password, charset, port)
         self._op_service_attach()
         (h, oid, buf) = self._op_response()
