@@ -52,11 +52,17 @@ if __name__ == '__main__':
     conn.cursor().execute("update foo set c='Hajime' where a=1")
     conn.cursor().execute("update foo set c=? where a=2", ['Nakagami'])
     conn.commit()
+
     cur = conn.cursor()
     try:
         conn.cursor().execute("insert into foo(a, b, c) values (1, 'a', 'b')")
     except firebirdsql.IntegrityError:
         pass
+    try:
+        conn.cursor().execute("bad sql")
+    except firebirdsql.OperationalError, e:
+        assert e.sql_code == -104
+
     cur = conn.cursor()
     cur.execute("select * from foo")
     print(cur.description)
