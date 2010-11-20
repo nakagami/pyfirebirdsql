@@ -14,7 +14,7 @@ from firebirdsql import (DatabaseError, InternalError,
     NotSupportedError,
 )
 
-DEFAULT_CHARSET='UNICODE_FSS'
+DEFAULT_CHARSET='UTF8'
 PYTHON_MAJOR_VER = sys.version_info[0]
 
 def bs(byte_array):
