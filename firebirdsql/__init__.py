@@ -8,8 +8,9 @@
 ##############################################################################
 
 class Error(Exception):
-    def __init__(self, message, sql_code=0):
+    def __init__(self, message, gds_codes, sql_code=0):
         self.message = message
+        self.gds_codes = gds_codes
         self.sql_code = sql_code
     def __str__(self):
         return self.message

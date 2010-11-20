@@ -53,6 +53,11 @@ if __name__ == '__main__':
     conn.cursor().execute("update foo set c=? where a=2", ['Nakagami'])
     conn.commit()
     cur = conn.cursor()
+    try:
+        conn.cursor().execute("insert into foo(a, b, c) values (1, 'a', 'b')")
+    except firebirdsql.IntegrityError:
+        pass
+    cur = conn.cursor()
     cur.execute("select * from foo")
     print(cur.description)
     for c in cur.fetchall():

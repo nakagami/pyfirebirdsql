@@ -524,7 +524,11 @@ class cursor:
             self.cur_row = 0
         else:
             self.connection._op_execute(self.stmt_handle, params)
-            (h, oid, buf) = self.connection._op_response()
+            try:
+                (h, oid, buf) = self.connection._op_response()
+            except OperationalError, o:
+                if 335544665 in o.gds_codes:
+                    raise IntegrityError(o.message, o.gds_codes, o.sql_code)
             self.rows = None
 
     def executemany(self, query, seq_of_params):
@@ -1011,7 +1015,7 @@ class BaseConnect:
             s = isc_status_names[bytes_to_bint(recv_channel(self.sock, 4))] 
 
         if sql_code or message:
-            raise OperationalError(message, sql_code)
+            raise OperationalError(message, gds_codes, sql_code)
 
         return (h, oid, buf)
 
