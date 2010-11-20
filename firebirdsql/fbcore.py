@@ -1011,7 +1011,7 @@ class BaseConnect:
             s = isc_status_names[bytes_to_bint(recv_channel(self.sock, 4))] 
 
         if sql_code or message:
-            raise ProgrammingError(message, sql_code)
+            raise OperationalError(message, sql_code)
 
         return (h, oid, buf)
 
