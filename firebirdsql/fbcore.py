@@ -23,7 +23,7 @@ def bs(byte_array):
     return ''.join([chr(c) for c in byte_array])
 
 DEBUG = False
-__version__ = '0.3.0'
+__version__ = '0.3.1'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
@@ -526,7 +526,7 @@ class cursor:
             self.connection._op_execute(self.stmt_handle, params)
             try:
                 (h, oid, buf) = self.connection._op_response()
-            except OperationalError, o:
+            except OperationalError as o:
                 if 335544665 in o.gds_codes:
                     raise IntegrityError(o.message, o.gds_codes, o.sql_code)
             self.rows = None

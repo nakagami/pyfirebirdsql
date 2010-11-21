@@ -60,7 +60,7 @@ if __name__ == '__main__':
         pass
     try:
         conn.cursor().execute("bad sql")
-    except firebirdsql.OperationalError, e:
+    except firebirdsql.OperationalError as e:
         assert e.sql_code == -104
 
     cur = conn.cursor()
