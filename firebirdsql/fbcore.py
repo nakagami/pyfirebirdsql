@@ -31,6 +31,7 @@ ISOLATION_LEVEL_READ_UNCOMMITTED = 0
 ISOLATION_LEVEL_READ_COMMITED = 1
 ISOLATION_LEVEL_REPEATABLE_READ = 2
 ISOLATION_LEVEL_SERIALIZABLE = 3
+
 isc_tpb_version1 = 1
 isc_tpb_version3 = 3
 isc_tpb_consistency = 1
@@ -55,6 +56,16 @@ isc_tpb_restart_requests = 19
 isc_tpb_no_auto_undo = 20
 isc_tpb_lock_timeout = 21
 
+transaction_parameter_block = [
+    # ISOLATION_LEVEL_READ_UNCOMMITTED
+    bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
+    # ISOLATION_LEVEL_READ_COMMITED
+    bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_no_rec_version]),
+    # ISOLATION_LEVEL_REPEATABLE_READ
+    bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_concurrency]),
+    # ISOLATION_LEVEL_SERIALIZABLE
+    bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_consistency]),
+]
 
 isc_info_sql_names = [
   None, 'isc_info_end', 'isc_info_truncated', 'isc_info_error', 
@@ -1050,11 +1061,10 @@ class BaseConnect:
         self.cursor_set.add(c)
         return c
 
-    def begin(self, tpb = bs([0x03,0x09,0x06,0x0f,0x11])):
-        # tpb=(isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version)
+    def begin(self):
         if not hasattr(self, "db_handle"):
             raise InternalError
-        self._op_transaction(tpb)
+        self._op_transaction(transaction_parameter_block[self.isolation_level])
         (h, oid, buf) = self._op_response()
         self.trans_handle = h
     
