@@ -1107,7 +1107,7 @@ class BaseConnect:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.hostname, self.port))
 
-    def set_isolation_level(isolation_level):
+    def set_isolation_level(self, isolation_level):
         self.isolation_level = isolation_level
 
     def info_database(self, info_names):

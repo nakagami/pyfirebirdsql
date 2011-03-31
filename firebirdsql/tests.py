@@ -69,6 +69,16 @@ if __name__ == '__main__':
     for c in cur.fetchall():
         print(c)
     conn.close()
+
+    conn = firebirdsql.connect(TEST_DSN, TEST_USER, TEST_PASS, port=3050)
+    conn.set_isolation_level(firebirdsql.ISOLATION_LEVEL_SERIALIZABLE)
+    cur = conn.cursor()
+    cur.execute("select * from foo")
+    print(cur.description)
+    for c in cur.fetchall():
+        print(c)
+    conn.close()
+
     print('backup database')    
     svc = firebirdsql.service_mgr(TEST_DSN, TEST_USER, TEST_PASS, port=3050)
     svc.backup_database(TEST_BACKUP_FILE, sys.stdout)
