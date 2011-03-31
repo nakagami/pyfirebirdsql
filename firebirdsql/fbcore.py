@@ -16,11 +16,6 @@ from firebirdsql import (DatabaseError, InternalError, OperationalError,
 DEFAULT_CHARSET='UTF8'
 PYTHON_MAJOR_VER = sys.version_info[0]
 
-ISOLATION_LEVEL_READ_UNCOMMITTED = 0
-ISOLATION_LEVEL_READ_COMMITED = 1
-ISOLATION_LEVEL_REPEATABLE_READ = 2
-ISOLATION_LEVEL_SERIALIZABLE = 3
-
 def bs(byte_array):
     if PYTHON_MAJOR_VER==3:
         return bytes(byte_array)
@@ -31,6 +26,35 @@ __version__ = '0.3.2'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
+
+ISOLATION_LEVEL_READ_UNCOMMITTED = 0
+ISOLATION_LEVEL_READ_COMMITED = 1
+ISOLATION_LEVEL_REPEATABLE_READ = 2
+ISOLATION_LEVEL_SERIALIZABLE = 3
+isc_tpb_version1 = 1
+isc_tpb_version3 = 3
+isc_tpb_consistency = 1
+isc_tpb_concurrency = 2
+isc_tpb_shared = 3
+isc_tpb_protected = 4
+isc_tpb_exclusive = 5
+isc_tpb_wait = 6
+isc_tpb_nowait = 7
+isc_tpb_read = 8
+isc_tpb_write = 9
+isc_tpb_lock_read = 10
+isc_tpb_lock_write = 11
+isc_tpb_verb_time = 12
+isc_tpb_commit_time = 13
+isc_tpb_ignore_limbo = 14
+isc_tpb_read_committed = 15
+isc_tpb_autocommit = 16
+isc_tpb_rec_version = 17
+isc_tpb_no_rec_version = 18
+isc_tpb_restart_requests = 19
+isc_tpb_no_auto_undo = 20
+isc_tpb_lock_timeout = 21
+
 
 isc_info_sql_names = [
   None, 'isc_info_end', 'isc_info_truncated', 'isc_info_error', 
