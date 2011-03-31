@@ -9,13 +9,17 @@
 import sys, os, socket
 import xdrlib, time, datetime, decimal, struct
 from firebirdsql.fberrmsgs import messages
-from firebirdsql import (DatabaseError, InternalError,
-    OperationalError, ProgrammingError, IntegrityError, DataError,
-    NotSupportedError,
+from firebirdsql import (DatabaseError, InternalError, OperationalError, 
+    ProgrammingError, IntegrityError, DataError, NotSupportedError,
 )
 
 DEFAULT_CHARSET='UTF8'
 PYTHON_MAJOR_VER = sys.version_info[0]
+
+ISOLATION_LEVEL_READ_UNCOMMITTED = 0
+ISOLATION_LEVEL_READ_COMMITED = 1
+ISOLATION_LEVEL_REPEATABLE_READ = 2
+ISOLATION_LEVEL_SERIALIZABLE = 3
 
 def bs(byte_array):
     if PYTHON_MAJOR_VER==3:
@@ -1064,9 +1068,13 @@ class BaseConnect:
         self.charset = charset
         self.port = port
         self.cursor_set = set()
+        self.isolation_level = ISOLATION_LEVEL_READ_COMMITED
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.hostname, self.port))
+
+    def set_isolation_level(isolation_level):
+        self.isolation_level = isolation_level
 
     def info_database(self, info_names):
         if info_names[-1] != 'isc_info_end':
