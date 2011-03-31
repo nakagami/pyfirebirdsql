@@ -7,7 +7,7 @@
 # Python DB-API 2.0 module for Firebird. 
 ##############################################################################
 import sys, os, socket
-import xdrlib, ctypes, time, datetime, decimal, struct
+import xdrlib, time, datetime, decimal, struct
 from firebirdsql.fberrmsgs import messages
 from firebirdsql import (DatabaseError, InternalError,
     OperationalError, ProgrammingError, IntegrityError, DataError,
@@ -151,34 +151,32 @@ def send_channel(sock, b):
     sock.send(b)
 
 def bytes_to_bint(b):           # Read as big endian
-    val = 0
-    if PYTHON_MAJOR_VER==3:
-        n = len(b)
-        for i in range(n):
-            val += b[i] << (8 * (n - i -1))
-        if b[0] & 128:              # First byte MSB eq 1 means negative.
-            val = ctypes.c_int(val).value
+    len_b = len(b)
+    if len_b == 1:
+        fmt = 'b'
+    elif len_b ==2:
+        fmt = '>h'
+    elif len_b ==4:
+        fmt = '>l'
+    elif len_b ==8:
+        fmt = '>q'
     else:
-        n = len(b)
-        for i in range(n):
-            val += ord(b[i]) << (8 * (n - i -1))
-        if ord(b[0]) & 128:              # First byte MSB eq 1 means negative.
-            val = ctypes.c_int(val).value
-    return val
+        raise InternalError
+    return struct.unpack(fmt, b)[0]
 
 def bytes_to_int(b):            # Read as little endian.
-    val = 0
-    if PYTHON_MAJOR_VER==3:
-        for i in range(len(b)):
-            val += b[i] << (8 * i)
-        if (b[-1] & 128):           # Last byte MSB eq 1 means negative.
-            val = ctypes.c_int(val).value
+    len_b = len(b)
+    if len_b == 1:
+        fmt = 'b'
+    elif len_b ==2:
+        fmt = '<h'
+    elif len_b ==4:
+        fmt = '<l'
+    elif len_b ==8:
+        fmt = '<q'
     else:
-        for i in range(len(b)):
-            val += ord(b[i]) << (8 * i)
-        if (ord(b[-1]) & 128):           # Last byte MSB eq 1 means negative.
-            val = ctypes.c_int(val).value
-    return val
+        raise InternalError
+    return struct.unpack(fmt, b)[0]
 
 def bint_to_bytes(val, nbytes): # Convert int value to big endian bytes.
     v = abs(val)
