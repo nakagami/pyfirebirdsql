@@ -56,6 +56,56 @@ isc_tpb_restart_requests = 19
 isc_tpb_no_auto_undo = 20
 isc_tpb_lock_timeout = 21
 
+
+# Service Parameter Block parameter
+isc_spb_version1 = 1
+isc_spb_current_version = 2
+isc_spb_version = isc_spb_current_version
+isc_spb_user_name = 28              # isc_dpb_user_name
+isc_spb_sys_user_name = 19          # isc_dpb_sys_user_name
+isc_spb_sys_user_name_enc = 31      # isc_dpb_sys_user_name_enc
+isc_spb_password = 29               # isc_dpb_password
+isc_spb_password_enc = 30           # isc_dpb_password_enc
+isc_spb_command_line = 105
+isc_spb_dbname = 106
+isc_spb_verbose = 107
+isc_spb_options = 108
+isc_spb_address_path = 109
+isc_spb_process_id = 110
+isc_spb_trusted_auth = 111
+isc_spb_process_name = 112
+isc_spb_trusted_role = 113
+isc_spb_connect_timeout = 57        # isc_dpb_connect_timeout
+isc_spb_dummy_packet_interval = 58  # isc_dpb_dummy_packet_interval
+isc_spb_sql_role_name = 60          # isc_dpb_sql_role_name
+
+# Service Action Items
+isc_action_svc_backup = 1
+isc_action_svc_restore = 2
+isc_action_svc_repair = 3
+isc_action_svc_add_user = 4
+isc_action_svc_delete_user = 5
+isc_action_svc_modify_user = 6
+isc_action_svc_display_user = 7
+isc_action_svc_properties = 8
+isc_action_svc_add_license = 9
+isc_action_svc_remove_license = 10
+isc_action_svc_db_stats = 11
+isc_action_svc_get_ib_log = 12
+isc_action_svc_get_fb_log = 12
+isc_action_svc_nbak = 20
+isc_action_svc_nrest = 21
+isc_action_svc_trace_start = 22
+isc_action_svc_trace_stop = 23
+isc_action_svc_trace_suspend = 24
+isc_action_svc_trace_resume = 25
+isc_action_svc_trace_list = 26
+isc_action_svc_set_mapping = 27
+isc_action_svc_drop_mapping = 28
+isc_action_svc_display_user_adm = 29
+isc_action_svc_last = 30
+
+
 transaction_parameter_block = [
     # ISOLATION_LEVEL_READ_UNCOMMITTED
     bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
