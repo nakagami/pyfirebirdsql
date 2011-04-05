@@ -61,6 +61,9 @@ isc_tpb_lock_timeout = 21
 isc_spb_version1 = 1
 isc_spb_current_version = 2
 isc_spb_version = isc_spb_current_version
+isc_spb_bkp_file = 5
+isc_spb_res_buffers = 9
+isc_spb_res_page_size = 10
 isc_spb_user_name = 28              # isc_dpb_user_name
 isc_spb_sys_user_name = 19          # isc_dpb_sys_user_name
 isc_spb_sys_user_name_enc = 31      # isc_dpb_sys_user_name_enc
@@ -1217,13 +1220,13 @@ class service_mgr(BaseConnect):
         self.db_handle = h
 
     def backup_database(self, backup_filename, f=None):
-        spb = bs([1])
+        spb = bs([isc_action_svc_backup])
         s = self.str_to_bytes(self.filename)
-        spb += bs([0x6a]) + int_to_bytes(len(s), 2) + s
+        spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
         s = self.str_to_bytes(backup_filename)
-        spb += bs([0x05]) + int_to_bytes(len(s), 2) + s
+        spb += bs([isc_spb_bkp_file]) + int_to_bytes(len(s), 2) + s
         if f:
-            spb += bs([0x6b])
+            spb += bs([isc_spb_verbose])
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
@@ -1236,14 +1239,14 @@ class service_mgr(BaseConnect):
             (f if f else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
 
     def restore_database(self, restore_filename, f=None):
-        spb = bs([2])
+        spb = bs([isc_action_svc_restore])
         s = self.str_to_bytes(restore_filename)
-        spb += bs([0x05]) + int_to_bytes(len(s), 2) + s
+        spb += bs([isc_spb_bkp_file]) + int_to_bytes(len(s), 2) + s
         s = self.str_to_bytes(self.filename)
-        spb += bs([0x6a]) + int_to_bytes(len(s), 2) + s
+        spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
         if f:
-            spb += bs([0x6b])
-        spb += bs([0x09,0x00,0x08,0x00,0x00,0x0a,0x00,0x10,0x00,0x00,0x6c,0x00,0x30,0x00,0x00])
+            spb += bs([isc_spb_verbose])
+        spb += bs([isc_spb_res_buffers,0x00,0x08,0x00,0x00,isc_spb_res_page_size,0x00,0x10,0x00,0x00,isc_spb_options,0x00,0x30,0x00,0x00])
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
