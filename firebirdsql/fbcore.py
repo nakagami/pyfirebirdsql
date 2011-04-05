@@ -356,6 +356,8 @@ class XSQLVAR:
             yyyy, mm, dd = self._parse_date(raw_value[:4])
             h, m, s, ms = self._parse_time(raw_value[4:])
             return datetime.datetime(yyyy, mm, dd, h, m, s, ms)
+        elif self.sqltype == SQL_TYPE_FLOAT:
+            return struct.unpack('!f', raw_value)[0]
         elif self.sqltype == SQL_TYPE_DOUBLE:
             return struct.unpack('!d', raw_value)[0]
         else:
