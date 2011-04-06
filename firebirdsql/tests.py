@@ -69,6 +69,7 @@ if __name__ == '__main__':
     print(cur.description)
     for c in cur.fetchall():
         print(c)
+    cur.execute("select * from foo")
     conn.close()
 
     conn = firebirdsql.connect(TEST_DSN, TEST_USER, TEST_PASS, port=3050)
