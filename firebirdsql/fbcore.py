@@ -621,6 +621,12 @@ class cursor:
                         (h, oid, buf) = self.connection._op_response()
                         r[i] = v
             self.cur_row = 0
+            # recreate stmt_handle
+            self.connection._op_free_statement(self.stmt_handle, 2) # DSQL_drop
+            (h, oid, buf) = self.connection._op_response()
+            self.connection._op_allocate_statement()
+            (h, oid, buf) = self.connection._op_response()
+            self.stmt_handle = h
         else:
             self.connection._op_execute(self.stmt_handle, params)
             try:
