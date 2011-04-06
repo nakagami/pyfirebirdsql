@@ -1,4 +1,5 @@
 from distutils.core import setup
+import firebirdsql
 
 classifiers = [
     'Development Status :: 3 - Alpha',
@@ -7,7 +8,7 @@ classifiers = [
 ]
 
 setup(name='firebirdsql', 
-        version='0.3.4',
+        version=firebirdsql.__version__,
         description = 'python dbapi for firebird rdbms.', 
         url='http://github.com/nakagami/pyfirebirdsql/',
         classifiers=classifiers,
