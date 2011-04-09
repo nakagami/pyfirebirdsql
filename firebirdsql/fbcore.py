@@ -1313,7 +1313,7 @@ class service_mgr(BaseConnect):
 
     def trace_suspend(self, id, file=None):
         id = int(id)
-        spb = bs([isc_action_svc_trace_suspned])
+        spb = bs([isc_action_svc_trace_suspend])
         spb += bs([isc_spb_trc_id]) + int_to_bytes(id, 4)
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
