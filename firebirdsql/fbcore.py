@@ -1332,7 +1332,7 @@ class service_mgr(BaseConnect):
             ln = bytes_to_int(buf[1:2])
             (f if f else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
 
-    def trace_list(self):
+    def trace_list(self, f=None):
         spb = bs([isc_action_svc_trace_list])
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
