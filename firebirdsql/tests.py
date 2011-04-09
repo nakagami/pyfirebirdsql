@@ -11,6 +11,9 @@ import os,sys
 sys.path.append('./../')
 import firebirdsql
 
+def debug_print(msg):
+    print(msg)
+
 if __name__ == '__main__':
     if sys.platform in ('win32', 'darwin'):
         fbase = os.path.abspath('.') + '/test'
@@ -88,10 +91,10 @@ if __name__ == '__main__':
     print('backup database')    
     svc = firebirdsql.service_mgr(dsn=TEST_DSN, user=TEST_USER, 
                                                 password=TEST_PASS, port=3050)
-    svc.backup_database(TEST_BACKUP_FILE, sys.stdout)
+    svc.backup_database(TEST_BACKUP_FILE, callback=debug_print)
     svc.close()
     print('restore database')    
     svc = firebirdsql.service_mgr(dsn=TEST_RESTORE_DSN, user=TEST_USER, 
                                                 password=TEST_PASS, port=3050)
-    svc.restore_database(TEST_BACKUP_FILE, sys.stdout)
+    svc.restore_database(TEST_BACKUP_FILE, callback=debug_print)
     svc.close()

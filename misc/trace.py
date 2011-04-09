@@ -15,6 +15,9 @@ HOST = 'localhost'
 USER = 'sysdba'
 PASS = 'masterkey'
 
+def debug_print(msg):
+    print(msg)
+
 def print_usage():
     print(sys.argv[0] + 
                 ' start|stop <trc_id>|suspend <trc_id>|resume <trc_id>|list')
@@ -26,13 +29,13 @@ if len(sys.argv) < 2:
 svc = firebirdsql.service_mgr(host=HOST, user=USER, password=PASS)
 if sys.argv[1] == 'start':
     cfg = open('/opt/firebird/fbtrace.conf').read()
-    svc.trace_start(cfg=cfg, file=sys.stdout)
+    svc.trace_start(cfg=cfg, callback=debug_print)
 elif sys.argv[1] == 'stop':
-    svc.trace_stop(id=sys.argv[2], file=sys.stdout)
+    svc.trace_stop(id=sys.argv[2], callback=debug_print)
 elif sys.argv[1] == 'suspend':
-    svc.trace_suspend(id=sys.argv[2], file=sys.stdout)
+    svc.trace_suspend(id=sys.argv[2], callback=debug_print)
 elif sys.argv[1] == 'resume':
-    svc.trace_resume(id=sys.argv[2], file=sys.stdout)
+    svc.trace_resume(id=sys.argv[2], callback=debug_print)
 elif sys.argv[1] == 'list':
     svc.trace_list()
 svc.close()

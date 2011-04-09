@@ -1242,13 +1242,13 @@ class service_mgr(BaseConnect):
         (h, oid, buf) = self._op_response()
         self.db_handle = h
 
-    def backup_database(self, backup_filename, file=None):
+    def backup_database(self, backup_filename, callback=None):
         spb = bs([isc_action_svc_backup])
         s = self.str_to_bytes(self.filename)
         spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
         s = self.str_to_bytes(backup_filename)
         spb += bs([isc_spb_bkp_file]) + int_to_bytes(len(s), 2) + s
-        if file:
+        if callback:
             spb += bs([isc_spb_verbose])
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
@@ -1259,15 +1259,16 @@ class service_mgr(BaseConnect):
             if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
                 break
             ln = bytes_to_int(buf[1:2])
-            (file if file else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
+            if callback:
+                callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def restore_database(self, restore_filename, file=None):
+    def restore_database(self, restore_filename, callback=None):
         spb = bs([isc_action_svc_restore])
         s = self.str_to_bytes(restore_filename)
         spb += bs([isc_spb_bkp_file]) + int_to_bytes(len(s), 2) + s
         s = self.str_to_bytes(self.filename)
         spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
-        if file:
+        if callback:
             spb += bs([isc_spb_verbose])
         spb += bs([isc_spb_res_buffers,0x00,0x08,0x00,0x00,isc_spb_res_page_size,0x00,0x10,0x00,0x00,isc_spb_options,0x00,0x30,0x00,0x00])
         self._op_service_start(spb)
@@ -1279,9 +1280,10 @@ class service_mgr(BaseConnect):
             if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
                 break
             ln = bytes_to_int(buf[1:2])
-            (file if file else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
+            if callback:
+                callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def trace_start(self, name=None, cfg=None, file=None):
+    def trace_start(self, name=None, cfg=None, callback=None):
         spb = bs([isc_action_svc_trace_start])
         if name:
             s = self.str_to_bytes(name)
@@ -1298,9 +1300,10 @@ class service_mgr(BaseConnect):
             if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
                 break
             ln = bytes_to_int(buf[1:2])
-            (file if file else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
+            if callback:
+                callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def trace_stop(self, id, file=None):
+    def trace_stop(self, id, callback=None):
         id = int(id)
         spb = bs([isc_action_svc_trace_stop])
         spb += bs([isc_spb_trc_id]) + int_to_bytes(id, 4)
@@ -1311,9 +1314,10 @@ class service_mgr(BaseConnect):
         self._op_service_info(bs([0x02]), bs([0x3e]))
         (h, oid, buf) = self._op_response()
         ln = bytes_to_int(buf[1:2])
-        (file if file else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
+        if callback:
+            callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def trace_suspend(self, id, file=None):
+    def trace_suspend(self, id, callback=None):
         id = int(id)
         spb = bs([isc_action_svc_trace_suspend])
         spb += bs([isc_spb_trc_id]) + int_to_bytes(id, 4)
@@ -1324,9 +1328,10 @@ class service_mgr(BaseConnect):
         self._op_service_info(bs([0x02]), bs([0x3e]))
         (h, oid, buf) = self._op_response()
         ln = bytes_to_int(buf[1:2])
-        (file if file else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
+        if callback:
+            callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def trace_resume(self, id, file=None):
+    def trace_resume(self, id, callback=None):
         id = int(id)
         spb = bs([isc_action_svc_trace_resume])
         spb += bs([isc_spb_trc_id]) + int_to_bytes(id, 4)
@@ -1337,9 +1342,10 @@ class service_mgr(BaseConnect):
         self._op_service_info(bs([0x02]), bs([0x3e]))
         (h, oid, buf) = self._op_response()
         ln = bytes_to_int(buf[1:2])
-        (file if file else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
+        if callback:
+            callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def trace_list(self, file=None):
+    def trace_list(self, callback=None):
         spb = bs([isc_action_svc_trace_list])
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
@@ -1350,7 +1356,8 @@ class service_mgr(BaseConnect):
             if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
                 break
             ln = bytes_to_int(buf[1:2])
-            (file if file else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
+            if callback:
+                callback(self.bytes_to_str(buf[3:3+ln]))
 
     def close(self):
         if not hasattr(self, "db_handle"):
