@@ -1234,7 +1234,8 @@ class create_database(BaseConnect):
 class service_mgr(BaseConnect):
     def __init__(self, dsn=None, user=None, password=None, host=None,
             database=None, charset=DEFAULT_CHARSET, port=3050):
-        BaseConnect.__init__(self, dsn, user, password, charset, port)
+        BaseConnect.__init__(self, dsn=dsn, user=user, password=password,
+                    host=host, database=database, charset=charset, port=port)
         self._op_connect()
         self._op_accept()
         self._op_service_attach()
