@@ -17,7 +17,9 @@ if __name__ == '__main__':
     else:
         import tempfile
         fbase = tempfile.mktemp()
-    TEST_DSN = 'localhost:' + fbase + '.fdb'
+    TEST_HOST = 'localhost'
+    TEST_DATABASE = fbase + '.fdb'
+    TEST_DSN = TEST_HOST + ':' + TEST_DATABASE
     TEST_BACKUP_FILE = fbase + '.fbk'
     TEST_RESTORE_DSN = 'localhost:' + fbase + '_restore.fdb'
     print('dsn=', TEST_DSN)
@@ -73,8 +75,8 @@ if __name__ == '__main__':
     cur.execute("select * from foo")
     conn.close()
 
-    conn = firebirdsql.connect(dsn=TEST_DSN, user=TEST_USER, 
-                                            password=TEST_PASS, port=3050)
+    conn = firebirdsql.connect(host=TEST_HOST, database=TEST_DATABASE,
+                                        user=TEST_USER, password=TEST_PASS)
     conn.set_isolation_level(firebirdsql.ISOLATION_LEVEL_SERIALIZABLE)
     cur = conn.cursor()
     cur.execute("select * from foo")

@@ -1159,13 +1159,17 @@ class BaseConnect:
 
     def __init__(self, dsn=None, user=None, password=None, host=None,
             database=None, charset=DEFAULT_CHARSET, port=3050):
-        i = dsn.find(':')
-        if i < 0:
-            self.hostname = ''
-            self.filename = dsn
+        if dsn:
+            i = dsn.find(':')
+            if i < 0:
+                self.hostname = host
+                self.filename = dsn
+            else:
+                self.hostname = dsn[:i]
+                self.filename = dsn[i+1:]
         else:
-            self.hostname = dsn[:i]
-            self.filename = dsn[i+1:]
+            self.hostname = host
+            self.filename = database
         self.user = user
         self.password = password
         self.charset = charset
