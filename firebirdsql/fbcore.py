@@ -1271,6 +1271,80 @@ class service_mgr(BaseConnect):
             ln = bytes_to_int(buf[1:2])
             (f if f else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
 
+    def trace_start(self, name=None, cfg=None, f=None):
+        spb = bs([isc_action_svc_trace_start])
+        if name:
+            s = self.str_to_bytes(name)
+            spb += bs([isc_spb_trc_name]) + int_to_bytes(len(s), 2) + s
+        if cfg:
+            s = self.str_to_bytes(cfg)
+            spb += bs([isc_spb_trc_cfg]) + int_to_bytes(len(s), 2) + s
+        self._op_service_start(spb)
+        (h, oid, buf) = self._op_response()
+        self.svc_handle = h
+        while True:
+            self._op_service_info(bs([0x02]), bs([0x3e]))
+            (h, oid, buf) = self._op_response()
+            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
+                break
+            ln = bytes_to_int(buf[1:2])
+            (f if f else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
+
+    def trace_stop(self, id, f=None):
+        spb = bs([isc_action_svc_trace_stop])
+        spb += bs([isc_spb_trc_id]) + int_to_bytes(id, 4)
+        self._op_service_start(spb)
+        (h, oid, buf) = self._op_response()
+        self.svc_handle = h
+        while True:
+            self._op_service_info(bs([0x02]), bs([0x3e]))
+            (h, oid, buf) = self._op_response()
+            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
+                break
+            ln = bytes_to_int(buf[1:2])
+            (f if f else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
+
+    def trace_suspend(self, id, f=None):
+        spb = bs([isc_action_svc_trace_suspned])
+        spb += bs([isc_spb_trc_id]) + int_to_bytes(id, 4)
+        self._op_service_start(spb)
+        (h, oid, buf) = self._op_response()
+        self.svc_handle = h
+        while True:
+            self._op_service_info(bs([0x02]), bs([0x3e]))
+            (h, oid, buf) = self._op_response()
+            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
+                break
+            ln = bytes_to_int(buf[1:2])
+            (f if f else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
+
+    def trace_resume(self, id, f=None):
+        spb = bs([isc_action_svc_trace_resume])
+        spb += bs([isc_spb_trc_id]) + int_to_bytes(id, 4)
+        self._op_service_start(spb)
+        (h, oid, buf) = self._op_response()
+        self.svc_handle = h
+        while True:
+            self._op_service_info(bs([0x02]), bs([0x3e]))
+            (h, oid, buf) = self._op_response()
+            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
+                break
+            ln = bytes_to_int(buf[1:2])
+            (f if f else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
+
+    def trace_list(self):
+        spb = bs([isc_action_svc_trace_list])
+        self._op_service_start(spb)
+        (h, oid, buf) = self._op_response()
+        self.svc_handle = h
+        while True:
+            self._op_service_info(bs([0x02]), bs([0x3e]))
+            (h, oid, buf) = self._op_response()
+            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
+                break
+            ln = bytes_to_int(buf[1:2])
+            (f if f else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
+
     def close(self):
         if not hasattr(self, "db_handle"):
             return
