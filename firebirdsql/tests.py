@@ -23,7 +23,8 @@ if __name__ == '__main__':
     print('dsn=', TEST_DSN)
     TEST_USER = 'sysdba'
     TEST_PASS = 'masterkey'
-    conn = firebirdsql.create_database(TEST_DSN, TEST_USER, TEST_PASS, port=3050)
+    conn = firebirdsql.create_database(dsn=TEST_DSN, user=TEST_USER, 
+                                                password=TEST_PASS, port=3050)
     print(conn.info_database(['isc_info_ods_version', 
                             'isc_info_ods_minor_version',
                             'isc_info_user_names']))
@@ -72,7 +73,8 @@ if __name__ == '__main__':
     cur.execute("select * from foo")
     conn.close()
 
-    conn = firebirdsql.connect(TEST_DSN, TEST_USER, TEST_PASS, port=3050)
+    conn = firebirdsql.connect(dsn=TEST_DSN, user=TEST_USER, 
+                                            password=TEST_PASS, port=3050)
     conn.set_isolation_level(firebirdsql.ISOLATION_LEVEL_SERIALIZABLE)
     cur = conn.cursor()
     cur.execute("select * from foo")
@@ -82,10 +84,12 @@ if __name__ == '__main__':
     conn.close()
 
     print('backup database')    
-    svc = firebirdsql.service_mgr(TEST_DSN, TEST_USER, TEST_PASS, port=3050)
+    svc = firebirdsql.service_mgr(dsn=TEST_DSN, user=TEST_USER, 
+                                                password=TEST_PASS, port=3050)
     svc.backup_database(TEST_BACKUP_FILE, sys.stdout)
     svc.close()
     print('restore database')    
-    svc = firebirdsql.service_mgr(TEST_RESTORE_DSN, TEST_USER, TEST_PASS, port=3050)
+    svc = firebirdsql.service_mgr(dsn=TEST_RESTORE_DSN, user=TEST_USER, 
+                                                password=TEST_PASS, port=3050)
     svc.restore_database(TEST_BACKUP_FILE, sys.stdout)
     svc.close()

@@ -1157,7 +1157,8 @@ class BaseConnect:
         (h, oid, buf) = self._op_response()
         delattr(self, "db_handle")
 
-    def __init__(self, dsn, user, password, charset=DEFAULT_CHARSET, port=3050):
+    def __init__(self, dsn=None, user=None, password=None, host=None,
+            database=None, charset=DEFAULT_CHARSET, port=3050):
         i = dsn.find(':')
         if i < 0:
             self.hostname = ''
@@ -1203,8 +1204,10 @@ class BaseConnect:
             self.close()
 
 class connect(BaseConnect):
-    def __init__(self, dsn, user, password, charset=DEFAULT_CHARSET , port=3050):
-        BaseConnect.__init__(self, dsn, user, password, charset, port)
+    def __init__(self, dsn=None, user=None, password=None, host=None,
+            database=None, charset=DEFAULT_CHARSET, port=3050):
+        BaseConnect.__init__(self, dsn=dsn, user=user, password=password,
+                    host=host, database=database, charset=charset, port=port)
         self._op_connect()
         self._op_accept()
         self._op_attach()
@@ -1213,10 +1216,11 @@ class connect(BaseConnect):
 
 
 class create_database(BaseConnect):
-    def __init__(self, dsn, user, password, charset=DEFAULT_CHARSET , port=3050,
-                                                            page_size = 4096):
+    def __init__(self, dsn=None, user=None, password=None, host=None,
+            database=None, charset=DEFAULT_CHARSET, port=3050, page_size=4096):
         self.page_size = page_size
-        BaseConnect.__init__(self, dsn, user, password, charset, port)
+        BaseConnect.__init__(self, dsn=dsn, user=user, password=password,
+                    host=host, database=database, charset=charset, port=port)
         self._op_connect()
         self._op_accept()
         self._op_create(self.page_size)
@@ -1224,7 +1228,8 @@ class create_database(BaseConnect):
         self.db_handle = h
 
 class service_mgr(BaseConnect):
-    def __init__(self, dsn, user, password, charset=DEFAULT_CHARSET , port=3050):
+    def __init__(self, dsn=None, user=None, password=None, host=None,
+            database=None, charset=DEFAULT_CHARSET, port=3050):
         BaseConnect.__init__(self, dsn, user, password, charset, port)
         self._op_connect()
         self._op_accept()
