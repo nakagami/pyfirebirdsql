@@ -798,7 +798,7 @@ class BaseConnect:
         p.pack_int(self.op_attach)
         p.pack_int(2)   # CONNECT_VERSION2
         p.pack_int(1)   # Arch type (Generic = 1)
-        p.pack_string(self.str_to_bytes(self.filename))
+        p.pack_string(self.str_to_bytes(self.filename if self.filename else ''))
         p.pack_int(1)   # Protocol version understood count.
         p.pack_bytes(self.uid())
         p.pack_int(10)  # PROTOCOL_VERSION10
