@@ -1292,11 +1292,13 @@ class service_mgr(BaseConnect):
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
-
-        self._op_service_info(bs([0x02]), bs([0x3e]))
-        (h, oid, buf) = self._op_response()
-        ln = bytes_to_int(buf[1:2])
-        (file if file else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
+        while True:
+            self._op_service_info(bs([0x02]), bs([0x3e]))
+            (h, oid, buf) = self._op_response()
+            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
+                break
+            ln = bytes_to_int(buf[1:2])
+            (file if file else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
 
     def trace_stop(self, id, file=None):
         id = int(id)
