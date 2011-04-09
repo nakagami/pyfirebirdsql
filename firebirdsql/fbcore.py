@@ -1299,6 +1299,7 @@ class service_mgr(BaseConnect):
         (file if file else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
 
     def trace_stop(self, id, file=None):
+        id = int(id)
         spb = bs([isc_action_svc_trace_stop])
         spb += bs([isc_spb_trc_id]) + int_to_bytes(id, 4)
         self._op_service_start(spb)
@@ -1311,6 +1312,7 @@ class service_mgr(BaseConnect):
         (file if file else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
 
     def trace_suspend(self, id, file=None):
+        id = int(id)
         spb = bs([isc_action_svc_trace_suspned])
         spb += bs([isc_spb_trc_id]) + int_to_bytes(id, 4)
         self._op_service_start(spb)
@@ -1323,6 +1325,7 @@ class service_mgr(BaseConnect):
         (file if file else sys.stdout).write(self.bytes_to_str(buf[3:3+ln]))
 
     def trace_resume(self, id, file=None):
+        id = int(id)
         spb = bs([isc_action_svc_trace_resume])
         spb += bs([isc_spb_trc_id]) + int_to_bytes(id, 4)
         self._op_service_start(spb)
