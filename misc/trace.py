@@ -37,5 +37,5 @@ elif sys.argv[1] == 'suspend':
 elif sys.argv[1] == 'resume':
     svc.trace_resume(id=sys.argv[2], callback=debug_print)
 elif sys.argv[1] == 'list':
-    svc.trace_list()
+    svc.trace_list(callback=debug_print)
 svc.close()
