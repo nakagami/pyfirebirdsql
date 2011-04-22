@@ -631,9 +631,10 @@ class cursor:
             self.connection._op_execute(self.stmt_handle, params)
             try:
                 (h, oid, buf) = self.connection._op_response()
-            except OperationalError as o:
-                if 335544665 in o.gds_codes:
-                    raise IntegrityError(o.message, o.gds_codes, o.sql_code)
+            except OperationalError:
+                e = sys.exc_info()[1]
+                if 335544665 in e.gds_codes:
+                    raise IntegrityError(e.message, e.gds_codes, e.sql_code)
             self.rows = None
 
     def executemany(self, query, seq_of_params):
