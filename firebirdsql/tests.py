@@ -21,15 +21,15 @@ if __name__ == '__main__':
         import tempfile
         fbase = tempfile.mktemp()
     TEST_HOST = 'localhost'
+    TEST_PORT = 3050
     TEST_DATABASE = fbase + '.fdb'
-    TEST_DSN = TEST_HOST + ':' + TEST_DATABASE
+    TEST_DSN = TEST_HOST + '/' + str(TEST_PORT) + ':' + TEST_DATABASE
     TEST_BACKUP_FILE = fbase + '.fbk'
     TEST_RESTORE_DSN = 'localhost:' + fbase + '_restore.fdb'
     print('dsn=', TEST_DSN)
     TEST_USER = 'sysdba'
     TEST_PASS = 'masterkey'
-    conn = firebirdsql.create_database(dsn=TEST_DSN, user=TEST_USER, 
-                                                password=TEST_PASS, port=3050)
+    conn = firebirdsql.create_database(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
     print(conn.info_database(['isc_info_ods_version', 
                             'isc_info_ods_minor_version',
                             'isc_info_user_names']))
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     conn.close()
 
     conn = firebirdsql.connect(host=TEST_HOST, database=TEST_DATABASE,
-                                        user=TEST_USER, password=TEST_PASS)
+                        port=TEST_PORT, user=TEST_USER, password=TEST_PASS)
     conn.set_isolation_level(firebirdsql.ISOLATION_LEVEL_SERIALIZABLE)
     cur = conn.cursor()
     cur.execute("select * from foo")
@@ -90,12 +90,10 @@ if __name__ == '__main__':
     conn.close()
 
     print('backup database')    
-    svc = firebirdsql.service_mgr(dsn=TEST_DSN, user=TEST_USER, 
-                                                password=TEST_PASS, port=3050)
+    svc = firebirdsql.service_mgr(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
     svc.backup_database(TEST_BACKUP_FILE, callback=debug_print)
     svc.close()
     print('restore database')    
-    svc = firebirdsql.service_mgr(dsn=TEST_RESTORE_DSN, user=TEST_USER, 
-                                                password=TEST_PASS, port=3050)
+    svc = firebirdsql.service_mgr(dsn=TEST_RESTORE_DSN, user=TEST_USER, password=TEST_PASS)
     svc.restore_database(TEST_BACKUP_FILE, callback=debug_print)
     svc.close()

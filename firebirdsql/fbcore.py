@@ -1166,15 +1166,22 @@ class BaseConnect:
                 self.hostname = host
                 self.filename = dsn
             else:
-                self.hostname = dsn[:i]
+                hostport = dsn[:i]
                 self.filename = dsn[i+1:]
+                i = hostport.find('/')
+                if i < 0:
+                    self.hostname = hostport
+                    self.port = port
+                else:
+                    self.hostname = hostport[:i]
+                    self.port = int(hostport[i+1:])
         else:
             self.hostname = host
             self.filename = database
+            self.port = port
         self.user = user
         self.password = password
         self.charset = charset
-        self.port = port
         self.cursor_set = set()
         self.isolation_level = ISOLATION_LEVEL_READ_COMMITED
 
