@@ -9,7 +9,7 @@ classifiers = [
 
 setup(name='firebirdsql', 
         version=firebirdsql.__version__,
-        description = 'python dbapi for firebird rdbms.', 
+        description = 'Python dbapi for Firebird RDBMS.', 
         url='http://github.com/nakagami/pyfirebirdsql/',
         classifiers=classifiers,
         keywords=['Firebird'],
