@@ -1186,6 +1186,7 @@ class BaseConnect:
         self.isolation_level = ISOLATION_LEVEL_READ_COMMITED
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         self.sock.connect((self.hostname, self.port))
 
     def set_isolation_level(self, isolation_level):
