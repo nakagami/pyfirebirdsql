@@ -1140,12 +1140,12 @@ class BaseConnect:
     def commit(self):
         self._op_commit()
         (h, oid, buf) = self._op_response()
-        self.begin()
+        delattr(self, "trans_handle")
 
     def rollback(self):
         self._op_rollback()
         (h, oid, buf) = self._op_response()
-        self.begin()
+        delattr(self, "trans_handle")
 
     def close(self):
         if not hasattr(self, "db_handle"):
