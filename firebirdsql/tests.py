@@ -50,6 +50,12 @@ if __name__ == '__main__':
         )
     ''')
     conn.commit()
+
+    cur = conn.cursor()
+    cur.execute("select * from foo")
+    assert cur.fetchone() is None
+    cur.close()
+
     conn.cursor().execute("insert into foo(a, b, c) values (1, 'a', 'b')")
     conn.cursor().execute("""insert into foo(a, b, c, e, g, i, j) 
         values (2, 'A', 'B', '1999-01-25', '00:00:01', 0.1, 0.1)""")
@@ -59,6 +65,14 @@ if __name__ == '__main__':
     conn.cursor().execute("update foo set c='Hajime' where a=1")
     conn.cursor().execute("update foo set c=? where a=2", ['Nakagami'])
     conn.commit()
+
+    cur = conn.cursor()
+    cur.execute("select * from foo")
+    assert not cur.fetchone() is None
+    assert not cur.fetchone() is None
+    assert not cur.fetchone() is None
+    assert cur.fetchone() is None
+    cur.close()
 
     cur = conn.cursor()
     try:

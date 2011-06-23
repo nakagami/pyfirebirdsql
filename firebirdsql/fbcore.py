@@ -642,8 +642,12 @@ class cursor:
             self.execute(query, params)
             
     def fetchone(self):
-        return self.rows[self.cur_row]
-        self.cur_row += 1
+        if self.cur_row < len(self.rows):
+            r = self.rows[self.cur_row]
+            self.cur_row += 1
+            return r
+        else:
+            return None
 
     def fetchall(self):
         return self.rows
