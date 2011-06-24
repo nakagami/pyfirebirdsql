@@ -63,7 +63,7 @@ if __name__ == '__main__':
         values (3, 'X', 'Y', '2001-07-05', '00:01:02', 0.2, 0.2)""")
     conn.commit()
     conn.cursor().execute("update foo set c='Hajime' where a=1")
-    conn.cursor().execute("update foo set c=? where a=2", ['Nakagami'])
+    conn.cursor().execute("update foo set c=? where a=2", ('Nakagami', ))
     conn.commit()
 
     cur = conn.cursor()

@@ -550,15 +550,16 @@ class cursor:
         self.connection._op_prepare_statement(self.stmt_handle, query)
         (h, oid, buf) = self.connection._op_response()
 
-        for i in range(len(params)):    # Convert bytes parameter to blob id
-            if PYTHON_MAJOR_VER==3 and type(params[i]) != bytes:
+        blob_params = []
+        for param in params:            # Convert bytes parameter to blob id
+            if PYTHON_MAJOR_VER==3 and type(param) != bytes:
                 continue
-            elif PYTHON_MAJOR_VER==2 and type(params[i]) != str:
+            elif PYTHON_MAJOR_VER==2 and type(param) != str:
                 continue
             self.connection._op_create_blob2()
             (blob_handle, blob_id, buf2) = self.connection._op_response()
             seg_size = self.connection.buffer_length
-            (seg, remains) = params[i][:seg_size], params[i][seg_size:]
+            (seg, remains) = param[:seg_size], param[seg_size:]
             while seg:
                 self.connection._op_batch_segments(blob_handle, seg)
                 (h3, oid3, buf3) = self.connection._op_response()
@@ -566,7 +567,7 @@ class cursor:
             self.connection._op_close_blob(blob_handle)
             (h4, oid4, buf4) = self.connection._op_response()
             assert blob_id == oid4
-            params[i] = blob_id
+            blob_params.append(blob_id)
 
         assert buf[:3] == bs([0x15,0x04,0x00]) # isc_info_sql_stmt_type (4 bytes)
         stmt_type = bytes_to_int(buf[3:7])
@@ -586,7 +587,7 @@ class cursor:
                 assert bytes_to_int(buf[4:4+l]) == col_len
                 next_index = self._parse_select_items(buf[4+l:])
 
-            self.connection._op_execute(self.stmt_handle, params)
+            self.connection._op_execute(self.stmt_handle, blob_params)
             (h, oid, buf) = self.connection._op_response()
 
             # Fetch
