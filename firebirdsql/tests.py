@@ -56,6 +56,11 @@ if __name__ == '__main__':
     assert cur.fetchone() is None
     cur.close()
 
+    cur = conn.cursor()
+    cur.execute("select a as alias_name from foo")
+    assert cur.description[0][0] == 'ALIAS_NAME'
+    cur.close()
+
     conn.cursor().execute("insert into foo(a, b, c) values (1, 'a', 'b')")
     conn.cursor().execute("""insert into foo(a, b, c, e, g, i, j) 
         values (2, 'A', 'B', '1999-01-25', '00:00:01', 0.1, 0.1)""")
