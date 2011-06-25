@@ -550,11 +550,14 @@ class cursor:
         self.connection._op_prepare_statement(self.stmt_handle, query)
         (h, oid, buf) = self.connection._op_response()
 
-        blob_params = []
-        for param in params:            # Convert bytes parameter to blob id
-            if PYTHON_MAJOR_VER==3 and type(param) != bytes:
-                continue
-            elif PYTHON_MAJOR_VER==2 and type(param) != str:
+        cooked_params = []
+        for param in params:        # Convert str/bytes parameter to blob id
+            if ((PYTHON_MAJOR_VER==3 and type(param) == str) or 
+                            (PYTHON_MAJOR_VER==2 and type(param) == unicode)):
+                param = self.connection.str_to_bytes(param)
+            elif ((PYTHON_MAJOR_VER==3 and type(param) != bytes) or 
+                            (PYTHON_MAJOR_VER==2 and type(param) != str)):
+                cooked_params.append(param)
                 continue
             self.connection._op_create_blob2()
             (blob_handle, blob_id, buf2) = self.connection._op_response()
@@ -567,7 +570,7 @@ class cursor:
             self.connection._op_close_blob(blob_handle)
             (h4, oid4, buf4) = self.connection._op_response()
             assert blob_id == oid4
-            blob_params.append(blob_id)
+            cooked_params.append(blob_id)
 
         assert buf[:3] == bs([0x15,0x04,0x00]) # isc_info_sql_stmt_type (4 bytes)
         stmt_type = bytes_to_int(buf[3:7])
@@ -587,7 +590,7 @@ class cursor:
                 assert bytes_to_int(buf[4:4+l]) == col_len
                 next_index = self._parse_select_items(buf[4+l:])
 
-            self.connection._op_execute(self.stmt_handle, blob_params)
+            self.connection._op_execute(self.stmt_handle, cooked_params)
             (h, oid, buf) = self.connection._op_response()
 
             # Fetch
@@ -752,13 +755,14 @@ class BaseConnect:
         values = bs([])
         for p in params:
             t = type(p)
-            if t == str:
+
+            if t == str or t == unicode:
                 v = self.str_to_bytes(p)
                 nbytes = len(v)
                 pad_length = ((4-nbytes) & 3)
                 v += bs([0]) * pad_length
                 blr += bs([14, nbytes & 255, nbytes >> 8])
-            elif t == bytes:
+            elif PYTHON_MAJOR_VER == 3 and t == bytes:
                 v = p
                 blr += bytes([9, 0])
             elif t == int:
