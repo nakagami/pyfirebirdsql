@@ -340,7 +340,7 @@ class XSQLVAR:
         self.sqlsubtype = None
         self.sqllen = None
         self.null_ok = None
-        self.sqlname = ''
+        self.fieldname = ''
         self.relname = ''
         self.ownname = ''
         self.aliasname = ''
@@ -360,8 +360,8 @@ class XSQLVAR:
     def __str__(self):
         s  = '[' + str(self.sqltype) + ',' + str(self.sqlscale) + ',' \
                 + str(self.sqlsubtype) + ',' + str(self.sqllen)  + ',' \
-                + str(self.null_ok) + ',' \
-                + self.sqlname + ',' + self.relname + ',' + self.ownname + ',' \
+                + str(self.null_ok) + ',' + self.fieldname + ',' \
+                + self.relname + ',' + self.ownname + ',' \
                 + self.aliasname + ']'
         return s
 
@@ -501,7 +501,7 @@ class cursor:
                 i = i + 3 + l
             elif item == 'isc_info_sql_field':
                 l = bytes_to_int(buf[i+1:i+3])
-                self._xsqlda[index-1].sqlname = \
+                self._xsqlda[index-1].fieldname = \
                         self.connection.bytes_to_str(buf[i + 3: i + 3 + l])
                 i = i + 3 + l
             elif item == 'isc_info_sql_relation':
@@ -684,7 +684,7 @@ class cursor:
         if attrname == 'description':
             r = []
             for x in self._xsqlda:
-                r.append((x.sqlname, x.sqltype, None, x.io_length(), None, 
+                r.append((x.aliasname, x.sqltype, None, x.io_length(), None, 
                         x.sqlscale, True if x.null_ok else False))
             return r
         elif attrname == 'rowcount':
