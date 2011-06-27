@@ -16,8 +16,12 @@ import firebirdsql
 
 classifiers = [
     'Development Status :: 4 - Beta',
-    'Topic :: Database',
     'License :: OSI Approved :: BSD License',
+    'Operating System :: OS Independent',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 2',
+    'Programming Language :: Python :: 3',
+    'Topic :: Database',
 ]
 
 setup(name='firebirdsql', 
