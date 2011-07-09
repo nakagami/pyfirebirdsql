@@ -40,15 +40,6 @@ transaction_parameter_block = [
     bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_consistency]),
 ]
 
-isc_status_names = [
-  'isc_arg_end', 'isc_arg_gds', 'isc_arg_string', 'isc_arg_cstring',
-  'isc_arg_number', 'isc_arg_interpreted', 'isc_arg_vms', 'isc_arg_unix',
-  'isc_arg_domain', 'isc_arg_dos', 'isc_arg_mpexl', 'isc_arg_mpexl_ipc',
-  None, None, None, 
-  'isc_arg_next_mach', 'isc_arg_netware', 'isc_arg_win32', 'isc_arg_warning',
-]
-
-
 INFO_SQL_STMT_TYPE = bs([0x15])
 INFO_SQL_SQLDA_START = bs([0x14,0x02])
 INFO_SQL_SELECT_DESCRIBE_VARS = bs([0x04,0x07,0x09,0x0b,0x0c,0x0d,0x0e,0x0f,0x10,0x11,0x12,0x13,0x08])
@@ -958,26 +949,26 @@ class BaseConnect:
         sql_code = 0
         gds_codes = set()
         message = ''
-        s = isc_status_names[bytes_to_bint(recv_channel(self.sock, 4))] 
-        while s != 'isc_arg_end':
-            if s == 'isc_arg_gds':
+        n = bytes_to_bint(recv_channel(self.sock, 4))
+        while n != isc_arg_end:
+            if n == isc_arg_gds:
                 gds_code = bytes_to_bint(recv_channel(self.sock, 4))
                 if gds_code:
                     gds_codes.add(gds_code)
                     message += messages.get(gds_code, '@1')
                     num_arg = 0
-            elif s == 'isc_arg_number':
+            elif n == isc_arg_number:
                 num = bytes_to_bint(recv_channel(self.sock, 4))
                 if gds_code == 335544436:
                     sql_code = num
                 num_arg += 1
                 message = message.replace('@' + str(num_arg), str(num))
-            elif s == 'isc_arg_string' or s == 'isc_arg_interpreted':
+            elif n == isc_arg_string or n == isc_arg_interpreted:
                 nbytes = bytes_to_bint(recv_channel(self.sock, 4))
-                s = str(recv_channel(self.sock, nbytes, True))
+                n = str(recv_channel(self.sock, nbytes, True))
                 num_arg += 1
-                message = message.replace('@' + str(num_arg), s)
-            s = isc_status_names[bytes_to_bint(recv_channel(self.sock, 4))] 
+                message = message.replace('@' + str(num_arg), n)
+            n = bytes_to_bint(recv_channel(self.sock, 4))
 
         if sql_code or message:
             raise OperationalError(message, gds_codes, sql_code)
