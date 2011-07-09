@@ -40,18 +40,6 @@ transaction_parameter_block = [
     bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_consistency]),
 ]
 
-isc_info_sql_names = [
-  None, 'isc_info_end', 'isc_info_truncated', 'isc_info_error', 
-  'isc_info_sql_select', 'isc_info_sql_bind',
-  'isc_info_sql_num_variables', 'isc_info_sql_describe_vars',
-  'isc_info_sql_describe_end', 'isc_info_sql_sqlda_seq',
-  'isc_info_sql_message_seq', 'isc_info_sql_type', 'isc_info_sql_sub_type',
-  'isc_info_sql_scale', 'isc_info_sql_length', 'isc_info_sql_null_ind',
-  'isc_info_sql_field', 'isc_info_sql_relation', 'isc_info_sql_owner',
-  'isc_info_sql_alias', 'isc_info_sql_sqlda_start', 'isc_info_sql_stmt_type',
-  'isc_info_sql_get_plan', 'isc_info_sql_records', 'isc_info_sql_batch_fetch',
-]
-
 isc_status_names = [
   'isc_arg_end', 'isc_arg_gds', 'isc_arg_string', 'isc_arg_cstring',
   'isc_arg_number', 'isc_arg_interpreted', 'isc_arg_vms', 'isc_arg_unix',
@@ -331,67 +319,67 @@ class cursor:
         index = 0
         i = 0
         if PYTHON_MAJOR_VER==3:
-            item = isc_info_sql_names[buf[i]]
+            item = buf[i]
         else:
-            item = isc_info_sql_names[ord(buf[i])]
-        while item != 'isc_info_end':
-            if item == 'isc_info_sql_sqlda_seq':
+            item = ord(buf[i])
+        while item != isc_info_end:
+            if item == isc_info_sql_sqlda_seq:
                 l = bytes_to_int(buf[i+1:i+3])
                 index = bytes_to_int(buf[i+3:i+3+l])
                 self._xsqlda[index-1] = XSQLVAR(self.connection.bytes_to_str)
                 i = i + 3 + l
-            elif item == 'isc_info_sql_type':
+            elif item == isc_info_sql_type:
                 l = bytes_to_int(buf[i+1:i+3])
                 self._xsqlda[index-1].sqltype = \
                                         bytes_to_int(buf[i+3:i+3+l]) & ~ 1
                 i = i + 3 + l
-            elif item == 'isc_info_sql_sub_type':
+            elif item == isc_info_sql_sub_type:
                 l = bytes_to_int(buf[i+1:i+3])
                 self._xsqlda[index-1].sqlsubtype = bytes_to_int(buf[i+3:i+3+l])
                 i = i + 3 + l
-            elif item == 'isc_info_sql_scale':
+            elif item == isc_info_sql_scale:
                 l = bytes_to_int(buf[i+1:i+3])
                 self._xsqlda[index-1].sqlscale = bytes_to_int(buf[i+3:i+3+l])
                 i = i + 3 + l
-            elif item == 'isc_info_sql_length':
+            elif item == isc_info_sql_length:
                 l = bytes_to_int(buf[i+1:i+3])
                 self._xsqlda[index-1].sqllen = bytes_to_int(buf[i+3:i+3+l])
                 i = i + 3 + l
-            elif item == 'isc_info_sql_null_ind':
+            elif item == isc_info_sql_null_ind:
                 l = bytes_to_int(buf[i+1:i+3])
                 self._xsqlda[index-1].null_ok = bytes_to_int(buf[i+3:i+3+l])
                 i = i + 3 + l
-            elif item == 'isc_info_sql_field':
+            elif item == isc_info_sql_field:
                 l = bytes_to_int(buf[i+1:i+3])
                 self._xsqlda[index-1].fieldname = \
                         self.connection.bytes_to_str(buf[i + 3: i + 3 + l])
                 i = i + 3 + l
-            elif item == 'isc_info_sql_relation':
+            elif item == isc_info_sql_relation:
                 l = bytes_to_int(buf[i+1:i+3])
                 self._xsqlda[index-1].relname = \
                         self.connection.bytes_to_str(buf[i + 3: i + 3 + l])
                 i = i + 3 + l
-            elif item == 'isc_info_sql_owner':
+            elif item == isc_info_sql_owner:
                 l = bytes_to_int(buf[i+1:i+3])
                 self._xsqlda[index-1].ownname = \
                         self.connection.bytes_to_str(buf[i + 3: i + 3 + l])
                 i = i + 3 + l
-            elif item == 'isc_info_sql_alias':
+            elif item == isc_info_sql_alias:
                 l = bytes_to_int(buf[i+1:i+3])
                 self._xsqlda[index-1].aliasname = \
                         self.connection.bytes_to_str(buf[i + 3: i + 3 + l])
                 i = i + 3 + l
-            elif item == 'isc_info_truncated':
+            elif item == isc_info_truncated:
                 return index    # return next index
-            elif item == 'isc_info_sql_describe_end':
+            elif item == isc_info_sql_describe_end:
                 i = i + 1
             else:
                 print('\t', item, 'Invalid item [%02x] ! i=%d' % (buf[i], i))
                 i = i + 1
             if PYTHON_MAJOR_VER==3:
-                item = isc_info_sql_names[buf[i]]
+                item = buf[i]
             else:
-                item = isc_info_sql_names[ord(buf[i])]
+                item = ord(buf[i])
         return -1   # no more info
 
     def __init__(self, conn):
