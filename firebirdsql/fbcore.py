@@ -12,7 +12,7 @@ from firebirdsql.fberrmsgs import messages
 from firebirdsql import (DatabaseError, InternalError, OperationalError, 
     ProgrammingError, IntegrityError, DataError, NotSupportedError,
 )
-from consts import *
+from firebirdsql.consts import *
 
 DEFAULT_CHARSET='UTF8'
 PYTHON_MAJOR_VER = sys.version_info[0]
