@@ -495,11 +495,26 @@ class cursor:
             return None
 
     def fetchall(self):
-        return self.rows
+        rows = []
+        r = self.fetchone()
+        while r:
+            rows.append(r)
+            r = self.fetchone()
+        return rows
 
     def fetchmany(self, size=None):
         if not size:
             size = self.arraysize
+        r = self.fetchone()
+        while r:
+            rows.append(r)
+            size -= 1
+            if size == 0:
+                break
+            r = self.fetchone()
+        return rows
+
+
         rows = self.rows[self.cur_row:self.cur_row+size]
         self.cur_row += size
         if self.cur_row > len(self.rows):
