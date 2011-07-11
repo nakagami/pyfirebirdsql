@@ -12,6 +12,7 @@ from firebirdsql.fberrmsgs import messages
 from firebirdsql import (DatabaseError, InternalError, OperationalError, 
     ProgrammingError, IntegrityError, DataError, NotSupportedError,
 )
+from firebirdsql.consts import *
 
 DEFAULT_CHARSET='UTF8'
 PYTHON_MAJOR_VER = sys.version_info[0]
@@ -22,98 +23,10 @@ def bs(byte_array):
     return ''.join([chr(c) for c in byte_array])
 
 DEBUG = False
-__version__ = '0.4.2'
+__version__ = '0.4.3'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
-
-ISOLATION_LEVEL_READ_UNCOMMITTED = 0
-ISOLATION_LEVEL_READ_COMMITED = 1
-ISOLATION_LEVEL_REPEATABLE_READ = 2
-ISOLATION_LEVEL_SERIALIZABLE = 3
-
-isc_tpb_version1 = 1
-isc_tpb_version3 = 3
-isc_tpb_consistency = 1
-isc_tpb_concurrency = 2
-isc_tpb_shared = 3
-isc_tpb_protected = 4
-isc_tpb_exclusive = 5
-isc_tpb_wait = 6
-isc_tpb_nowait = 7
-isc_tpb_read = 8
-isc_tpb_write = 9
-isc_tpb_lock_read = 10
-isc_tpb_lock_write = 11
-isc_tpb_verb_time = 12
-isc_tpb_commit_time = 13
-isc_tpb_ignore_limbo = 14
-isc_tpb_read_committed = 15
-isc_tpb_autocommit = 16
-isc_tpb_rec_version = 17
-isc_tpb_no_rec_version = 18
-isc_tpb_restart_requests = 19
-isc_tpb_no_auto_undo = 20
-isc_tpb_lock_timeout = 21
-
-
-# Service Parameter Block parameter
-isc_spb_version1 = 1
-isc_spb_current_version = 2
-isc_spb_version = isc_spb_current_version
-isc_spb_user_name = 28              # isc_dpb_user_name
-isc_spb_sys_user_name = 19          # isc_dpb_sys_user_name
-isc_spb_sys_user_name_enc = 31      # isc_dpb_sys_user_name_enc
-isc_spb_password = 29               # isc_dpb_password
-isc_spb_password_enc = 30           # isc_dpb_password_enc
-isc_spb_command_line = 105
-isc_spb_dbname = 106
-isc_spb_verbose = 107
-isc_spb_options = 108
-isc_spb_address_path = 109
-isc_spb_process_id = 110
-isc_spb_trusted_auth = 111
-isc_spb_process_name = 112
-isc_spb_trusted_role = 113
-isc_spb_connect_timeout = 57        # isc_dpb_connect_timeout
-isc_spb_dummy_packet_interval = 58  # isc_dpb_dummy_packet_interval
-isc_spb_sql_role_name = 60          # isc_dpb_sql_role_name
-# backup
-isc_spb_bkp_file = 5
-# restore
-isc_spb_res_buffers = 9
-isc_spb_res_page_size = 10
-# trace
-isc_spb_trc_id = 1
-isc_spb_trc_name = 2
-isc_spb_trc_cfg = 3
-
-
-# Service Action Items
-isc_action_svc_backup = 1
-isc_action_svc_restore = 2
-isc_action_svc_repair = 3
-isc_action_svc_add_user = 4
-isc_action_svc_delete_user = 5
-isc_action_svc_modify_user = 6
-isc_action_svc_display_user = 7
-isc_action_svc_properties = 8
-isc_action_svc_add_license = 9
-isc_action_svc_remove_license = 10
-isc_action_svc_db_stats = 11
-isc_action_svc_get_ib_log = 12
-isc_action_svc_get_fb_log = 12
-isc_action_svc_nbak = 20
-isc_action_svc_nrest = 21
-isc_action_svc_trace_start = 22
-isc_action_svc_trace_stop = 23
-isc_action_svc_trace_suspend = 24
-isc_action_svc_trace_resume = 25
-isc_action_svc_trace_list = 26
-isc_action_svc_set_mapping = 27
-isc_action_svc_drop_mapping = 28
-isc_action_svc_display_user_adm = 29
-isc_action_svc_last = 30
 
 
 transaction_parameter_block = [
@@ -126,78 +39,6 @@ transaction_parameter_block = [
     # ISOLATION_LEVEL_SERIALIZABLE
     bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_consistency]),
 ]
-
-isc_info_sql_names = [
-  None, 'isc_info_end', 'isc_info_truncated', 'isc_info_error', 
-  'isc_info_sql_select', 'isc_info_sql_bind',
-  'isc_info_sql_num_variables', 'isc_info_sql_describe_vars',
-  'isc_info_sql_describe_end', 'isc_info_sql_sqlda_seq',
-  'isc_info_sql_message_seq', 'isc_info_sql_type', 'isc_info_sql_sub_type',
-  'isc_info_sql_scale', 'isc_info_sql_length', 'isc_info_sql_null_ind',
-  'isc_info_sql_field', 'isc_info_sql_relation', 'isc_info_sql_owner',
-  'isc_info_sql_alias', 'isc_info_sql_sqlda_start', 'isc_info_sql_stmt_type',
-  'isc_info_sql_get_plan', 'isc_info_sql_records', 'isc_info_sql_batch_fetch',
-]
-
-isc_status_names = [
-  'isc_arg_end', 'isc_arg_gds', 'isc_arg_string', 'isc_arg_cstring',
-  'isc_arg_number', 'isc_arg_interpreted', 'isc_arg_vms', 'isc_arg_unix',
-  'isc_arg_domain', 'isc_arg_dos', 'isc_arg_mpexl', 'isc_arg_mpexl_ipc',
-  None, None, None, 
-  'isc_arg_next_mach', 'isc_arg_netware', 'isc_arg_win32', 'isc_arg_warning',
-]
-
-isc_info_names = [
-  None, 'isc_info_end', 'isc_info_truncated', 'isc_info_error', 
-  'isc_info_db_id', 'isc_info_reads',
-  'isc_info_writes', 'isc_info_fetches', 'isc_info_marks', None, None,
-  'isc_info_implementation', 'isc_info_isc_version', 'isc_info_base_level',
-  'isc_info_page_size', 'isc_info_num_buffers', 'isc_info_limbo',
-  'isc_info_current_memory', 'isc_info_max_memory', 'isc_info_window_turns',
-  'isc_info_license', 'isc_info_allocation', 'isc_info_attachment_id',
-  'isc_info_read_seq_count', 'isc_info_read_idx_count',
-  'isc_info_insert_count', 'isc_info_update_count', 'isc_info_delete_count',
-  'isc_info_backout_count', 'isc_info_purge_count', 'isc_info_expunge_count',
-  'isc_info_sweep_interval', 'isc_info_ods_version',
-  'isc_info_ods_minor_version', 'isc_info_no_reserve', 'isc_info_logfile',
-  'isc_info_cur_logfile_name', 'isc_info_cur_log_part_offset',
-  'isc_info_num_wal_buffers', 'isc_info_wal_buffer_size',
-  'isc_info_wal_ckpt_length', 'isc_info_wal_cur_ckpt_interval',
-  'isc_info_wal_prv_ckpt_fname', 'isc_info_wal_prv_ckpt_poffset',
-  'isc_info_wal_recv_ckpt_fname', 'isc_info_wal_recv_ckpt_poffset', None,
-  'isc_info_wal_grpc_wait_usecs', 'isc_info_wal_num_io',
-  'isc_info_wal_avg_io_size', 'isc_info_wal_num_commits',
-  'isc_info_wal_avg_grpc_size', 'isc_info_forced_writes',
-  'isc_info_user_names', 'isc_info_page_errors',
-  'isc_info_record_errors', 'isc_info_bpage_errors',
-  'isc_info_dpage_errors', 'isc_info_ipage_errors',
-  'isc_info_ppage_errors', 'isc_info_tpage_errors',
-  'isc_info_set_page_buffers', 'isc_info_db_sql_dialect',
-  'isc_info_db_read_only', 'isc_info_db_size_in_pages',
-]
-for i in range(len(isc_info_names), 101): # 65-100 no use
-    isc_info_names.append(None)
-isc_info_names += [
-  'frb_info_att_charset', 'isc_info_db_class', 'isc_info_firebird_version',
-  'isc_info_oldest_transaction', 'isc_info_oldest_active',
-  'isc_info_oldest_snapshot', 'isc_info_next_transaction',
-  'isc_info_db_provider', 'isc_info_active_transactions',
-]
-
-SQL_TYPE_TEXT = 452
-SQL_TYPE_VARYING = 448
-SQL_TYPE_SHORT = 500
-SQL_TYPE_LONG = 496
-SQL_TYPE_FLOAT = 482
-SQL_TYPE_DOUBLE = 480
-SQL_TYPE_D_FLOAT = 530
-SQL_TYPE_TIMESTAMP = 510
-SQL_TYPE_BLOB = 520
-SQL_TYPE_ARRAY = 540
-SQL_TYPE_QUAD = 550
-SQL_TYPE_TIME = 560
-SQL_TYPE_DATE = 570
-SQL_TYPE_INT64 = 580
 
 INFO_SQL_STMT_TYPE = bs([0x15])
 INFO_SQL_SQLDA_START = bs([0x14,0x02])
@@ -469,67 +310,67 @@ class cursor:
         index = 0
         i = 0
         if PYTHON_MAJOR_VER==3:
-            item = isc_info_sql_names[buf[i]]
+            item = buf[i]
         else:
-            item = isc_info_sql_names[ord(buf[i])]
-        while item != 'isc_info_end':
-            if item == 'isc_info_sql_sqlda_seq':
+            item = ord(buf[i])
+        while item != isc_info_end:
+            if item == isc_info_sql_sqlda_seq:
                 l = bytes_to_int(buf[i+1:i+3])
                 index = bytes_to_int(buf[i+3:i+3+l])
                 self._xsqlda[index-1] = XSQLVAR(self.connection.bytes_to_str)
                 i = i + 3 + l
-            elif item == 'isc_info_sql_type':
+            elif item == isc_info_sql_type:
                 l = bytes_to_int(buf[i+1:i+3])
                 self._xsqlda[index-1].sqltype = \
                                         bytes_to_int(buf[i+3:i+3+l]) & ~ 1
                 i = i + 3 + l
-            elif item == 'isc_info_sql_sub_type':
+            elif item == isc_info_sql_sub_type:
                 l = bytes_to_int(buf[i+1:i+3])
                 self._xsqlda[index-1].sqlsubtype = bytes_to_int(buf[i+3:i+3+l])
                 i = i + 3 + l
-            elif item == 'isc_info_sql_scale':
+            elif item == isc_info_sql_scale:
                 l = bytes_to_int(buf[i+1:i+3])
                 self._xsqlda[index-1].sqlscale = bytes_to_int(buf[i+3:i+3+l])
                 i = i + 3 + l
-            elif item == 'isc_info_sql_length':
+            elif item == isc_info_sql_length:
                 l = bytes_to_int(buf[i+1:i+3])
                 self._xsqlda[index-1].sqllen = bytes_to_int(buf[i+3:i+3+l])
                 i = i + 3 + l
-            elif item == 'isc_info_sql_null_ind':
+            elif item == isc_info_sql_null_ind:
                 l = bytes_to_int(buf[i+1:i+3])
                 self._xsqlda[index-1].null_ok = bytes_to_int(buf[i+3:i+3+l])
                 i = i + 3 + l
-            elif item == 'isc_info_sql_field':
+            elif item == isc_info_sql_field:
                 l = bytes_to_int(buf[i+1:i+3])
                 self._xsqlda[index-1].fieldname = \
                         self.connection.bytes_to_str(buf[i + 3: i + 3 + l])
                 i = i + 3 + l
-            elif item == 'isc_info_sql_relation':
+            elif item == isc_info_sql_relation:
                 l = bytes_to_int(buf[i+1:i+3])
                 self._xsqlda[index-1].relname = \
                         self.connection.bytes_to_str(buf[i + 3: i + 3 + l])
                 i = i + 3 + l
-            elif item == 'isc_info_sql_owner':
+            elif item == isc_info_sql_owner:
                 l = bytes_to_int(buf[i+1:i+3])
                 self._xsqlda[index-1].ownname = \
                         self.connection.bytes_to_str(buf[i + 3: i + 3 + l])
                 i = i + 3 + l
-            elif item == 'isc_info_sql_alias':
+            elif item == isc_info_sql_alias:
                 l = bytes_to_int(buf[i+1:i+3])
                 self._xsqlda[index-1].aliasname = \
                         self.connection.bytes_to_str(buf[i + 3: i + 3 + l])
                 i = i + 3 + l
-            elif item == 'isc_info_truncated':
+            elif item == isc_info_truncated:
                 return index    # return next index
-            elif item == 'isc_info_sql_describe_end':
+            elif item == isc_info_sql_describe_end:
                 i = i + 1
             else:
                 print('\t', item, 'Invalid item [%02x] ! i=%d' % (buf[i], i))
                 i = i + 1
             if PYTHON_MAJOR_VER==3:
-                item = isc_info_sql_names[buf[i]]
+                item = buf[i]
             else:
-                item = isc_info_sql_names[ord(buf[i])]
+                item = ord(buf[i])
         return -1   # no more info
 
     def __init__(self, conn):
@@ -654,11 +495,26 @@ class cursor:
             return None
 
     def fetchall(self):
-        return self.rows
+        rows = []
+        r = self.fetchone()
+        while r:
+            rows.append(r)
+            r = self.fetchone()
+        return rows
 
     def fetchmany(self, size=None):
         if not size:
             size = self.arraysize
+        r = self.fetchone()
+        while r:
+            rows.append(r)
+            size -= 1
+            if size == 0:
+                break
+            r = self.fetchone()
+        return rows
+
+
         rows = self.rows[self.cur_row:self.cur_row+size]
         self.cur_row += size
         if self.cur_row > len(self.rows):
@@ -1108,26 +964,26 @@ class BaseConnect:
         sql_code = 0
         gds_codes = set()
         message = ''
-        s = isc_status_names[bytes_to_bint(recv_channel(self.sock, 4))] 
-        while s != 'isc_arg_end':
-            if s == 'isc_arg_gds':
+        n = bytes_to_bint(recv_channel(self.sock, 4))
+        while n != isc_arg_end:
+            if n == isc_arg_gds:
                 gds_code = bytes_to_bint(recv_channel(self.sock, 4))
                 if gds_code:
                     gds_codes.add(gds_code)
                     message += messages.get(gds_code, '@1')
                     num_arg = 0
-            elif s == 'isc_arg_number':
+            elif n == isc_arg_number:
                 num = bytes_to_bint(recv_channel(self.sock, 4))
                 if gds_code == 335544436:
                     sql_code = num
                 num_arg += 1
                 message = message.replace('@' + str(num_arg), str(num))
-            elif s == 'isc_arg_string' or s == 'isc_arg_interpreted':
+            elif n == isc_arg_string or n == isc_arg_interpreted:
                 nbytes = bytes_to_bint(recv_channel(self.sock, 4))
-                s = str(recv_channel(self.sock, nbytes, True))
+                n = str(recv_channel(self.sock, nbytes, True))
                 num_arg += 1
-                message = message.replace('@' + str(num_arg), s)
-            s = isc_status_names[bytes_to_bint(recv_channel(self.sock, 4))] 
+                message = message.replace('@' + str(num_arg), n)
+            n = bytes_to_bint(recv_channel(self.sock, 4))
 
         if sql_code or message:
             raise OperationalError(message, gds_codes, sql_code)
@@ -1202,19 +1058,19 @@ class BaseConnect:
         self.isolation_level = isolation_level
 
     def info_database(self, info_names):
-        if info_names[-1] != 'isc_info_end':
-            info_names.append('isc_info_end')
-        b = bs([isc_info_names.index(s)  for s in info_names])
+        if info_names[-1] != isc_info_end:
+            info_names.append(isc_info_end)
+        b = bs(info_names)
         self._op_info_database(b)
         (h, oid, buf) = self._op_response()
         i = 0
         r = []
         while i < len(buf):
             if PYTHON_MAJOR_VER==3:
-                s = isc_info_names[buf[i]]
+                s = buf[i]
             else:
-                s = isc_info_names[ord(buf[i])]
-            if s == 'isc_info_end':
+                s = ord(buf[i])
+            if s == isc_info_end:
                 break
             l = bytes_to_int(buf[i+1:i+3])
             r.append(buf[i+3:i+3+l])

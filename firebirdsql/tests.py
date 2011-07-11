@@ -30,9 +30,9 @@ if __name__ == '__main__':
     TEST_USER = 'sysdba'
     TEST_PASS = 'masterkey'
     conn = firebirdsql.create_database(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
-    print(conn.info_database(['isc_info_ods_version', 
-                            'isc_info_ods_minor_version',
-                            'isc_info_user_names']))
+    print(conn.info_database([firebirdsql.isc_info_ods_version, 
+                            firebirdsql.isc_info_ods_minor_version,
+                            firebirdsql.isc_info_user_names]))
     conn.cursor().execute('''
         CREATE TABLE foo (
             a INTEGER NOT NULL,

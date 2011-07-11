@@ -7,6 +7,8 @@
 # Python DB-API 2.0 module for Firebird. 
 ##############################################################################
 
+from firebirdsql.consts import *
+
 class Error(Exception):
     def __init__(self, message, gds_codes, sql_code=0):
         self.message = message
