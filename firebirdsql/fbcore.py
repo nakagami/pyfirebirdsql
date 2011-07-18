@@ -592,7 +592,10 @@ class BaseConnect:
         return s.encode(self.charset_map.get(self.charset, self.charset))
 
     def bytes_to_str(self, b):
-        return b.decode(self.charset_map.get(self.charset, self.charset))
+        if PYTHON_MAJOR_VER==3:
+            return b.decode(self.charset_map.get(self.charset, self.charset))
+        else:
+            return b
 
     def uid(self):
         if sys.platform == 'win32':
