@@ -240,10 +240,7 @@ class XSQLVAR:
 
     def value(self, raw_value):
         if self.sqltype in (SQL_TYPE_TEXT, SQL_TYPE_VARYING):
-            if PYTHON_MAJOR_VER==3:
-                return self.bytes_to_str(raw_value)
-            else:
-                return raw_value
+            return self.bytes_to_str(raw_value)
         elif self.sqltype in (SQL_TYPE_SHORT, SQL_TYPE_LONG, SQL_TYPE_INT64):
             n = bytes_to_bint(raw_value)
             if self.sqlscale:
@@ -595,7 +592,10 @@ class BaseConnect:
         return s.encode(self.charset_map.get(self.charset, self.charset))
 
     def bytes_to_str(self, b):
-        return b.decode(self.charset_map.get(self.charset, self.charset))
+        if PYTHON_MAJOR_VER==3:
+            return b.decode(self.charset_map.get(self.charset, self.charset))
+        else:
+            return b
 
     def uid(self):
         if sys.platform == 'win32':
