@@ -239,8 +239,17 @@ class XSQLVAR:
         return (h, m, s, (n % 10000) * 100)
 
     def value(self, raw_value):
-        if self.sqltype in (SQL_TYPE_TEXT, SQL_TYPE_VARYING):
-            return self.bytes_to_str(raw_value)
+        if self.sqltype == SQL_TYPE_TEXT:
+            if self.sqlsubtype in (4, 69):  # UTF8 and GB18030 
+                reallength = self.sqllen // 4 
+                return self.bytes_to_str(raw_value)[:reallength]
+            elif self.sqlsubtype == 3:      # UNICODE_FSS 
+                reallength = self.sqllen // 3
+                return self.bytes_to_str(raw_value)[:reallength]
+            else:
+                return self.bytes_to_str(raw_value) 
+        elif self.sqltype == SQL_TYPE_VARYING:
+                return self.bytes_to_str(raw_value) 
         elif self.sqltype in (SQL_TYPE_SHORT, SQL_TYPE_LONG, SQL_TYPE_INT64):
             n = bytes_to_bint(raw_value)
             if self.sqlscale:
@@ -585,17 +594,58 @@ class BaseConnect:
     op_service_start = 85
 
     charset_map = {
-        'UNICODE_FSS' : 'utf-8',
+    # DB CHAR SET NAME    :   PYTHON CODEC NAME (CANONICAL)
+    # ---------------------------------------------------------------------------
+    'OCTETS'              :   None, # Allow to pass through unchanged.
+    'UNICODE_FSS'         :   'utf_8',
+    'UTF8'                :   'utf_8', # (Firebird 2.0+)
+    'SJIS_0208'           :   'shift_jis',
+    'EUCJ_0208'           :   'euc_jp',
+    'DOS737'              :   'cp737',
+    'DOS437'              :   'cp437',
+    'DOS850'              :   'cp850',
+    'DOS865'              :   'cp865',
+    'DOS860'              :   'cp860',
+    'DOS863'              :   'cp863',
+    'DOS775'              :   'cp775',
+    'DOS862'              :   'cp862',
+    'DOS864'              :   'cp864',
+    'ISO8859_1'           :   'iso8859_1',
+    'ISO8859_2'           :   'iso8859_2',
+    'ISO8859_3'           :   'iso8859_3',
+    'ISO8859_4'           :   'iso8859_4',
+    'ISO8859_5'           :   'iso8859_5',
+    'ISO8859_6'           :   'iso8859_6',
+    'ISO8859_7'           :   'iso8859_7',
+    'ISO8859_8'           :   'iso8859_8',
+    'ISO8859_9'           :   'iso8859_9',
+    'ISO8859_13'          :   'iso8859_13',
+    'KSC_5601'            :   'euc_kr',
+    'DOS852'              :   'cp852',
+    'DOS857'              :   'cp857',
+    'DOS861'              :   'cp861',
+    'DOS866'              :   'cp866',
+    'DOS869'              :   'cp869',
+    'WIN1250'             :   'cp1250',
+    'WIN1251'             :   'cp1251',
+    'WIN1252'             :   'cp1252',
+    'WIN1253'             :   'cp1253',
+    'WIN1254'             :   'cp1254',
+    'BIG_5'               :   'big5',
+    'GB_2312'             :   'gb2312',
+    'WIN1255'             :   'cp1255',
+    'WIN1256'             :   'cp1256',
+    'WIN1257'             :   'cp1257',
+    'KOI8-R'              :   'koi8_r', # (Firebird 2.0+)
+    'KOI8-U'              :   'koi8_u', # (Firebird 2.0+)
+    'WIN1258'             :   'cp1258', # (Firebird 2.0+)
     }
 
     def str_to_bytes(self, s):
         return s.encode(self.charset_map.get(self.charset, self.charset))
 
     def bytes_to_str(self, b):
-        if PYTHON_MAJOR_VER==3:
-            return b.decode(self.charset_map.get(self.charset, self.charset))
-        else:
-            return b
+        return b.decode(self.charset_map.get(self.charset, self.charset))
 
     def uid(self):
         if sys.platform == 'win32':
