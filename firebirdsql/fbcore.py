@@ -574,6 +574,8 @@ class BaseConnect:
     op_detach = 21
     op_transaction = 29
     op_commit = 30
+    op_commit_retaining = 50
+    op_rollback_retaining = 86
     op_rollback = 31
     op_open_blob = 35
     op_get_segment = 36
@@ -664,8 +666,8 @@ class BaseConnect:
         values = bs([])
         for p in params:
             t = type(p)
-
-            if t == str or t == unicode:
+            if ((PYTHON_MAJOR_VER==3 and t == str) or 
+                            (PYTHON_MAJOR_VER==2 and t == unicode)):
                 v = self.str_to_bytes(p)
                 nbytes = len(v)
                 pad_length = ((4-nbytes) & 3)
@@ -845,12 +847,25 @@ class BaseConnect:
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
+    def _op_commit_retaining(self):
+        p = xdrlib.Packer()
+        p.pack_int(self.op_commit_retaining)
+        p.pack_int(self.trans_handle)
+        send_channel(self.sock, p.get_buffer())
+
+    @wire_operation
     def _op_rollback(self):
         p = xdrlib.Packer()
         p.pack_int(self.op_rollback)
         p.pack_int(self.trans_handle)
         send_channel(self.sock, p.get_buffer())
 
+    @wire_operation
+    def _op_rollback_retaining(self):
+        p = xdrlib.Packer()
+        p.pack_int(self.op_rollback_retaining)
+        p.pack_int(self.trans_handle)
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_allocate_statement(self):
@@ -1055,15 +1070,23 @@ class BaseConnect:
         (h, oid, buf) = self._op_response()
         self.trans_handle = h
     
-    def commit(self):
-        self._op_commit()
-        (h, oid, buf) = self._op_response()
-        delattr(self, "trans_handle")
+    def commit(self, retaining=False):
+        if retaining:
+            self._op_commit_retaining()
+            (h, oid, buf) = self._op_response()
+        else:
+            self._op_commit()
+            (h, oid, buf) = self._op_response()
+            delattr(self, "trans_handle")
 
-    def rollback(self):
-        self._op_rollback()
-        (h, oid, buf) = self._op_response()
-        delattr(self, "trans_handle")
+    def rollback(self, retaining=False):
+        if retaining:
+            self._op_rollback_retaining()
+            (h, oid, buf) = self._op_response()
+        else:
+            self._op_rollback()
+            (h, oid, buf) = self._op_response()
+            delattr(self, "trans_handle")
 
     def close(self):
         if not hasattr(self, "db_handle"):
