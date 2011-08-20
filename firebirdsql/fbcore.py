@@ -38,6 +38,8 @@ transaction_parameter_block = [
     bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_concurrency]),
     # ISOLATION_LEVEL_SERIALIZABLE
     bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_consistency]),
+    # ISOLATION_LEVEL_READ_COMMITED_READ_ONLY
+    bs([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_no_rec_version]),
 ]
 
 INFO_SQL_STMT_TYPE = bs([0x15])
@@ -667,7 +669,7 @@ class BaseConnect:
         for p in params:
             t = type(p)
             if ((PYTHON_MAJOR_VER==3 and t == str) or 
-                            (PYTHON_MAJOR_VER==2 and t == unicode)):
+                            (PYTHON_MAJOR_VER==2 and (t == str or t == unicode))):
                 v = self.str_to_bytes(p)
                 nbytes = len(v)
                 pad_length = ((4-nbytes) & 3)
