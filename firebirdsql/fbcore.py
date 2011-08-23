@@ -423,7 +423,7 @@ class cursor:
 
         assert buf[:3] == bs([0x15,0x04,0x00]) # isc_info_sql_stmt_type (4 bytes)
         stmt_type = bytes_to_int(buf[3:7])
-        if stmt_type == 1:  # isc_info_sql_stmt_select
+        if stmt_type == isc_info_sql_stmt_select:
             assert buf[7:9] == bs([0x04,0x07])
             l = bytes_to_int(buf[9:11])
             col_len = bytes_to_int(buf[11:11+l])
