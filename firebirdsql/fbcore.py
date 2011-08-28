@@ -396,7 +396,7 @@ class cursor:
     def callproc(self, procname, *params):
         raise NotSupportedError()
 
-    def execute(self, query, params = []):
+    def _execute(self, query, params):
         self.connection._op_prepare_statement(self.stmt_handle, query)
         (h, oid, buf) = self.connection._op_response()
 
@@ -442,21 +442,36 @@ class cursor:
             self.connection._op_execute(self.stmt_handle, cooked_params)
             (h, oid, buf) = self.connection._op_response()
 
-            # Fetch
-            self.rows = []
-            more_data = True
-            while more_data:
-                self.connection._op_fetch(
-                                    self.stmt_handle, calc_blr(self._xsqlda))
-                (rows, more_data) = self.connection._op_fetch_response(
-                                                self.stmt_handle, self._xsqlda)
-                self.rows += rows
+        else:
+            self.connection._op_execute(self.stmt_handle, params)
+            try:
+                (h, oid, buf) = self.connection._op_response()
+            except OperationalError:
+                e = sys.exc_info()[1]
+                if 335544665 in e.gds_codes:
+                    raise IntegrityError(e.message, e.gds_codes, e.sql_code)
+        return stmt_type
 
-            # Convert BLOB handle to data
-            for i in range(len(self._xsqlda)):
-                x = self._xsqlda[i]
-                if x.sqltype == SQL_TYPE_BLOB:
-                    for r in self.rows:
+    def execute(self, query, params = []):
+        self._stmt_type = self._execute(query, params)
+        if self._stmt_type == isc_info_sql_stmt_select:
+            self._fetch_records = self._fetch_generator()
+
+    def executemany(self, query, seq_of_params):
+        for params in seq_of_params:
+            self.execute(query, params)
+
+    def _fetch_generator(self):
+        more_data = True
+        while more_data:
+            self.connection._op_fetch(self.stmt_handle, calc_blr(self._xsqlda))
+            (rows, more_data) = self.connection._op_fetch_response(
+                                            self.stmt_handle, self._xsqlda)
+            for r in rows:
+                # Convert BLOB handle to data    
+                for i in range(len(self._xsqlda)):    
+                    x = self._xsqlda[i]    
+                    if x.sqltype == SQL_TYPE_BLOB:    
                         if not r[i]:
                             continue
                         self.connection._op_open_blob(r[i])
@@ -473,33 +488,21 @@ class cursor:
                         self.connection._op_close_blob(h)
                         (h, oid, buf) = self.connection._op_response()
                         r[i] = v
-            self.cur_row = 0
-            # recreate stmt_handle
-            self.connection._op_free_statement(self.stmt_handle, 2) # DSQL_drop
-            (h, oid, buf) = self.connection._op_response()
-            self.connection._op_allocate_statement()
-            (h, oid, buf) = self.connection._op_response()
-            self.stmt_handle = h
-        else:
-            self.connection._op_execute(self.stmt_handle, params)
-            try:
-                (h, oid, buf) = self.connection._op_response()
-            except OperationalError:
-                e = sys.exc_info()[1]
-                if 335544665 in e.gds_codes:
-                    raise IntegrityError(e.message, e.gds_codes, e.sql_code)
-            self.rows = None
+                yield r
 
-    def executemany(self, query, seq_of_params):
-        for params in seq_of_params:
-            self.execute(query, params)
+        # recreate stmt_handle
+        self.connection._op_free_statement(self.stmt_handle, 2) # DSQL_drop
+        (h, oid, buf) = self.connection._op_response()
+        self.connection._op_allocate_statement()
+        (h, oid, buf) = self.connection._op_response()
+        self.stmt_handle = h
+
+        yield None
             
     def fetchone(self):
-        if self.cur_row < len(self.rows):
-            r = self.rows[self.cur_row]
-            self.cur_row += 1
-            return r
-        else:
+        try:
+            return self._fetch_records.next()
+        except StopIteration:
             return None
 
     def fetchall(self):
