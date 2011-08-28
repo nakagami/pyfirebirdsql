@@ -501,7 +501,10 @@ class cursor:
             
     def fetchone(self):
         try:
-            return self._fetch_records.next()
+            if PYTHON_MAJOR_VER==3:
+                return next(self._fetch_records)
+            else:
+                return self._fetch_records.next()
         except StopIteration:
             return None
 
