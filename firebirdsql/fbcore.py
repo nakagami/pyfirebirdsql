@@ -509,12 +509,7 @@ class cursor:
             return None
 
     def fetchall(self):
-        rows = []
-        r = self.fetchone()
-        while r:
-            rows.append(r)
-            r = self.fetchone()
-        return rows
+        return [self._fetch_recoerds()]
 
     def fetchmany(self, size=None):
         rows = []
@@ -528,12 +523,6 @@ class cursor:
                 break
             r = self.fetchone()
         return rows
-
-
-        rows = self.rows[self.cur_row:self.cur_row+size]
-        self.cur_row += size
-        if self.cur_row > len(self.rows):
-            self.cur_row = len(self.rows)
 
     def close(self):
         if not hasattr(self, "stmt_handle"):
@@ -559,10 +548,7 @@ class cursor:
                         x.sqlscale, True if x.null_ok else False))
             return r
         elif attrname == 'rowcount':
-            if self.rows:
-                return len(self.rows)
-            else:
-                return -1
+            return -1
         raise AttributeError
 
     def __del__(self):
