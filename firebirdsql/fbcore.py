@@ -517,6 +517,7 @@ class cursor:
         return rows
 
     def fetchmany(self, size=None):
+        rows = []
         if not size:
             size = self.arraysize
         r = self.fetchone()
