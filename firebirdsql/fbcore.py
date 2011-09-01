@@ -509,7 +509,12 @@ class cursor:
             return None
 
     def fetchall(self):
-        return [self._fetch_recoerds()]
+        rows = []
+        r = self.fetchone()
+        while r:
+            rows.append(r)
+            r = self.fetchone()
+        return rows
 
     def fetchmany(self, size=None):
         rows = []
