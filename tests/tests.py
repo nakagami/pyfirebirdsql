@@ -72,6 +72,12 @@ if __name__ == '__main__':
     conn.commit()
 
     cur = conn.cursor()
+    cur.execute("select * from foo where c=?", ('Nakagami', ))
+    print('search Nakagami')
+    print(cur.fetchall())
+    cur.close()
+
+    cur = conn.cursor()
     cur.execute("select * from foo")
     assert not cur.fetchone() is None
     assert not cur.fetchone() is None
