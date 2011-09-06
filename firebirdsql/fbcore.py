@@ -497,7 +497,7 @@ class cursor:
         (h, oid, buf) = self.connection._op_response()
         self.stmt_handle = h
 
-        yield None
+        raise StopIteration()
             
     def fetchone(self):
         try:
