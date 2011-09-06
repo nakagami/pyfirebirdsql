@@ -202,6 +202,22 @@ isc_info_sql_stmt_type = 21
 isc_info_sql_get_plan = 22
 isc_info_sql_records = 23
 isc_info_sql_batch_fetch = 24
+
+isc_info_sql_stmt_select = 1
+isc_info_sql_stmt_insert = 2
+isc_info_sql_stmt_update = 3
+isc_info_sql_stmt_delete = 4
+isc_info_sql_stmt_ddl = 5
+isc_info_sql_stmt_get_segment = 6
+isc_info_sql_stmt_put_segment = 7
+isc_info_sql_stmt_exec_procedure = 8
+isc_info_sql_stmt_start_trans = 9
+isc_info_sql_stmt_commit = 10
+isc_info_sql_stmt_rollback = 11
+isc_info_sql_stmt_select_for_upd = 12
+isc_info_sql_stmt_set_generator = 13
+isc_info_sql_stmt_savepoint = 14
+
 isc_arg_end = 0
 isc_arg_gds = 1
 isc_arg_string = 2

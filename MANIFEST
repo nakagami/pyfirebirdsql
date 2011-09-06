@@ -1,0 +1,5 @@
+setup.py
+firebirdsql/__init__.py
+firebirdsql/fbcore.py
+firebirdsql/fberrmsgs.py
+firebirdsql/consts.py
