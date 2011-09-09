@@ -23,7 +23,7 @@ def bs(byte_array):
     return ''.join([chr(c) for c in byte_array])
 
 DEBUG = False
-__version__ = '0.4.4'
+__version__ = '0.5.0'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
