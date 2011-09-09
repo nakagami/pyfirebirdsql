@@ -73,8 +73,7 @@ if __name__ == '__main__':
 
     cur = conn.cursor()
     cur.execute("select * from foo where c=?", ('Nakagami', ))
-    print('search Nakagami')
-    print(cur.fetchall())
+    len(cur.fetchall()) == 1
     cur.close()
 
     cur = conn.cursor()

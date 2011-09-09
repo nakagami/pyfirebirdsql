@@ -402,10 +402,9 @@ class cursor:
 
         cooked_params = []
         for param in params:        # Convert str/bytes parameter to blob id
-            if type(param) == str: 
+            if type(param) == type(''): 
                 param = self.connection.str_to_bytes(param)
-            elif ((PYTHON_MAJOR_VER==3 and type(param) != bytes) or 
-                            (PYTHON_MAJOR_VER==2 and type(param) != str)):
+            else:
                 cooked_params.append(param)
                 continue
             self.connection._op_create_blob2()
@@ -443,7 +442,7 @@ class cursor:
             (h, oid, buf) = self.connection._op_response()
 
         else:
-            self.connection._op_execute(self.stmt_handle, params)
+            self.connection._op_execute(self.stmt_handle, cooked_params)
             try:
                 (h, oid, buf) = self.connection._op_response()
             except OperationalError:
