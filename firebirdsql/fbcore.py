@@ -23,7 +23,7 @@ def bs(byte_array):
     return ''.join([chr(c) for c in byte_array])
 
 DEBUG = False
-__version__ = '0.4.4'
+__version__ = '0.5.0'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
@@ -404,10 +404,9 @@ class cursor:
 
         cooked_params = []
         for param in params:        # Convert str/bytes parameter to blob id
-            if type(param) == str: 
+            if type(param) == str:
                 param = self.connection.str_to_bytes(param)
-            elif ((PYTHON_MAJOR_VER==3 and type(param) != bytes) or 
-                            (PYTHON_MAJOR_VER==2 and type(param) != str)):
+            else:
                 cooked_params.append(param)
                 continue
             self.connection._op_create_blob2()
@@ -445,7 +444,7 @@ class cursor:
             (h, oid, buf) = self.connection._op_response()
 
         else:
-            self.connection._op_execute(self.stmt_handle, params)
+            self.connection._op_execute(self.stmt_handle, cooked_params)
             try:
                 (h, oid, buf) = self.connection._op_response()
             except OperationalError:
@@ -499,7 +498,7 @@ class cursor:
         (h, oid, buf) = self.connection._op_response()
         self.stmt_handle = h
 
-        yield None
+        raise StopIteration()
             
     def fetchone(self):
         try:
@@ -660,15 +659,13 @@ class BaseConnect:
         values = bs([])
         for p in params:
             t = type(p)
-            if t == str:
-                v = self.str_to_bytes(p)
+            if ((PYTHON_MAJOR_VER == 2 and t == str) or
+                (PYTHON_MAJOR_VER == 3 and t == bytes)):
+                v = p
                 nbytes = len(v)
                 pad_length = ((4-nbytes) & 3)
                 v += bs([0]) * pad_length
                 blr += bs([14, nbytes & 255, nbytes >> 8])
-            elif PYTHON_MAJOR_VER == 3 and t == bytes:
-                v = p
-                blr += bytes([9, 0])
             elif t == int:
                 v = bint_to_bytes(p, 4)
                 blr += bytes([7, 0])
