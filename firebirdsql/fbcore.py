@@ -402,7 +402,7 @@ class cursor:
 
         cooked_params = []
         for param in params:        # Convert str/bytes parameter to blob id
-            if type(param) == type(''): 
+            if type(param) == str:
                 param = self.connection.str_to_bytes(param)
             else:
                 cooked_params.append(param)
@@ -657,15 +657,13 @@ class BaseConnect:
         values = bs([])
         for p in params:
             t = type(p)
-            if t == str:
-                v = self.str_to_bytes(p)
+            if ((PYTHON_MAJOR_VER == 2 and t == str) or
+                (PYTHON_MAJOR_VER == 3 and t == bytes)):
+                v = p
                 nbytes = len(v)
                 pad_length = ((4-nbytes) & 3)
                 v += bs([0]) * pad_length
                 blr += bs([14, nbytes & 255, nbytes >> 8])
-            elif PYTHON_MAJOR_VER == 3 and t == bytes:
-                v = p
-                blr += bytes([9, 0])
             elif t == int:
                 v = bint_to_bytes(p, 4)
                 blr += bytes([7, 0])
