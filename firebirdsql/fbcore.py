@@ -406,9 +406,8 @@ class cursor:
         for param in params:        # Convert str/bytes parameter to blob id
             if type(param) == str:
                 param = self.connection.str_to_bytes(param)
-            else:
-                cooked_params.append(param)
-                continue
+            cooked_params.append(param)
+            continue
             self.connection._op_create_blob2()
             (blob_handle, blob_id, buf2) = self.connection._op_response()
             seg_size = self.connection.buffer_length
