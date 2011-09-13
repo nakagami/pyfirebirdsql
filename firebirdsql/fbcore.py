@@ -38,6 +38,8 @@ transaction_parameter_block = [
     bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_concurrency]),
     # ISOLATION_LEVEL_SERIALIZABLE
     bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_consistency]),
+    # ISOLATION_LEVEL_READ_COMMITED_READ_ONLY
+    bs([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_no_rec_version]),
 ]
 
 INFO_SQL_STMT_TYPE = bs([0x15])
@@ -404,9 +406,8 @@ class cursor:
         for param in params:        # Convert str/bytes parameter to blob id
             if type(param) == str:
                 param = self.connection.str_to_bytes(param)
-            else:
-                cooked_params.append(param)
-                continue
+            cooked_params.append(param)
+            continue
             self.connection._op_create_blob2()
             (blob_handle, blob_id, buf2) = self.connection._op_response()
             seg_size = self.connection.buffer_length
