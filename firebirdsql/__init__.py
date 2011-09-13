@@ -50,4 +50,5 @@ from firebirdsql.fbcore import ( __version__, apilevel, threadsafety,
     paramstyle, cursor, connect, create_database, service_mgr,
     ISOLATION_LEVEL_READ_UNCOMMITTED, ISOLATION_LEVEL_READ_COMMITED,
     ISOLATION_LEVEL_REPEATABLE_READ, ISOLATION_LEVEL_SERIALIZABLE,
+    ISOLATION_LEVEL_READ_COMMITED_READ_ONLY
 )
