@@ -1122,10 +1122,11 @@ class BaseConnect:
     def set_isolation_level(self, isolation_level):
         self.isolation_level = isolation_level
 
-    def info_database(self, info_names):
-        if info_names[-1] != isc_info_end:
-            info_names.append(isc_info_end)
-        b = bs(info_names)
+    def _db_info(self, requests):
+        if requests[-1] == isc_info_end:
+            b = bs(requests)
+        else:
+            b = bs(requests+type(requests)([isc_info_end]))
         self._op_info_database(b)
         (h, oid, buf) = self._op_response()
         i = 0
