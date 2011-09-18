@@ -1122,12 +1122,12 @@ class BaseConnect:
     def set_isolation_level(self, isolation_level):
         self.isolation_level = isolation_level
 
-    def _db_info(self, requests):
-        if requests[-1] == isc_info_end:
-            b = bs(requests)
+    def _db_info(self, info_requests):
+        if info_requests[-1] == isc_info_end:
+            self._op_info_database(bs(info_requests))
         else:
-            b = bs(requests+type(requests)([isc_info_end]))
-        self._op_info_database(b)
+            self._op_info_database(
+                        bs(info_requests+type(info_requests)([isc_info_end])))
         (h, oid, buf) = self._op_response()
         i = 0
         r = []
@@ -1142,6 +1142,29 @@ class BaseConnect:
             r.append(buf[i+3:i+3+l])
             i = i + 3 + l
         return r
+
+    def _db_info_convert_type(self, info_request, v):
+        REQ_INT = (isc_info_ods_version, isc_info_ods_minor_version)
+        REQ_STRING = (isc_info_user_names, )
+
+        if info_request in REQ_INT:
+            return bytes_to_int(v)
+        elif info_request in REQ_STRING:
+            return self.bytes_to_str(v[1:])
+        else:
+            return v
+
+    def db_info(self, info_requests):
+        if type(info_requests) == int:  # singleton
+            r = self._db_info([info_requests])
+            return self._db_info_convert_type(info_requests, r[0])
+        else:
+            results = {}
+            rs = self._db_info(info_requests)
+            for i in range(len(info_requests)):
+                results[info_requests[i]] =  self._db_info_convert_type(
+                                                    info_requests[i], rs[i])
+            return results
 
     def __del__(self):
         if hasattr(self, "db_handle"):
