@@ -1144,13 +1144,46 @@ class BaseConnect:
         return r
 
     def _db_info_convert_type(self, info_request, v):
-        REQ_INT = (isc_info_ods_version, isc_info_ods_minor_version)
-        REQ_STRING = (isc_info_user_names, )
+        REQ_INT = [
+            isc_info_allocation, isc_info_no_reserve, isc_info_db_sql_dialect,
+            isc_info_ods_minor_version, isc_info_ods_version, 
+            isc_info_page_size, isc_info_current_memory, isc_info_forced_writes,
+            isc_info_max_memory, isc_info_num_buffers, isc_info_sweep_interval,
+            isc_info_limbo, isc_info_attachment_id, isc_info_fetches, 
+            isc_info_marks, isc_info_reads, isc_info_writes, 
+            isc_info_set_page_buffers, isc_info_db_read_only,
+            isc_info_db_size_in_pages, isc_info_page_errors, 
+            isc_info_record_errors, isc_info_bpage_errors, 
+            isc_info_dpage_errors, isc_info_ipage_errors,
+            isc_info_ppage_errors, isc_info_tpage_errors,
+        ]
+        REQ_COUNT = [
+            isc_info_backout_count, isc_info_delete_count, 
+            isc_info_expunge_count, isc_info_insert_count, isc_info_purge_count,
+            isc_info_read_idx_count, isc_info_read_seq_count, 
+            isc_info_update_count
+        ]
 
-        if info_request in REQ_INT:
-            return bytes_to_int(v)
-        elif info_request in REQ_STRING:
+        if info_request in (isc_info_base_level, ):
+            # TODO: IB6 API guide p52
+            return v
+        elif info_request in (isc_info_db_id, ):
+            # TODO: IB6 API guide p52
+            return v
+        elif info_request in (isc_info_implementation, ):
+            # TODO:
+            return v
+        elif info_request in (isc_info_version, isc_info_firebird_version):
+            # TODO:
+            return v
+        elif info_request in (isc_info_user_names, ):
+            # TODO:
             return self.bytes_to_str(v[1:])
+        elif info_request in REQ_INT:
+            return bytes_to_int(v)
+        elif info_request in REQ_COUNT:
+            # TODO:
+            return v
         else:
             return v
 
