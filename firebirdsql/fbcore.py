@@ -1130,17 +1130,32 @@ class BaseConnect:
                         bs(info_requests+type(info_requests)([isc_info_end])))
         (h, oid, buf) = self._op_response()
         i = 0
+        i_request = 0
         r = []
         while i < len(buf):
             if PYTHON_MAJOR_VER==3:
-                s = buf[i]
+                req = buf[i]
             else:
-                s = ord(buf[i])
-            if s == isc_info_end:
+                req = ord(buf[i])
+            if req == isc_info_end:
                 break
-            l = bytes_to_int(buf[i+1:i+3])
-            r.append(buf[i+3:i+3+l])
-            i = i + 3 + l
+            assert req == info_requests[i_request]
+            if req == isc_info_user_names:
+                user_names = []
+                while req == isc_info_user_names:
+                    l = bytes_to_int(buf[i+1:i+3])
+                    user_names.append(buf[i+3:i+3+l])
+                    i = i + 3 + l
+                    if PYTHON_MAJOR_VER==3:
+                        req = buf[i]
+                    else:
+                        req = ord(buf[i])
+                r.append(user_names)
+            else:
+                l = bytes_to_int(buf[i+1:i+3])
+                r.append(buf[i+3:i+3+l])
+                i = i + 3 + l
+            i_request += 1
         return r
 
     def _db_info_convert_type(self, info_request, v):
@@ -1177,8 +1192,10 @@ class BaseConnect:
             # TODO:
             return v
         elif info_request in (isc_info_user_names, ):
-            # TODO:
-            return self.bytes_to_str(v[1:])
+            user_names = []
+            for u in v:
+                user_names.append(self.bytes_to_str(u[1:]))
+            return user_names
         elif info_request in REQ_INT:
             return bytes_to_int(v)
         elif info_request in REQ_COUNT:

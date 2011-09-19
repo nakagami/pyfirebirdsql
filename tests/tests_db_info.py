@@ -31,17 +31,17 @@ if __name__ == '__main__':
     conn.begin()
 
     print('isc_info_ods_version =', conn.db_info(isc_info_ods_version))
-
-    requests = [isc_info_ods_version, 
-                isc_info_ods_minor_version,
-    ]
-    print(conn.db_info(requests))
-
     print('isc_info_base_level =', conn.db_info(isc_info_base_level))
     print('isc_info_db_id =', conn.db_info(isc_info_db_id))
     print('isc_info_implementation =', conn.db_info(isc_info_implementation))
     print('isc_info_firebird_version =', conn.db_info(isc_info_firebird_version))
     print('isc_info_user_names =', conn.db_info(isc_info_user_names))
     print('isc_info_reqd_idx_count =', conn.db_info(isc_info_read_idx_count))
+
+    requests = [isc_info_ods_version, 
+                isc_info_user_names,
+                isc_info_ods_minor_version,
+    ]
+    print(conn.db_info(requests))
 
     conn.close()
