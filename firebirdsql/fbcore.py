@@ -17,6 +17,11 @@ from firebirdsql.consts import *
 DEFAULT_CHARSET='UTF8'
 PYTHON_MAJOR_VER = sys.version_info[0]
 
+def _ord(b):
+    if PYTHON_MAJOR_VER==3:
+        return b
+    return ord(b)
+
 def bs(byte_array):
     if PYTHON_MAJOR_VER==3:
         return bytes(byte_array)
@@ -320,10 +325,7 @@ class cursor:
     def _parse_select_items(self, buf):
         index = 0
         i = 0
-        if PYTHON_MAJOR_VER==3:
-            item = buf[i]
-        else:
-            item = ord(buf[i])
+        item = _ord(buf[i])
         while item != isc_info_end:
             if item == isc_info_sql_sqlda_seq:
                 l = bytes_to_int(buf[i+1:i+3])
@@ -378,10 +380,7 @@ class cursor:
             else:
                 print('\t', item, 'Invalid item [%02x] ! i=%d' % (buf[i], i))
                 i = i + 1
-            if PYTHON_MAJOR_VER==3:
-                item = buf[i]
-            else:
-                item = ord(buf[i])
+            item = _ord(buf[i])
         return -1   # no more info
 
     def __init__(self, conn):
@@ -1133,10 +1132,7 @@ class BaseConnect:
         i_request = 0
         r = []
         while i < len(buf):
-            if PYTHON_MAJOR_VER==3:
-                req = buf[i]
-            else:
-                req = ord(buf[i])
+            req = _ord(buf[i])
             if req == isc_info_end:
                 break
             assert req == info_requests[i_request]
@@ -1146,10 +1142,7 @@ class BaseConnect:
                     l = bytes_to_int(buf[i+1:i+3])
                     user_names.append(buf[i+3:i+3+l])
                     i = i + 3 + l
-                    if PYTHON_MAJOR_VER==3:
-                        req = buf[i]
-                    else:
-                        req = ord(buf[i])
+                    req = _ord(buf[i])
                 r.append(user_names)
             else:
                 l = bytes_to_int(buf[i+1:i+3])
@@ -1180,18 +1173,23 @@ class BaseConnect:
         ]
 
         if info_request in (isc_info_base_level, ):
-            # TODO: IB6 API guide p52
-            return v
+            # IB6 API guide p52
+            return _ord(v[1])
         elif info_request in (isc_info_db_id, ):
-            # TODO: IB6 API guide p52
-            return v
+            # IB6 API guide p52
+            conn_code = _ord(v[0])
+            len1 = _ord(v[1])
+            filename = self.bytes_to_str(v[2:2+len1])
+            len2 = _ord(v[2+len1])
+            sitename = self.bytes_to_str(v[3+len1:3+len1+len2])
+            return (conn_code, filename, sitename)
         elif info_request in (isc_info_implementation, ):
-            # TODO:
-            return v
+            return (_ord(v[1]), _ord(v[2]))
         elif info_request in (isc_info_version, isc_info_firebird_version):
-            # TODO:
-            return v
+            # IB6 API guide p53
+            return self.bytes_to_str(v[2:2+_ord(v[1])])
         elif info_request in (isc_info_user_names, ):
+            # IB6 API guide p54
             user_names = []
             for u in v:
                 user_names.append(self.bytes_to_str(u[1:]))
@@ -1199,8 +1197,12 @@ class BaseConnect:
         elif info_request in REQ_INT:
             return bytes_to_int(v)
         elif info_request in REQ_COUNT:
-            # TODO:
-            return v
+            counts = {}
+            i = 0
+            while i < len(v):
+                counts[bytes_to_int(v[i:i+2])] = bytes_to_int(v[i+2:i+6])
+                i += 6
+            return counts
         else:
             return v
 
