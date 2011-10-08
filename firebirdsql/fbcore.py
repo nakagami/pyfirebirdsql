@@ -1374,6 +1374,42 @@ class service_mgr(BaseConnect):
             if callback:
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
+    def getServiceManagerVersion(self):
+        return 0
+
+    def getServerVersion(self):
+        return 0
+
+    def getArchitecture(self):
+        return ''
+
+    def getHomeDir(self):
+        return ''
+
+    def getSecurityDatabasePath(self):
+        return ''
+
+    def getLockFileDir(self):
+        return ''
+
+    def getCapabilityMask(self):
+        return 0
+
+    def getMessageFileDir(self):
+        return ''
+
+    def getConnectionCount(self):
+        return 0
+
+    def getAttachedDatabaseNames(self):
+        return []
+
+    def getLog(self):
+        return ''
+
+    def getStatistics(self):
+        return ''
+
     def close(self):
         if not hasattr(self, "db_handle"):
             return
