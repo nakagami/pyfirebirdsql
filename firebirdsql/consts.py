@@ -77,6 +77,26 @@ isc_info_next_transaction = 107
 isc_info_db_provider = 108
 isc_info_active_transactions = 109
 
+isc_info_svc_svr_db_info = 50
+isc_info_svc_get_license = 51
+isc_info_svc_get_license_mask = 52
+isc_info_svc_get_config = 53
+isc_info_svc_version = 54
+isc_info_svc_server_version = 55
+isc_info_svc_implementation = 56
+isc_info_svc_capabilities = 57
+isc_info_svc_user_dbpath = 58
+isc_info_svc_get_env = 59
+isc_info_svc_get_env_lock = 60
+isc_info_svc_get_env_msg = 61
+isc_info_svc_line = 62
+isc_info_svc_to_eof = 63
+isc_info_svc_timeout = 64
+isc_info_svc_get_licensed_users = 65
+isc_info_svc_limbo_trans = 66
+isc_info_svc_running = 67
+isc_info_svc_get_users = 68
+
 SQL_TYPE_TEXT = 452
 SQL_TYPE_VARYING = 448
 SQL_TYPE_SHORT = 500
