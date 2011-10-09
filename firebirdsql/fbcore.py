@@ -427,10 +427,7 @@ class cursor:
     def callproc(self, procname, *params):
         raise NotSupportedError()
 
-    def _execute(self, query, params):
-        self.connection._op_prepare_statement(self.stmt_handle, query)
-        (h, oid, buf) = self.connection._op_response()
-
+    def _convert_params(self, params):
         cooked_params = []
         for param in params:        # Convert str/bytes parameter to blob id
             if type(param) == str:
@@ -449,7 +446,13 @@ class cursor:
             (h4, oid4, buf4) = self.connection._op_response()
             assert blob_id == oid4
             cooked_params.append(blob_id)
+        return cooked_params
 
+    def _execute(self, query, params):
+        cooked_params = self._convert_params(params)
+
+        self.connection._op_prepare_statement(self.stmt_handle, query)
+        (h, oid, buf) = self.connection._op_response()
         assert buf[:3] == bs([0x15,0x04,0x00]) # isc_info_sql_stmt_type (4 bytes)
         stmt_type = bytes_to_int(buf[3:7])
         if stmt_type == isc_info_sql_stmt_select:

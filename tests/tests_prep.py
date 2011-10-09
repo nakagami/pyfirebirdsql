@@ -29,6 +29,9 @@ if __name__ == '__main__':
     conn = firebirdsql.connect(host=TEST_HOST, database=TEST_DATABASE,
                         port=TEST_PORT, user=TEST_USER, password=TEST_PASS)
     cur = conn.cursor()
+    cur.execute("select * from foo where c=?", ('Nakagami', ))
+    len(cur.fetchall()) == 1
+
     prep = cur.prep("select * from foo where c=?")
     print('sql=', prep.sql)
     print('statement_type=', prep.statement_type)
