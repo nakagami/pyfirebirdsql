@@ -47,9 +47,20 @@ transaction_parameter_block = [
     bs([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_no_rec_version]),
 ]
 
-INFO_SQL_STMT_TYPE = bs([0x15])
-INFO_SQL_SQLDA_START = bs([0x14,0x02])
-INFO_SQL_SELECT_DESCRIBE_VARS = bs([0x04,0x07,0x09,0x0b,0x0c,0x0d,0x0e,0x0f,0x10,0x11,0x12,0x13,0x08])
+INFO_SQL_SELECT_DESCRIBE_VARS = bs([
+    isc_info_sql_select,
+    isc_info_sql_describe_vars,
+    isc_info_sql_sqlda_seq,
+    isc_info_sql_type,
+    isc_info_sql_sub_type,
+    isc_info_sql_scale,
+    isc_info_sql_length,
+    isc_info_sql_null_ind,
+    isc_info_sql_field,
+    isc_info_sql_relation,
+    isc_info_sql_owner,
+    isc_info_sql_alias,
+    isc_info_sql_describe_end])
 
 def Date(year, month, day):
     return datetime.date(year, month, day)
@@ -430,8 +441,9 @@ class cursor:
             next_index = self._parse_select_items(buf[11+l:])
             while next_index > 0:   # more describe vars
                 self.connection._op_info_sql(self.stmt_handle,
-                            INFO_SQL_SQLDA_START + int_to_bytes(next_index, 2) 
-                            + INFO_SQL_SELECT_DESCRIBE_VARS)
+                            bs([isc_info_sql_sqlda_start, 2])
+                                + int_to_bytes(next_index, 2)
+                                + INFO_SQL_SELECT_DESCRIBE_VARS)
                 (h, oid, buf) = self.connection._op_response()
                 assert buf[:2] == bs([0x04,0x07])
                 l = bytes_to_int(buf[2:4])
@@ -871,14 +883,15 @@ class BaseConnect:
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
-    def _op_prepare_statement(self, stmt_handle, query):
+    def _op_prepare_statement(self, stmt_handle, query, 
+        desc_items=bs([isc_info_sql_stmt_type])+INFO_SQL_SELECT_DESCRIBE_VARS):
         p = xdrlib.Packer()
         p.pack_int(self.op_prepare_statement)
         p.pack_int(self.trans_handle)
         p.pack_int(stmt_handle)
         p.pack_int(3)   # dialect = 3
         p.pack_string(self.str_to_bytes(query))
-        p.pack_bytes(INFO_SQL_STMT_TYPE + INFO_SQL_SELECT_DESCRIBE_VARS)
+        p.pack_bytes(desc_items)
         p.pack_int(self.buffer_length)
         send_channel(self.sock, p.get_buffer())
 
