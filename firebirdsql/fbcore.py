@@ -330,7 +330,26 @@ def calc_blr(xsqlda):
     # x.sqlscale value shoud be negative, so b convert to range(0, 256)
     return bs([256 + b if b < 0 else b for b in blr])
 
+class PreparedStatement:
+    def __init__(self, cur, sql):
+        self.cur = cur
+        self.sql = sql
 
+        self.cur.connection._op_allocate_statement()
+        (h, oid, buf) = self.cur.connection._op_response()
+        self.stmt_handle = h
+
+        self.cur.connection._op_prepare_statement(self.stmt_handle, sql)
+        (h, oid, buf) = self.cur.connection._op_response()
+
+        assert buf[:3] == bs([0x15,0x04,0x00]) # isc_info_sql_stmt_type (4 bytes)
+        self.statement_type = bytes_to_int(buf[3:7])
+
+        # TODO: implement later
+        self.n_input_params = 0
+        self.n_output_params = 0
+        self.plan = ''
+        self.description = None
 
 class cursor:
     def _parse_select_items(self, buf):
@@ -462,6 +481,10 @@ class cursor:
                 if 335544665 in e.gds_codes:
                     raise IntegrityError(e.message, e.gds_codes, e.sql_code)
         return stmt_type
+
+    def prep(self, query):
+        prepared_statement = PreparedStatement(self, query)
+        return prepared_statement
 
     def execute(self, query, params = []):
         self._stmt_type = self._execute(query, params)
