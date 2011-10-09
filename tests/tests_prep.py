@@ -29,6 +29,7 @@ if __name__ == '__main__':
     conn = firebirdsql.connect(host=TEST_HOST, database=TEST_DATABASE,
                         port=TEST_PORT, user=TEST_USER, password=TEST_PASS)
     cur = conn.cursor()
+
     cur.execute("select * from foo where c=?", ('Nakagami', ))
     len(cur.fetchall()) == 1
 
@@ -39,6 +40,10 @@ if __name__ == '__main__':
     print('n_output_params=', prep.n_output_params)
     print('plan=', prep.plan)
     print('description=', prep.description)
+
+    cur.execute(prep, ('Nakagami', ))
+    len(cur.fetchall()) == 1
+
     cur.close()
     conn.close()
 

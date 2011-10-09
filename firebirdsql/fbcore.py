@@ -451,10 +451,16 @@ class cursor:
     def _execute(self, query, params):
         cooked_params = self._convert_params(params)
 
-        self.connection._op_prepare_statement(self.stmt_handle, query)
-        (h, oid, buf) = self.connection._op_response()
-        assert buf[:3] == bs([0x15,0x04,0x00]) # isc_info_sql_stmt_type (4 bytes)
-        stmt_type = bytes_to_int(buf[3:7])
+        if isinstance(query, PreparedStatement):
+            stmt_handle = query.stmt_handle
+            stmt_type = query.statement_type
+        else:
+            stmt_handle = self.stmt_handle
+            self.connection._op_prepare_statement(stmt_handle, query)
+            (h, oid, buf) = self.connection._op_response()
+            assert buf[:3] == bs([0x15,0x04,0x00]) # isc_info_sql_stmt_type
+            stmt_type = bytes_to_int(buf[3:7])
+
         if stmt_type == isc_info_sql_stmt_select:
             assert buf[7:9] == bs([0x04,0x07])
             l = bytes_to_int(buf[9:11])
@@ -462,7 +468,7 @@ class cursor:
             self._xsqlda = [None] * col_len
             next_index = self._parse_select_items(buf[11+l:])
             while next_index > 0:   # more describe vars
-                self.connection._op_info_sql(self.stmt_handle,
+                self.connection._op_info_sql(stmt_handle,
                             bs([isc_info_sql_sqlda_start, 2])
                                 + int_to_bytes(next_index, 2)
                                 + INFO_SQL_SELECT_DESCRIBE_VARS)
@@ -472,11 +478,11 @@ class cursor:
                 assert bytes_to_int(buf[4:4+l]) == col_len
                 next_index = self._parse_select_items(buf[4+l:])
 
-            self.connection._op_execute(self.stmt_handle, cooked_params)
+            self.connection._op_execute(stmt_handle, cooked_params)
             (h, oid, buf) = self.connection._op_response()
 
         else:
-            self.connection._op_execute(self.stmt_handle, cooked_params)
+            self.connection._op_execute(stmt_handle, cooked_params)
             try:
                 (h, oid, buf) = self.connection._op_response()
             except OperationalError:
