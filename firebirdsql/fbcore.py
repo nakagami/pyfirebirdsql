@@ -429,7 +429,17 @@ class PreparedStatement:
         self.n_input_params = 0
         self.n_output_params = 0
         self.plan = ''
-        self.description = None
+
+    def __getattr__(self, attrname):
+        if attrname == 'description':
+            if len(self._xsqlda) == 0:
+                return None
+            r = []
+            for x in self._xsqlda:
+                r.append((x.aliasname, x.sqltype, None, x.io_length(), None, 
+                        x.sqlscale, True if x.null_ok else False))
+            return r
+        raise AttributeError
 
 class cursor:
     def __init__(self, conn):
