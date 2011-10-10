@@ -418,17 +418,23 @@ class PreparedStatement:
         (h, oid, buf) = self.cur.connection._op_response()
         self.stmt_handle = h
 
-        self.cur.connection._op_prepare_statement(self.stmt_handle, sql)
+        self.cur.connection._op_prepare_statement(self.stmt_handle, sql,
+                                    option_items=bs([isc_info_sql_get_plan]))
         (h, oid, buf) = self.cur.connection._op_response()
 
-        assert buf[:3] == bs([0x15,0x04,0x00]) # isc_info_sql_stmt_type (4 bytes)
-        self.statement_type = bytes_to_int(buf[3:7])
-        self._xsqlda = parse_xsqlda(buf, self.cur.connection, self.stmt_handle)
+        i = 0
+        if _ord(buf[i]) == isc_info_sql_get_plan:
+            l = bytes_to_int(buf[i+1:i+3])
+            self.plan = self.cur.connection.bytes_to_str(buf[i+3:i+3+l])
+            i += 3 + l
+
+        assert buf[i:i+3] == bs([0x15,0x04,0x00]) # isc_info_sql_stmt_type (4 bytes)
+        self.statement_type = bytes_to_int(buf[i+3:i+7])
+        self._xsqlda = parse_xsqlda(buf[i:], self.cur.connection, self.stmt_handle)
 
         # TODO: implement later
         self.n_input_params = 0
         self.n_output_params = 0
-        self.plan = ''
 
     def __getattr__(self, attrname):
         if attrname == 'description':
@@ -692,6 +698,13 @@ class BaseConnect:
         return s.encode(self.charset_map.get(self.charset, self.charset))
 
     def bytes_to_str(self, b):
+        "convert bytes array to raw string"
+        if PYTHON_MAJOR_VER == 3:
+            return b.decode(self.charset_map.get(self.charset, self.charset))
+        return b
+
+    def bytes_to_ustr(self, b):
+        "convert bytes array to unicode string"
         return b.decode(self.charset_map.get(self.charset, self.charset))
 
     def uid(self):
@@ -925,8 +938,8 @@ class BaseConnect:
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
-    def _op_prepare_statement(self, stmt_handle, query, 
-        desc_items=bs([isc_info_sql_stmt_type])+INFO_SQL_SELECT_DESCRIBE_VARS):
+    def _op_prepare_statement(self, stmt_handle, query, option_items=bs([])):
+        desc_items = option_items + bs([isc_info_sql_stmt_type])+INFO_SQL_SELECT_DESCRIBE_VARS
         p = xdrlib.Packer()
         p.pack_int(self.op_prepare_statement)
         p.pack_int(self.trans_handle)
