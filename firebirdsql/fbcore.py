@@ -434,7 +434,6 @@ class PreparedStatement:
 
         # TODO: implement later
         self.n_input_params = 0
-        self.n_output_params = 0
 
     def __getattr__(self, attrname):
         if attrname == 'description':
@@ -445,6 +444,8 @@ class PreparedStatement:
                 r.append((x.aliasname, x.sqltype, None, x.io_length(), None, 
                         x.sqlscale, True if x.null_ok else False))
             return r
+        elif attrname == 'n_output_params':
+            return len(self._xsqlda)
         raise AttributeError
 
 class cursor:
