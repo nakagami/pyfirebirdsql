@@ -1437,8 +1437,8 @@ def op_connect(sock):
     print '\tuid=[' + binascii.b2a_hex(up.unpack_bytes()) + ']'
     print '\tProtocol version', up.unpack_int()
     print '\tArchitecture type', up.unpack_int()
-    assert up.unpack_int() == 2     # Minimum type (2)
-    assert up.unpack_int() == 3     # Maximum type (3)
+    print '\tMinimum type',  up.unpack_int()    # Minimum type (2) 
+    print '\tMaxiumum type',  up.unpack_int()   # Maximum type (3 to 5)
     print '\tPreference weight', up.unpack_int()
     while pcount > 1:
         print '\tmore protocol=', up.unpack_int(), up.unpack_int(),
