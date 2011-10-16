@@ -1186,6 +1186,16 @@ def _parse_trunc_sql_info(start, bytes, statement):
         elif item == 'isc_info_sql_describe_end':
             print '\t', item
             i = i + 1
+        elif item == 'isc_info_sql_num_variables':
+            l = _bytes_to_int(bytes, i + 1, 2)
+            num_variables = _bytes_to_int(bytes, i + 3, l)
+            print '\tnum_variables', num_variables
+            i = i + 3 + l
+        elif item == 'isc_info_sql_get_plan':
+            l = _bytes_to_int(bytes, i + 1, 2)
+            plan = bytes[i + 3: i + 3 + l]
+            print '\tplan', plan
+            i = i + 3 + l
         else:
             print '\t', item, 'Invalid item <%02x> ! i=%d' % (ord(bytes[i]), i)
             i = i + 1
