@@ -433,7 +433,7 @@ class PreparedStatement:
         self._xsqlda = parse_xsqlda(buf[i:], self.cur.connection, self.stmt_handle)
 
         # TODO: implement later
-        self.n_input_params = 0
+        self.n_input_params = None
 
     def __getattr__(self, attrname):
         if attrname == 'description':
