@@ -1553,7 +1553,8 @@ def op_free_statement(sock):
         print 'DSQL_drop' 
     else:
         print 'Unknown!'
-    up.done()
+    # unknown data remains
+#    up.done()
     return msg
 
 def op_execute(sock):
