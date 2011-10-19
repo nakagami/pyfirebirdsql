@@ -47,9 +47,20 @@ transaction_parameter_block = [
     bs([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_no_rec_version]),
 ]
 
-INFO_SQL_STMT_TYPE = bs([0x15])
-INFO_SQL_SQLDA_START = bs([0x14,0x02])
-INFO_SQL_SELECT_DESCRIBE_VARS = bs([0x04,0x07,0x09,0x0b,0x0c,0x0d,0x0e,0x0f,0x10,0x11,0x12,0x13,0x08])
+INFO_SQL_SELECT_DESCRIBE_VARS = bs([
+    isc_info_sql_select,
+    isc_info_sql_describe_vars,
+    isc_info_sql_sqlda_seq,
+    isc_info_sql_type,
+    isc_info_sql_sub_type,
+    isc_info_sql_scale,
+    isc_info_sql_length,
+    isc_info_sql_null_ind,
+    isc_info_sql_field,
+    isc_info_sql_relation,
+    isc_info_sql_owner,
+    isc_info_sql_alias,
+    isc_info_sql_describe_end])
 
 def Date(year, month, day):
     return datetime.date(year, month, day)
@@ -319,70 +330,125 @@ def calc_blr(xsqlda):
     # x.sqlscale value shoud be negative, so b convert to range(0, 256)
     return bs([256 + b if b < 0 else b for b in blr])
 
+def parse_select_items(buf, xsqlda, connection):
+    index = 0
+    i = 0
+    item = _ord(buf[i])
+    while item != isc_info_end:
+        if item == isc_info_sql_sqlda_seq:
+            l = bytes_to_int(buf[i+1:i+3])
+            index = bytes_to_int(buf[i+3:i+3+l])
+            xsqlda[index-1] = XSQLVAR(connection.bytes_to_str)
+            i = i + 3 + l
+        elif item == isc_info_sql_type:
+            l = bytes_to_int(buf[i+1:i+3])
+            xsqlda[index-1].sqltype = bytes_to_int(buf[i+3:i+3+l]) & ~ 1
+            i = i + 3 + l
+        elif item == isc_info_sql_sub_type:
+            l = bytes_to_int(buf[i+1:i+3])
+            xsqlda[index-1].sqlsubtype = bytes_to_int(buf[i+3:i+3+l])
+            i = i + 3 + l
+        elif item == isc_info_sql_scale:
+            l = bytes_to_int(buf[i+1:i+3])
+            xsqlda[index-1].sqlscale = bytes_to_int(buf[i+3:i+3+l])
+            i = i + 3 + l
+        elif item == isc_info_sql_length:
+            l = bytes_to_int(buf[i+1:i+3])
+            xsqlda[index-1].sqllen = bytes_to_int(buf[i+3:i+3+l])
+            i = i + 3 + l
+        elif item == isc_info_sql_null_ind:
+            l = bytes_to_int(buf[i+1:i+3])
+            xsqlda[index-1].null_ok = bytes_to_int(buf[i+3:i+3+l])
+            i = i + 3 + l
+        elif item == isc_info_sql_field:
+            l = bytes_to_int(buf[i+1:i+3])
+            xsqlda[index-1].fieldname = connection.bytes_to_str(buf[i+3:i+3+l])
+            i = i + 3 + l
+        elif item == isc_info_sql_relation:
+            l = bytes_to_int(buf[i+1:i+3])
+            xsqlda[index-1].relname = connection.bytes_to_str(buf[i+3:i+3+l])
+            i = i + 3 + l
+        elif item == isc_info_sql_owner:
+            l = bytes_to_int(buf[i+1:i+3])
+            xsqlda[index-1].ownname = connection.bytes_to_str(buf[i+3:i+3+l])
+            i = i + 3 + l
+        elif item == isc_info_sql_alias:
+            l = bytes_to_int(buf[i+1:i+3])
+            xsqlda[index-1].aliasname = connection.bytes_to_str(buf[i+3:i+3+l])
+            i = i + 3 + l
+        elif item == isc_info_truncated:
+            return index    # return next index
+        elif item == isc_info_sql_describe_end:
+            i = i + 1
+        else:
+            print('\t', item, 'Invalid item [%02x] ! i=%d' % (buf[i], i))
+            i = i + 1
+        item = _ord(buf[i])
+    return -1   # no more info
 
+def parse_xsqlda(buf, connection, stmt_handle):
+    assert buf[:3] == bs([0x15,0x04,0x00]) # isc_info_sql_stmt_type
+    stmt_type = bytes_to_int(buf[3:7])
+    if stmt_type != isc_info_sql_stmt_select:
+        return []
+
+    assert buf[7:9] == bs([0x04,0x07])
+    l = bytes_to_int(buf[9:11])
+    col_len = bytes_to_int(buf[11:11+l])
+    xsqlda = [None] * col_len
+    next_index = parse_select_items(buf[11+l:], xsqlda, connection)
+    while next_index > 0:   # more describe vars
+        self.connection._op_info_sql(stmt_handle,
+                    bs([isc_info_sql_sqlda_start, 2])
+                        + int_to_bytes(next_index, 2)
+                        + INFO_SQL_SELECT_DESCRIBE_VARS)
+        (h, oid, buf) = connection._op_response()
+        assert buf[:2] == bs([0x04,0x07])
+        l = bytes_to_int(buf[2:4])
+        assert bytes_to_int(buf[4:4+l]) == col_len
+        next_index = parse_select_items(buf[4+l:], xsqlda, connection)
+    return xsqlda
+
+class PreparedStatement:
+    def __init__(self, cur, sql):
+        self.cur = cur
+        self.sql = sql
+
+        self.cur.connection._op_allocate_statement()
+        (h, oid, buf) = self.cur.connection._op_response()
+        self.stmt_handle = h
+
+        self.cur.connection._op_prepare_statement(self.stmt_handle, sql,
+                                    option_items=bs([isc_info_sql_get_plan]))
+        (h, oid, buf) = self.cur.connection._op_response()
+
+        i = 0
+        if _ord(buf[i]) == isc_info_sql_get_plan:
+            l = bytes_to_int(buf[i+1:i+3])
+            self.plan = self.cur.connection.bytes_to_str(buf[i+3:i+3+l])
+            i += 3 + l
+
+        assert buf[i:i+3] == bs([0x15,0x04,0x00]) # isc_info_sql_stmt_type (4 bytes)
+        self.statement_type = bytes_to_int(buf[i+3:i+7])
+        self._xsqlda = parse_xsqlda(buf[i:], self.cur.connection, self.stmt_handle)
+
+        # TODO: implement later
+        self.n_input_params = None
+
+    def __getattr__(self, attrname):
+        if attrname == 'description':
+            if len(self._xsqlda) == 0:
+                return None
+            r = []
+            for x in self._xsqlda:
+                r.append((x.aliasname, x.sqltype, None, x.io_length(), None, 
+                        x.sqlscale, True if x.null_ok else False))
+            return r
+        elif attrname == 'n_output_params':
+            return len(self._xsqlda)
+        raise AttributeError
 
 class cursor:
-    def _parse_select_items(self, buf):
-        index = 0
-        i = 0
-        item = _ord(buf[i])
-        while item != isc_info_end:
-            if item == isc_info_sql_sqlda_seq:
-                l = bytes_to_int(buf[i+1:i+3])
-                index = bytes_to_int(buf[i+3:i+3+l])
-                self._xsqlda[index-1] = XSQLVAR(self.connection.bytes_to_str)
-                i = i + 3 + l
-            elif item == isc_info_sql_type:
-                l = bytes_to_int(buf[i+1:i+3])
-                self._xsqlda[index-1].sqltype = \
-                                        bytes_to_int(buf[i+3:i+3+l]) & ~ 1
-                i = i + 3 + l
-            elif item == isc_info_sql_sub_type:
-                l = bytes_to_int(buf[i+1:i+3])
-                self._xsqlda[index-1].sqlsubtype = bytes_to_int(buf[i+3:i+3+l])
-                i = i + 3 + l
-            elif item == isc_info_sql_scale:
-                l = bytes_to_int(buf[i+1:i+3])
-                self._xsqlda[index-1].sqlscale = bytes_to_int(buf[i+3:i+3+l])
-                i = i + 3 + l
-            elif item == isc_info_sql_length:
-                l = bytes_to_int(buf[i+1:i+3])
-                self._xsqlda[index-1].sqllen = bytes_to_int(buf[i+3:i+3+l])
-                i = i + 3 + l
-            elif item == isc_info_sql_null_ind:
-                l = bytes_to_int(buf[i+1:i+3])
-                self._xsqlda[index-1].null_ok = bytes_to_int(buf[i+3:i+3+l])
-                i = i + 3 + l
-            elif item == isc_info_sql_field:
-                l = bytes_to_int(buf[i+1:i+3])
-                self._xsqlda[index-1].fieldname = \
-                        self.connection.bytes_to_str(buf[i + 3: i + 3 + l])
-                i = i + 3 + l
-            elif item == isc_info_sql_relation:
-                l = bytes_to_int(buf[i+1:i+3])
-                self._xsqlda[index-1].relname = \
-                        self.connection.bytes_to_str(buf[i + 3: i + 3 + l])
-                i = i + 3 + l
-            elif item == isc_info_sql_owner:
-                l = bytes_to_int(buf[i+1:i+3])
-                self._xsqlda[index-1].ownname = \
-                        self.connection.bytes_to_str(buf[i + 3: i + 3 + l])
-                i = i + 3 + l
-            elif item == isc_info_sql_alias:
-                l = bytes_to_int(buf[i+1:i+3])
-                self._xsqlda[index-1].aliasname = \
-                        self.connection.bytes_to_str(buf[i + 3: i + 3 + l])
-                i = i + 3 + l
-            elif item == isc_info_truncated:
-                return index    # return next index
-            elif item == isc_info_sql_describe_end:
-                i = i + 1
-            else:
-                print('\t', item, 'Invalid item [%02x] ! i=%d' % (buf[i], i))
-                i = i + 1
-            item = _ord(buf[i])
-        return -1   # no more info
-
     def __init__(self, conn):
         if not hasattr(conn, "db_handle"):
             raise InternalError()
@@ -397,10 +463,7 @@ class cursor:
     def callproc(self, procname, *params):
         raise NotSupportedError()
 
-    def _execute(self, query, params):
-        self.connection._op_prepare_statement(self.stmt_handle, query)
-        (h, oid, buf) = self.connection._op_response()
-
+    def _convert_params(self, params):
         cooked_params = []
         for param in params:        # Convert str/bytes parameter to blob id
             if type(param) == str:
@@ -419,53 +482,51 @@ class cursor:
             (h4, oid4, buf4) = self.connection._op_response()
             assert blob_id == oid4
             cooked_params.append(blob_id)
+        return cooked_params
 
-        assert buf[:3] == bs([0x15,0x04,0x00]) # isc_info_sql_stmt_type (4 bytes)
-        stmt_type = bytes_to_int(buf[3:7])
-        if stmt_type == isc_info_sql_stmt_select:
-            assert buf[7:9] == bs([0x04,0x07])
-            l = bytes_to_int(buf[9:11])
-            col_len = bytes_to_int(buf[11:11+l])
-            self._xsqlda = [None] * col_len
-            next_index = self._parse_select_items(buf[11+l:])
-            while next_index > 0:   # more describe vars
-                self.connection._op_info_sql(self.stmt_handle,
-                            INFO_SQL_SQLDA_START + int_to_bytes(next_index, 2) 
-                            + INFO_SQL_SELECT_DESCRIBE_VARS)
-                (h, oid, buf) = self.connection._op_response()
-                assert buf[:2] == bs([0x04,0x07])
-                l = bytes_to_int(buf[2:4])
-                assert bytes_to_int(buf[4:4+l]) == col_len
-                next_index = self._parse_select_items(buf[4+l:])
+    def _execute(self, query, params):
+        cooked_params = self._convert_params(params)
 
-            self.connection._op_execute(self.stmt_handle, cooked_params)
-            (h, oid, buf) = self.connection._op_response()
-
+        if isinstance(query, PreparedStatement):
+            stmt_handle = query.stmt_handle
+            stmt_type = query.statement_type
+            self._xsqlda = query._xsqlda
         else:
-            self.connection._op_execute(self.stmt_handle, cooked_params)
-            try:
-                (h, oid, buf) = self.connection._op_response()
-            except OperationalError:
-                e = sys.exc_info()[1]
-                if 335544665 in e.gds_codes:
-                    raise IntegrityError(e.message, e.gds_codes, e.sql_code)
-        return stmt_type
+            stmt_handle = self.stmt_handle
+            self.connection._op_prepare_statement(stmt_handle, query)
+            (h, oid, buf) = self.connection._op_response()
+            assert buf[:3] == bs([0x15,0x04,0x00]) # isc_info_sql_stmt_type
+            stmt_type = bytes_to_int(buf[3:7])
+            self._xsqlda = parse_xsqlda(buf, self.connection, stmt_handle)
+
+        self.connection._op_execute(stmt_handle, cooked_params)
+        try:
+            (h, oid, buf) = self.connection._op_response()
+        except OperationalError:
+            e = sys.exc_info()[1]
+            if 335544665 in e.gds_codes:
+                raise IntegrityError(e.message, e.gds_codes, e.sql_code)
+        return stmt_type, stmt_handle
+
+    def prep(self, query):
+        prepared_statement = PreparedStatement(self, query)
+        return prepared_statement
 
     def execute(self, query, params = []):
-        self._stmt_type = self._execute(query, params)
-        if self._stmt_type == isc_info_sql_stmt_select:
-            self._fetch_records = self._fetch_generator()
+        stmt_type, stmt_handle = self._execute(query, params)
+        if stmt_type == isc_info_sql_stmt_select:
+            self._fetch_records = self._fetch_generator(stmt_handle)
 
     def executemany(self, query, seq_of_params):
         for params in seq_of_params:
             self.execute(query, params)
 
-    def _fetch_generator(self):
+    def _fetch_generator(self, stmt_handle):
         more_data = True
         while more_data:
-            self.connection._op_fetch(self.stmt_handle, calc_blr(self._xsqlda))
+            self.connection._op_fetch(stmt_handle, calc_blr(self._xsqlda))
             (rows, more_data) = self.connection._op_fetch_response(
-                                            self.stmt_handle, self._xsqlda)
+                                            stmt_handle, self._xsqlda)
             for r in rows:
                 # Convert BLOB handle to data    
                 for i in range(len(self._xsqlda)):    
@@ -490,7 +551,7 @@ class cursor:
                 yield r
 
         # recreate stmt_handle
-        self.connection._op_free_statement(self.stmt_handle, 2) # DSQL_drop
+        self.connection._op_free_statement(stmt_handle, 2) # DSQL_drop
         (h, oid, buf) = self.connection._op_response()
         self.connection._op_allocate_statement()
         (h, oid, buf) = self.connection._op_response()
@@ -638,6 +699,13 @@ class BaseConnect:
         return s.encode(self.charset_map.get(self.charset, self.charset))
 
     def bytes_to_str(self, b):
+        "convert bytes array to raw string"
+        if PYTHON_MAJOR_VER == 3:
+            return b.decode(self.charset_map.get(self.charset, self.charset))
+        return b
+
+    def bytes_to_ustr(self, b):
+        "convert bytes array to unicode string"
         return b.decode(self.charset_map.get(self.charset, self.charset))
 
     def uid(self):
@@ -871,14 +939,15 @@ class BaseConnect:
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
-    def _op_prepare_statement(self, stmt_handle, query):
+    def _op_prepare_statement(self, stmt_handle, query, option_items=bs([])):
+        desc_items = option_items + bs([isc_info_sql_stmt_type])+INFO_SQL_SELECT_DESCRIBE_VARS
         p = xdrlib.Packer()
         p.pack_int(self.op_prepare_statement)
         p.pack_int(self.trans_handle)
         p.pack_int(stmt_handle)
         p.pack_int(3)   # dialect = 3
         p.pack_string(self.str_to_bytes(query))
-        p.pack_bytes(INFO_SQL_STMT_TYPE + INFO_SQL_SELECT_DESCRIBE_VARS)
+        p.pack_bytes(desc_items)
         p.pack_int(self.buffer_length)
         send_channel(self.sock, p.get_buffer())
 

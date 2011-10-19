@@ -1186,6 +1186,18 @@ def _parse_trunc_sql_info(start, bytes, statement):
         elif item == 'isc_info_sql_describe_end':
             print '\t', item
             i = i + 1
+        elif item == 'isc_info_sql_num_variables':
+            l = _bytes_to_int(bytes, i + 1, 2)
+            num_variables = _bytes_to_int(bytes, i + 3, l)
+            print '\t', item, num_variables
+            i = i + 3 + l
+        elif item == 'isc_info_sql_get_plan':
+            l = _bytes_to_int(bytes, i + 1, 2)
+            plan = bytes[i + 3: i + 3 + l]
+            print '\t', item, plan
+            i = i + 3 + l
+        elif item == 'isc_info_sql_bind':
+            i += 1
         else:
             print '\t', item, 'Invalid item <%02x> ! i=%d' % (ord(bytes[i]), i)
             i = i + 1
@@ -1437,8 +1449,8 @@ def op_connect(sock):
     print '\tuid=[' + binascii.b2a_hex(up.unpack_bytes()) + ']'
     print '\tProtocol version', up.unpack_int()
     print '\tArchitecture type', up.unpack_int()
-    assert up.unpack_int() == 2     # Minimum type (2)
-    assert up.unpack_int() == 3     # Maximum type (3)
+    print '\tMinimum type',  up.unpack_int()    # Minimum type (2) 
+    print '\tMaxiumum type',  up.unpack_int()   # Maximum type (3 to 5)
     print '\tPreference weight', up.unpack_int()
     while pcount > 1:
         print '\tmore protocol=', up.unpack_int(), up.unpack_int(),
@@ -1553,7 +1565,8 @@ def op_free_statement(sock):
         print 'DSQL_drop' 
     else:
         print 'Unknown!'
-    up.done()
+    # unknown data remains
+#    up.done()
     return msg
 
 def op_execute(sock):
