@@ -146,7 +146,11 @@ class connect(BaseConnect):
         return bi(buf[1])
 
     def getServerVersion(self):
-        return 0
+        self._op_service_info(bs([]), bs([isc_info_svc_server_version]))
+        (h, oid, buf) = self._op_response()
+        assert bi(buf[0]) == isc_info_svc_server_version
+        ln = bytes_to_int(buf[1:3])
+        return self.bytes_to_str(buf[3:3+ln])
 
     def getArchitecture(self):
         return ''
