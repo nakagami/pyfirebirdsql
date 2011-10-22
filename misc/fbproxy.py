@@ -1209,19 +1209,28 @@ def _parse_trunc_sql_info(start, bytes, statement):
 def _database_parameter_block(bytes):
     i = 0
     while i < len(bytes):
-        s = isc_dpb_names[ord(bytes[i])]
+        n = ord(bytes[i])
+        print '\t', n,
+        if n == 110:
+            s = 'isc_spb_process_id'
+        elif n == 112:
+            s = 'isc_spb_process_name'
+        else:
+            s = isc_dpb_names[n]
         print '\t', s,
         if s in ['isc_dpb_lc_ctype', 'isc_dpb_user_name', 'isc_dpb_password',
             'isc_dpb_password_enc', 'isc_dpb_sql_role_name', 
             'isc_dpb_old_start_file', 'isc_dpb_set_db_charset',
             'isc_dpb_working_directory', 'isc_dpb_gbak_attach',
-            'isc_dpb_process_name']:
+            'isc_dpb_process_name',
+            'isc_spb_process_name']:
             l = ord(bytes[i+1])
             print '[' + bytes[i+2:i+2+l] + ']',
             i = i + 2 + l
         elif s in ['isc_dpb_dummy_packet_interval', 'isc_dpb_sql_dialect', 
             'isc_dpb_sweep', 'isc_dpb_connect_timeout', 'isc_dpb_page_size', 
-            'isc_dpb_force_write', 'isc_dpb_overwrite', 'isc_dpb_process_id']:
+            'isc_dpb_force_write', 'isc_dpb_overwrite', 'isc_dpb_process_id',
+            'isc_spb_process_id']:
             l = ord(bytes[i+1])
             print _bytes_to_int(bytes, i+2, l),
             i = i + 2 + l
