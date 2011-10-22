@@ -140,9 +140,10 @@ class connect(BaseConnect):
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
     def getServiceManagerVersion(self):
-#        self._op_service_info(bs([]), bs([0x24]))
-#        (h, oid, buf) = self._op_response()
-        return 0
+        self._op_service_info(bs([]), bs([isc_info_svc_version]))
+        (h, oid, buf) = self._op_response()
+        assert bi(buf[0]) == isc_info_svc_version
+        return bi(buf[1])
 
     def getServerVersion(self):
         return 0

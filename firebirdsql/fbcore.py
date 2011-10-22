@@ -17,7 +17,7 @@ from firebirdsql.consts import *
 DEFAULT_CHARSET='UTF8'
 PYTHON_MAJOR_VER = sys.version_info[0]
 
-def _ord(b):
+def bi(b):
     if PYTHON_MAJOR_VER==3:
         return b
     return ord(b)
@@ -333,7 +333,7 @@ def calc_blr(xsqlda):
 def parse_select_items(buf, xsqlda, connection):
     index = 0
     i = 0
-    item = _ord(buf[i])
+    item = bi(buf[i])
     while item != isc_info_end:
         if item == isc_info_sql_sqlda_seq:
             l = bytes_to_int(buf[i+1:i+3])
@@ -383,7 +383,7 @@ def parse_select_items(buf, xsqlda, connection):
         else:
             print('\t', item, 'Invalid item [%02x] ! i=%d' % (buf[i], i))
             i = i + 1
-        item = _ord(buf[i])
+        item = bi(buf[i])
     return -1   # no more info
 
 def parse_xsqlda(buf, connection, stmt_handle):
@@ -423,7 +423,7 @@ class PreparedStatement:
         (h, oid, buf) = self.cur.connection._op_response()
 
         i = 0
-        if _ord(buf[i]) == isc_info_sql_get_plan:
+        if bi(buf[i]) == isc_info_sql_get_plan:
             l = bytes_to_int(buf[i+1:i+3])
             self.plan = self.cur.connection.bytes_to_str(buf[i+3:i+3+l])
             i += 3 + l
@@ -1202,7 +1202,7 @@ class BaseConnect:
         i_request = 0
         r = []
         while i < len(buf):
-            req = _ord(buf[i])
+            req = bi(buf[i])
             if req == isc_info_end:
                 break
             assert req == info_requests[i_request]
@@ -1212,7 +1212,7 @@ class BaseConnect:
                     l = bytes_to_int(buf[i+1:i+3])
                     user_names.append(buf[i+3:i+3+l])
                     i = i + 3 + l
-                    req = _ord(buf[i])
+                    req = bi(buf[i])
                 r.append(user_names)
             else:
                 l = bytes_to_int(buf[i+1:i+3])
@@ -1244,20 +1244,20 @@ class BaseConnect:
 
         if info_request in (isc_info_base_level, ):
             # IB6 API guide p52
-            return _ord(v[1])
+            return bi(v[1])
         elif info_request in (isc_info_db_id, ):
             # IB6 API guide p52
-            conn_code = _ord(v[0])
-            len1 = _ord(v[1])
+            conn_code = bi(v[0])
+            len1 = bi(v[1])
             filename = self.bytes_to_str(v[2:2+len1])
-            len2 = _ord(v[2+len1])
+            len2 = bi(v[2+len1])
             sitename = self.bytes_to_str(v[3+len1:3+len1+len2])
             return (conn_code, filename, sitename)
         elif info_request in (isc_info_implementation, ):
-            return (_ord(v[1]), _ord(v[2]))
+            return (bi(v[1]), bi(v[2]))
         elif info_request in (isc_info_version, isc_info_firebird_version):
             # IB6 API guide p53
-            return self.bytes_to_str(v[2:2+_ord(v[1])])
+            return self.bytes_to_str(v[2:2+bi(v[1])])
         elif info_request in (isc_info_user_names, ):
             # IB6 API guide p54
             user_names = []
