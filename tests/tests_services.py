@@ -9,7 +9,7 @@
 ##############################################################################
 import os,sys
 sys.path.append('./../')
-import firebirdsql
+from firebirdsql import services
 
 def debug_print(msg):
     print(msg)
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     TEST_USER = 'sysdba'
     TEST_PASS = 'masterkey'
 
-    svc = firebirdsql.service_mgr(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
+    svc = services(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
     print('getServiceManagerVersion()')
     print(svc.getServiceManagerVersion())
 

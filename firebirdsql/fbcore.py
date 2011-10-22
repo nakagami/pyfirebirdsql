@@ -1315,7 +1315,7 @@ class create_database(BaseConnect):
         (h, oid, buf) = self._op_response()
         self.db_handle = h
 
-class service_mgr(BaseConnect):
+class services(BaseConnect):
     def __init__(self, dsn=None, user=None, password=None, host=None,
             database=None, charset=DEFAULT_CHARSET, port=3050):
         BaseConnect.__init__(self, dsn=dsn, user=user, password=password,
