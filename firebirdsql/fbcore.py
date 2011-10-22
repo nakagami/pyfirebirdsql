@@ -854,7 +854,8 @@ class BaseConnect:
     def _op_service_info(self, param, item, buffer_length=512):
         p = xdrlib.Packer()
         p.pack_int(self.op_service_info)
-        p.pack_int(self.svc_handle)
+#        p.pack_int(self.svc_handle)
+        p.pack_int(self.db_handle)
         p.pack_int(0)
         p.pack_bytes(param)
         p.pack_bytes(item)

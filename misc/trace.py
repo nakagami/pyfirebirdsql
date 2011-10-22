@@ -9,7 +9,7 @@
 ##############################################################################
 import os,sys
 sys.path.append('./../')
-import firebirdsql
+from firebirdsql import services
 
 HOST = 'localhost'
 USER = 'sysdba'
@@ -26,7 +26,7 @@ if len(sys.argv) < 2:
     print_usage()
     sys.exit(0)
 
-svc = firebirdsql.service_mgr(host=HOST, user=USER, password=PASS)
+svc = services.connect(host=HOST, user=USER, password=PASS)
 if sys.argv[1] == 'start':
     name = sys.argv[2] if len(sys.argv) == 3 else None
     cfg = open('/opt/firebird/fbtrace.conf').read()
