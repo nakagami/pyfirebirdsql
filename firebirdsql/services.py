@@ -8,26 +8,8 @@
 ##############################################################################
 import sys, os, socket
 import xdrlib, time, datetime, decimal, struct
-from firebirdsql.fberrmsgs import messages
-from firebirdsql import (DatabaseError, InternalError, OperationalError, 
-    ProgrammingError, IntegrityError, DataError, NotSupportedError,
-)
 from firebirdsql.consts import *
 from firebirdsql.fbcore import *
-
-DEFAULT_CHARSET='UTF8'
-PYTHON_MAJOR_VER = sys.version_info[0]
-
-def _ord(b):
-    if PYTHON_MAJOR_VER==3:
-        return b
-    return ord(b)
-
-def bs(byte_array):
-    if PYTHON_MAJOR_VER==3:
-        return bytes(byte_array)
-    return ''.join([chr(c) for c in byte_array])
-
 
 class connect(BaseConnect):
     def __init__(self, dsn=None, user=None, password=None, host=None,
