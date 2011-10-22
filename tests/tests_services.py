@@ -28,7 +28,7 @@ if __name__ == '__main__':
     TEST_USER = 'sysdba'
     TEST_PASS = 'masterkey'
 
-    svc = services(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
+    svc = services.connect(host=TEST_HOST, user=TEST_USER, password=TEST_PASS)
     print('getServiceManagerVersion()')
     print(svc.getServiceManagerVersion())
 
