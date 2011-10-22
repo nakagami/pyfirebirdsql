@@ -1230,8 +1230,6 @@ def _database_parameter_block(bytes):
         print
 
 def _service_parameter_block(bytes):
-    return
-    # Experimental
     i = 0
     while i < len(bytes):
         s = isc_spb_names[ord(bytes[i])]

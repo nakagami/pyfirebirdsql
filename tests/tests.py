@@ -111,10 +111,10 @@ if __name__ == '__main__':
     conn.close()
 
     print('backup database')    
-    svc = firebirdsql.service_mgr(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
+    svc = firebirdsql.services(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
     svc.backup_database(TEST_BACKUP_FILE, callback=debug_print)
     svc.close()
     print('restore database')    
-    svc = firebirdsql.service_mgr(dsn=TEST_RESTORE_DSN, user=TEST_USER, password=TEST_PASS)
+    svc = firebirdsql.services(dsn=TEST_RESTORE_DSN, user=TEST_USER, password=TEST_PASS)
     svc.restore_database(TEST_BACKUP_FILE, callback=debug_print)
     svc.close()
