@@ -839,10 +839,10 @@ class BaseConnect:
     def _op_service_attach(self):
         dpb = bs([2,2])
         s = self.str_to_bytes(self.user)
-        dpb += bs([28, len(s)]) + s
+        dpb += bs([isc_spb_user_name, len(s)]) + s
         s = self.str_to_bytes(self.password)
-        dpb += bs([29, len(s)]) + s
-        dpb += bs([0x3a,0x04,0x78,0x0a,0x00,0x00])  # isc_dpb_dummy_packet_interval
+        dpb += bs([isc_spb_password, len(s)]) + s
+        dpb += bs([isc_dpb_dummy_packet_interbal,0x04,0x78,0x0a,0x00,0x00])
         p = xdrlib.Packer()
         p.pack_int(self.op_service_attach)
         p.pack_int(0)
