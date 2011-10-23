@@ -9,6 +9,10 @@
 isc_info_end = 1
 isc_info_truncated = 2
 isc_info_error = 3
+isc_info_data_not_ready = 4
+isc_info_length = 126
+isc_info_flag_end = 127
+
 isc_info_db_id = 4
 isc_info_reads = 5
 isc_info_writes = 6
@@ -174,6 +178,9 @@ isc_spb_trc_id = 1
 isc_spb_trc_name = 2
 isc_spb_trc_cfg = 3
 
+# isc_info_svc_svr_db_info params
+isc_spb_num_att = 5
+isc_spb_num_db = 6
 
 # Service Action Items
 isc_action_svc_backup = 1

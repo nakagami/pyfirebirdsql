@@ -177,7 +177,15 @@ class connect(BaseConnect):
         return self._getStringVal(isc_info_svc_get_env_msg)
 
     def getConnectionCount(self):
-        return 0
+        self._op_service_info(bs([]), bs([isc_info_svc_svr_db_info]))
+        (h, oid, buf) = self._op_response()
+        assert bi(buf[0]) == isc_info_svc_svr_db_info
+        assert bi(buf[1]) == isc_spb_num_att
+        num_attach =  bytes_to_int(buf[2:6])
+        assert bi(buf[6]) == isc_spb_num_db
+        num_db =  bytes_to_int(buf[7:11])
+        assert bi(buf[11]) == isc_info_flag_end
+        return num_attach
 
     def getAttachedDatabaseNames(self):
         return []
