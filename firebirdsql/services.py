@@ -173,6 +173,20 @@ class connect(BaseConnect):
 
         return (num_attach, db_names)
 
+    def _getLogLines(self, spb):
+        self._op_service_start(spb)
+        (h, oid, buf) = self._op_response()
+        self.svc_handle = h
+        logs = ''
+        while True:
+            self._op_service_info(bs([]), bs([0x3e]))
+            (h, oid, buf) = self._op_response()
+            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
+                break
+            ln = bytes_to_int(buf[1:2])
+            logs += self.bytes_to_str(buf[3:3+ln]) + '\n'
+        return logs
+
     def getServiceManagerVersion(self):
         return self._getIntegerVal(isc_info_svc_version)
 
@@ -205,21 +219,14 @@ class connect(BaseConnect):
 
     def getLog(self):
         spb = bs([isc_action_svc_get_fb_log])
-        self._op_service_start(spb)
-        (h, oid, buf) = self._op_response()
-        self.svc_handle = h
-        logs = []
-        while True:
-            self._op_service_info(bs([]), bs([0x3e]))
-            (h, oid, buf) = self._op_response()
-            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
-                break
-            ln = bytes_to_int(buf[1:2])
-            logs.append(self.bytes_to_str(buf[3:3+ln]))
-        return logs
+        return self._getLogLines(spb)
 
-    def getStatistics(self):
-        return ''
+    def getStatistics(self, dbname):
+        spb = bs([isc_spb_res_length])
+        s = self.str_to_bytes(dbname)
+        spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
+        spb += bs([isc_spb_options]) + int_to_bytes(9, 4)
+        return self._getLogLines(spb)
 
     def close(self):
         if not hasattr(self, "db_handle"):

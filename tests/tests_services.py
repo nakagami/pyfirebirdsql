@@ -63,6 +63,6 @@ if __name__ == '__main__':
 #    print(svc.getLog())
 
     print('getStatistics()')
-    print(svc.getStatistics())
+    print(svc.getStatistics(TEST_DATABASE))
 
     svc.close()

@@ -1242,7 +1242,7 @@ def _database_parameter_block(bytes):
 def _service_parameter_block(bytes):
     i = 0
     while i < len(bytes):
-        print '\t', ord(bytes[i])
+        print '\t', ord(bytes[i]),
         s = isc_spb_names[ord(bytes[i])]
         print '\t', s,
         if s in ['isc_spb_bkp_file', 'isc_spb_command_line', 
@@ -1250,7 +1250,7 @@ def _service_parameter_block(bytes):
             l = _bytes_to_int(bytes, i+1, 2)
             print '[' + bytes[i+3:i+3+l] + ']'
             i += 3 + l
-        elif s in ['isc_spb_bkp_length', 'isc_spb_res_length',
+        elif s in ['isc_spb_bkp_length',
                 'isc_spb_res_buffers', 'isc_spb_res_page_size']:
             print _bytes_to_int(bytes, i+1, 4)
             i = i + 5
