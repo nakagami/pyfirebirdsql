@@ -139,36 +139,42 @@ class connect(BaseConnect):
             if callback:
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def getServiceManagerVersion(self):
-        self._op_service_info(bs([]), bs([isc_info_svc_version]))
+    def _getIntegerVal(self, item_id):
+        self._op_service_info(bs([]), bs([item_id]))
         (h, oid, buf) = self._op_response()
-        assert bi(buf[0]) == isc_info_svc_version
+        assert bi(buf[0]) == item_id
         return bi(buf[1])
 
-    def getServerVersion(self):
-        self._op_service_info(bs([]), bs([isc_info_svc_server_version]))
+    def _getStringVal(self, item_id):
+        self._op_service_info(bs([]), bs([item_id]))
         (h, oid, buf) = self._op_response()
-        assert bi(buf[0]) == isc_info_svc_server_version
+        assert bi(buf[0]) == item_id
         ln = bytes_to_int(buf[1:3])
         return self.bytes_to_str(buf[3:3+ln])
 
+    def getServiceManagerVersion(self):
+        return self._getIntegerVal(isc_info_svc_version)
+
+    def getServerVersion(self):
+        return self._getStringVal(isc_info_svc_server_version)
+
     def getArchitecture(self):
-        return ''
+        return self._getStringVal(isc_info_svc_implementation)
 
     def getHomeDir(self):
-        return ''
+        return self._getStringVal(isc_info_svc_get_env)
 
     def getSecurityDatabasePath(self):
-        return ''
+        return self._getStringVal(isc_info_svc_user_dbpath)
 
     def getLockFileDir(self):
-        return ''
+        return self._getStringVal(isc_info_svc_get_env_lock)
 
     def getCapabilityMask(self):
-        return 0
+        return self._getIntegerVal(isc_info_svc_capabilities)
 
     def getMessageFileDir(self):
-        return ''
+        return self._getStringVal(isc_info_svc_get_env_msg)
 
     def getConnectionCount(self):
         return 0
