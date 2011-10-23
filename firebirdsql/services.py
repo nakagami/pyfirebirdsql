@@ -38,8 +38,8 @@ class connect(BaseConnect):
             (h, oid, buf) = self._op_response()
             if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
                 break
-            ln = bytes_to_int(buf[1:2])
             if callback:
+                ln = bytes_to_int(buf[1:3])
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
     def restore_database(self, restore_filename, callback=None):
@@ -59,8 +59,8 @@ class connect(BaseConnect):
             (h, oid, buf) = self._op_response()
             if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
                 break
-            ln = bytes_to_int(buf[1:2])
             if callback:
+                ln = bytes_to_int(buf[1:3])
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
     def trace_start(self, name=None, cfg=None, callback=None):
@@ -152,6 +152,27 @@ class connect(BaseConnect):
         ln = bytes_to_int(buf[1:3])
         return self.bytes_to_str(buf[3:3+ln])
 
+    def _getSvrDbInfo(self):
+        self._op_service_info(bs([]), bs([isc_info_svc_svr_db_info]))
+        (h, oid, buf) = self._op_response()
+        assert bi(buf[0]) == isc_info_svc_svr_db_info
+        db_names=[]
+        i = 1
+        while bi(buf[i]) != isc_info_flag_end and i < len(buf):
+            if bi(buf[i]) == isc_spb_num_att:
+                num_attach =  bytes_to_int(buf[i+1:i+5])
+                i += 5
+            elif bi(buf[i]) == isc_spb_num_db:
+                num_db =  bytes_to_int(buf[7:11])
+                i += 5
+            elif bi(buf[i]) == isc_spb_dbname:
+                ln = bytes_to_int(buf[i:i+1])
+                db_name = self.bytes_to_str(buf[i+2:i+2+ln])
+                db_names.append(db_name)
+                i += ln + 2
+
+        return (num_attach, db_names)
+
     def getServiceManagerVersion(self):
         return self._getIntegerVal(isc_info_svc_version)
 
@@ -177,18 +198,10 @@ class connect(BaseConnect):
         return self._getStringVal(isc_info_svc_get_env_msg)
 
     def getConnectionCount(self):
-        self._op_service_info(bs([]), bs([isc_info_svc_svr_db_info]))
-        (h, oid, buf) = self._op_response()
-        assert bi(buf[0]) == isc_info_svc_svr_db_info
-        assert bi(buf[1]) == isc_spb_num_att
-        num_attach =  bytes_to_int(buf[2:6])
-        assert bi(buf[6]) == isc_spb_num_db
-        num_db =  bytes_to_int(buf[7:11])
-        assert bi(buf[11]) == isc_info_flag_end
-        return num_attach
+        return self._getSvrDbInfo()[0]
 
     def getAttachedDatabaseNames(self):
-        return []
+        return self._getSvrDbInfo()[1]
 
     def getLog(self):
         return ''
