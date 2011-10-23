@@ -59,8 +59,8 @@ if __name__ == '__main__':
     print('getAttachedDatabaseNames()')
     print(svc.getAttachedDatabaseNames())
 
-    print('getLog()')
-    print(svc.getLog())
+#    print('getLog()')
+#    print(svc.getLog())
 
     print('getStatistics()')
     print(svc.getStatistics())
