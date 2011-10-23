@@ -158,7 +158,7 @@ class connect(BaseConnect):
         assert bi(buf[0]) == isc_info_svc_svr_db_info
         db_names=[]
         i = 1
-        while bi(buf[i]) != isc_info_flag_end and i < len(buf):
+        while i < len(buf) and bi(buf[i]) != isc_info_flag_end:
             if bi(buf[i]) == isc_spb_num_att:
                 num_attach =  bytes_to_int(buf[i+1:i+5])
                 i += 5

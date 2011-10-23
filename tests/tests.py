@@ -25,8 +25,6 @@ if __name__ == '__main__':
     TEST_PORT = 3050
     TEST_DATABASE = fbase + '.fdb'
     TEST_DSN = TEST_HOST + '/' + str(TEST_PORT) + ':' + TEST_DATABASE
-    TEST_BACKUP_FILE = fbase + '.fbk'
-    TEST_RESTORE_DSN = 'localhost:' + fbase + '_restore.fdb'
     print('dsn=', TEST_DSN)
     TEST_USER = 'sysdba'
     TEST_PASS = 'masterkey'
@@ -111,11 +109,3 @@ if __name__ == '__main__':
         print(c)
     conn.close()
 
-    print('backup database')    
-    svc = services.connect(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
-    svc.backup_database(TEST_BACKUP_FILE, callback=debug_print)
-    svc.close()
-    print('restore database')    
-    svc = services.connect(dsn=TEST_RESTORE_DSN, user=TEST_USER, password=TEST_PASS)
-    svc.restore_database(TEST_BACKUP_FILE, callback=debug_print)
-    svc.close()
