@@ -827,6 +827,7 @@ isc_spb_names = {
   5 : 'isc_spb_bkp_file', 7 : 'isc_spb_bkp_length', 
   9 : 'isc_spb_res_buffers', 10 : 'isc_spb_res_page_size',
   11 : 'isc_spb_res_length',
+  12 : 'isc_action_svc_get_fb_log',
   19 : 'isc_spb_sys_user_name',
   28 : 'isc_spb_user_name', 29 : 'isc_spb_password',
   30 : 'isc_spb_password_enc', 31 : 'isc_spb_sys_user_name_enc',
@@ -1241,6 +1242,7 @@ def _database_parameter_block(bytes):
 def _service_parameter_block(bytes):
     i = 0
     while i < len(bytes):
+        print '\t', ord(bytes[i])
         s = isc_spb_names[ord(bytes[i])]
         print '\t', s,
         if s in ['isc_spb_bkp_file', 'isc_spb_command_line', 
