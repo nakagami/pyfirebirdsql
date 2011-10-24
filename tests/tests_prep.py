@@ -26,6 +26,25 @@ if __name__ == '__main__':
     TEST_USER = 'sysdba'
     TEST_PASS = 'masterkey'
 
+    conn = firebirdsql.create_database(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
+    conn.cursor().execute('''
+        CREATE TABLE foo (
+            a INTEGER NOT NULL,
+            b VARCHAR(30) NOT NULL UNIQUE,
+            c VARCHAR(1024),
+            d DECIMAL(16,3) DEFAULT -0.123,
+            e DATE DEFAULT '1967-08-11',
+            f TIMESTAMP DEFAULT '1967-08-11 23:45:01',
+            g TIME DEFAULT '23:45:01',
+            h BLOB SUB_TYPE 0, 
+            i DOUBLE PRECISION DEFAULT 0.0,
+            j FLOAT DEFAULT 0.0,
+            PRIMARY KEY (a),
+            CONSTRAINT CHECK_A CHECK (a <> 0)
+        )
+    ''')
+    conn.commit()
+
     conn = firebirdsql.connect(host=TEST_HOST, database=TEST_DATABASE,
                         port=TEST_PORT, user=TEST_USER, password=TEST_PASS)
     cur = conn.cursor()
