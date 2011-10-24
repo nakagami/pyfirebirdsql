@@ -221,11 +221,27 @@ class connect(BaseConnect):
         spb = bs([isc_action_svc_get_fb_log])
         return self._getLogLines(spb)
 
-    def getStatistics(self, dbname):
+    def getStatistics(self, dbname, showOnlyDatabaseLogPages=False,
+                                    showOnlyDatabaseHeaderPages=False,
+                                    showUserDataPages=True,
+                                    showUserIndexPages=True,
+                                    showSystemTablesAndIndexes=False):
+        optionMask = 0
+        if showUserDataPages:
+            optionMask |= isc_spb_sts_data_pages
+        if showOnlyDatabaseLogPages:
+            optionMask |= isc_spb_sts_db_log
+        if showOnlyDatabaseHeaderPages:
+            optionMask |= isc_spb_sts_hdr_pages
+        if showUserIndexPages:
+            optionMask |= isc_spb_sts_idx_pages
+        if showSystemTablesAndIndexes:
+            optionMask |= isc_spb_sts_sys_relations
+
         spb = bs([isc_spb_res_length])
         s = self.str_to_bytes(dbname)
         spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
-        spb += bs([isc_spb_options]) + int_to_bytes(9, 4)
+        spb += bs([isc_spb_options]) + int_to_bytes(optionMask, 4)
         return self._getLogLines(spb)
 
     def close(self):

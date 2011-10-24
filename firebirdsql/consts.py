@@ -185,6 +185,16 @@ isc_spb_trc_cfg = 3
 isc_spb_num_att = 5
 isc_spb_num_db = 6
 
+# isc_info_svc_db_stats params
+isc_spb_sts_data_pages = 0x01
+isc_spb_sts_db_log =0x02
+isc_spb_sts_hdr_pages = 0x04
+isc_spb_sts_idx_pages = 0x08
+isc_spb_sts_sys_relations = 0x10
+isc_spb_sts_record_versions = 0x20
+isc_spb_sts_table = 0x40
+isc_spb_sts_nocreation = 0x80
+
 # Service Action Items
 isc_action_svc_backup = 1
 isc_action_svc_restore = 2
