@@ -10,7 +10,6 @@
 import os,sys
 sys.path.append('./../')
 import firebirdsql
-from firebirdsql import services
 
 def debug_print(msg):
     print(msg)
@@ -51,15 +50,15 @@ if __name__ == '__main__':
     conn.commit()
 
     print('backup database')    
-    svc = services.connect(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
+    svc = firebirdsql.services.connect(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
     svc.backup_database(TEST_BACKUP_FILE, callback=debug_print)
     svc.close()
     print('restore database')    
-    svc = services.connect(dsn=TEST_RESTORE_DSN, user=TEST_USER, password=TEST_PASS)
+    svc = firebirdsql.services.connect(dsn=TEST_RESTORE_DSN, user=TEST_USER, password=TEST_PASS)
     svc.restore_database(TEST_BACKUP_FILE, callback=debug_print)
     svc.close()
 
-    svc = services.connect(host=TEST_HOST, user=TEST_USER, password=TEST_PASS)
+    svc = firebirdsql.services.connect(host=TEST_HOST, user=TEST_USER, password=TEST_PASS)
     print('getServiceManagerVersion()')
     print(svc.getServiceManagerVersion())
 
