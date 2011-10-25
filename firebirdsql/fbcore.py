@@ -1190,7 +1190,7 @@ class Connection:
         self.sock.connect((self.hostname, self.port))
 
         self.page_size = page_size
-        self.is_services = is_services,
+        self.is_services = is_services
         self._op_connect()
         self._op_accept()
         if self.page_size:                      # create database
