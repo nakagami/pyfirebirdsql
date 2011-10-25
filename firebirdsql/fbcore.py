@@ -619,10 +619,6 @@ class Cursor:
             return -1
         raise AttributeError
 
-    def __del__(self):
-        if hasattr(self, "stmt_handle"):
-            self.close()
-
 class Connection:
     buffer_length = 1024
     op_connect = 1
@@ -1135,7 +1131,6 @@ class Connection:
             raise InternalError
         trans = Transaction(self)
         trans.begin()
-        self._transactions.append(trans)
 
     @property
     def transactions(self):
@@ -1319,13 +1314,14 @@ class Connection:
 class Transaction:
     def __init__(self, connection, tpb=None):
         self._connection = connection
-        self.begin()
 
     def begin(self):
+        self.close()
         self.connection._op_transaction(
                 transaction_parameter_block[self.connection.isolation_level])
         (h, oid, buf) = self.connection._op_response()
         self.trans_handle = h
+        self.connection._transactions.append(self)
 
     def commit(self, retaining=False):
         if retaining:
@@ -1362,8 +1358,4 @@ class Transaction:
     @property
     def closed(self):
         return not hasattr(self, "trans_handle")
-
-    def __del__(self):
-        if hasattr(self, "trans_handle"):
-            self.close()
 
