@@ -414,24 +414,27 @@ class PreparedStatement:
     def __init__(self, cur, sql):
         self.cur = cur
         self.sql = sql
+        transaction = self.cur.transaction
+        connection = transaction.connection
 
-        self.cur.connection._op_allocate_statement(cur.transaction)
-        (h, oid, buf) = self.cur.connection._op_response()
+        connection._op_allocate_statement(transaction)
+        (h, oid, buf) = connection._op_response()
         self.stmt_handle = h
 
-        self.cur.connection._op_prepare_statement(self.stmt_handle, self.cur.transaction.trans_handle, sql,
-                                    option_items=bs([isc_info_sql_get_plan]))
-        (h, oid, buf) = self.cur.connection._op_response()
+        connection._op_prepare_statement(
+                self.stmt_handle, transaction.trans_handle, sql, 
+                option_items=bs([isc_info_sql_get_plan]))
+        (h, oid, buf) = connection._op_response()
 
         i = 0
         if bi(buf[i]) == isc_info_sql_get_plan:
             l = bytes_to_int(buf[i+1:i+3])
-            self.plan = self.cur.connection.bytes_to_str(buf[i+3:i+3+l])
+            self.plan = connection.bytes_to_str(buf[i+3:i+3+l])
             i += 3 + l
 
         assert buf[i:i+3] == bs([0x15,0x04,0x00]) # isc_info_sql_stmt_type (4 bytes)
         self.statement_type = bytes_to_int(buf[i+3:i+7])
-        self._xsqlda = parse_xsqlda(buf[i:], self.cur.connection, self.stmt_handle)
+        self._xsqlda = parse_xsqlda(buf[i:], connection, self.stmt_handle)
 
         # TODO: implement later
         self.n_input_params = None
@@ -526,10 +529,11 @@ class Cursor:
             self.execute(query, params)
 
     def _fetch_generator(self, stmt_handle):
+        connection = self.transaction.connection
         more_data = True
         while more_data:
-            self.transaction.connection._op_fetch(stmt_handle, calc_blr(self._xsqlda))
-            (rows, more_data) = self.transaction.connection._op_fetch_response(
+            connection._op_fetch(stmt_handle, calc_blr(self._xsqlda))
+            (rows, more_data) = connection._op_fetch_response(
                                             stmt_handle, self._xsqlda)
             for r in rows:
                 # Convert BLOB handle to data    
@@ -538,27 +542,27 @@ class Cursor:
                     if x.sqltype == SQL_TYPE_BLOB:    
                         if not r[i]:
                             continue
-                        self.transaction.connection._op_open_blob(r[i])
-                        (h, oid, buf) = self.transaction.connection._op_response()
+                        connection._op_open_blob(r[i])
+                        (h, oid, buf) = connection._op_response()
                         v = bs([])
                         n = 1   # 1:mora data 2:no more data
                         while n == 1:
-                            self.transaction.connection._op_get_segment(h)
-                            (n, oid, buf) = self.transaction.connection._op_response()
+                            connection._op_get_segment(h)
+                            (n, oid, buf) = connection._op_response()
                             while buf:
                                 ln = bytes_to_int(buf[:2])
                                 v += buf[2:ln+2]
                                 buf = buf[ln+2:]
-                        self.transaction.connection._op_close_blob(h)
-                        (h, oid, buf) = self.transaction.connection._op_response()
+                        connection._op_close_blob(h)
+                        (h, oid, buf) = connection._op_response()
                         r[i] = v
                 yield r
 
         # recreate stmt_handle
-        self.transaction.connection._op_free_statement(stmt_handle, 2) # DSQL_drop
-        (h, oid, buf) = self.transaction.connection._op_response()
-        self.transaction.connection._op_allocate_statement(self.transaction)
-        (h, oid, buf) = self.transaction.connection._op_response()
+        connection._op_free_statement(stmt_handle, 2) # DSQL_drop
+        (h, oid, buf) = connection._op_response()
+        connection._op_allocate_statement(self.transaction)
+        (h, oid, buf) = connection._op_response()
         self.stmt_handle = h
 
         raise StopIteration()
