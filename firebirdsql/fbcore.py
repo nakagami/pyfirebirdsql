@@ -1322,34 +1322,35 @@ class Transaction:
         self.begin()
 
     def begin(self):
-        self.connection._op_transaction(transaction_parameter_block[self.connection.isolation_level])
+        self.connection._op_transaction(
+                transaction_parameter_block[self.connection.isolation_level])
         (h, oid, buf) = self.connection._op_response()
         self.trans_handle = h
 
     def commit(self, retaining=False):
         if retaining:
-            self.connection._op_commit_retaining(trans_handle=self.trans_handle)
+            self.connection._op_commit_retaining(self.trans_handle)
             (h, oid, buf) = self.connection._op_response()
         else:
-            self.connection._op_commit(trans_handle=self.trans_handle)
+            self.connection._op_commit(self.trans_handle)
             (h, oid, buf) = self.connection._op_response()
             delattr(self, "trans_handle")
             self.connection._transactions.remove(self)
 
     def rollback(self, retaining=False):
         if retaining:
-            self.connection._op_rollback_retaining(trans_handle=self.trans_handle)
+            self.connection._op_rollback_retaining(self.trans_handle)
             (h, oid, buf) = self.connection._op_response()
         else:
             self.connection._op_rollback()
-            (h, oid, buf) = self.connection._op_response(trans_handle=self.trans_handle)
+            (h, oid, buf) = self.connection._op_response(self.trans_handle)
             delattr(self, "trans_handle")
             self.connection._transactions.remove(self)
 
     def close(self):
         if self.closed:
             return
-        self.connection._op_rollback(trans_handle=self.trans_handle)
+        self.connection._op_rollback(self.trans_handle)
         (h, oid, buf) = self.connection._op_response()
         delattr(self, "trans_handle")
         self.connection._transactions.remove(self)
