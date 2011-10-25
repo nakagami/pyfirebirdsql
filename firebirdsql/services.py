@@ -11,20 +11,11 @@ import xdrlib, time, datetime, decimal, struct
 from firebirdsql.consts import *
 from firebirdsql.fbcore import *
 
-class connect(BaseConnect):
-    def __init__(self, dsn=None, user=None, password=None, host=None,
-            database=None, charset=DEFAULT_CHARSET, port=3050):
-        BaseConnect.__init__(self, dsn=dsn, user=user, password=password,
-                    host=host, database=database, charset=charset, port=port)
-        self._op_connect()
-        self._op_accept()
-        self._op_service_attach()
-        (h, oid, buf) = self._op_response()
-        self.db_handle = h
+class Services(Connection):
 
-    def backup_database(self, backup_filename, callback=None):
+    def backup_database(self, database_name, backup_filename, callback=None):
         spb = bs([isc_action_svc_backup])
-        s = self.str_to_bytes(self.filename)
+        s = self.str_to_bytes(database_name)
         spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
         s = self.str_to_bytes(backup_filename)
         spb += bs([isc_spb_bkp_file]) + int_to_bytes(len(s), 2) + s
@@ -42,11 +33,11 @@ class connect(BaseConnect):
                 ln = bytes_to_int(buf[1:3])
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def restore_database(self, restore_filename, callback=None):
+    def restore_database(self, restore_filename, database_name, callback=None):
         spb = bs([isc_action_svc_restore])
         s = self.str_to_bytes(restore_filename)
         spb += bs([isc_spb_bkp_file]) + int_to_bytes(len(s), 2) + s
-        s = self.str_to_bytes(self.filename)
+        s = self.str_to_bytes(database_name)
         spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
         if callback:
             spb += bs([isc_spb_verbose])
@@ -244,13 +235,6 @@ class connect(BaseConnect):
         spb += bs([isc_spb_options]) + int_to_bytes(optionMask, 4)
         return self._getLogLines(spb)
 
-    def close(self):
-        if not hasattr(self, "db_handle"):
-            return
-        self._op_service_detach()
-        (h, oid, buf) = self._op_response()
-        delattr(self, "db_handle")
 
-    def __del__(self):
-        if hasattr(self, "db_handle"):
-            self.close()
+def connect(user=None, password=None, host=None, charset=DEFAULT_CHARSET,  port=3050):
+    return Services(user=user, password=password, host=host, charset=charset, is_services=True, port=3050)

@@ -47,10 +47,21 @@ class NotSupportedError(DatabaseError):
         NotSupportedError.__init__(self, 'NotSupportedError')
 
 from firebirdsql.fbcore import ( __version__, apilevel, threadsafety, 
-    paramstyle, cursor, connect, create_database,
+    paramstyle, Transaction, Cursor, Connection,
     ISOLATION_LEVEL_READ_UNCOMMITTED, ISOLATION_LEVEL_READ_COMMITED,
     ISOLATION_LEVEL_REPEATABLE_READ, ISOLATION_LEVEL_SERIALIZABLE,
     ISOLATION_LEVEL_READ_COMMITED_READ_ONLY
 )
 
 import firebirdsql.services
+
+def connect(dsn=None, user=None, password=None, host=None, 
+            database=None, charset=DEFAULT_CHARSET, port=3050):
+    return Connection(dsn=dsn, user=user, password=password, host=host, 
+                database=database, charset=charset, port=port)
+
+def create_database(dsn=None, user=None, password=None, host=None,
+            database=None, charset=DEFAULT_CHARSET, port=3050, page_size=4096):
+    return Connection(dsn=dsn, user=user, password=password, host=host, 
+                database=database, charset=charset, port=port, 
+                page_size=page_size)

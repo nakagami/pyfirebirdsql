@@ -14,7 +14,6 @@ from firebirdsql import (DatabaseError, InternalError, OperationalError,
 )
 from firebirdsql.consts import *
 
-DEFAULT_CHARSET='UTF8'
 PYTHON_MAJOR_VER = sys.version_info[0]
 
 def bi(b):
@@ -448,7 +447,7 @@ class PreparedStatement:
             return len(self._xsqlda)
         raise AttributeError
 
-class cursor:
+class Cursor:
     def __init__(self, conn):
         if not hasattr(conn, "db_handle"):
             raise InternalError()
@@ -615,7 +614,7 @@ class cursor:
         if hasattr(self, "stmt_handle"):
             self.close()
 
-class BaseConnect:
+class Connection:
     buffer_length = 1024
     op_connect = 1
     op_accept = 3
@@ -1117,7 +1116,7 @@ class BaseConnect:
         return (h, oid, buf)
 
     def cursor(self):
-        c = cursor(self)
+        c = Cursor(self)
         self.cursor_set.add(c)
         return c
 
@@ -1158,7 +1157,9 @@ class BaseConnect:
         delattr(self, "db_handle")
 
     def __init__(self, dsn=None, user=None, password=None, host=None,
-            database=None, charset=DEFAULT_CHARSET, port=3050):
+                    database=None, charset=DEFAULT_CHARSET, port=3050, 
+                    page_size=None,
+                    is_services = False):
         if dsn:
             i = dsn.find(':')
             if i < 0:
@@ -1187,6 +1188,19 @@ class BaseConnect:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         self.sock.connect((self.hostname, self.port))
+
+        self.page_size = page_size
+        self.is_services = is_services,
+        self._op_connect()
+        self._op_accept()
+        if self.page_size:                      # create database
+            self._op_create(self.page_size)
+        elif self.is_services:                  # service api
+            self._op_service_attach()
+        else:                                   # connect
+            self._op_attach()
+        (h, oid, buf) = self._op_response()
+        self.db_handle = h
 
     def set_isolation_level(self, isolation_level):
         self.isolation_level = isolation_level
@@ -1288,31 +1302,27 @@ class BaseConnect:
                                                     info_requests[i], rs[i])
             return results
 
+    def close(self):
+        if self.is_services:
+            self._op_service_detach()
+            (h, oid, buf) = self._op_response()
+        else:
+            self._op_detach()
+            (h, oid, buf) = self._op_response()
+        if hasattr(self, "db_handle"):
+            delattr(self, "db_handle")
+
     def __del__(self):
         if hasattr(self, "db_handle"):
             self.close()
 
-class connect(BaseConnect):
-    def __init__(self, dsn=None, user=None, password=None, host=None,
-            database=None, charset=DEFAULT_CHARSET, port=3050):
-        BaseConnect.__init__(self, dsn=dsn, user=user, password=password,
-                    host=host, database=database, charset=charset, port=port)
-        self._op_connect()
-        self._op_accept()
-        self._op_attach()
-        (h, oid, buf) = self._op_response()
-        self.db_handle = h
+class Transaction:
+    def __init__(connection, tpb=None):
+        self._connection = connection
 
+    @property
+    def connection(self):
+        return self._connection
 
-class create_database(BaseConnect):
-    def __init__(self, dsn=None, user=None, password=None, host=None,
-            database=None, charset=DEFAULT_CHARSET, port=3050, page_size=4096):
-        self.page_size = page_size
-        BaseConnect.__init__(self, dsn=dsn, user=user, password=password,
-                    host=host, database=database, charset=charset, port=port)
-        self._op_connect()
-        self._op_accept()
-        self._op_create(self.page_size)
-        (h, oid, buf) = self._op_response()
-        self.db_handle = h
+    
 
