@@ -1153,13 +1153,6 @@ class Connection:
     def rollback(self, retaining=False):
         self.main_transaction.rollback(retaining=retaining)
 
-    def close(self):
-        if not hasattr(self, "db_handle"):
-            return
-        for trans in self._transactons:
-            c.close()
-        delattr(self, "db_handle")
-
     def __init__(self, dsn=None, user=None, password=None, host=None,
                     database=None, charset=DEFAULT_CHARSET, port=3050, 
                     page_size=None,
@@ -1307,14 +1300,17 @@ class Connection:
             return results
 
     def close(self):
+        if not hasattr(self, "db_handle"):
+            return
+        for trans in self._transactions:
+            trans.close()
         if self.is_services:
             self._op_service_detach()
-            (h, oid, buf) = self._op_response()
         else:
             self._op_detach()
-            (h, oid, buf) = self._op_response()
-        if hasattr(self, "db_handle"):
-            delattr(self, "db_handle")
+        (h, oid, buf) = self._op_response()
+        delattr(self, "db_handle")
+
 
     def __del__(self):
         if hasattr(self, "db_handle"):
@@ -1351,7 +1347,7 @@ class Transaction:
             self.connection._transactions.remove(self)
 
     def close(self):
-        if self.closed():
+        if self.closed:
             return
         self.connection._op_rollback(trans_handle=self.trans_handle)
         (h, oid, buf) = self.connection._op_response()
@@ -1364,4 +1360,9 @@ class Transaction:
 
     @property
     def closed(self):
-        return hasattr(self, "trans_handle")
+        return not hasattr(self, "trans_handle")
+
+    def __del__(self):
+        if hasattr(self, "trans_handle"):
+            self.close()
+
