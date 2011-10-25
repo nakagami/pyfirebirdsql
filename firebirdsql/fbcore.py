@@ -17,11 +17,13 @@ from firebirdsql.consts import *
 PYTHON_MAJOR_VER = sys.version_info[0]
 
 def bi(b):
+    "byte to integer"
     if PYTHON_MAJOR_VER==3:
         return b
     return ord(b)
 
 def bs(byte_array):
+    "bytes to string"
     if PYTHON_MAJOR_VER==3:
         return bytes(byte_array)
     return ''.join([chr(c) for c in byte_array])
