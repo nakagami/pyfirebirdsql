@@ -415,11 +415,11 @@ class PreparedStatement:
         self.cur = cur
         self.sql = sql
 
-        self.cur.connection._op_allocate_statement()
+        self.cur.connection._op_allocate_statement(cur.transaction)
         (h, oid, buf) = self.cur.connection._op_response()
         self.stmt_handle = h
 
-        self.cur.connection._op_prepare_statement(self.stmt_handle, sql,
+        self.cur.connection._op_prepare_statement(self.stmt_handle, self.cur.transaction.trans_handle, sql,
                                     option_items=bs([isc_info_sql_get_plan]))
         (h, oid, buf) = self.cur.connection._op_response()
 
@@ -450,16 +450,16 @@ class PreparedStatement:
         raise AttributeError
 
 class Cursor:
-    def __init__(self, conn):
-        if not hasattr(conn, "db_handle"):
-            raise InternalError()
-        self.connection = conn
-        if not hasattr(self.connection, "trans_handle"):
-            self.connection.begin()
-        self.connection._op_allocate_statement()
-        (h, oid, buf) = self.connection._op_response()
+    def __init__(self, trans):
+        self._transaction = trans
+        self.transaction.connection._op_allocate_statement(self.transaction)
+        (h, oid, buf) = self.transaction.connection._op_response()
         self.stmt_handle = h
         self.arraysize = 1
+
+    @property
+    def transaction(self):
+        return self._transaction
 
     def callproc(self, procname, *params):
         raise NotSupportedError()
@@ -468,19 +468,19 @@ class Cursor:
         cooked_params = []
         for param in params:        # Convert str/bytes parameter to blob id
             if type(param) == str:
-                param = self.connection.str_to_bytes(param)
+                param = self.transaction.connection.str_to_bytes(param)
             cooked_params.append(param)
             continue
-            self.connection._op_create_blob2()
-            (blob_handle, blob_id, buf2) = self.connection._op_response()
-            seg_size = self.connection.buffer_length
+            self.transaction.connection._op_create_blob2()
+            (blob_handle, blob_id, buf2) = self.transaction.connection._op_response()
+            seg_size = self.transaction.connection.buffer_length
             (seg, remains) = param[:seg_size], param[seg_size:]
             while seg:
-                self.connection._op_batch_segments(blob_handle, seg)
-                (h3, oid3, buf3) = self.connection._op_response()
+                self.transaction.connection._op_batch_segments(blob_handle, seg)
+                (h3, oid3, buf3) = self.transaction.connection._op_response()
                 (seg, remains) = remains[:seg_size], remains[seg_size:]
-            self.connection._op_close_blob(blob_handle)
-            (h4, oid4, buf4) = self.connection._op_response()
+            self.transaction.connection._op_close_blob(blob_handle)
+            (h4, oid4, buf4) = self.transaction.connection._op_response()
             assert blob_id == oid4
             cooked_params.append(blob_id)
         return cooked_params
@@ -494,15 +494,18 @@ class Cursor:
             self._xsqlda = query._xsqlda
         else:
             stmt_handle = self.stmt_handle
-            self.connection._op_prepare_statement(stmt_handle, query)
-            (h, oid, buf) = self.connection._op_response()
+            self.transaction.connection._op_prepare_statement(stmt_handle, 
+                                        self.transaction.trans_handle, query)
+            (h, oid, buf) = self.transaction.connection._op_response()
             assert buf[:3] == bs([0x15,0x04,0x00]) # isc_info_sql_stmt_type
             stmt_type = bytes_to_int(buf[3:7])
-            self._xsqlda = parse_xsqlda(buf, self.connection, stmt_handle)
+            self._xsqlda = parse_xsqlda(buf, self.transaction.connection, 
+                                                                stmt_handle)
 
-        self.connection._op_execute(stmt_handle, cooked_params)
+        self.transaction.connection._op_execute(stmt_handle, 
+                                self.transaction.trans_handle, cooked_params)
         try:
-            (h, oid, buf) = self.connection._op_response()
+            (h, oid, buf) = self.transaction.connection._op_response()
         except OperationalError:
             e = sys.exc_info()[1]
             if 335544665 in e.gds_codes:
@@ -525,8 +528,8 @@ class Cursor:
     def _fetch_generator(self, stmt_handle):
         more_data = True
         while more_data:
-            self.connection._op_fetch(stmt_handle, calc_blr(self._xsqlda))
-            (rows, more_data) = self.connection._op_fetch_response(
+            self.transaction.connection._op_fetch(stmt_handle, calc_blr(self._xsqlda))
+            (rows, more_data) = self.transaction.connection._op_fetch_response(
                                             stmt_handle, self._xsqlda)
             for r in rows:
                 # Convert BLOB handle to data    
@@ -535,27 +538,27 @@ class Cursor:
                     if x.sqltype == SQL_TYPE_BLOB:    
                         if not r[i]:
                             continue
-                        self.connection._op_open_blob(r[i])
-                        (h, oid, buf) = self.connection._op_response()
+                        self.transaction.connection._op_open_blob(r[i])
+                        (h, oid, buf) = self.transaction.connection._op_response()
                         v = bs([])
                         n = 1   # 1:mora data 2:no more data
                         while n == 1:
-                            self.connection._op_get_segment(h)
-                            (n, oid, buf) = self.connection._op_response()
+                            self.transaction.connection._op_get_segment(h)
+                            (n, oid, buf) = self.transaction.connection._op_response()
                             while buf:
                                 ln = bytes_to_int(buf[:2])
                                 v += buf[2:ln+2]
                                 buf = buf[ln+2:]
-                        self.connection._op_close_blob(h)
-                        (h, oid, buf) = self.connection._op_response()
+                        self.transaction.connection._op_close_blob(h)
+                        (h, oid, buf) = self.transaction.connection._op_response()
                         r[i] = v
                 yield r
 
         # recreate stmt_handle
-        self.connection._op_free_statement(stmt_handle, 2) # DSQL_drop
-        (h, oid, buf) = self.connection._op_response()
-        self.connection._op_allocate_statement()
-        (h, oid, buf) = self.connection._op_response()
+        self.transaction.connection._op_free_statement(stmt_handle, 2) # DSQL_drop
+        (h, oid, buf) = self.transaction.connection._op_response()
+        self.transaction.connection._op_allocate_statement(self.transaction)
+        (h, oid, buf) = self.transaction.connection._op_response()
         self.stmt_handle = h
 
         raise StopIteration()
@@ -588,8 +591,8 @@ class Cursor:
     def close(self):
         if not hasattr(self, "stmt_handle"):
             return
-        self.connection._op_free_statement(self.stmt_handle, 2)   # DSQL_drop
-        (h, oid, buf) = self.connection._op_response()
+        self.transaction.connection._op_free_statement(self.stmt_handle, 2)   # DSQL_drop
+        (h, oid, buf) = self.transaction.connection._op_response()
         delattr(self, "stmt_handle")
 
     def nextset():
@@ -898,35 +901,35 @@ class Connection:
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
-    def _op_commit(self):
+    def _op_commit(self, trans_handle):
         p = xdrlib.Packer()
         p.pack_int(self.op_commit)
-        p.pack_int(self.trans_handle)
+        p.pack_int(trans_handle)
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
-    def _op_commit_retaining(self):
+    def _op_commit_retaining(self, trans_handle):
         p = xdrlib.Packer()
         p.pack_int(self.op_commit_retaining)
-        p.pack_int(self.trans_handle)
+        p.pack_int(trans_handle)
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
-    def _op_rollback(self):
+    def _op_rollback(self, trans_handle):
         p = xdrlib.Packer()
         p.pack_int(self.op_rollback)
-        p.pack_int(self.trans_handle)
+        p.pack_int(trans_handle)
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
-    def _op_rollback_retaining(self):
+    def _op_rollback_retaining(self, trans_handle):
         p = xdrlib.Packer()
         p.pack_int(self.op_rollback_retaining)
-        p.pack_int(self.trans_handle)
+        p.pack_int(trans_handle)
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
-    def _op_allocate_statement(self):
+    def _op_allocate_statement(self, trans_handle):
         p = xdrlib.Packer()
         p.pack_int(self.op_allocate_statement)
         p.pack_int(self.db_handle)
@@ -941,11 +944,11 @@ class Connection:
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
-    def _op_prepare_statement(self, stmt_handle, query, option_items=bs([])):
+    def _op_prepare_statement(self, stmt_handle, trans_handle, query, option_items=bs([])):
         desc_items = option_items + bs([isc_info_sql_stmt_type])+INFO_SQL_SELECT_DESCRIBE_VARS
         p = xdrlib.Packer()
         p.pack_int(self.op_prepare_statement)
-        p.pack_int(self.trans_handle)
+        p.pack_int(trans_handle)
         p.pack_int(stmt_handle)
         p.pack_int(3)   # dialect = 3
         p.pack_string(self.str_to_bytes(query))
@@ -964,11 +967,11 @@ class Connection:
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
-    def _op_execute(self, stmt_handle, params):
+    def _op_execute(self, stmt_handle, trans_handle, params):
         p = xdrlib.Packer()
         p.pack_int(self.op_execute)
         p.pack_int(stmt_handle)
-        p.pack_int(self.trans_handle)
+        p.pack_int(trans_handle)
 
         if len(params) == 0:
             p.pack_bytes(bs([]))
@@ -1118,44 +1121,39 @@ class Connection:
         return (h, oid, buf)
 
     def cursor(self):
-        c = Cursor(self)
-        self.cursor_set.add(c)
+        if self.main_transaction is None:
+            self.begin()
+        c = Cursor(self.main_transaction)
         return c
 
     def begin(self):
         if not hasattr(self, "db_handle"):
             raise InternalError
-        self._op_transaction(transaction_parameter_block[self.isolation_level])
-        (h, oid, buf) = self._op_response()
-        self.trans_handle = h
+        trans = Transaction(self)
+        trans.begin()
+        self._transactions.append(trans)
+
+    @property
+    def transactions(self):
+        return self._transactions
+
+    @property
+    def main_transaction(self):
+        if len(self._transactions):
+            return self._transactions[0]
+        return None
     
     def commit(self, retaining=False):
-        if retaining:
-            self._op_commit_retaining()
-            (h, oid, buf) = self._op_response()
-        else:
-            self._op_commit()
-            (h, oid, buf) = self._op_response()
-            delattr(self, "trans_handle")
+        self.main_transaction.commit(retaining=retaining)
 
     def rollback(self, retaining=False):
-        if retaining:
-            self._op_rollback_retaining()
-            (h, oid, buf) = self._op_response()
-        else:
-            self._op_rollback()
-            (h, oid, buf) = self._op_response()
-            delattr(self, "trans_handle")
+        self.main_transaction.rollback(retaining=retaining)
 
     def close(self):
         if not hasattr(self, "db_handle"):
             return
-        for c in self.cursor_set:
+        for trans in self._transactons:
             c.close()
-        self._op_rollback()
-        (h, oid, buf) = self._op_response()
-        self._op_detach()
-        (h, oid, buf) = self._op_response()
         delattr(self, "db_handle")
 
     def __init__(self, dsn=None, user=None, password=None, host=None,
@@ -1184,7 +1182,7 @@ class Connection:
         self.user = user
         self.password = password
         self.charset = charset
-        self.cursor_set = set()
+        self._transactions = []
         self.isolation_level = ISOLATION_LEVEL_READ_COMMITED
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -1319,12 +1317,47 @@ class Connection:
             self.close()
 
 class Transaction:
-    def __init__(connection, tpb=None):
+    def __init__(self, connection, tpb=None):
         self._connection = connection
+        self.begin()
+
+    def begin(self):
+        self.connection._op_transaction(transaction_parameter_block[self.connection.isolation_level])
+        (h, oid, buf) = self.connection._op_response()
+        self.trans_handle = h
+
+    def commit(self, retaining=False):
+        if retaining:
+            self.connection._op_commit_retaining(trans_handle=self.trans_handle)
+            (h, oid, buf) = self.connection._op_response()
+        else:
+            self.connection._op_commit(trans_handle=self.trans_handle)
+            (h, oid, buf) = self.connection._op_response()
+            delattr(self, "trans_handle")
+            self.connection._transactions.remove(self)
+
+    def rollback(self, retaining=False):
+        if retaining:
+            self.connection._op_rollback_retaining(trans_handle=self.trans_handle)
+            (h, oid, buf) = self.connection._op_response()
+        else:
+            self.connection._op_rollback()
+            (h, oid, buf) = self.connection._op_response(trans_handle=self.trans_handle)
+            delattr(self, "trans_handle")
+            self.connection._transactions.remove(self)
+
+    def close(self):
+        if self.closed():
+            return
+        self.connection._op_rollback(trans_handle=self.trans_handle)
+        (h, oid, buf) = self.connection._op_response()
+        delattr(self, "trans_handle")
+        self.connection._transactions.remove(self)
 
     @property
     def connection(self):
         return self._connection
 
-    
-
+    @property
+    def closed(self):
+        return hasattr(self, "trans_handle")
