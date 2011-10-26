@@ -48,6 +48,7 @@ if __name__ == '__main__':
         )
     ''')
     conn.commit()
+    conn.close()
 
     print('backup database')    
     svc = firebirdsql.services.connect(host=TEST_HOST, user=TEST_USER, 
@@ -58,6 +59,11 @@ if __name__ == '__main__':
     svc = firebirdsql.services.connect(host=TEST_HOST, user=TEST_USER, password=TEST_PASS)
     svc.restore_database(TEST_BACKUP_FILE, TEST_RESTORE_DATABASE, callback=debug_print)
     svc.close()
+
+    # dummy connection for service api test
+    conn = firebirdsql.connect(host=TEST_HOST, database=TEST_DATABASE,
+                        port=TEST_PORT, user=TEST_USER, password=TEST_PASS)
+
 
     svc = firebirdsql.services.connect(host=TEST_HOST, user=TEST_USER, password=TEST_PASS)
     print('getServiceManagerVersion()')
@@ -97,3 +103,5 @@ if __name__ == '__main__':
     print(svc.getStatistics(TEST_DATABASE))
 
     svc.close()
+
+    conn.close()
