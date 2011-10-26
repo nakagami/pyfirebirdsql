@@ -157,10 +157,10 @@ class Services(Connection):
                 num_db =  bytes_to_int(buf[7:11])
                 i += 5
             elif bi(buf[i]) == isc_spb_dbname:
-                ln = bytes_to_int(buf[i:i+1])
-                db_name = self.bytes_to_str(buf[i+2:i+2+ln])
+                ln = bytes_to_int(buf[i+1:i+3])
+                db_name = self.bytes_to_str(buf[i+3:i+3+ln])
                 db_names.append(db_name)
-                i += ln + 2
+                i += 3 + ln
 
         return (num_attach, db_names)
 
