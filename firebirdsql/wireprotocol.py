@@ -39,8 +39,10 @@ def wire_operation(fn):
     if not DEBUG:
         return fn
     def f(*args):
-        print(fn, args)
-        return fn(*args)
+        print('<----', fn, args)
+        r = fn(*args)
+        print(fn, '---->')
+        return r
     return f
 
 def bytes_to_bint(b):           # Read as big endian
