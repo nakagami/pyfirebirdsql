@@ -18,11 +18,11 @@ from firebirdsql.wireprotocol import (WireProtocol,
 
 PYTHON_MAJOR_VER = sys.version_info[0]
 
-if sys.version_info[0] == 3:
+if PYTHON_MAJOR_VER == 3:
     def ord(b):
         return b
 
-if sys.version_info[0] == 2:
+if PYTHON_MAJOR_VER == 2:
     def bytes(byte_array):
         return ''.join([chr(c) for c in byte_array])
 

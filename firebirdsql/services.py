@@ -11,14 +11,6 @@ import xdrlib, time, datetime, decimal, struct
 from firebirdsql.consts import *
 from firebirdsql.fbcore import *
 
-if sys.version_info[0] == 3:
-    def ord(b):
-        return b
-
-if sys.version_info[0] == 2:
-    def bytes(byte_array):
-        return ''.join([chr(c) for c in byte_array])
-
 class Services(Connection):
 
     def backup_database(self, database_name, backup_filename, callback=None):
