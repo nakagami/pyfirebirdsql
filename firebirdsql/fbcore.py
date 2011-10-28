@@ -528,6 +528,8 @@ class Connection(WireProtocol):
         else:
             user = os.environ['USER']
             hostname = os.environ.get('HOSTNAME', '')
+        user = self.str_to_bytes(user)
+        hostname = self.str_to_bytes(hostname)
         return bytes([1] + [len(user)] + [ord(c) for c in user] 
                 + [4] + [len(hostname)] + [ord(c) for c in hostname] + [6, 0])
 
