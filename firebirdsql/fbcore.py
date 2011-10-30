@@ -605,10 +605,14 @@ class Connection(WireProtocol):
         return None
     
     def commit(self, retaining=False):
-        self.main_transaction.commit(retaining=retaining)
+        if self.main_transaction:
+            self.main_transaction.commit(retaining=retaining)
 
-    def rollback(self, retaining=False):
-        self.main_transaction.rollback(retaining=retaining)
+    def savepoint(self, name):
+        return self.main_transaction.savepoint(name)
+
+    def rollback(self, retaining=False, savepoint=None):
+        self.main_transaction.rollback(retaining=retaining, savepoint=savepoint)
 
     def __init__(self, dsn=None, user=None, password=None, host=None,
                     database=None, charset=DEFAULT_CHARSET, port=3050, 
@@ -795,13 +799,16 @@ class Transaction:
             delattr(self, "trans_handle")
             self.connection._transactions.remove(self)
 
-    def rollback(self, retaining=False):
+    def savepoint(self, name):
+        return None
+
+    def rollback(self, retaining=False, savepoint=None):
         if retaining:
             self.connection._op_rollback_retaining(self.trans_handle)
             (h, oid, buf) = self.connection._op_response()
         else:
-            self.connection._op_rollback()
-            (h, oid, buf) = self.connection._op_response(self.trans_handle)
+            self.connection._op_rollback(self.trans_handle)
+            (h, oid, buf) = self.connection._op_response()
             delattr(self, "trans_handle")
             self.connection._transactions.remove(self)
 

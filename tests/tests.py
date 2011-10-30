@@ -63,9 +63,11 @@ if __name__ == '__main__':
     conn.cursor().execute("""insert into foo(a, b, c, e, g, i, j) 
         values (3, 'X', 'Y', '2001-07-05', '00:01:02', 0.2, 0.2)""")
     conn.commit()
+
+    cur = conn.cursor()
     conn.savepoint('A')
-    conn.cursor().execute("""insert into foo(a, b, c, e, g, i, j) 
-        values (3, 'x', 'y', '1967-05-08', '00:01:03', 0.3, 0.3)""")
+    cur.execute("""insert into foo(a, b, c, e, g, i, j) 
+        values (4, 'x', 'y', '1967-05-08', '00:01:03', 0.3, 0.3)""")
     conn.rollback(savepoint='A')
 
     conn.cursor().execute("update foo set c='Hajime' where a=1")
