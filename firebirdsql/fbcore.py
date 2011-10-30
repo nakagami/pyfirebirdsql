@@ -300,7 +300,7 @@ def parse_xsqlda(buf, connection, stmt_handle):
     xsqlda = [None] * col_len
     next_index = parse_select_items(buf[11+l:], xsqlda, connection)
     while next_index > 0:   # more describe vars
-        self.connection._op_info_sql(stmt_handle,
+        connection._op_info_sql(stmt_handle,
                     bytes([isc_info_sql_sqlda_start, 2])
                         + int_to_bytes(next_index, 2)
                         + INFO_SQL_SELECT_DESCRIBE_VARS)
