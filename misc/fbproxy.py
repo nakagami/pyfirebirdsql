@@ -1596,10 +1596,11 @@ op_execute2 = op_execute
 
 def op_execute_immediate(sock):
     msg = sock.recv(bufsize)
+    hex_dump(msg)
     i = 0
-    db_handle = _bytes_to_bint(msg, i, 4)
-    i += 4
     trans_handle = _bytes_to_bint(msg, i, 4)
+    i += 4
+    db_handle = _bytes_to_bint(msg, i, 4)
     i += 4
     sql_len = _bytes_to_bint(msg, i, 2)
     i += 2

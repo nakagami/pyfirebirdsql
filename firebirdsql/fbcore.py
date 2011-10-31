@@ -800,11 +800,17 @@ class Transaction:
             self.connection._transactions.remove(self)
 
     def savepoint(self, name):
-        self.connection._op_execute_immediate(
-                                self.trans_handle, in_msg='SAVEPOINT '+name)
+        self.connection._op_execute_immediate(self.trans_handle,
+                        self.connection.db_handle, in_msg='SAVEPOINT '+name)
         (h, oid, buf) = self.connection._op_response()
 
     def rollback(self, retaining=False, savepoint=None):
+        if savepoint:
+            self.connection._op_execute_immediate(self.trans_handle,
+                        -1, in_msg='ROLLBACK TO '+savepoint)
+            (h, oid, buf) = self.connection._op_response()
+            return
+
         if retaining:
             self.connection._op_rollback_retaining(self.trans_handle)
             (h, oid, buf) = self.connection._op_response()

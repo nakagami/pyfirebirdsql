@@ -57,13 +57,14 @@ if __name__ == '__main__':
     assert cur.description[0][0] == 'ALIAS_NAME'
     cur.close()
 
+    # 3 records insert
     conn.cursor().execute("insert into foo(a, b, c) values (1, 'a', 'b')")
     conn.cursor().execute("""insert into foo(a, b, c, e, g, i, j) 
         values (2, 'A', 'B', '1999-01-25', '00:00:01', 0.1, 0.1)""")
     conn.cursor().execute("""insert into foo(a, b, c, e, g, i, j) 
         values (3, 'X', 'Y', '2001-07-05', '00:01:02', 0.2, 0.2)""")
-    conn.commit()
 
+    # 1 record insert and rollback to savepoint
     cur = conn.cursor()
     conn.savepoint('abcdefghijklmnopqrstuvwxyz')
     cur.execute("""insert into foo(a, b, c, e, g, i, j) 
