@@ -26,7 +26,7 @@ if PYTHON_MAJOR_VER == 2:
     def bytes(byte_array):
         return ''.join([chr(c) for c in byte_array])
 
-__version__ = '0.6.0'
+__version__ = '0.6.1'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
