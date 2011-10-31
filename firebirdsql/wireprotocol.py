@@ -431,7 +431,8 @@ class WireProtocol:
         sql = self.str_to_bytes(sql)
         in_msg = self.str_to_bytes(in_msg)
         out_msg = self.str_to_bytes(out_msg)
-        r = bint_to_bytes(self.db_handle, 4) + bint_to_bytes(trans_handle, 4)
+        r = bint_to_bytes(self.op_execute_immediate, 4)
+        r += bint_to_bytes(self.db_handle, 4) + bint_to_bytes(trans_handle, 4)
         r += bint_to_bytes(len(sql), 2) + sql
         r += bint_to_bytes(3, 2)    # dialect
         if len(params) == 0:
