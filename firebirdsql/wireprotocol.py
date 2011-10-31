@@ -432,22 +432,20 @@ class WireProtocol:
         in_msg = self.str_to_bytes(in_msg)
         out_msg = self.str_to_bytes(out_msg)
         r = bint_to_bytes(self.op_execute_immediate, 4)
-        r += bint_to_bytes(self.db_handle, 4) + bint_to_bytes(trans_handle, 4)
+        r += bint_to_bytes(trans_handle, 4) + bint_to_bytes(self.db_handle, 4)
         r += bint_to_bytes(len(sql), 2) + sql
         r += bint_to_bytes(3, 2)    # dialect
         if len(params) == 0:
             r += bint_to_bytes(0, 2)    # in_blr len
-            r += bint_to_bytes(len(in_msg), 2) + in_msg
-            r += bint_to_bytes(len(out_msg), 2) + out_msg
-            r += bint_to_bytes(possible_requests, 4)
-            send_channel(self.sock, r)
+            values = ''
         else:
             (blr, values) = self.params_to_blr(params)
             r += bint_to_bytes(len(blr), 2) + blr
-            r += bint_to_bytes(len(in_msg), 2) + in_msg
-            r += bint_to_bytes(len(out_msg), 2) + out_msg
-            r += bint_to_bytes(possible_requests, 4)
-            send_channel(self.sock, r + values)
+        r += bint_to_bytes(len(in_msg), 2) + in_msg
+        r += bint_to_bytes(len(out_msg), 2) + out_msg
+        r += bint_to_bytes(possible_requests, 4)
+        r += bytes([0]) * ((4-len(r+values)) & 3)    # padding
+        send_channel(self.sock, r + values)
 
     @wire_operation
     def _op_fetch(self, stmt_handle, blr):
