@@ -140,6 +140,7 @@ class WireProtocol:
     op_allocate_statement = 62
     op_create_blob2 = 57
     op_execute = 63
+    op_execute_immediate = 64
     op_fetch = 65
     op_fetch_response = 66
     op_free_statement = 67

@@ -784,10 +784,10 @@ op_names = [
   'op_prepare2', 'op_event', 'op_connect_request', 'op_aux_connect', 'op_ddl',
   'op_open_blob2', 'op_create_blob2', 'op_get_slice', 'op_put_slice',
   'op_slice', 'op_seek_blob', 'op_allocate_statement', 'op_execute',
-  'op_exec_immediate', 'op_fetch', 'op_fetch_response', 'op_free_statement',
+  'op_execute_immediate', 'op_fetch', 'op_fetch_response', 'op_free_statement',
   'op_prepare_statement', 'op_set_cursor', 'op_info_sql', 'op_dummy',
   'op_response_piggyback', 'op_start_and_receive', 'op_start_send_and_receive',
-  'op_exec_immediate2', 'op_execute2', 'op_insert', 'op_sql_response',
+  'op_execute_immediate2', 'op_execute2', 'op_insert', 'op_sql_response',
   'op_transact', 'op_transact_response', 'op_drop_database',
   'op_service_attach', 'op_service_detach', 'op_service_info',
   'op_service_start', 'op_rollback_retaining',
@@ -1593,6 +1593,45 @@ def op_execute(sock):
     return msg
 
 op_execute2 = op_execute
+
+def op_execute_immediate(sock):
+    msg = sock.recv(bufsize)
+    i = 0
+    db_handle = _bytes_to_bint(msg, i, 4)
+    i += 4
+    trans_handle = _bytes_to_bint(msg, i, 4)
+    i += 4
+    sql_len = _bytes_to_bint(msg, i, 2)
+    i += 2
+    sql = msg[i:i+sql_len]
+    i += sql_len
+    dialect = _bytes_to_bint(msg, i, 2)
+    i += 2
+    in_blr_len = _bytes_to_bint(msg, i, 2)
+    i += 2
+    in_blr = msg[i:i+in_blr_len]
+    i += in_blr_len
+    in_msg_len = _bytes_to_bint(msg, i, 2)
+    i += 2
+    in_msg = msg[i:i+in_msg_len]
+    i += in_msg_len
+    out_msg_len = _bytes_to_bint(msg, i, 2)
+    i += 2
+    out_msg = msg[i:i+out_msg_len]
+    i += out_msg_len
+    possible_requests = _bytes_to_bint(msg, i, 4)
+
+    print '\tdb_handle=', db_handle
+    print '\ttrans_handle=', trans_handle
+    print '\tsql=[' + sql +']'
+    print '\tdiarect=', dialect
+    print '\tin_msg=[%s]' % (in_msg, )
+    print '\tout_msg=[%s]' % (out_msg, )
+    print '\tpossible_requests=', possible_requests
+
+    return msg
+
+op_execute_immediate2 = op_execute_immediate
 
 def op_open_blob(sock):
     msg = sock.recv(bufsize)
