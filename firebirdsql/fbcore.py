@@ -18,15 +18,18 @@ from firebirdsql.wireprotocol import (WireProtocol,
 
 PYTHON_MAJOR_VER = sys.version_info[0]
 
-if PYTHON_MAJOR_VER == 3:
-    def ord(b):
+def b2i(b):
+    "byte to int"
+    if PYTHON_MAJOR_VER == 3:
         return b
+    else:
+        return ord(b)
 
 if PYTHON_MAJOR_VER == 2:
     def bytes(byte_array):
         return ''.join([chr(c) for c in byte_array])
 
-__version__ = '0.6.1'
+__version__ = '0.6.2'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
@@ -235,7 +238,7 @@ def calc_blr(xsqlda):
 def parse_select_items(buf, xsqlda, connection):
     index = 0
     i = 0
-    item = ord(buf[i])
+    item = b2i(buf[i])
     while item != isc_info_end:
         if item == isc_info_sql_sqlda_seq:
             l = bytes_to_int(buf[i+1:i+3])
@@ -285,7 +288,7 @@ def parse_select_items(buf, xsqlda, connection):
         else:
             print('\t', item, 'Invalid item [%02x] ! i=%d' % (buf[i], i))
             i = i + 1
-        item = ord(buf[i])
+        item = b2i(buf[i])
     return -1   # no more info
 
 def parse_xsqlda(buf, connection, stmt_handle):
@@ -328,7 +331,7 @@ class PreparedStatement:
         (h, oid, buf) = connection._op_response()
 
         i = 0
-        if ord(buf[i]) == isc_info_sql_get_plan:
+        if b2i(buf[i]) == isc_info_sql_get_plan:
             l = bytes_to_int(buf[i+1:i+3])
             self.plan = connection.bytes_to_str(buf[i+3:i+3+l])
             i += 3 + l
@@ -528,8 +531,8 @@ class Connection(WireProtocol):
         else:
             user = os.environ['USER']
             hostname = os.environ.get('HOSTNAME', '')
-        user = self.str_to_bytes(user)
-        hostname = self.str_to_bytes(hostname)
+#        user = self.str_to_bytes(user)
+#        hostname = self.str_to_bytes(hostname)
         return bytes([1] + [len(user)] + [ord(c) for c in user] 
                 + [4] + [len(hostname)] + [ord(c) for c in hostname] + [6, 0])
 
@@ -674,7 +677,7 @@ class Connection(WireProtocol):
         i_request = 0
         r = []
         while i < len(buf):
-            req = ord(buf[i])
+            req = b2i(buf[i])
             if req == isc_info_end:
                 break
             assert req == info_requests[i_request]
@@ -684,7 +687,7 @@ class Connection(WireProtocol):
                     l = bytes_to_int(buf[i+1:i+3])
                     user_names.append(buf[i+3:i+3+l])
                     i = i + 3 + l
-                    req = ord(buf[i])
+                    req = b2i(buf[i])
                 r.append(user_names)
             else:
                 l = bytes_to_int(buf[i+1:i+3])
@@ -716,20 +719,20 @@ class Connection(WireProtocol):
 
         if info_request in (isc_info_base_level, ):
             # IB6 API guide p52
-            return ord(v[1])
+            return b2i(v[1])
         elif info_request in (isc_info_db_id, ):
             # IB6 API guide p52
-            conn_code = ord(v[0])
-            len1 = ord(v[1])
+            conn_code = b2i(v[0])
+            len1 = b2i(v[1])
             filename = self.bytes_to_str(v[2:2+len1])
-            len2 = ord(v[2+len1])
+            len2 = b2i(v[2+len1])
             sitename = self.bytes_to_str(v[3+len1:3+len1+len2])
             return (conn_code, filename, sitename)
         elif info_request in (isc_info_implementation, ):
-            return (ord(v[1]), ord(v[2]))
+            return (b2i(v[1]), b2i(v[2]))
         elif info_request in (isc_info_version, isc_info_firebird_version):
             # IB6 API guide p53
-            return self.bytes_to_str(v[2:2+ord(v[1])])
+            return self.bytes_to_str(v[2:2+b2i(v[1])])
         elif info_request in (isc_info_user_names, ):
             # IB6 API guide p54
             user_names = []
