@@ -50,48 +50,14 @@ if __name__ == '__main__':
     conn.commit()
     conn.close()
 
-    # dummy connection for service api test
-    conn = firebirdsql.connect(host=TEST_HOST, database=TEST_DATABASE,
-                        port=TEST_PORT, user=TEST_USER, password=TEST_PASS)
-
-
+    print('backup database')    
+    svc = firebirdsql.services.connect(host=TEST_HOST, user=TEST_USER, 
+        password=TEST_PASS)
+    svc.backup_database(TEST_DATABASE, TEST_BACKUP_FILE, callback=debug_print)
+    svc.close()
+    print('restore database')    
     svc = firebirdsql.services.connect(host=TEST_HOST, user=TEST_USER, password=TEST_PASS)
-    print('getServiceManagerVersion()')
-    print(svc.getServiceManagerVersion())
-
-    print('getServerVersion()')
-    print(svc.getServerVersion())
-
-    print('getArchitecture()')
-    print(svc.getArchitecture())
-
-    print('getHomeDir()')
-    print(svc.getHomeDir())
-
-    print('getSecurityDatabasePath()')
-    print(svc.getSecurityDatabasePath())
-
-    print('getLockFileDir()')
-    print(svc.getLockFileDir())
-
-    print('getCapabilityMask()')
-    print(svc.getCapabilityMask())
-
-    print('getMessageFileDir()')
-    print(svc.getMessageFileDir())
-
-    print('getConnectionCount()')
-    print(svc.getConnectionCount())
-
-    print('getAttachedDatabaseNames()')
-    print(svc.getAttachedDatabaseNames())
-
-    print('getLog()')
-    print(svc.getLog())
-
-    print('getStatistics()')
-    print(svc.getStatistics(TEST_DATABASE))
-
+    svc.restore_database(TEST_BACKUP_FILE, TEST_RESTORE_DATABASE, callback=debug_print)
     svc.close()
 
     conn.close()
