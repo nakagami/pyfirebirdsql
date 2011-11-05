@@ -27,14 +27,14 @@ def b2i(b):
 
 if PYTHON_MAJOR_VER == 2:
     def bytes(byte_array):
-        return ''.join([chr(c) for c in byte_array])
+        return ''.join(chr(c) for c in byte_array)
 
 __version__ = '0.6.2'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
 
-transaction_parameter_block = [
+transaction_parameter_block = (
     # ISOLATION_LEVEL_READ_UNCOMMITTED
     bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
     # ISOLATION_LEVEL_READ_COMMITED
@@ -45,7 +45,7 @@ transaction_parameter_block = [
     bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_consistency]),
     # ISOLATION_LEVEL_READ_COMMITED_READ_ONLY
     bytes([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_no_rec_version]),
-]
+)
 
 def Date(year, month, day):
     return datetime.date(year, month, day)
@@ -233,7 +233,7 @@ def calc_blr(xsqlda):
     blr += [255, 76]    # [blr_end, blr_eoc]
 
     # x.sqlscale value shoud be negative, so b convert to range(0, 256)
-    return bytes([256 + b if b < 0 else b for b in blr])
+    return bytes(256 + b if b < 0 else b for b in blr)
 
 def parse_select_items(buf, xsqlda, connection):
     index = 0
@@ -470,7 +470,7 @@ class Cursor:
         self.stmt_handle = h
 
         raise StopIteration()
-            
+
     def fetchone(self):
         try:
             if PYTHON_MAJOR_VER==3:
@@ -606,7 +606,7 @@ class Connection(WireProtocol):
         if len(self._transactions):
             return self._transactions[0]
         return None
-    
+
     def commit(self, retaining=False):
         if self.main_transaction:
             self.main_transaction.commit(retaining=retaining)
