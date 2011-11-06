@@ -48,30 +48,16 @@ def wire_operation(fn):
     return f
 
 def bytes_to_bint(b):           # Read as big endian
-    len_b = len(b)
-    if len_b == 1:
-        fmt = 'b'
-    elif len_b ==2:
-        fmt = '>h'
-    elif len_b ==4:
-        fmt = '>l'
-    elif len_b ==8:
-        fmt = '>q'
-    else:
+    fmtmap = {1: 'b', 2: '>h', 4: '>l', 8: '>q'}
+    fmt = fmtmap.get(len(b))
+    if fmt is None:
         raise InternalError
     return struct.unpack(fmt, b)[0]
 
 def bytes_to_int(b):            # Read as little endian.
-    len_b = len(b)
-    if len_b == 1:
-        fmt = 'b'
-    elif len_b ==2:
-        fmt = '<h'
-    elif len_b ==4:
-        fmt = '<l'
-    elif len_b ==8:
-        fmt = '<q'
-    else:
+    fmtmap = {1: 'b', 2: '<h', 4: '<l', 8: '<q'}
+    fmt = fmtmap.get(len(b))
+    if fmt is None:
         raise InternalError
     return struct.unpack(fmt, b)[0]
 

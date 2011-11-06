@@ -99,6 +99,21 @@ def convert_timestamp(v):   # Convert datetime.datetime to BLR format timestamp
 
 #------------------------------------------------------------------------------
 class XSQLVAR:
+    type_length = {
+        SQL_TYPE_VARYING: -1,
+        SQL_TYPE_SHORT: 4,
+        SQL_TYPE_LONG: 4,
+        SQL_TYPE_FLOAT: 4,
+        SQL_TYPE_TIME: 4,
+        SQL_TYPE_DATE: 4,
+        SQL_TYPE_DOUBLE: 8,
+        SQL_TYPE_TIMESTAMP: 8,
+        SQL_TYPE_BLOB: 8, 
+        SQL_TYPE_ARRAY: 8, 
+        SQL_TYPE_QUAD: 8,
+        SQL_TYPE_INT64: 8
+        }
+    
     def __init__(self, bytes_to_str):
         self.bytes_to_str = bytes_to_str
         self.sqltype = None
@@ -112,16 +127,11 @@ class XSQLVAR:
         self.aliasname = ''
 
     def io_length(self):
-        if self.sqltype == SQL_TYPE_TEXT:
+        sqltype = self.sqltype
+        if sqltype == SQL_TYPE_TEXT:
             return self.sqllen
-        elif self.sqltype == SQL_TYPE_VARYING:
-            return -1   # First 4 bytes 
-        elif self.sqltype in (SQL_TYPE_SHORT, SQL_TYPE_LONG, SQL_TYPE_FLOAT,
-                SQL_TYPE_TIME, SQL_TYPE_DATE):
-            return 4
-        elif self.sqltype in (SQL_TYPE_DOUBLE, SQL_TYPE_TIMESTAMP,
-                SQL_TYPE_BLOB, SQL_TYPE_ARRAY, SQL_TYPE_QUAD, SQL_TYPE_INT64):
-            return 8
+        else:
+            return self.type_length[sqltype]
 
     def __str__(self):
         s  = '[' + str(self.sqltype) + ',' + str(self.sqlscale) + ',' \
@@ -198,39 +208,38 @@ class XSQLVAR:
         else:
             return raw_value
 
+
+sqltype2blr = {
+    SQL_TYPE_DOUBLE: [27],
+    SQL_TYPE_FLOAT: [10],
+    SQL_TYPE_D_FLOAT: [11],
+    SQL_TYPE_DATE: [12],
+    SQL_TYPE_TIME: [13],
+    SQL_TYPE_TIMESTAMP: [35],
+    SQL_TYPE_BLOB: [9, 0],
+    SQL_TYPE_ARRAY: [9, 0],
+    }
+
 def calc_blr(xsqlda):
     "Calculate  BLR from XSQLVAR array."
     ln = len(xsqlda) *2
     blr = [5, 2, 4, 0, ln & 255, ln >> 8]
     for x in xsqlda:
-        if x.sqltype == SQL_TYPE_VARYING:
+        sqltype = x.sqltype
+        if sqltype == SQL_TYPE_VARYING:
             blr += [37, x.sqllen & 255, x.sqllen >> 8]
-        elif x.sqltype == SQL_TYPE_TEXT:
+        elif sqltype == SQL_TYPE_TEXT:
             blr += [14, x.sqllen & 255, x.sqllen >> 8]
-        elif x.sqltype == SQL_TYPE_DOUBLE:
-            blr += [27]
-        elif x.sqltype == SQL_TYPE_FLOAT:
-            blr += [10]
-        elif x.sqltype == SQL_TYPE_D_FLOAT:
-            blr += [11]
-        elif x.sqltype == SQL_TYPE_DATE:
-            blr += [12]
-        elif x.sqltype == SQL_TYPE_TIME:
-            blr += [13]
-        elif x.sqltype == SQL_TYPE_TIMESTAMP:
-            blr += [35]
-        elif x.sqltype == SQL_TYPE_BLOB:
-            blr += [9, 0]
-        elif x.sqltype == SQL_TYPE_ARRAY:
-            blr += [9, 0]
-        elif x.sqltype == SQL_TYPE_LONG:
+        elif sqltype == SQL_TYPE_LONG:
             blr += [8, x.sqlscale]
-        elif x.sqltype == SQL_TYPE_SHORT:
+        elif sqltype == SQL_TYPE_SHORT:
             blr += [7, x.sqlscale]
-        elif x.sqltype == SQL_TYPE_INT64:
+        elif sqltype == SQL_TYPE_INT64:
             blr += [16, x.sqlscale]
-        elif x.sqltype == SQL_TYPE_QUAD:
+        elif sqltype == SQL_TYPE_QUAD:
             blr += [9, x.sqlscale]
+        else:
+            blr += sqltype2blr[sqltype]
         blr += [7, 0]   # [blr_short, 0]
     blr += [255, 76]    # [blr_end, blr_eoc]
 
