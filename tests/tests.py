@@ -28,7 +28,8 @@ if __name__ == '__main__':
     print('dsn=', TEST_DSN)
     TEST_USER = 'sysdba'
     TEST_PASS = 'masterkey'
-    conn = firebirdsql.create_database(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
+    conn = firebirdsql.create_database(dsn=TEST_DSN,
+                        user=TEST_USER, password=TEST_PASS, page_size=2<<13)
     conn.cursor().execute('''
         CREATE TABLE foo (
             a INTEGER NOT NULL,

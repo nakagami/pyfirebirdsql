@@ -245,7 +245,7 @@ class WireProtocol:
         dpb += bytes([63, 4]) + int_to_bytes(3, 4) # isc_dpb_sql_dialect = 3
         dpb += bytes([24, 4]) + bint_to_bytes(1, 4) # isc_dpb_force_write = 1
         dpb += bytes([54, 4]) + bint_to_bytes(1, 4) # isc_dpb_overwirte = 1
-        dpb += bytes([4, 4]) + bint_to_bytes(page_size, 4)
+        dpb += bytes([4, 4]) + int_to_bytes(page_size, 4)
         p = xdrlib.Packer()
         p.pack_int(self.op_create)
         p.pack_int(0)                       # Database Object ID
