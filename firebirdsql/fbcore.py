@@ -531,8 +531,6 @@ class Connection(WireProtocol):
         else:
             user = os.environ['USER']
             hostname = os.environ.get('HOSTNAME', '')
-#        user = self.str_to_bytes(user)
-#        hostname = self.str_to_bytes(hostname)
         return bytes([1] + [len(user)] + [ord(c) for c in user] 
                 + [4] + [len(hostname)] + [ord(c) for c in hostname] + [6, 0])
 
@@ -592,7 +590,7 @@ class Connection(WireProtocol):
         return c
 
     def begin(self):
-        if not hasattr(self, "db_handle"):
+        if self.is_closed:
             raise InternalError
         trans = Transaction(self)
         trans.begin()
@@ -662,6 +660,7 @@ class Connection(WireProtocol):
             self._op_attach()
         (h, oid, buf) = self._op_response()
         self.db_handle = h
+        self.is_closed = False
 
     def set_isolation_level(self, isolation_level):
         self.isolation_level = isolation_level
@@ -764,7 +763,7 @@ class Connection(WireProtocol):
             return results
 
     def close(self):
-        if not hasattr(self, "db_handle"):
+        if self.is_closed:
             return
         for trans in self._transactions:
             trans.close()
@@ -773,11 +772,16 @@ class Connection(WireProtocol):
         else:
             self._op_detach()
         (h, oid, buf) = self._op_response()
+        self.is_closed = True
+
+    def drop_database(self):
+        self._op_drop_database()
+        (h, oid, buf) = self._op_response()
+        self.is_closed = True
         delattr(self, "db_handle")
 
-
     def __del__(self):
-        if hasattr(self, "db_handle"):
+        if hasattr(self, "db_handle") and (not self.is_closed):
             self.close()
 
 class Transaction:

@@ -146,6 +146,7 @@ class WireProtocol:
     op_free_statement = 67
     op_prepare_statement = 68
     op_info_sql = 70
+    op_drop_database = 81
     op_service_attach = 82
     op_service_detach = 83
     op_service_info = 84
@@ -277,6 +278,13 @@ class WireProtocol:
         p.pack_int(0)                       # Database Object ID
         p.pack_string(self.str_to_bytes(self.filename))
         p.pack_bytes(dpb)
+        send_channel(self.sock, p.get_buffer())
+
+    @wire_operation
+    def _op_drop_database(self):
+        p = xdrlib.Packer()
+        p.pack_int(self.op_drop_database)
+        p.pack_int(self.db_handle)
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
