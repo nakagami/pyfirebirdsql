@@ -33,7 +33,8 @@ class Services(Connection):
                 ln = bytes_to_int(buf[1:3])
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def restore_database(self, restore_filename, database_name, callback=None):
+    def restore_database(self, restore_filename, database_name, pageSize=1024,
+                                                                callback=None):
         spb = bytes([isc_action_svc_restore])
         s = self.str_to_bytes(restore_filename)
         spb += bytes([isc_spb_bkp_file]) + int_to_bytes(len(s), 2) + s
@@ -41,7 +42,9 @@ class Services(Connection):
         spb += bytes([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
         if callback:
             spb += bytes([isc_spb_verbose])
-        spb += bytes([isc_spb_res_buffers,0x00,0x08,0x00,0x00,isc_spb_res_page_size,0x00,0x10,0x00,0x00,isc_spb_options,0x00,0x30,0x00,0x00])
+        spb += bytes([isc_spb_res_buffers,0x00,0x08,0x00,0x00])
+        spb += bytes([isc_spb_res_page_size]) + int_to_bytes(pageSize, 4)
+        spb += bytes([isc_spb_options,0x00,0x30,0x00,0x00])
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h

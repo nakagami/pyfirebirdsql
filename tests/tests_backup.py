@@ -57,7 +57,8 @@ if __name__ == '__main__':
     svc.close()
     print('restore database')    
     svc = firebirdsql.services.connect(host=TEST_HOST, user=TEST_USER, password=TEST_PASS)
-    svc.restore_database(TEST_BACKUP_FILE, TEST_RESTORE_DATABASE, callback=debug_print)
+    svc.restore_database(TEST_BACKUP_FILE, TEST_RESTORE_DATABASE, pageSize=4096,
+                                                        callback=debug_print)
     svc.close()
 
     conn.close()
