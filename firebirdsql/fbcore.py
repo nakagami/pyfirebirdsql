@@ -26,6 +26,8 @@ def b2i(b):
         return ord(b)
 
 if PYTHON_MAJOR_VER == 2:
+    __metaclass__ = type
+
     def bytes(byte_array):
         return ''.join(chr(c) for c in byte_array)
 

@@ -17,6 +17,8 @@ from firebirdsql.consts import *
 DEBUG = False
 
 if sys.version_info[0] == 2:
+    __metaclass__ = type
+
     def bytes(byte_array):
         return ''.join([chr(c) for c in byte_array])
 
