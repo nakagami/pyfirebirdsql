@@ -532,7 +532,7 @@ class Cursor:
             return r
         elif attrname == 'rowcount':
             return -1
-        raise AttributeError
+        raise AttributeError(attrname)
 
 class Connection(WireProtocol):
     def uid(self):
