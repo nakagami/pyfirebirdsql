@@ -216,6 +216,16 @@ isc_spb_sts_record_versions = 0x20
 isc_spb_sts_table = 0x40
 isc_spb_sts_nocreation = 0x80
 
+# isc_action_svc_repair params
+isc_spb_rpr_validate_db = 0x01
+isc_spb_rpr_sweep_db = 0x02
+isc_spb_rpr_mend_db = 0x04
+isc_spb_rpr_list_limbo_trans = 0x08
+isc_spb_rpr_check_db = 0x10
+isc_spb_rpr_ignore_checksum = 0x20
+isc_spb_rpr_kill_shadows = 0x40
+isc_spb_rpr_full = 0x80
+
 # Service Action Items
 isc_action_svc_backup = 1
 isc_action_svc_restore = 2
