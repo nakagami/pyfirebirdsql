@@ -8,7 +8,6 @@
 ##############################################################################
 import sys, os, socket
 import xdrlib, time, datetime, decimal, struct
-import collections
 import itertools
 from firebirdsql.fberrmsgs import messages
 from firebirdsql import (DatabaseError, InternalError, OperationalError, 
@@ -19,6 +18,13 @@ from firebirdsql.wireprotocol import (WireProtocol,
     INFO_SQL_SELECT_DESCRIBE_VARS,)
 
 PYTHON_MAJOR_VER = sys.version_info[0]
+
+if sys.version_info < (2, 6):
+    from UserDict import DictMixin as Mapping
+    HAS_MAPPING = False
+else:
+    from collections import Mapping
+    HAS_MAPPING = True
 
 def b2i(b):
     "byte to int"
@@ -870,7 +876,7 @@ class Transaction:
         return not hasattr(self, "trans_handle")
 
 
-class RowMapping(dict):
+class RowMapping(Mapping):
     """dict like interface to result rows
     """
     __slots__ = ("_description", "_fields")
@@ -918,3 +924,13 @@ class RowMapping(dict):
                   for desc in self._description]
         return ("<RowMapping at 0x%08x with fields: %s>" % 
                 (id(self), ", ".join(values))) 
+
+    if not HAS_MAPPING:
+        def keys(self):
+            return list(self)
+        
+        def __setitem__(self, key, value):
+            raise NotImplementedError
+
+        def __delitem__(self, key):
+            raise NotImplementedError
