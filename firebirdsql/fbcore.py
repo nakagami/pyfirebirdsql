@@ -863,7 +863,7 @@ class Transaction:
         return not hasattr(self, "trans_handle")
 
 
-class RowMapping(collections.Mapping):
+class RowMapping(dict):
     """dict like interface to result rows
     """
     __slots__ = ("_description", "_fields")
