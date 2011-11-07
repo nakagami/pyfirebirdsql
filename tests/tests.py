@@ -109,7 +109,7 @@ if __name__ == '__main__':
     for r in cur.fetchallmap():
         print(r)
         for key in r:
-            print key, r[key]
+            print (key, r[key])
     cur.execute("select * from foo")
     conn.close()
 
