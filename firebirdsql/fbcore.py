@@ -631,7 +631,8 @@ class Connection(WireProtocol):
         return self.main_transaction.savepoint(name)
 
     def rollback(self, retaining=False, savepoint=None):
-        self.main_transaction.rollback(retaining=retaining, savepoint=savepoint)
+        if self.main_transaction:
+            self.main_transaction.rollback(retaining=retaining, savepoint=savepoint)
 
     def __init__(self, dsn=None, user=None, password=None, host=None,
                     database=None, charset=DEFAULT_CHARSET, port=3050, 
