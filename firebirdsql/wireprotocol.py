@@ -433,7 +433,7 @@ class WireProtocol:
         r += bint_to_bytes(3, 2)    # dialect
         if len(params) == 0:
             r += bint_to_bytes(0, 2)    # in_blr len
-            values = ''
+            values = bytes([])
         else:
             (blr, values) = self.params_to_blr(params)
             r += bint_to_bytes(len(blr), 2) + blr

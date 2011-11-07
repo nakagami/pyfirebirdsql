@@ -13,12 +13,56 @@ from firebirdsql.fbcore import *
 
 class Services(Connection):
 
-    def backup_database(self, database_name, backup_filename, callback=None):
+    def sweep(self, database_name, callback=None):
+        spb = bytes([isc_spb_rpr_validate_db|isc_spb_rpr_sweep_db])
+        s = self.str_to_bytes(database_name)
+        spb += bytes([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
+
+        optionMask = 0
+        optionMask |= 0x02
+        spb += bytes([isc_spb_options]) + int_to_bytes(optionMask, 4)
+        self._op_service_start(spb)
+        (h, oid, buf) = self._op_response()
+        self.svc_handle = h
+        while True:
+            self._op_service_info(bytes([0x02]), bytes([0x3e]))
+            (h, oid, buf) = self._op_response()
+            if buf[:4] == bytes([0x3e,0x00,0x00,0x01]):
+                break
+            if callback:
+                ln = bytes_to_int(buf[1:3])
+                callback(self.bytes_to_str(buf[3:3+ln]))
+
+    def backup_database(self, database_name, backup_filename,
+                                    transportable=True,
+                                    metadataOnly=False,
+                                    garbageCollect=True,
+                                    ignoreLimboTransactions=False,
+                                    ignoreChecksums=False,
+                                    convertExternalTablesToInternalTables=True,
+                                    expand=False,
+                                    callback=None):
         spb = bytes([isc_action_svc_backup])
         s = self.str_to_bytes(database_name)
         spb += bytes([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
         s = self.str_to_bytes(backup_filename)
         spb += bytes([isc_spb_bkp_file]) + int_to_bytes(len(s), 2) + s
+        optionMask = 0
+        if ignoreChecksums:
+            optionMask |= isc_spb_bkp_ignore_checksums
+        if ignoreLimboTransactions:
+            optionMask |= isc_spb_bkp_ignore_limbo
+        if metadataOnly:
+            optionMask |= isc_spb_bkp_metadata_only
+        if not garbageCollect:
+            optionMask |= isc_spb_bkp_no_garbage_collect
+        if not transportable:
+            optionMask |= isc_spb_bkp_non_transportable
+        if convertExternalTablesToInternalTables:
+            optionMask |= isc_spb_bkp_convert
+        if expand:
+            optionMask |= isc_spb_bkp_expand
+        spb += bytes([isc_spb_options]) + int_to_bytes(optionMask, 4)
         if callback:
             spb += bytes([isc_spb_verbose])
         self._op_service_start(spb)
@@ -33,15 +77,42 @@ class Services(Connection):
                 ln = bytes_to_int(buf[1:3])
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def restore_database(self, restore_filename, database_name, callback=None):
+    def restore_database(self, restore_filename, database_name,
+                            replace=False,
+                            create=False,
+                            deactivateIndexes=False,
+                            doNotRestoreShadows=False,
+                            doNotEnforceConstraints=False,
+                            commitAfterEachTable=False,
+                            useAllPageSpace=False,
+                            pageSize=None, cacheBuffers=None, callback=None):
         spb = bytes([isc_action_svc_restore])
         s = self.str_to_bytes(restore_filename)
         spb += bytes([isc_spb_bkp_file]) + int_to_bytes(len(s), 2) + s
         s = self.str_to_bytes(database_name)
         spb += bytes([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
+        optionMask = 0
+        if replace:
+            optionMask |= isc_spb_res_replace
+        if create:
+            optionMask |= isc_spb_res_create
+        if deactivateIndexes:
+            optionMask |= isc_spb_res_deactivate_idx
+        if doNotRestoreShadows:
+            optionMask |= isc_spb_res_no_shadow
+        if doNotEnforceConstraints:
+            optionMask |= isc_spb_res_no_validity
+        if commitAfterEachTable:
+            optionMask |= isc_spb_res_one_at_a_time
+        if useAllPageSpace:
+            optionMask |= isc_spb_res_use_all_space
+        spb += bytes([isc_spb_options]) + int_to_bytes(optionMask, 4)
+        if pageSize:
+            spb += bytes([isc_spb_res_page_size]) + int_to_bytes(pageSize, 4)
+        if cacheBuffers:
+            spb += bytes([isc_spb_res_buffers]) + int_to_bytes(cacheBuffers, 4)
         if callback:
             spb += bytes([isc_spb_verbose])
-        spb += bytes([isc_spb_res_buffers,0x00,0x08,0x00,0x00,isc_spb_res_page_size,0x00,0x10,0x00,0x00,isc_spb_options,0x00,0x30,0x00,0x00])
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h

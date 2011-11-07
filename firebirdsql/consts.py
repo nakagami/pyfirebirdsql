@@ -153,9 +153,6 @@ isc_tpb_lock_timeout = 21
 isc_spb_version1 = 1
 isc_spb_current_version = 2
 isc_spb_version = isc_spb_current_version
-isc_spb_res_buffers = 9
-isc_spb_res_page_size = 10
-isc_spb_res_length = 11
 isc_spb_user_name = 28              # isc_dpb_user_name
 isc_spb_sys_user_name = 19          # isc_dpb_sys_user_name
 isc_spb_sys_user_name_enc = 31      # isc_dpb_sys_user_name_enc
@@ -173,11 +170,33 @@ isc_spb_trusted_role = 113
 isc_spb_connect_timeout = 57        # isc_dpb_connect_timeout
 isc_spb_dummy_packet_interval = 58  # isc_dpb_dummy_packet_interval
 isc_spb_sql_role_name = 60          # isc_dpb_sql_role_name
+
 # backup
 isc_spb_bkp_file = 5
+isc_spb_bkp_factor = 6
+isc_spb_bkp_length = 7
+isc_spb_bkp_ignore_checksums = 0x01
+isc_spb_bkp_ignore_limbo = 0x02
+isc_spb_bkp_metadata_only = 0x04
+isc_spb_bkp_no_garbage_collect = 0x08
+isc_spb_bkp_old_descriptions = 0x10
+isc_spb_bkp_non_transportable = 0x20
+isc_spb_bkp_convert = 0x40
+isc_spb_bkp_expand = 0x8
+
 # restore
 isc_spb_res_buffers = 9
 isc_spb_res_page_size = 10
+isc_spb_res_length = 11
+isc_spb_res_access_mode = 12
+isc_spb_res_deactivate_idx = 0x0100
+isc_spb_res_no_shadow = 0x0200
+isc_spb_res_no_validity = 0x0400
+isc_spb_res_one_at_a_time = 0x0800
+isc_spb_res_replace = 0x1000
+isc_spb_res_create = 0x2000
+isc_spb_res_use_all_space = 0x4000
+
 # trace
 isc_spb_trc_id = 1
 isc_spb_trc_name = 2
@@ -196,6 +215,16 @@ isc_spb_sts_sys_relations = 0x10
 isc_spb_sts_record_versions = 0x20
 isc_spb_sts_table = 0x40
 isc_spb_sts_nocreation = 0x80
+
+# isc_action_svc_repair params
+isc_spb_rpr_validate_db = 0x01
+isc_spb_rpr_sweep_db = 0x02
+isc_spb_rpr_mend_db = 0x04
+isc_spb_rpr_list_limbo_trans = 0x08
+isc_spb_rpr_check_db = 0x10
+isc_spb_rpr_ignore_checksum = 0x20
+isc_spb_rpr_kill_shadows = 0x40
+isc_spb_rpr_full = 0x80
 
 # Service Action Items
 isc_action_svc_backup = 1
