@@ -94,4 +94,4 @@ if __name__ == '__main__':
 
     svc.close()
 
-    conn.close()
+    conn.drop_database()

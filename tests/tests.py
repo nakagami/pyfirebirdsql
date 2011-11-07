@@ -28,7 +28,8 @@ if __name__ == '__main__':
     print('dsn=', TEST_DSN)
     TEST_USER = 'sysdba'
     TEST_PASS = 'masterkey'
-    conn = firebirdsql.create_database(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS, page_size=2<<13)
+    conn = firebirdsql.create_database(dsn=TEST_DSN,
+                        user=TEST_USER, password=TEST_PASS, page_size=2<<13)
     conn.cursor().execute('''
         CREATE TABLE foo (
             a INTEGER NOT NULL,
@@ -132,4 +133,9 @@ if __name__ == '__main__':
     for c in cur.fetchall():
         print(c)
     conn.close()
+
+    # drop database
+    conn = firebirdsql.connect(host=TEST_HOST, database=TEST_DATABASE,
+                        port=TEST_PORT, user=TEST_USER, password=TEST_PASS)
+    conn.drop_database()
 
