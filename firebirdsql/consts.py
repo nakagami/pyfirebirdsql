@@ -173,6 +173,16 @@ isc_spb_sql_role_name = 60          # isc_dpb_sql_role_name
 
 # backup
 isc_spb_bkp_file = 5
+isc_spb_bkp_factor = 6
+isc_spb_bkp_length = 7
+isc_spb_bkp_ignore_checksums = 0x01
+isc_spb_bkp_ignore_limbo = 0x02
+isc_spb_bkp_metadata_only = 0x04
+isc_spb_bkp_no_garbage_collect = 0x08
+isc_spb_bkp_old_descriptions = 0x10
+isc_spb_bkp_non_transportable = 0x20
+isc_spb_bkp_convert = 0x40
+isc_spb_bkp_expand = 0x8
 
 # restore
 isc_spb_res_buffers = 9
