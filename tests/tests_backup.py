@@ -50,11 +50,18 @@ if __name__ == '__main__':
     conn.commit()
     conn.close()
 
+    print('sweep database')
+    svc = firebirdsql.services.connect(host=TEST_HOST, user=TEST_USER,
+        password=TEST_PASS)
+    svc.backup_database(TEST_DATABASE, TEST_BACKUP_FILE, callback=debug_print)
+    svc.close()
+
     print('backup database')    
     svc = firebirdsql.services.connect(host=TEST_HOST, user=TEST_USER, 
         password=TEST_PASS)
     svc.backup_database(TEST_DATABASE, TEST_BACKUP_FILE, callback=debug_print)
     svc.close()
+
     print('restore database')    
     svc = firebirdsql.services.connect(host=TEST_HOST, user=TEST_USER, password=TEST_PASS)
     svc.restore_database(TEST_BACKUP_FILE, TEST_RESTORE_DATABASE, 

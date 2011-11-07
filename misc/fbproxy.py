@@ -824,6 +824,7 @@ isc_dpb_names = [
 
 isc_spb_names = {
   1 : 'isc_spb_version1', 2 : 'isc_spb_current_version',
+  3 : 'isc_spb_rpr_validate_db|isc_spb_rpr_sweep_db',
   5 : 'isc_spb_bkp_file', 7 : 'isc_spb_bkp_length', 
   9 : 'isc_spb_res_buffers', 10 : 'isc_spb_res_page_size',
   11 : 'isc_spb_res_length',
