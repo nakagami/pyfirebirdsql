@@ -8,6 +8,8 @@
 ##############################################################################
 import sys, os, socket
 import xdrlib, time, datetime, decimal, struct
+import collections
+import itertools
 from firebirdsql.fberrmsgs import messages
 from firebirdsql import (DatabaseError, InternalError, OperationalError, 
     ProgrammingError, IntegrityError, DataError, NotSupportedError,)
@@ -495,17 +497,21 @@ class Cursor:
         return list(self._fetch_records)
 
     def fetchmany(self, size=None):
-        rows = []
         if not size:
             size = self.arraysize
-        r = self.fetchone()
-        while r:
-            rows.append(r)
-            size -= 1
-            if size == 0:
-                break
-            r = self.fetchone()
-        return rows
+        return list(itertools.islice(self._fetch_records, size))
+    
+    # kinterbasdb extended API
+    def fetchonemap(self):
+        return RowMapping(self.fetchone(), self.description)
+    
+    def fetchallmap(self):
+        desc = self.description
+        return [RowMapping(row, desc) for row in self._fetch_records]
+    
+    def fetchmanymap(self, size=None):
+        desc = self.description
+        return [RowMapping(row, desc) for row in self.fetchmany(size)]
 
     def close(self):
         if not hasattr(self, "stmt_handle"):
@@ -514,7 +520,7 @@ class Cursor:
         (h, oid, buf) = self.transaction.connection._op_response()
         delattr(self, "stmt_handle")
 
-    def nextset():
+    def nextset(self):
         raise NotSupportedError()
 
     def setinputsizes(self, sizes):
@@ -522,17 +528,18 @@ class Cursor:
 
     def setoutputsize(self, size, column):
         pass
+    
+    @property
+    def description(self):
+        return [(x.aliasname, x.sqltype, None, x.io_length(), None, 
+                 x.sqlscale, True if x.null_ok else False)
+                for x in self._xsqlda]
+        
+    @property
+    def rowcount(self):
+        # to be implemented
+        return -1
 
-    def __getattr__(self, attrname):
-        if attrname == 'description':
-            r = []
-            for x in self._xsqlda:
-                r.append((x.aliasname, x.sqltype, None, x.io_length(), None, 
-                        x.sqlscale, True if x.null_ok else False))
-            return r
-        elif attrname == 'rowcount':
-            return -1
-        raise AttributeError(attrname)
 
 class Connection(WireProtocol):
     def uid(self):
@@ -854,3 +861,52 @@ class Transaction:
     def closed(self):
         return not hasattr(self, "trans_handle")
 
+
+class RowMapping(collections.Mapping):
+    """dict like interface to result rows
+    """
+    __slots__ = ("_description", "_fields")
+    
+    def __init__(self, row, description):
+        self._fields = fields = {}
+        # result may contain multiple fields with the same name. The
+        # RowMapping API ignores these additional fields.
+        for i, descr in enumerate(description):
+            fields.setdefault(descr[0], row[i])
+        self._description = description
+
+    def __getitem__(self, key):
+        fields = self._fields
+        # try unnormalized key first
+        try:
+            return fields[key]
+        except KeyError:
+            pass
+        
+        # normalize field name
+        if key[0] == '"' and key[-1] == '"':
+            # field names in quotes are case sensitive
+            normkey = key[1:-1]
+        else:
+            # default is all upper case fields
+            normkey = key.upper()
+        
+        try:
+            return fields[normkey]
+        except KeyError:
+            raise KeyError("RowMapping has no field names '%s'. Available "
+                           "field names are: %s" % 
+                           (key, ", ".join(self.keys())))
+            
+    def __iter__(self):
+        return iter(self._fields)
+    
+    def __len__(self):
+        return len(self._fields)
+    
+    def __repr__(self):
+        fields = self._fields
+        values = ["%s=%r" % (desc[0], fields[desc[0]]) 
+                  for desc in self._description]
+        return ("<RowMapping at 0x%08x with fields: %s>" % 
+                (id(self), ", ".join(values))) 

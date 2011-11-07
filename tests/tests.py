@@ -106,6 +106,11 @@ if __name__ == '__main__':
     for c in cur.fetchall():
         print(c)
     cur.execute("select * from foo")
+    for r in cur.fetchallmap():
+        print(r)
+        for key in r:
+            print key, r[key]
+    cur.execute("select * from foo")
     conn.close()
 
     conn = firebirdsql.connect(host=TEST_HOST, database=TEST_DATABASE,
