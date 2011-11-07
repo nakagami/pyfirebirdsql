@@ -34,19 +34,43 @@ class Services(Connection):
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
     def restore_database(self, restore_filename, database_name,
+                            replace=False,
+                            create=False,
+                            deactivateIndexes=False,
+                            doNotRestoreShadows=False,
+                            doNotEnforceConstraints=False,
+                            commitAfterEachTable=False,
+                            useAllPageSpace=False,
                             pageSize=None, cacheBuffers=None, callback=None):
         spb = bytes([isc_action_svc_restore])
         s = self.str_to_bytes(restore_filename)
         spb += bytes([isc_spb_bkp_file]) + int_to_bytes(len(s), 2) + s
         s = self.str_to_bytes(database_name)
         spb += bytes([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
+
+        optionMask = 0
+        if replace:
+            optionMask |= isc_spb_res_replace
+        if create:
+            optionMask |= isc_spb_res_create
+        if deactivateIndexes:
+            optionMask |= isc_spb_res_deactivate_idx
+        if doNotRestoreShadows:
+            optionMask |= isc_spb_res_no_shadow
+        if doNotEnforceConstraints:
+            optionMask |= isc_spb_res_no_validity
+        if commitAfterEachTable:
+            optionMask |= isc_spb_res_one_at_a_time
+        if useAllPageSpace:
+            optionMask |= isc_spb_res_use_all_space
+
         if callback:
             spb += bytes([isc_spb_verbose])
         if cacheBuffers:
             spb += bytes([isc_spb_res_buffers]) + int_to_bytes(cacheBuffers, 4)
         if pageSize:
             spb += bytes([isc_spb_res_page_size]) + int_to_bytes(pageSize, 4)
-        spb += bytes([isc_spb_options,0x00,0x30,0x00,0x00])
+        spb += bytes([isc_spb_options]) + int_to_bytes(optionMask, 4)
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h

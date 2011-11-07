@@ -153,9 +153,6 @@ isc_tpb_lock_timeout = 21
 isc_spb_version1 = 1
 isc_spb_current_version = 2
 isc_spb_version = isc_spb_current_version
-isc_spb_res_buffers = 9
-isc_spb_res_page_size = 10
-isc_spb_res_length = 11
 isc_spb_user_name = 28              # isc_dpb_user_name
 isc_spb_sys_user_name = 19          # isc_dpb_sys_user_name
 isc_spb_sys_user_name_enc = 31      # isc_dpb_sys_user_name_enc
@@ -173,11 +170,23 @@ isc_spb_trusted_role = 113
 isc_spb_connect_timeout = 57        # isc_dpb_connect_timeout
 isc_spb_dummy_packet_interval = 58  # isc_dpb_dummy_packet_interval
 isc_spb_sql_role_name = 60          # isc_dpb_sql_role_name
+
 # backup
 isc_spb_bkp_file = 5
+
 # restore
 isc_spb_res_buffers = 9
 isc_spb_res_page_size = 10
+isc_spb_res_length = 11
+isc_spb_res_access_mode = 12
+isc_spb_res_deactivate_idx = 0x0100
+isc_spb_res_no_shadow = 0x0200
+isc_spb_res_no_validity = 0x0400
+isc_spb_res_one_at_a_time = 0x0800
+isc_spb_res_replace = 0x1000
+isc_spb_res_create = 0x2000
+isc_spb_res_use_all_space = 0x4000
+
 # trace
 isc_spb_trc_id = 1
 isc_spb_trc_name = 2
