@@ -82,6 +82,9 @@ isc_info_oldest_snapshot = 106
 isc_info_next_transaction = 107
 isc_info_db_provider = 108
 isc_info_active_transactions = 109
+isc_info_active_tran_count = 110
+isc_info_creation_date = 111
+isc_info_db_file_size = 112
 
 isc_info_svc_svr_db_info = 50
 isc_info_svc_get_license = 51

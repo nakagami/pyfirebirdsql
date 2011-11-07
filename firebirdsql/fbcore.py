@@ -715,7 +715,7 @@ class Connection(WireProtocol):
         return r
 
     def _db_info_convert_type(self, info_request, v):
-        REQ_INT = [
+        REQ_INT = set([
             isc_info_allocation, isc_info_no_reserve, isc_info_db_sql_dialect,
             isc_info_ods_minor_version, isc_info_ods_version, 
             isc_info_page_size, isc_info_current_memory, isc_info_forced_writes,
@@ -727,13 +727,17 @@ class Connection(WireProtocol):
             isc_info_record_errors, isc_info_bpage_errors, 
             isc_info_dpage_errors, isc_info_ipage_errors,
             isc_info_ppage_errors, isc_info_tpage_errors,
-        ]
-        REQ_COUNT = [
+            # may not be available in some versions of Firebird
+            isc_info_oldest_transaction, isc_info_oldest_active, 
+            isc_info_oldest_snapshot, isc_info_next_transaction,
+            isc_info_active_tran_count
+        ])
+        REQ_COUNT = set([
             isc_info_backout_count, isc_info_delete_count, 
             isc_info_expunge_count, isc_info_insert_count, isc_info_purge_count,
             isc_info_read_idx_count, isc_info_read_seq_count, 
             isc_info_update_count
-        ]
+        ])
 
         if info_request in (isc_info_base_level, ):
             # IB6 API guide p52
@@ -766,6 +770,9 @@ class Connection(WireProtocol):
                 counts[bytes_to_int(v[i:i+2])] = bytes_to_int(v[i+2:i+6])
                 i += 6
             return counts
+        elif info_request in (isc_info_creation_date,):
+            # TODO: implement from time stamp, XSQLVAR doesn't work
+            return v
         else:
             return v
 
