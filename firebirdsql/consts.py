@@ -8,6 +8,8 @@
 ##############################################################################
 DEFAULT_CHARSET='UTF8'
 
+ISC_TIME_SECONDS_PRECISION = 10000
+
 isc_info_end = 1
 isc_info_truncated = 2
 isc_info_error = 3

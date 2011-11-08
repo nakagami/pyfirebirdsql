@@ -777,8 +777,32 @@ class Connection(WireProtocol):
                 i += 6
             return counts
         elif info_request in (isc_info_creation_date,):
-            # TODO: implement from time stamp, XSQLVAR doesn't work
-            return v
+            nday = bytes_to_int(v[:4]) + 2400001 - 1721119
+            century = (4 * nday - 1) // 146097
+            nday = 4 * nday - 1 - 146097 * century
+            dd = nday // 4
+            nday = (4 * dd + 3) // 1461
+            dd = 4 * dd + 3 - 1461 * nday
+            dd = (dd + 4) // 4
+            mm = (5 * dd - 3) // 153
+            dd = 5 * dd - 3 - 153 * mm
+            dd = (dd + 5) // 5
+            yyyy = 100 * century + nday;
+            if mm < 10:
+                mm += 3
+            else:
+                mm -= 9
+                yyyy += 1
+
+            ntime = bytes_to_int(v[4:])
+            h = ntime // (3600 * ISC_TIME_SECONDS_PRECISION)
+            ntime %= 3600 * ISC_TIME_SECONDS_PRECISION
+            m = ntime // (60 * ISC_TIME_SECONDS_PRECISION)
+            ntime %= 60 * ISC_TIME_SECONDS_PRECISION
+            s = ntime // ISC_TIME_SECONDS_PRECISION
+            ms = ntime % ISC_TIME_SECONDS_PRECISION * 100
+
+            return datetime.datetime(yyyy, mm, dd, h, m, s, ms)
         else:
             return v
 

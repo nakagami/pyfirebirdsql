@@ -124,6 +124,7 @@ if __name__ == '__main__':
     print('isc_info_firebird_version =', conn.db_info(isc_info_firebird_version))
     print('isc_info_user_names =', conn.db_info(isc_info_user_names))
     print('isc_info_reqd_idx_count =', conn.db_info(isc_info_read_idx_count))
+    print('isc_info_creation_date =', conn.db_info(isc_info_creation_date))
 
     requests = [isc_info_ods_version, 
                 isc_info_user_names,
