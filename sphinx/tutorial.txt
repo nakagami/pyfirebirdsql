@@ -4,11 +4,11 @@ Quick-start Guide / Tutorial
 ############################
 
 This brief tutorial aims to get the reader started by demonstrating
-elementary usage of KInterbasDB. It is not a comprehensive Python
+elementary usage of pyFirebirdSQL. It is not a comprehensive Python
 Database API tutorial, nor is it comprehensive in its coverage of
 anything else.
 
-The numerous advanced features of KInterbasDB are covered in another
+The numerous advanced features of pyFirebirdSQL are covered in another
 section of this documentation, which is not in a tutorial format, though it
 is replete with examples.
 
@@ -23,13 +23,13 @@ A database connection is typically established with code such as this:
 
 .. sourcecode:: python
 
-    import kinterbasdb
+    import firebirdsql
     
     # The server is named 'bison'; the database file is at '/temp/test.db'.
-    con = kinterbasdb.connect(dsn='bison:/temp/test.db', user='sysdba', password='pass')
+    con = firebirdsql.connect(dsn='bison:/temp/test.db', user='sysdba', password='pass')
     
     # Or, equivalently:
-    con = kinterbasdb.connect(
+    con = firebirdsql.connect(
         host='bison', database='/temp/test.db',
         user='sysdba', password='pass'
       )
@@ -42,9 +42,9 @@ UTF-8 as the character set of the connection:
 
 .. sourcecode:: python
 
-    import kinterbasdb
+    import firebirdsql
     
-    con = kinterbasdb.connect(
+    con = firebirdsql.connect(
         dsn='bison:/temp/test.db',
         user='sysdba', password='pass',
         dialect=1, # necessary for all dialect 1 databases
@@ -77,9 +77,9 @@ the `languages` table:
 
 .. sourcecode:: python
 
-    import kinterbasdb
+    import firebirdsql
 
-    con = kinterbasdb.connect(dsn='/temp/test.db', user='sysdba', password='masterkey')
+    con = firebirdsql.connect(dsn='/temp/test.db', user='sysdba', password='masterkey')
 
     # Create a Cursor object that operates in the context of Connection con:
     cur = con.cursor()
@@ -105,9 +105,9 @@ fetching a single row at a time from a `SELECT`-cursor:
 
 .. sourcecode:: python
 
-    import kinterbasdb
+    import firebirdsql
 
-    con = kinterbasdb.connect(dsn='/temp/test.db', user='sysdba', password='masterkey')
+    con = firebirdsql.connect(dsn='/temp/test.db', user='sysdba', password='masterkey')
 
     cur = con.cursor()
     SELECT = "select name, year_released from languages order by year_released"
@@ -148,7 +148,7 @@ example to `languages`):
 
 .. sourcecode:: python
 
-    import kinterbasdb as k
+    import firebirdsql as k
 
     TABLE_NAME = 'languages'
     SELECT = 'select * from %s order by year_released' % TABLE_NAME
@@ -193,9 +193,9 @@ Let's insert more languages:
 
 .. sourcecode:: python
 
-    import kinterbasdb
+    import firebirdsql
 
-    con = kinterbasdb.connect(dsn='/temp/test.db', user='sysdba', password='masterkey')
+    con = firebirdsql.connect(dsn='/temp/test.db', user='sysdba', password='masterkey')
 
     cur = con.cursor()
 

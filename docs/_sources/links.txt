@@ -32,10 +32,10 @@ Python + Databases
 Zope Database Adapters for Interbase®/Firebird
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-+ `kinterbasdbDA <http://www.zope.org/Members/mwoj/kinterbasdbDA>`__
++ `kinterbasdbDA <http://old.zope.org/Members/mwoj/kinterbasdbDA>`__
   (based on kinterbasdb)
 + `ZKInterbasdbDA
-  <http://www.zope.org/Members/nakagami/ZKInterbasdbDA>`__ (based on
+  <http://old.zope.org/Members/nakagami/ZKInterbasdbDA>`__ (based on
   kinterbasdb)
 + `ZFireBirdDA <http://savannah.nongnu.org/projects/zfirebirdda/>`__
   (based on kinterbasdb)
