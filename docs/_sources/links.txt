@@ -1,0 +1,79 @@
+
+KInterbasDB Links
+=================
+
+
+KInterbasDB
+^^^^^^^^^^^
++ `Home Page <http://kinterbasdb.sourceforge.net>`__
+
+
+Python + Databases
+^^^^^^^^^^^^^^^^^^
+
++ `Python <http://www.python.org>`__
++ `distutils Home Page <http://www.python.org/sigs/distutils-sig/>`__
++ `distutils Installation Instructions for Generic Packages
+  <http://www.python.org/doc/current/inst/inst.html>`__
++ `Python Database Topic Guide
+  <http://www.python.org/topics/database/>`__
++ `Python DB-API Spec 2.0
+  <http://www.python.org/topics/database/DatabaseAPI-2.0.html>`__
+
+    + `PEP 249 - Augmented Python DB-API Spec 2.0
+      <http://www.python.org/peps/pep-0249.html>`__
+
++ `Google's Python Database Module Directory <http://directory.google.
+  com/Top/Computers/Programming/Languages/Python/Modules/Databases_and_P
+  ersistence/>`__
++ `Vaults of Parnassus - Database section
+  <http://py.vaults.ca/parnassus/apyllo.py/973100124>`__
+
+Zope Database Adapters for Interbase®/Firebird
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
++ `kinterbasdbDA <http://www.zope.org/Members/mwoj/kinterbasdbDA>`__
+  (based on kinterbasdb)
++ `ZKInterbasdbDA
+  <http://www.zope.org/Members/nakagami/ZKInterbasdbDA>`__ (based on
+  kinterbasdb)
++ `ZFireBirdDA <http://savannah.nongnu.org/projects/zfirebirdda/>`__
+  (based on kinterbasdb)
++ `gvibDA <http://www.zope.org/Members/bkc/gvibDA>`__ (based on gvib)
+
+Interbase® and Firebird
+^^^^^^^^^^^^^^^^^^^^^^^
+
++ `Firebird <http://www.firebirdsql.org/>`__
++ `Interbase® <http://www.interbase.com>`__
++ `IBPhoenix <http://www.ibphoenix.com>`__
+
+    + `IBPhoenix Contributed Downloads <http://www.ibphoenix.com/main.nfs?
+      a=ibphoenix&page=ibp_contrib_download>`__
+
++ `Google's Interbase® Directory <http://directory.google.com/Top/Com
+  puters/Software/Databases/InterBase/>`__
++ `IB O Console - nice, free Win32 GUI for Firebird
+  <http://www.mengoni.it/downloads.html>`__
+
+Help
+^^^^
+
++ `Brief Python DB API Tutorial <http://www.amk.ca/python/writing/DB-
+  API.html>`__
++ `SQL Tutorials <http://directory.google.com/Top/Computers/Programmin
+  g/Languages/SQL/FAQs,_Help,_and_Tutorials/>`__
+
+    + `An Especially Good SQL Tutorial
+      <http://www.onlamp.com/pub/ct/19>`__
+
++ `KInterbasDB User forum
+  <http://sourceforge.net/forum/forum.php?forum_id=30917>`__ (on
+  SourceForge)
++ `Firebird-Python list <http://groups.yahoo.com/group/firebird-
+  python/>`__ (Yahoo Group)
++ `Firebird-Support list <http://groups.yahoo.com/group/firebird-
+  support/>`__ (Yahoo Group)
++ `Python Database SIG mailing list <http://mail.python.org/pipermail
+  /db-sig/>`__
+

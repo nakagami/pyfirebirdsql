@@ -1,0 +1,199 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>KInterbasDB Links &mdash; KInterbasDB v3.3.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '3.3.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="KInterbasDB v3.3.0 documentation" href="index.html" />
+    <link rel="next" title="KInterbasDB Changelog" href="changelog.html" />
+    <link rel="prev" title="Overview of Firebird Client Library Thread-Safety" href="thread-safety-overview.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="changelog.html" title="KInterbasDB Changelog"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="thread-safety-overview.html" title="Overview of Firebird Client Library Thread-Safety"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">KInterbasDB v3.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  
+  <div class="section" id="kinterbasdb-links">
+<h1>KInterbasDB Links<a class="headerlink" href="#kinterbasdb-links" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="kinterbasdb">
+<h2>KInterbasDB<a class="headerlink" href="#kinterbasdb" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference external" href="http://kinterbasdb.sourceforge.net">Home Page</a></li>
+</ul>
+</div>
+<div class="section" id="python-databases">
+<h2>Python + Databases<a class="headerlink" href="#python-databases" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first"><a class="reference external" href="http://www.python.org">Python</a></p>
+</li>
+<li><p class="first"><a class="reference external" href="http://www.python.org/sigs/distutils-sig/">distutils Home Page</a></p>
+</li>
+<li><p class="first"><a class="reference external" href="http://www.python.org/doc/current/inst/inst.html">distutils Installation Instructions for Generic Packages</a></p>
+</li>
+<li><p class="first"><a class="reference external" href="http://www.python.org/topics/database/">Python Database Topic Guide</a></p>
+</li>
+<li><p class="first"><a class="reference external" href="http://www.python.org/topics/database/DatabaseAPI-2.0.html">Python DB-API Spec 2.0</a></p>
+<blockquote>
+<ul class="simple">
+<li><a class="reference external" href="http://www.python.org/peps/pep-0249.html">PEP 249 - Augmented Python DB-API Spec 2.0</a></li>
+</ul>
+</blockquote>
+</li>
+<li><p class="first"><a class="reference external" href="http://directory.google.com/Top/Computers/Programming/Languages/Python/Modules/Databases_and_Persistence/">Google&#8217;s Python Database Module Directory</a></p>
+</li>
+<li><p class="first"><a class="reference external" href="http://py.vaults.ca/parnassus/apyllo.py/973100124">Vaults of Parnassus - Database section</a></p>
+</li>
+</ul>
+</div>
+<div class="section" id="zope-database-adapters-for-interbase-firebird">
+<h2>Zope Database Adapters for Interbase®/Firebird<a class="headerlink" href="#zope-database-adapters-for-interbase-firebird" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference external" href="http://www.zope.org/Members/mwoj/kinterbasdbDA">kinterbasdbDA</a>
+(based on kinterbasdb)</li>
+<li><a class="reference external" href="http://www.zope.org/Members/nakagami/ZKInterbasdbDA">ZKInterbasdbDA</a> (based on
+kinterbasdb)</li>
+<li><a class="reference external" href="http://savannah.nongnu.org/projects/zfirebirdda/">ZFireBirdDA</a>
+(based on kinterbasdb)</li>
+<li><a class="reference external" href="http://www.zope.org/Members/bkc/gvibDA">gvibDA</a> (based on gvib)</li>
+</ul>
+</div>
+<div class="section" id="interbase-and-firebird">
+<h2>Interbase® and Firebird<a class="headerlink" href="#interbase-and-firebird" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first"><a class="reference external" href="http://www.firebirdsql.org/">Firebird</a></p>
+</li>
+<li><p class="first"><a class="reference external" href="http://www.interbase.com">Interbase®</a></p>
+</li>
+<li><p class="first"><a class="reference external" href="http://www.ibphoenix.com">IBPhoenix</a></p>
+<blockquote>
+<ul class="simple">
+<li><a class="reference external" href="http://www.ibphoenix.com/main.nfs?a=ibphoenix&amp;page=ibp_contrib_download">IBPhoenix Contributed Downloads</a></li>
+</ul>
+</blockquote>
+</li>
+<li><p class="first"><a class="reference external" href="http://directory.google.com/Top/Computers/Software/Databases/InterBase/">Google&#8217;s Interbase® Directory</a></p>
+</li>
+<li><p class="first"><a class="reference external" href="http://www.mengoni.it/downloads.html">IB O Console - nice, free Win32 GUI for Firebird</a></p>
+</li>
+</ul>
+</div>
+<div class="section" id="help">
+<h2>Help<a class="headerlink" href="#help" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first"><a class="reference external" href="http://www.amk.ca/python/writing/DB-API.html">Brief Python DB API Tutorial</a></p>
+</li>
+<li><p class="first"><a class="reference external" href="http://directory.google.com/Top/Computers/Programming/Languages/SQL/FAQs,_Help,_and_Tutorials/">SQL Tutorials</a></p>
+<blockquote>
+<ul class="simple">
+<li><a class="reference external" href="http://www.onlamp.com/pub/ct/19">An Especially Good SQL Tutorial</a></li>
+</ul>
+</blockquote>
+</li>
+<li><p class="first"><a class="reference external" href="http://sourceforge.net/forum/forum.php?forum_id=30917">KInterbasDB User forum</a> (on
+SourceForge)</p>
+</li>
+<li><p class="first"><a class="reference external" href="http://groups.yahoo.com/group/firebird-python/">Firebird-Python list</a> (Yahoo Group)</p>
+</li>
+<li><p class="first"><a class="reference external" href="http://groups.yahoo.com/group/firebird-support/">Firebird-Support list</a> (Yahoo Group)</p>
+</li>
+<li><p class="first"><a class="reference external" href="http://mail.python.org/pipermail/db-sig/">Python Database SIG mailing list</a></p>
+</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">KInterbasDB Links</a><ul>
+<li><a class="reference external" href="#kinterbasdb">KInterbasDB</a></li>
+<li><a class="reference external" href="#python-databases">Python + Databases</a></li>
+<li><a class="reference external" href="#zope-database-adapters-for-interbase-firebird">Zope Database Adapters for Interbase®/Firebird</a></li>
+<li><a class="reference external" href="#interbase-and-firebird">Interbase® and Firebird</a></li>
+<li><a class="reference external" href="#help">Help</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="thread-safety-overview.html" title="previous chapter">Overview of Firebird Client Library Thread-Safety</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="changelog.html" title="next chapter">KInterbasDB Changelog</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/links.txt">Show Source</a></li>
+            </ul>
+          <h3>Quick search</h3>
+            <form class="search" action="search.html" method="get">
+              <input type="text" name="q" size="18" /> <input type="submit" value="Go" />
+              <input type="hidden" name="check_keywords" value="yes" />
+              <input type="hidden" name="area" value="default" />
+            </form>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="changelog.html" title="KInterbasDB Changelog"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="thread-safety-overview.html" title="Overview of Firebird Client Library Thread-Safety"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">KInterbasDB v3.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, David Rushby, Pavel Cisar.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.5.1.
+    </div>
+  </body>
+</html>

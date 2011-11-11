@@ -1,0 +1,420 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Compliance to Python Database API 2.0 &mdash; KInterbasDB v3.3.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '3.3.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="KInterbasDB v3.3.0 documentation" href="index.html" />
+    <link rel="next" title="Native Database Engine Features and Extensions Beyond the Python DB API" href="beyond-python-db-api.html" />
+    <link rel="prev" title="Python Database API Specification 2.0" href="Python-DB-API-2.0.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="beyond-python-db-api.html" title="Native Database Engine Features and Extensions Beyond the Python DB API"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Python-DB-API-2.0.html" title="Python Database API Specification 2.0"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">KInterbasDB v3.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  
+  <div class="section" id="compliance-to-python-database-api-2-0">
+<h1>Compliance to Python Database API 2.0<a class="headerlink" href="#compliance-to-python-database-api-2-0" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="incompatibilities">
+<h2>Incompatibilities<a class="headerlink" href="#incompatibilities" title="Permalink to this headline">¶</a></h2>
+<dl class="data">
+<dt id="kinterbasdb.DATETIME">
+<!--[kinterbasdb.DATETIME]--><tt class="descclassname">kinterbasdb.</tt><tt class="descname">DATETIME</tt><a class="headerlink" href="#kinterbasdb.DATETIME" title="Permalink to this definition">¶</a></dt>
+<dd>KInterbasDB&#8217;s deferred loading of dynamic type translators causes
+this singleton to behave in violation of the standard until the
+<a title="kinterbasdb.init" class="reference external" href="beyond-python-db-api.html#kinterbasdb.init"><tt class="xref docutils literal"><span class="pre">kinterbasdb.init()</span></tt></a> function has been called (whether explicitly or
+implicitly). For more information, see the documnation section about
+<cite>Deferred Loading of Dynamic Type Translators</cite>.</dd></dl>
+
+</div>
+<div class="section" id="unsupported-optional-features">
+<h2>Unsupported Optional Features<a class="headerlink" href="#unsupported-optional-features" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="kinterbasdb.Cursor.nextset">
+<!--[kinterbasdb.Cursor.nextset]--><tt class="descclassname">Cursor.</tt><tt class="descname">nextset</tt><big>(</big><big>)</big><a class="headerlink" href="#kinterbasdb.Cursor.nextset" title="Permalink to this definition">¶</a></dt>
+<dd>This method is not implemented because the database engine does not support
+opening multiple result sets simultaneously with a single cursor.</dd></dl>
+
+</div>
+<div class="section" id="nominally-supported-optional-features">
+<h2>Nominally Supported Optional Features<a class="headerlink" href="#nominally-supported-optional-features" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="kinterbasdb.Cursor">
+<!--[kinterbasdb.Cursor]-->class <tt class="descclassname">kinterbasdb.</tt><tt class="descname">Cursor</tt><a class="headerlink" href="#kinterbasdb.Cursor" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="kinterbasdb.Cursor.arraysize">
+<!--[kinterbasdb.Cursor.arraysize]--><tt class="descname">arraysize</tt><a class="headerlink" href="#kinterbasdb.Cursor.arraysize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>As required by the spec, the value of this attribute is observed with
+respect to the <cite>fetchmany</cite> method. However, changing the value of this
+attribute does not make any difference in fetch efficiency because
+the database engine only supports fetching a single row at a time.</p>
+<dl class="method">
+<dt id="kinterbasdb.Cursor.setinputsizes">
+<!--[kinterbasdb.Cursor.setinputsizes]--><tt class="descname">setinputsizes</tt><big>(</big><big>)</big><a class="headerlink" href="#kinterbasdb.Cursor.setinputsizes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Although this method is present, it does nothing, as allowed by the spec.</p>
+<dl class="method">
+<dt id="kinterbasdb.Cursor.setoutputsize">
+<!--[kinterbasdb.Cursor.setoutputsize]--><tt class="descname">setoutputsize</tt><big>(</big><big>)</big><a class="headerlink" href="#kinterbasdb.Cursor.setoutputsize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Although this method is present, it does nothing, as allowed by the spec.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="extensions-and-caveats">
+<h2>Extensions and Caveats<a class="headerlink" href="#extensions-and-caveats" title="Permalink to this headline">¶</a></h2>
+<p>KInterbasDB offers a large feature set beyond the minimal requirements
+of the Python DB API. Most of these extensions are documented in the
+section of this document entitled <cite>Native Database Engine Features and
+Extensions Beyond the Python DB API</cite>.</p>
+<p>This section attempts to document only those features that overlap
+with the DB API, or are too insignificant to warrant their own
+subsection elsewhere.</p>
+<dl class="function">
+<dt id="kinterbasdb.connect">
+<!--[kinterbasdb.connect]--><tt class="descclassname">kinterbasdb.</tt><tt class="descname">connect</tt><big>(</big><big>)</big><a class="headerlink" href="#kinterbasdb.connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function supports the following optional keyword arguments in addition
+to those required by the spec:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Role:</th><td class="field-body">For connecting to a database with a specific SQL role.</td>
+</tr>
+</tbody>
+</table>
+<p><em>Example:</em></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">kinterbasdb</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s">&#39;host:/path/database.db&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;limited_user&#39;</span><span class="p">,</span>
+   <span class="n">password</span><span class="o">=</span><span class="s">&#39;pass&#39;</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="s">&#39;MORE_POWERFUL_ROLE&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Charset:</th><td class="field-body">For explicitly specifying the character set of the connection.
+See Firebird Documentation for a list of available character sets, and
+<cite>Unicode Fields and KInterbasDB</cite> section for information on handling
+extended character sets with KInterbasDB.</td>
+</tr>
+</tbody>
+</table>
+<p><em>Example:</em></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">kinterbasdb</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s">&#39;host:/path/database.db&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span>
+    <span class="n">password</span><span class="o">=</span><span class="s">&#39;pass&#39;</span><span class="p">,</span> <span class="n">charset</span><span class="o">=</span><span class="s">&#39;UTF8&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Dialect:</th><td class="field-body">The SQL dialect is feature for backward compatibility with Interbase® 5.5
+or earlier. The default dialect is <cite>3</cite> (the most featureful dialect, default
+for Firebird). If you want to connect to <cite>legacy</cite> databases, you must
+explicitly set this argument&#8217;s value to <cite>1</cite>. Dialect <cite>2</cite> is a transitional
+dialect that is normally used only during ports from IB &lt; 6 to IB &gt;= 6
+or Firebird. See Firebird documentation for more information about
+SQL Dialects.</td>
+</tr>
+</tbody>
+</table>
+<p><em>Example:</em></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">kinterbasdb</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s">&#39;host:/path/database.db&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span>
+   <span class="n">password</span><span class="o">=</span><span class="s">&#39;pass&#39;</span><span class="p">,</span> <span class="n">dialect</span><span class="o">=</span><span class="mf">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Timeout:</th><td class="field-body">(<cite>Optional</cite>) Dictionary with timeout and action specification. See section
+about <a class="reference external" href="beyond-python-db-api.html#connection-timeout">Connection Timeouts</a> for details.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="kinterbasdb.Connection">
+<!--[kinterbasdb.Connection]-->class <tt class="descclassname">kinterbasdb.</tt><tt class="descname">Connection</tt><a class="headerlink" href="#kinterbasdb.Connection" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="kinterbasdb.Connection.charset">
+<!--[kinterbasdb.Connection.charset]--><tt class="descname">charset</tt><a class="headerlink" href="#kinterbasdb.Connection.charset" title="Permalink to this definition">¶</a></dt>
+<dd><em>(read-only)</em> The character set of the connection (set via the <cite>charset</cite>
+parameter of <a title="kinterbasdb.connect" class="reference internal" href="#kinterbasdb.connect"><tt class="xref docutils literal"><span class="pre">kinterbasdb.connect()</span></tt></a>). See Firebird Documentation for a list
+of available character sets, and <cite>Unicode Fields and KInterbasDB</cite> section
+for information on handling extended character sets with KInterbasDB.</dd></dl>
+
+<dl class="attribute">
+<dt id="kinterbasdb.Connection.dialect">
+<!--[kinterbasdb.Connection.dialect]--><tt class="descname">dialect</tt><a class="headerlink" href="#kinterbasdb.Connection.dialect" title="Permalink to this definition">¶</a></dt>
+<dd>This integer attribute indicates which SQL dialect the connection is using.
+You should not change a connection&#8217;s dialect; instead, discard the connection
+and establish a new one with the desired dialect. For more information, see
+the documentation of the <cite>dialect</cite> argument of the <cite>connect</cite> function.</dd></dl>
+
+<dl class="attribute">
+<dt id="kinterbasdb.Connection.server_version">
+<!--[kinterbasdb.Connection.server_version]--><tt class="descname">server_version</tt><a class="headerlink" href="#kinterbasdb.Connection.server_version" title="Permalink to this definition">¶</a></dt>
+<dd><em>(read-only)</em> The version string of the database server to which this connection
+is connected. For example, a connection to Firebird 1.0 on Windows has the following
+<cite>server_version</cite>: <cite>WI-V6.2.794 Firebird 1.0</cite></dd></dl>
+
+<dl class="method">
+<dt id="kinterbasdb.Connection.execute_immediate">
+<!--[kinterbasdb.Connection.execute_immediate]--><tt class="descname">execute_immediate</tt><big>(</big><big>)</big><a class="headerlink" href="#kinterbasdb.Connection.execute_immediate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes a statement without caching its prepared form. The statement must <em>not</em> be
+of a type that returns a result set. In most cases (especially cases in which the same
+statement &#8211; perhaps a parameterized statement &#8211; is executed repeatedly),
+it is better to create a cursor using the connection&#8217;s <cite>cursor</cite> method, then execute
+the statement using one of the cursor&#8217;s execute methods.</p>
+<p>Arguments:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Sql:</th><td class="field-body">String containing the SQL statement to execute.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="kinterbasdb.Connection.precision_mode">
+<!--[kinterbasdb.Connection.precision_mode]--><tt class="descname">precision_mode</tt><a class="headerlink" href="#kinterbasdb.Connection.precision_mode" title="Permalink to this definition">¶</a></dt>
+<dd>Although this attribute is present in KInterbasDB 3.1+ and works in a backward-compatible
+fashion, it is deprecated in favor of the more general dynamic type translation feature.</dd></dl>
+
+<dl class="method">
+<dt id="kinterbasdb.Connection.commit">
+<!--[kinterbasdb.Connection.commit]--><tt class="descname">commit</tt><big>(</big><em>retaining=False</em><big>)</big><a class="headerlink" href="#kinterbasdb.Connection.commit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="kinterbasdb.Connection.rollback">
+<!--[kinterbasdb.Connection.rollback]--><tt class="descname">rollback</tt><big>(</big><em>retaining=False</em><big>)</big><a class="headerlink" href="#kinterbasdb.Connection.rollback" title="Permalink to this definition">¶</a></dt>
+<dd>The <cite>commit</cite> and <cite>rollback</cite> methods accept an optional boolean parameter <cite>retaining</cite>
+(default <cite>False</cite>) that indicates whether the transactional context of the transaction
+being resolved should be recycled. For details, see the Advanced
+Transaction Control: Retaining Operations section of this document.
+The <cite>rollback</cite> method accepts an optional string parameter <cite>savepoint</cite>
+that causes the transaction to roll back only as far as the designated
+savepoint, rather than rolling back entirely. For details, see the
+Advanced Transaction Control: Savepoints section of this document.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt>
+class <tt class="descclassname">kinterbasdb.</tt><tt class="descname">Cursor</tt></dt>
+<dd><dl class="attribute">
+<dt id="kinterbasdb.Cursor.description">
+<!--[kinterbasdb.Cursor.description]--><tt class="descname">description</tt><a class="headerlink" href="#kinterbasdb.Cursor.description" title="Permalink to this definition">¶</a></dt>
+<dd><p>KInterbasDB makes absolutely no guarantees about <cite>description</cite> except those
+required by the Python Database API Specification 2.0 (that is, <cite>description</cite>
+is either <cite>None</cite> or a sequence of 7-element sequences). Therefore, client
+programmers should <em>not</em> rely on <cite>description</cite> being an instance of a particular
+class or type. KInterbasDB provides several named positional constants to be
+used as indices into a given element of <cite>description</cite> . The contents
+of all <cite>description</cite> elements are defined by the DB API spec; these
+constants are provided merely for convenience.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">DESCRIPTION_NAME</span>
+<span class="n">DESCRIPTION_TYPE_CODE</span>
+<span class="n">DESCRIPTION_DISPLAY_SIZE</span>
+<span class="n">DESCRIPTION_INTERNAL_SIZE</span>
+<span class="n">DESCRIPTION_PRECISION</span>
+<span class="n">DESCRIPTION_SCALE</span>
+<span class="n">DESCRIPTION_NULL_OK</span>
+</pre></div>
+</div>
+<p>Here is an example of accessing the <em>name</em> of the first field in the
+<cite>description</cite> of cursor <cite>cur</cite>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">nameOfFirstField</span> <span class="o">=</span> <span class="n">cur</span><span class="o">.</span><span class="n">description</span><span class="p">[</span><span class="mf">0</span><span class="p">][</span><span class="n">kinterbasdb</span><span class="o">.</span><span class="n">DESCRIPTION_NAME</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>For more information, see the documentation of Cursor.description in
+the <a class="reference external" href="Python-DB-API-2.0.html">DB API Specification</a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="kinterbasdb.Cursor.rowcount">
+<!--[kinterbasdb.Cursor.rowcount]--><tt class="descname">rowcount</tt><a class="headerlink" href="#kinterbasdb.Cursor.rowcount" title="Permalink to this definition">¶</a></dt>
+<dd>Although KInterbasDB&#8217;s <cite>Cursor`s implement this
+attribute, the database engine&#8217;s own support for the determination of
+&#8220;rows affected&#8221;/&#8221;rows selected&#8221; is quirky. The database engine only
+supports the determination of rowcount for `INSERT</cite>, <cite>UPDATE</cite>,
+<cite>DELETE</cite>, and <cite>SELECT</cite> statements. When stored procedures become
+involved, row count figures are usually not available to the client.
+Determining rowcount for <cite>SELECT</cite> statements is problematic: the
+rowcount is reported as zero until at least one row has been fetched
+from the result set, and the rowcount is misreported if the result set
+is larger than 1302 rows. The server apparently marshals result sets
+internally in batches of 1302, and will misreport the rowcount for
+result sets larger than 1302 rows until the 1303rd row is fetched,
+result sets larger than 2604 rows until the 2605th row is fetched, and
+so on, in increments of 1302. As required by the Python DB API Spec,
+the rowcount attribute &#8220;is -1 in case no executeXX() has been
+performed on the cursor or the rowcount of the last operation is not
+determinable by the interface&#8221;.</dd></dl>
+
+<dl class="method">
+<dt id="kinterbasdb.Cursor.fetchone">
+<!--[kinterbasdb.Cursor.fetchone]--><tt class="descname">fetchone</tt><big>(</big><big>)</big><a class="headerlink" href="#kinterbasdb.Cursor.fetchone" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="kinterbasdb.Cursor.fetchmany">
+<!--[kinterbasdb.Cursor.fetchmany]--><tt class="descname">fetchmany</tt><big>(</big><big>)</big><a class="headerlink" href="#kinterbasdb.Cursor.fetchmany" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="kinterbasdb.Cursor.fetchall">
+<!--[kinterbasdb.Cursor.fetchall]--><tt class="descname">fetchall</tt><big>(</big><big>)</big><a class="headerlink" href="#kinterbasdb.Cursor.fetchall" title="Permalink to this definition">¶</a></dt>
+<dd>KInterbasDB makes absolutely no guarantees about
+the return value of the <cite>fetchone</cite> / <cite>fetchmany</cite> / <cite>fetchall</cite> methods
+except that it is a sequence indexed by field position. KInterbasDB
+makes absolutely no guarantees about the return value of the
+<cite>fetchonemap</cite> / <cite>fetchmanymap</cite> / <cite>fetchallmap</cite> methods (documented
+below) except that it is a mapping of field name to field value.
+Therefore, client programmers should <em>not</em> rely on the return value
+being an instance of a particular class or type.</dd></dl>
+
+<dl class="method">
+<dt id="kinterbasdb.Cursor.fetchonemap">
+<!--[kinterbasdb.Cursor.fetchonemap]--><tt class="descname">fetchonemap</tt><big>(</big><big>)</big><a class="headerlink" href="#kinterbasdb.Cursor.fetchonemap" title="Permalink to this definition">¶</a></dt>
+<dd>This method is just like the standard
+<cite>fetchone</cite> method of the DB API, except that it returns a mapping of
+field name to field value, rather than a sequence.</dd></dl>
+
+<dl class="method">
+<dt id="kinterbasdb.Cursor.fetchmanymap">
+<!--[kinterbasdb.Cursor.fetchmanymap]--><tt class="descname">fetchmanymap</tt><big>(</big><big>)</big><a class="headerlink" href="#kinterbasdb.Cursor.fetchmanymap" title="Permalink to this definition">¶</a></dt>
+<dd>This method is just like the standard
+<cite>fetchmany</cite> method of the DB API, except that it returns a sequence of
+mappings of field name to field value, rather than a sequence of
+sequences.</dd></dl>
+
+<dl class="method">
+<dt id="kinterbasdb.Cursor.fetchallmap">
+<!--[kinterbasdb.Cursor.fetchallmap]--><tt class="descname">fetchallmap</tt><big>(</big><big>)</big><a class="headerlink" href="#kinterbasdb.Cursor.fetchallmap" title="Permalink to this definition">¶</a></dt>
+<dd>This method is just like the standard
+<cite>fetchall</cite> method of the DB API, except that it returns a sequence of
+mappings of field name to field value, rather than a sequence of
+sequences.</dd></dl>
+
+<dl class="method">
+<dt id="kinterbasdb.Cursor.iter">
+<!--[kinterbasdb.Cursor.iter]--><tt class="descname">iter</tt><big>(</big><big>)</big><a class="headerlink" href="#kinterbasdb.Cursor.iter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="kinterbasdb.Cursor.itermap">
+<!--[kinterbasdb.Cursor.itermap]--><tt class="descname">itermap</tt><big>(</big><big>)</big><a class="headerlink" href="#kinterbasdb.Cursor.itermap" title="Permalink to this definition">¶</a></dt>
+<dd>These methods are equivalent to the
+<cite>fetchall</cite> and <cite>fetchallmap</cite> methods, respectively, except that they
+return iterators rather than materialized sequences. <cite>iter</cite> and
+<cite>itermap</cite> are exercised in this example.</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">Compliance to Python Database API 2.0</a><ul>
+<li><a class="reference external" href="#incompatibilities">Incompatibilities</a></li>
+<li><a class="reference external" href="#unsupported-optional-features">Unsupported Optional Features</a></li>
+<li><a class="reference external" href="#nominally-supported-optional-features">Nominally Supported Optional Features</a></li>
+<li><a class="reference external" href="#extensions-and-caveats">Extensions and Caveats</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="Python-DB-API-2.0.html" title="previous chapter">Python Database API Specification 2.0</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="beyond-python-db-api.html" title="next chapter">Native Database Engine Features and Extensions Beyond the Python DB API</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/python-db-api-compliance.txt">Show Source</a></li>
+            </ul>
+          <h3>Quick search</h3>
+            <form class="search" action="search.html" method="get">
+              <input type="text" name="q" size="18" /> <input type="submit" value="Go" />
+              <input type="hidden" name="check_keywords" value="yes" />
+              <input type="hidden" name="area" value="default" />
+            </form>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="beyond-python-db-api.html" title="Native Database Engine Features and Extensions Beyond the Python DB API"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Python-DB-API-2.0.html" title="Python Database API Specification 2.0"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">KInterbasDB v3.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, David Rushby, Pavel Cisar.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.5.1.
+    </div>
+  </body>
+</html>

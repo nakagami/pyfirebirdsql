@@ -1,0 +1,55 @@
+.. KInterbasDB documentation master file, created by sphinx-quickstart on Wed Jan  7 12:29:48 2009.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+#######################################
+Welcome to KInterbasDB's documentation!
+#######################################
+
+KInterbasDB is a `Python <http://python.org>`__ extension package that
+implements `Python Database API 2.0`-compliant support for the open source relational
+database `Firebird® <http://www.firebirdsql.org>`__ and some versions of its
+proprietary cousin `Interbase® <http://www.interbase.com>`__.
+In addition to the minimal feature set of the standard Python DB API,
+KInterbasDB also exposes nearly the entire native client API of the database engine.
+
+KInterbasDB is free -- covered by a permissive BSD-style `license
+<license.html>`__ that both commercial and noncommercial users should
+find agreeable.
+
+This documentation set is not a tutorial on Python, SQL, or Firebird;
+rather, it is a topical presentation of KInterbasDB's feature set,
+with example code to demonstrate basic usage patterns. For detailed
+information about Firebird features, see the `Firebird documentation 
+<http://www.firebirdsql.org/index.php?op=doc>`__, and especially the excellent
+`The Firebird Book <http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_firebird_book>`__ 
+written by Helen Borrie and published by APress.
+
+.. module:: kinterbasdb
+   :synopsis: Python Database API 2.0 Compliant driver for Firebird
+
+Documentation Contents:
+***********************
+
+.. toctree::
+   :maxdepth: 2
+
+   installation
+   tutorial
+   Python-DB-API-2.0
+   python-db-api-compliance
+   beyond-python-db-api
+   concurrency
+   thread-safety-overview
+   links
+
+   changelog
+   license
+
+Indices and tables
+******************
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
+

@@ -1,0 +1,283 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Overview of Firebird Client Library Thread-Safety &mdash; KInterbasDB v3.3.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '3.3.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="KInterbasDB v3.3.0 documentation" href="index.html" />
+    <link rel="next" title="KInterbasDB Links" href="links.html" />
+    <link rel="prev" title="Concurrency" href="concurrency.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="links.html" title="KInterbasDB Links"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="concurrency.html" title="Concurrency"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">KInterbasDB v3.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  
+  <div class="section" id="overview-of-firebird-client-library-thread-safety">
+<h1>Overview of Firebird Client Library Thread-Safety<a class="headerlink" href="#overview-of-firebird-client-library-thread-safety" title="Permalink to this headline">¶</a></h1>
+<p>The thread-safety properties of the standard Firebird client library
+vary according to the following:</p>
+<ul class="simple">
+<li>Firebird version</li>
+<li>operating system</li>
+<li>Firebird server architecture (SuperServer, Classic, Embedded)</li>
+<li>underlying connection protocol (embedded vs. local vs. IPC vs.
+remote)</li>
+</ul>
+<p>Determining whether the client library you&#8217;re using is thread-safe can
+be quite confusing. This document aims to reduce that confusion by
+defining what thread-safety means in the context of the Firebird
+client library, then presenting a table that specifies which client
+library configurations are thread-safe.</p>
+<p>Note that this document deals only with the <em>standard</em> Firebird client
+library that underlies the Firebird C API. It has <em>no relevance</em> to
+the clean-slate reimplementations in access libraries such as Jaybird.</p>
+<div class="section" id="definition-of-thread-safety">
+<h2>Definition of &#8220;Thread-Safety&#8221;<a class="headerlink" href="#definition-of-thread-safety" title="Permalink to this headline">¶</a></h2>
+<p>Currently, the highest level of concurrency supported by any version
+of the Firebird client library is <em>thread-safety at the connection
+level</em>.</p>
+<p>When we say that the Firebird client library is <em>thread-safe at the
+connection level</em>, we mean that it is safe to use a particular
+connection in only one thread at a time, although the same connection
+can be manipulated by different threads in a serial fashion, and
+different connections can be manipulated by different threads in
+parallel.</p>
+<p>For example, in a multithreaded application server, it is safe for a
+particular connection to be leased from a connection pool by Thread A,
+used, and returned to the pool for later lease by Thread B. It is not
+safe for Thread A and Thread B to use the same connection at the same
+time.</p>
+</div>
+<div class="section" id="thread-safety-table">
+<h2>Thread-Safety Table<a class="headerlink" href="#thread-safety-table" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="16%" />
+<col width="12%" />
+<col width="23%" />
+<col width="22%" />
+<col width="27%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">FB Version</th>
+<th class="head">OS</th>
+<th class="head">FB Architecture</th>
+<th class="head">Remote / Local</th>
+<th class="head">Thread-Safe?</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td rowspan="10">1.0.3</td>
+<td rowspan="6">Windows</td>
+<td rowspan="2">SuperServer</td>
+<td>Local</td>
+<td>No</td>
+</tr>
+<tr><td>Remote</td>
+<td>Yes</td>
+</tr>
+<tr><td rowspan="2">Classic</td>
+<td>Local</td>
+<td>No such config.</td>
+</tr>
+<tr><td>Remote</td>
+<td>No such config.</td>
+</tr>
+<tr><td rowspan="2">Embedded</td>
+<td>Local</td>
+<td>No such config.</td>
+</tr>
+<tr><td>Remote</td>
+<td>No such config.</td>
+</tr>
+<tr><td rowspan="4">Linux</td>
+<td rowspan="2">SuperServer</td>
+<td>Local</td>
+<td>No such config.</td>
+</tr>
+<tr><td>Remote</td>
+<td>No</td>
+</tr>
+<tr><td rowspan="2">Classic</td>
+<td>Local</td>
+<td>No</td>
+</tr>
+<tr><td>Remote</td>
+<td>No</td>
+</tr>
+<tr><td rowspan="10">1.5</td>
+<td rowspan="6">Windows</td>
+<td rowspan="2">SuperServer</td>
+<td>Local</td>
+<td>No</td>
+</tr>
+<tr><td>Remote</td>
+<td>Yes</td>
+</tr>
+<tr><td rowspan="2">Classic</td>
+<td>Local</td>
+<td>No such config.</td>
+</tr>
+<tr><td>Remote</td>
+<td>Yes</td>
+</tr>
+<tr><td rowspan="2">Embedded</td>
+<td>Local</td>
+<td>Yes</td>
+</tr>
+<tr><td>Remote</td>
+<td>No such config.</td>
+</tr>
+<tr><td rowspan="4">Linux</td>
+<td rowspan="2">SuperServer</td>
+<td>Local</td>
+<td>No such config.</td>
+</tr>
+<tr><td>Remote</td>
+<td>Yes</td>
+</tr>
+<tr><td rowspan="2">Classic</td>
+<td>Local</td>
+<td>No</td>
+</tr>
+<tr><td>Remote</td>
+<td>No</td>
+</tr>
+<tr><td rowspan="10">2.0/2.1</td>
+<td rowspan="6">Windows</td>
+<td rowspan="2">SuperServer</td>
+<td>Local</td>
+<td>Yes</td>
+</tr>
+<tr><td>Remote</td>
+<td>Yes</td>
+</tr>
+<tr><td rowspan="2">Classic</td>
+<td>Local</td>
+<td>Yes</td>
+</tr>
+<tr><td>Remote</td>
+<td>Yes</td>
+</tr>
+<tr><td rowspan="2">Embedded</td>
+<td>Local</td>
+<td>Yes</td>
+</tr>
+<tr><td>Remote</td>
+<td>No such config.</td>
+</tr>
+<tr><td rowspan="4">Linux</td>
+<td rowspan="2">SuperServer</td>
+<td>Local</td>
+<td>No such config.</td>
+</tr>
+<tr><td>Remote</td>
+<td>Yes</td>
+</tr>
+<tr><td rowspan="2">Classic</td>
+<td>Local</td>
+<td>No</td>
+</tr>
+<tr><td>Remote</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p>This document was written by David Rushby, with assistance from Dmitry
+Yemanov. Errors are attributable to Rushby rather than Yemanov.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">Overview of Firebird Client Library Thread-Safety</a><ul>
+<li><a class="reference external" href="#definition-of-thread-safety">Definition of &#8220;Thread-Safety&#8221;</a></li>
+<li><a class="reference external" href="#thread-safety-table">Thread-Safety Table</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="concurrency.html" title="previous chapter">Concurrency</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="links.html" title="next chapter">KInterbasDB Links</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/thread-safety-overview.txt">Show Source</a></li>
+            </ul>
+          <h3>Quick search</h3>
+            <form class="search" action="search.html" method="get">
+              <input type="text" name="q" size="18" /> <input type="submit" value="Go" />
+              <input type="hidden" name="check_keywords" value="yes" />
+              <input type="hidden" name="area" value="default" />
+            </form>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="links.html" title="KInterbasDB Links"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="concurrency.html" title="Concurrency"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">KInterbasDB v3.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, David Rushby, Pavel Cisar.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.5.1.
+    </div>
+  </body>
+</html>

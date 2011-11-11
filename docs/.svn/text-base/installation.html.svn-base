@@ -1,0 +1,453 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>KInterbasDB Installation Guide &mdash; KInterbasDB v3.3.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '3.3.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="KInterbasDB v3.3.0 documentation" href="index.html" />
+    <link rel="next" title="Quick-start Guide / Tutorial" href="tutorial.html" />
+    <link rel="prev" title="Welcome to KInterbasDB&#8217;s documentation!" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Quick-start Guide / Tutorial"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to KInterbasDB&#8217;s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">KInterbasDB v3.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  
+  <div class="section" id="kinterbasdb-installation-guide">
+<h1>KInterbasDB Installation Guide<a class="headerlink" href="#kinterbasdb-installation-guide" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<p>KInterbasDB requires a valid combination of the dependencies in
+the list below.</p>
+<p>Detailed instructions on how to install each dependency are beyond the
+scope of this document; consult the dependency distributor for
+installation instructions.</p>
+<p>Satisfying the dependencies is not difficult! For mainstream
+operating systems &#8211; including Windows and Linux &#8211; easily installable
+binary distributions are available for <em>all</em> of KInterbasDB&#8217;s
+dependencies (see the download links below).</p>
+<ol class="arabic">
+<li><p class="first">Operating System - one of:</p>
+<blockquote>
+<ul class="simple">
+<li>Win32 (NT 4, 2000, XP, 2003, ...)</li>
+<li>Win64 (Should work fine, but no binary distributions are available.)</li>
+<li>Linux (Known to work fine on both x86 and x86-64.)</li>
+<li>Other Unix or Unix-like operating system</li>
+</ul>
+</blockquote>
+</li>
+<li><p class="first"><a class="reference external" href="http://www.firebirdsql.org">Firebird</a> 2.0 or later - client or server
+installation [<a class="reference external" href="http://sourceforge.net/project/showfiles.php?group_id=9028">download here</a>]
+If you want to use KInterbasDB 3.3 with Firebird 1.5 and older or InterBase, you
+will need to do <a class="reference internal" href="#installation-from-source-distribution">installation from source distribution</a> instead.</p>
+</li>
+<li><p class="first"><a class="reference external" href="http://www.python.org">Python</a> [<a class="reference external" href="http://www.python.org/download/">download here</a>] 2.4 or later</p>
+</li>
+<li><p class="first"><a class="reference external" href="http://www.lemburg.com/files/python/eGenix-mx-Extensions.html">eGenix.com mx Extensions for Python</a>,
+version 2.0.1 or later [<a class="reference external" href="http://www.lemburg.com/files/python/eGenix-mx-Extensions.html#Download-mxBASE">download here</a>] By default, KInterbasDB uses the <cite>DateTime</cite>
+module of the eGenix.com <cite>mx</cite> Extensions to represent date and time
+values, as recommended by the
+<em>Python Database API Specification</em>. <em>However, it is not strictly necessary
+to use the `mx.DateTime` module to handle dates and times, especially when you&#8217;re
+using Python 2.5 and newer.</em> See <a class="reference external" href="usage.html#faq_fep_is_mxdatetime_required">this
+FAQ</a>.</p>
+</li>
+</ol>
+</div>
+<div class="section" id="installation-from-binary-distribution">
+<h2>Installation from binary distribution<a class="headerlink" href="#installation-from-binary-distribution" title="Permalink to this headline">¶</a></h2>
+<p>Note: If a binary distribution of KInterbasDB (e.g., a Windows
+executable installer) is not available for your platform, Python or Firebird
+version, you will need to do <a class="reference internal" href="#installation-from-source-distribution">installation from source distribution</a> instead.</p>
+<div class="section" id="windows">
+<h3>Windows<a class="headerlink" href="#windows" title="Permalink to this headline">¶</a></h3>
+<p>Binary distributions of KInterbasDB for Windows come in the form of a
+conventional executable installer or MSI package. Just invoke the installer and
+follow the wizard prompts.</p>
+<p>Because KInterbasDB is compatible with numerous versions of Python,
+you must choose a binary distribution that matches your Python version.
+There are currently Windows binary distributions of KInterbasDB
+compiled for use with Firebird 2.x for each of Python 2.4, 2.5 and 2.6.</p>
+</div>
+<div class="section" id="linux-and-other-unix-variants">
+<h3>Linux and Other Unix Variants<a class="headerlink" href="#linux-and-other-unix-variants" title="Permalink to this headline">¶</a></h3>
+<p>Currently, Linux users must typically install from <a class="reference internal" href="#source-distribution">source distribution</a>
+as only Mandriva Linux offer the pre-built KInterbasDB package.</p>
+<p>The source distribution will <em>probably</em> also install (and function) on most
+other POSIX-compliant Unix variants, as long as all of the <a class="reference internal" href="#dependencies">dependencies</a>
+are also installed and functional.</p>
+<p>Because the KInterbasDB source distribution supports the standard
+Python package installation facility (<a class="reference external" href="http://www.python.org/sigs/distutils-sig/">distutils</a>), installing the source
+distribution on a typical Linux system is downright easy.</p>
+</div>
+</div>
+<div class="section" id="installation-from-source-distribution">
+<span id="source-distribution"></span><h2>Installation from source distribution<a class="headerlink" href="#installation-from-source-distribution" title="Permalink to this headline">¶</a></h2>
+<p>Shortcut for the Experienced and Impatient:</p>
+<div class="highlight-python"><pre>(decompress KInterbasDB into *temp_dir*)
+cd *temp_dir*
+python setup.py build
+python setup.py install
+python -c "import kinterbasdb"
+(delete *temp_dir*)</pre>
+</div>
+<p>Then hit the <a class="reference external" href="usage.html">Usage Guide</a>.</p>
+<div class="section" id="compile-kinterbasdb">
+<h3>Compile KInterbasDB<a class="headerlink" href="#compile-kinterbasdb" title="Permalink to this headline">¶</a></h3>
+<p>You will need a C compiler for that. VC or MinGW to compile KInterbasDB
+on Windows, and GCC to compile it on Linux/POSIX.</p>
+<p>Once you have successfully installed the dependencies, you may proceed
+with the installation of KInterbasDB itself.</p>
+<p>Beginning with version 3.0, KInterbasDB has full support for the
+<a class="reference external" href="http://www.python.org/sigs/distutils-sig/">distutils</a>, the
+standard facility for Python package distribution and installation.
+Full instructions for using the distutils are available <a class="reference external" href="http://www.python.org/doc/current/inst/inst.html">here</a>, but you can
+skip them unless you have an otherwise insoluble problem.</p>
+<p>Open a command prompt, change to the directory where you decompressed
+the kinterbasdb source distribution, and type:</p>
+<div class="highlight-python"><pre>python setup.py build</pre>
+</div>
+<p>The installation script, <tt class="docutils literal"><span class="pre">setup.py</span></tt>, will attempt to automatically
+detect the information needed by the C compiler; then it will invoke
+the distutils to perform the actual compilation. If you installed
+automatic distributions of the dependencies that place themselves in
+standard locations (on UNIX-style operating systems) or record their
+locations in the system registry (on Windows), the compilation should
+proceed without incident.</p>
+<p>On Windows, compilers other than Microsoft Visual C++ usually require
+some library conversion to work with Python or Firebird. With Firebird
+1.5 and MinGW or Firebird 1.0 and Borland C++, <tt class="docutils literal"><span class="pre">setup.py</span></tt> will perform
+this conversion automatically. If the automatic conversion fails,
+ensure that your compiler is installed properly (especially that its
+<tt class="docutils literal"><span class="pre">bin</span></tt> directory is in your <tt class="docutils literal"><span class="pre">PATH</span></tt>). For more information, see
+thecompiler-specific notes in this document, as well as the Python standard
+library documentation on &#8220;Installing Python Modules&#8221;.</p>
+<p>If <tt class="docutils literal"><span class="pre">setup.py</span></tt> raises no errors and its output concludes with something
+like &#8220;Creating library...&#8221;, then you are ready to proceed to the
+next step.</p>
+<p>If you receive an error message, examine its contents and then consult
+the following table:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="24%" />
+<col width="76%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Error Message Header</th>
+<th class="head">Explanation</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td rowspan="2"><strong>LIBRARY
+AUTODETECTION ERROR</strong></td>
+<td><p class="first">The setup script was unable to automatically find one or more files
+needed for the compilation process, such as a library needed by the
+C compiler.</p>
+<p>Using a text editor, you will need to manually specify the relevant
+paths in the <cite>manual_config</cite> section of the setup configuration file,
+<tt class="docutils literal"><span class="pre">setup.cfg</span></tt> (in the root directory of the KInterbasDB source
+distribution). Uncomment the item in question and provide a value
+appropriate to your system. Save the newly modified
+<tt class="docutils literal"><span class="pre">setup.cfg</span></tt>, then repeat the compilation step.</p>
+<dl class="last docutils">
+<dt>If manually specifying the library paths fails to solve the problem:</dt>
+<dd><ul class="first last simple">
+<li>Your C compiler or linker may not be properly configured.</li>
+<li>You may have a corrupt or incomplete installation of one or more
+KInterbasDB dependencies.</li>
+</ul>
+</dd>
+</dl>
+</td>
+</tr>
+<tr><td><p class="first"><em>Note for non-Windows platforms:</em>
+If the compiler indicates that it cannot find the include file
+<tt class="docutils literal"><span class="pre">Python.h</span></tt>, this probably means that you have the user-oriented
+Python package installed, but not the developer-oriented package that
+would enable you to compile C extensions.</p>
+<p>For example, RedHat-derived distributions such as Fedora split the
+core Python distribution into <tt class="docutils literal"><span class="pre">python-</span><em><span class="pre">x.y.z</span></em></tt>, <tt class="docutils literal"><span class="pre">python-</span>
+<span class="pre">devel-</span><em><span class="pre">x.y.z</span></em></tt> and <tt class="docutils literal"><span class="pre">python-docs-</span><em><span class="pre">x.y.z</span></em></tt> packages.
+You&#8217;ll need to install the <tt class="docutils literal"><span class="pre">python-devel-</span><em><span class="pre">x.y.z</span></em></tt> package
+in order to compile KInterbasDB.</p>
+<p class="last">The use of C extensions to Python is quite common, so Python
+repackagers such as Linux distributions should include the files
+necessary to compile C extensions in their basic Python package. The
+Python core developers have noticed these repackaging mistakes and
+complained about them, but apparently without effect.</p>
+</td>
+</tr>
+<tr><td><strong>COMPILER
+CONFIGURATION ERROR</strong></td>
+<td><p class="first">The setup script could not function because of the current
+configuration of your compiler. The error message should provide
+details about what went wrong, and perhaps a suggestion of how to fix
+the problem.</p>
+<p class="last">If you are not using the standard compiler for your platform, consult
+the compiler-specific notes.</p>
+</td>
+</tr>
+<tr><td><strong>LIBRARY CONVERSION
+ERROR</strong></td>
+<td><p class="first">The setup script&#8217;s attempt to convert libraries intended for use with
+Microsoft Visual C++ into a format compatible with your compiler was
+not successful.</p>
+<p class="last">Consult the compiler-specific notes in this document, as well as the
+Python standard library documentation on &#8220;Installing Python Modules&#8221;.</p>
+</td>
+</tr>
+<tr><td><strong>PYTHON SYSTEM
+ERROR</strong></td>
+<td>Your Python installation is outdated, lacks some crucial modules, or
+is otherwise inadequate. The error message will indicate what your
+options are, which may include installing a more recent Python
+version, compiling additional C extension modules for your current
+Python version, or editing <tt class="docutils literal"><span class="pre">setup.cfg</span></tt> to manually specify
+library paths, thus relieving <tt class="docutils literal"><span class="pre">setup.py</span></tt> of the burden
+of detecting them.</td>
+</tr>
+<tr><td><strong>KINTERBASDB
+DISTRIBUTION ERROR</strong></td>
+<td>The setup script cannot find a file that was supposed to be included
+with the KInterbasDB source distribution. Try downloading the
+KInterbasDB source distribution again and decompressing it into a
+fresh temporary directory, then repeat the compilation step.</td>
+</tr>
+<tr><td><strong>LIBRARY MANUAL
+SPECIFICATION ERROR</strong></td>
+<td><p class="first">One of the library paths specified in <tt class="docutils literal"><span class="pre">setup.cfg</span></tt> is not valid.
+Verify the location of the library, then edit <tt class="docutils literal"><span class="pre">setup.cfg</span></tt> to
+reflect the correct path.</p>
+<p class="last">If you had no particular reason to manually specify the library path
+in the first place, try commenting out that entry in
+<tt class="docutils literal"><span class="pre">setup.cfg</span></tt>, then repeat the compilation step and let the setup
+script attempt to automatically detect the location of the library.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>If the problem persists after you have followed the advice in the
+error message itself and in the table above, visit the <a class="reference external" href="http://www.firebirdsql.org/index.php?op=lists#firebird-python">KInterbasDB support list</a> and report your problem.</p>
+<div class="section" id="compiler-specific-notes">
+<h4>Compiler-Specific Notes<a class="headerlink" href="#compiler-specific-notes" title="Permalink to this headline">¶</a></h4>
+<ul>
+<li><p class="first">Microsoft Windows</p>
+<blockquote>
+<ul>
+<li><p class="first">Microsoft Visual C++ 6.0</p>
+<blockquote>
+<ol class="arabic simple">
+<li>The Visual C++ command-line utilities must be available on your
+system path, and their required environment variables must be
+initialized to meaningful values. If, when you installed Visual C++,
+you did <em>not</em> allow it to register the paths needed for command-line
+compilation, you will need to run the <tt class="docutils literal"><span class="pre">vcvars32.bat</span></tt> batch file from
+the <tt class="docutils literal"><span class="pre">bin</span></tt> subdirectory of your Visual C++ installation. By default,
+this directory is <tt class="docutils literal"><span class="pre">C:\Program</span> <span class="pre">Files\Microsoft</span> <span class="pre">Visual</span> <span class="pre">Studio\VC98\bin</span></tt></li>
+<li>Use the * same * command prompt window to run the following command
+in the temporary directory into which you decompressed KInterbasDB:
+<strong>python setup.py build</strong></li>
+</ol>
+</blockquote>
+</li>
+<li><p class="first"><a class="reference external" href="http://mingw.org">MinGW</a> (Windows port of GCC) Note that
+KInterbasDB supports MinGW only with Firebird 1.5 or later, not
+Firebird 1.0 or Interbase®. With earlier versions of the database,
+use Microsoft Visual C++.</p>
+<blockquote>
+<ol class="arabic">
+<li><p class="first">Make sure that the <tt class="docutils literal"><span class="pre">bin</span></tt> subdirectory of the directory where you
+installed MinGW is in your PATH. KInterbasDB requires numerous MinGW
+sub-packages, so it&#8217;s easiest to install the monolithic distribution
+of MinGW, rather than piecing together individual sub-packages. The
+monolithic distribution is an executable installer; installation is
+trivial. If you do decide to install individual MinGW sub-packages,
+you must install at least the following:</p>
+<blockquote>
+<ul class="simple">
+<li>binutils</li>
+<li>gcc-core</li>
+<li>mingw-runtime</li>
+<li>mingw-utils</li>
+<li>w32api</li>
+</ul>
+</blockquote>
+<p>KInterbasDB&#8217;s setup script will automatically perform all of the
+required preparatory steps for compiling an extension with MinGW on
+your Python installation.</p>
+</li>
+<li><p class="first">In the temporary directory into which you decompressed KInterbasDB,
+run the command: <strong>python setup.py build &#8211;compiler=mingw32</strong></p>
+</li>
+</ol>
+</blockquote>
+</li>
+</ul>
+</blockquote>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="install-kinterbasdb">
+<h3>Install KInterbasDB<a class="headerlink" href="#install-kinterbasdb" title="Permalink to this headline">¶</a></h3>
+<p>During this step, the setup script moves the KInterbasDB package
+(including the newly compiled C extensions) to the standard package
+directory of your Python installation so that Python will be able to
+<strong>import kinterbasdb</strong> and <strong>import kinterbasdb.services</strong></p>
+<p>In addition to the Python code and shared library files actually used
+by the Python interpreter, the setup script typically installs some
+supporting files, such as documentation. Depending on your system
+configuration, these supporting files may be placed in the same
+directory or a different directory from the files used by the Python
+interpreter.</p>
+<p>Run the following command:
+<strong>python setup.py install</strong></p>
+<p>The setup script will install KInterbasDB, listing each file it
+installs.</p>
+<p>Errors during this step are rare because compilation (the finicky part
+of this process) has already taken place; installation is really just
+a matter of copying files. However, there will be file system
+permission errors if the Python installation directory is not writable
+by the user running the setup script. If you encounter such an error,
+try one of the following:</p>
+<blockquote>
+<ul class="simple">
+<li>Log in as a user who has the required file system permissions and
+repeatthe installation step.</li>
+<li>Manually copy the directory <tt class="docutils literal"><span class="pre">build/lib.</span><em><span class="pre">platform</span></em><span class="pre">-</span><em><span class="pre">pyver</span></em><span class="pre">/kinterbasdb</span></tt>
+(which contains the Python modules and compiled library files created during
+the compilation step) to a directory in your PYTHONPATH. This approach will
+not install the supporting files, but they are for the benefit of the programmer
+rather than the Python interpreter anyway.</li>
+</ul>
+</blockquote>
+</div>
+</div>
+<div class="section" id="test-your-kinterbasdb-installation">
+<h2>Test your KInterbasDB installation<a class="headerlink" href="#test-your-kinterbasdb-installation" title="Permalink to this headline">¶</a></h2>
+<p>KInterbasDB has an extensive test suite, but it is not really intended for
+routine public use.</p>
+<p>To verify that KInterbasDB is installed properly, switch to a
+directory <em>other than the temporary directory into which you
+decompressed the source distribution</em> (to avoid conflict between the
+copy of kinterbasdb in that directory and the copy placed under the
+standard Python <cite>site-packages</cite> directory), then verify the
+importability of your KInterbasDB installation by issuing the
+following command:</p>
+<div class="highlight-python"><pre>python -c "import kinterbasdb as k; print k.__version__"</pre>
+</div>
+<p>If the import attempt does not encounter any errors and the version
+number is what you expected, you are finished. Next, consider reading
+the KInterbasDB Usage Guide.</p>
+<p>You should not encounter any errors at this stage since you have
+already completed the compilation and installation steps successfully.
+If you do, please report them to the <a class="reference external" href="http://www.firebirdsql.org/index.php?op=lists#firebird-python">KInterbasDB support list</a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">KInterbasDB Installation Guide</a><ul>
+<li><a class="reference external" href="#dependencies">Dependencies</a></li>
+<li><a class="reference external" href="#installation-from-binary-distribution">Installation from binary distribution</a><ul>
+<li><a class="reference external" href="#windows">Windows</a></li>
+<li><a class="reference external" href="#linux-and-other-unix-variants">Linux and Other Unix Variants</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#installation-from-source-distribution">Installation from source distribution</a><ul>
+<li><a class="reference external" href="#compile-kinterbasdb">Compile KInterbasDB</a><ul>
+<li><a class="reference external" href="#compiler-specific-notes">Compiler-Specific Notes</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#install-kinterbasdb">Install KInterbasDB</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#test-your-kinterbasdb-installation">Test your KInterbasDB installation</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="index.html" title="previous chapter">Welcome to KInterbasDB&#8217;s documentation!</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="tutorial.html" title="next chapter">Quick-start Guide / Tutorial</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/installation.txt">Show Source</a></li>
+            </ul>
+          <h3>Quick search</h3>
+            <form class="search" action="search.html" method="get">
+              <input type="text" name="q" size="18" /> <input type="submit" value="Go" />
+              <input type="hidden" name="check_keywords" value="yes" />
+              <input type="hidden" name="area" value="default" />
+            </form>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Quick-start Guide / Tutorial"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to KInterbasDB&#8217;s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">KInterbasDB v3.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, David Rushby, Pavel Cisar.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.5.1.
+    </div>
+  </body>
+</html>

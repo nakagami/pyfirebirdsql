@@ -1,0 +1,453 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Index &mdash; KInterbasDB v3.3.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '3.3.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="KInterbasDB v3.3.0 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li><a href="index.html">KInterbasDB v3.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+
+   <h1 id="index">Index</h1>
+
+   <a href="#_"><strong>_</strong></a> | <a href="#A"><strong>A</strong></a> | <a href="#B"><strong>B</strong></a> | <a href="#C"><strong>C</strong></a> | <a href="#D"><strong>D</strong></a> | <a href="#E"><strong>E</strong></a> | <a href="#F"><strong>F</strong></a> | <a href="#G"><strong>G</strong></a> | <a href="#I"><strong>I</strong></a> | <a href="#K"><strong>K</strong></a> | <a href="#L"><strong>L</strong></a> | <a href="#M"><strong>M</strong></a> | <a href="#N"><strong>N</strong></a> | <a href="#O"><strong>O</strong></a> | <a href="#P"><strong>P</strong></a> | <a href="#R"><strong>R</strong></a> | <a href="#S"><strong>S</strong></a> | <a href="#T"><strong>T</strong></a> | <a href="#U"><strong>U</strong></a> | <a href="#W"><strong>W</strong></a> 
+
+   <hr />
+
+   
+<h2 id="_">_</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="beyond-python-db-api.html#kinterbasdb.ConnectionGroup.__init__">__init__() (kinterbasdb.ConnectionGroup method)</a></dt>
+  <dd><dl>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.EventConduit.__init__">(kinterbasdb.EventConduit method)</a></dt>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.Transaction.__init__">(kinterbasdb.Transaction method)</a></dt>
+  </dl></dd></dl></td><td width="33%" valign="top"><dl>
+</dl></td></tr></table>
+
+<h2 id="A">A</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="beyond-python-db-api.html#kinterbasdb.TPB.access_mode">access_mode (kinterbasdb.TPB attribute)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Conenction.activateShadowFile">activateShadowFile() (kinterbasdb.services.Conenction method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.ConnectionGroup.add">add() (kinterbasdb.ConnectionGroup method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Conenction.addUser">addUser() (kinterbasdb.services.Conenction method)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="Python-DB-API-2.0.html#apilevel">apilevel (built-in variable)</a></dt>
+<dt><a href="python-db-api-compliance.html#kinterbasdb.Cursor.arraysize">arraysize (kinterbasdb.Cursor attribute)</a></dt>
+</dl></td></tr></table>
+
+<h2 id="B">B</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Connection.backup">backup() (kinterbasdb.services.Connection method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Connection.begin">begin() (kinterbasdb.Connection method)</a></dt>
+  <dd><dl>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.ConnectionGroup.begin">(kinterbasdb.ConnectionGroup method)</a></dt>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.Transaction.begin">(kinterbasdb.Transaction method)</a></dt>
+  </dl></dd>
+<dt><a href="Python-DB-API-2.0.html#BINARY">BINARY (built-in variable)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="Python-DB-API-2.0.html#Binary">Binary() (built-in function)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.BlobReader">BlobReader (class in kinterbasdb)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Conenction.bringOnline">bringOnline() (kinterbasdb.services.Conenction method)</a></dt>
+</dl></td></tr></table>
+
+<h2 id="C">C</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="Python-DB-API-2.0.html#Cursor.callproc">callproc() (Cursor method)</a></dt>
+<dt><a href="python-db-api-compliance.html#kinterbasdb.Connection.charset">charset (kinterbasdb.Connection attribute)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.BlobReader.chunks">chunks() (kinterbasdb.BlobReader method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.ConnectionGroup.clear">clear() (kinterbasdb.ConnectionGroup method)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#Connection.close">close() (Connection method)</a></dt>
+  <dd><dl>
+    <dt><a href="Python-DB-API-2.0.html#Cursor.close">(Cursor method)</a></dt>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.EventConduit.close">(kinterbasdb.EventConduit method)</a></dt>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.Transaction.close">(kinterbasdb.Transaction method)</a></dt>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.services.Connection.close">(kinterbasdb.services.Connection method)</a></dt>
+  </dl></dd>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Transaction.closed">closed (kinterbasdb.Transaction attribute)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#Connection.commit">commit() (Connection method)</a></dt>
+  <dd><dl>
+    <dt><a href="python-db-api-compliance.html#kinterbasdb.Connection.commit">(kinterbasdb.Connection method)</a></dt>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.ConnectionGroup.commit">(kinterbasdb.ConnectionGroup method)</a></dt>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.Transaction.commit">(kinterbasdb.Transaction method)</a></dt>
+  </dl></dd>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Conenction.commitLimboTransaction">commitLimboTransaction() (kinterbasdb.services.Conenction method)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#connect">connect() (built-in function)</a></dt>
+  <dd><dl>
+    <dt><a href="python-db-api-compliance.html#kinterbasdb.connect">(in module kinterbasdb)</a></dt>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.services.connect">(in module kinterbasdb.services)</a></dt>
+  </dl></dd></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="Python-DB-API-2.0.html#Connection">Connection (built-in class)</a></dt>
+  <dd><dl>
+    <dt><a href="python-db-api-compliance.html#kinterbasdb.Connection">(class in kinterbasdb)</a>, <a href="beyond-python-db-api.html#kinterbasdb.Connection">[1]</a>, <a href="beyond-python-db-api.html#kinterbasdb.Connection">[2]</a></dt>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.services.Connection">(class in kinterbasdb.services)</a></dt>
+  </dl></dd>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Transaction.connection">connection (kinterbasdb.Transaction attribute)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.ConnectionGroup">ConnectionGroup (class in kinterbasdb)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.ConnectionGroup.contains">contains() (kinterbasdb.ConnectionGroup method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.ConnectionGroup.count">count() (kinterbasdb.ConnectionGroup method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.create_database">create_database() (in module kinterbasdb)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.CT_COMMIT">CT_COMMIT (in module kinterbasdb)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.CT_NONTRANSPARENT">CT_NONTRANSPARENT (in module kinterbasdb)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.CT_ROLLBACK">CT_ROLLBACK (in module kinterbasdb)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.CT_VETO">CT_VETO (in module kinterbasdb)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#Cursor">Cursor (built-in class)</a></dt>
+  <dd><dl>
+    <dt><a href="python-db-api-compliance.html#kinterbasdb.Cursor">(class in kinterbasdb)</a>, <a href="python-db-api-compliance.html#kinterbasdb.Cursor">[1]</a>, <a href="beyond-python-db-api.html#kinterbasdb.Cursor">[2]</a></dt>
+  </dl></dd>
+<dt><a href="Python-DB-API-2.0.html#Connection.cursor">cursor() (Connection method)</a></dt>
+  <dd><dl>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.Transaction.cursor">(kinterbasdb.Transaction method)</a></dt>
+  </dl></dd>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Transaction.cursors">cursors (kinterbasdb.Transaction attribute)</a></dt>
+</dl></td></tr></table>
+
+<h2 id="D">D</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Connection.database_info">database_info() (kinterbasdb.Connection method)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#DatabaseError">DatabaseError</a></dt>
+<dt><a href="Python-DB-API-2.0.html#DataError">DataError</a></dt>
+<dt><a href="Python-DB-API-2.0.html#Date">Date() (built-in function)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#DateFromTicks">DateFromTicks() (built-in function)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#DATETIME">DATETIME (built-in variable)</a></dt>
+  <dd><dl>
+    <dt><a href="python-db-api-compliance.html#kinterbasdb.DATETIME">(in module kinterbasdb)</a></dt>
+  </dl></dd>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Connection.db_info">db_info() (kinterbasdb.Connection method)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="Python-DB-API-2.0.html#Cursor.description">description (Cursor attribute)</a></dt>
+  <dd><dl>
+    <dt><a href="python-db-api-compliance.html#kinterbasdb.Cursor.description">(kinterbasdb.Cursor attribute)</a></dt>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.PreparedStatement.description">(kinterbasdb.PreparedStatement attribute)</a></dt>
+  </dl></dd>
+<dt><a href="python-db-api-compliance.html#kinterbasdb.Connection.dialect">dialect (kinterbasdb.Connection attribute)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.ConnectionGroup.disband">disband() (kinterbasdb.ConnectionGroup method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Connection.drop_database">drop_database() (kinterbasdb.Connection method)</a></dt>
+</dl></td></tr></table>
+
+<h2 id="E">E</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="Python-DB-API-2.0.html#Error">Error</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Connection.event_conduit">event_conduit() (kinterbasdb.Connection method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.EventConduit">EventConduit (class in kinterbasdb)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#Cursor.execute">execute() (Cursor method)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="python-db-api-compliance.html#kinterbasdb.Connection.execute_immediate">execute_immediate() (kinterbasdb.Connection method)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#Cursor.executemany">executemany() (Cursor method)</a></dt>
+</dl></td></tr></table>
+
+<h2 id="F">F</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="Python-DB-API-2.0.html#Cursor.fetchall">fetchall() (Cursor method)</a></dt>
+  <dd><dl>
+    <dt><a href="python-db-api-compliance.html#kinterbasdb.Cursor.fetchall">(kinterbasdb.Cursor method)</a></dt>
+  </dl></dd>
+<dt><a href="python-db-api-compliance.html#kinterbasdb.Cursor.fetchallmap">fetchallmap() (kinterbasdb.Cursor method)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#Cursor.fetchmany">fetchmany() (Cursor method)</a></dt>
+  <dd><dl>
+    <dt><a href="python-db-api-compliance.html#kinterbasdb.Cursor.fetchmany">(kinterbasdb.Cursor method)</a></dt>
+  </dl></dd>
+<dt><a href="python-db-api-compliance.html#kinterbasdb.Cursor.fetchmanymap">fetchmanymap() (kinterbasdb.Cursor method)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="Python-DB-API-2.0.html#Cursor.fetchone">fetchone() (Cursor method)</a></dt>
+  <dd><dl>
+    <dt><a href="python-db-api-compliance.html#kinterbasdb.Cursor.fetchone">(kinterbasdb.Cursor method)</a></dt>
+  </dl></dd>
+<dt><a href="python-db-api-compliance.html#kinterbasdb.Cursor.fetchonemap">fetchonemap() (kinterbasdb.Cursor method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.EventConduit.flush">flush() (kinterbasdb.EventConduit method)</a></dt>
+</dl></td></tr></table>
+
+<h2 id="G">G</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Connection.get_type_trans_in">get_type_trans_in() (kinterbasdb.Connection method)</a></dt>
+  <dd><dl>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.Cursor.get_type_trans_in">(kinterbasdb.Cursor method)</a></dt>
+  </dl></dd>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Connection.getArchitecture">getArchitecture() (kinterbasdb.services.Connection method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Connection.getAttachedDatabaseNames">getAttachedDatabaseNames() (kinterbasdb.services.Connection method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Connection.getCapabilityMask">getCapabilityMask() (kinterbasdb.services.Connection method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Connection.getConnectionCount">getConnectionCount() (kinterbasdb.services.Connection method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Connection.getHomeDir">getHomeDir() (kinterbasdb.services.Connection method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Conenction.getLimboTransactionIDs">getLimboTransactionIDs() (kinterbasdb.services.Conenction method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Connection.getLockFileDir">getLockFileDir() (kinterbasdb.services.Connection method)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Connection.getLog">getLog() (kinterbasdb.services.Connection method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Connection.getMessageFileDir">getMessageFileDir() (kinterbasdb.services.Connection method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Connection.getSecurityDatabasePath">getSecurityDatabasePath() (kinterbasdb.services.Connection method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Connection.getServerVersion">getServerVersion() (kinterbasdb.services.Connection method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Connection.getServiceManagerVersion">getServiceManagerVersion() (kinterbasdb.services.Connection method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Connection.getStatistics">getStatistics() (kinterbasdb.services.Connection method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Conenction.getUsers">getUsers() (kinterbasdb.services.Conenction method)</a></dt>
+</dl></td></tr></table>
+
+<h2 id="I">I</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="beyond-python-db-api.html#kinterbasdb.init">init() (in module kinterbasdb)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#IntegrityError">IntegrityError</a></dt>
+<dt><a href="Python-DB-API-2.0.html#InterfaceError">InterfaceError</a></dt>
+<dt><a href="Python-DB-API-2.0.html#InternalError">InternalError</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.TPB.isolation_level">isolation_level (kinterbasdb.TPB attribute)</a></dt>
+<dt><a href="python-db-api-compliance.html#kinterbasdb.Cursor.iter">iter() (kinterbasdb.Cursor method)</a></dt>
+<dt><a href="python-db-api-compliance.html#kinterbasdb.Cursor.itermap">itermap() (kinterbasdb.Cursor method)</a></dt>
+</dl></td></tr></table>
+
+<h2 id="K">K</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="index.html#module-kinterbasdb">kinterbasdb (module)</a></dt>
+<dt><a href="beyond-python-db-api.html#module-kinterbasdb.services">kinterbasdb.services (module)</a></dt>
+<dt><a href="beyond-python-db-api.html#module-kinterbasdb.typeconv_23plus">kinterbasdb.typeconv_23plus (module)</a></dt>
+<dt><a href="beyond-python-db-api.html#module-kinterbasdb.typeconv_23plus_lowmem">kinterbasdb.typeconv_23plus_lowmem (module)</a></dt>
+<dt><a href="beyond-python-db-api.html#module-kinterbasdb.typeconv_24plus">kinterbasdb.typeconv_24plus (module)</a></dt>
+<dt><a href="beyond-python-db-api.html#module-kinterbasdb.typeconv_backcompat">kinterbasdb.typeconv_backcompat (module)</a></dt>
+<dt><a href="beyond-python-db-api.html#module-kinterbasdb.typeconv_datetime_mx">kinterbasdb.typeconv_datetime_mx (module)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="beyond-python-db-api.html#module-kinterbasdb.typeconv_datetime_stdlib">kinterbasdb.typeconv_datetime_stdlib (module)</a></dt>
+<dt><a href="beyond-python-db-api.html#module-kinterbasdb.typeconv_fixed_decimal">kinterbasdb.typeconv_fixed_decimal (module)</a></dt>
+<dt><a href="beyond-python-db-api.html#module-kinterbasdb.typeconv_fixed_fixedpoint">kinterbasdb.typeconv_fixed_fixedpoint (module)</a></dt>
+<dt><a href="beyond-python-db-api.html#module-kinterbasdb.typeconv_fixed_stdlib">kinterbasdb.typeconv_fixed_stdlib (module)</a></dt>
+<dt><a href="beyond-python-db-api.html#module-kinterbasdb.typeconv_naked">kinterbasdb.typeconv_naked (module)</a></dt>
+<dt><a href="beyond-python-db-api.html#module-kinterbasdb.typeconv_text_unicode">kinterbasdb.typeconv_text_unicode (module)</a></dt>
+</dl></td></tr></table>
+
+<h2 id="L">L</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="beyond-python-db-api.html#kinterbasdb.TPB.lock_resolution">lock_resolution (kinterbasdb.TPB attribute)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.TPB.lock_timeout">lock_timeout (kinterbasdb.TPB attribute)</a></dt></dl></td><td width="33%" valign="top"><dl>
+</dl></td></tr></table>
+
+<h2 id="M">M</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Connection.main_transaction">main_transaction (kinterbasdb.Connection attribute)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.ConnectionGroup.members">members() (kinterbasdb.ConnectionGroup method)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Conenction.modifyUser">modifyUser() (kinterbasdb.services.Conenction method)</a></dt>
+</dl></td></tr></table>
+
+<h2 id="N">N</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="beyond-python-db-api.html#kinterbasdb.PreparedStatement.n_input_params">n_input_params (kinterbasdb.PreparedStatement attribute)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.PreparedStatement.n_output_params">n_output_params (kinterbasdb.PreparedStatement attribute)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Transaction.n_physical">n_physical (kinterbasdb.Transaction attribute)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Cursor.name">name (kinterbasdb.Cursor attribute)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#Cursor.nextset">nextset() (Cursor method)</a></dt>
+  <dd><dl>
+    <dt><a href="python-db-api-compliance.html#kinterbasdb.Cursor.nextset">(kinterbasdb.Cursor method)</a></dt>
+  </dl></dd></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="Python-DB-API-2.0.html#NotSupportedError">NotSupportedError</a></dt>
+<dt><a href="Python-DB-API-2.0.html#NUMBER">NUMBER (built-in variable)</a></dt>
+</dl></td></tr></table>
+
+<h2 id="O">O</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="Python-DB-API-2.0.html#OperationalError">OperationalError</a></dt></dl></td><td width="33%" valign="top"><dl>
+</dl></td></tr></table>
+
+<h2 id="P">P</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="Python-DB-API-2.0.html#paramstyle">paramstyle (built-in variable)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.PreparedStatement.plan">plan (kinterbasdb.PreparedStatement attribute)</a></dt>
+<dt><a href="python-db-api-compliance.html#kinterbasdb.Connection.precision_mode">precision_mode (kinterbasdb.Connection attribute)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Cursor.prep">prep() (kinterbasdb.Cursor method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Connection.prepare">prepare() (kinterbasdb.Connection method)</a></dt>
+  <dd><dl>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.ConnectionGroup.prepare">(kinterbasdb.ConnectionGroup method)</a></dt>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.Transaction.prepare">(kinterbasdb.Transaction method)</a></dt>
+  </dl></dd></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.PreparedStatement">PreparedStatement (class in kinterbasdb)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#ProgrammingError">ProgrammingError</a></dt>
+</dl></td></tr></table>
+
+<h2 id="R">R</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="beyond-python-db-api.html#kinterbasdb.ConnectionGroup.remove">remove() (kinterbasdb.ConnectionGroup method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Conenction.removeUser">removeUser() (kinterbasdb.services.Conenction method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.TableReservation.render">render() (kinterbasdb.TableReservation method)</a></dt>
+  <dd><dl>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.TPB.render">(kinterbasdb.TPB method)</a></dt>
+  </dl></dd>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Conenction.repair">repair() (kinterbasdb.services.Conenction method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Transaction.resolution">resolution (kinterbasdb.Transaction attribute)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Connection.restore">restore() (kinterbasdb.services.Connection method)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#Connection.rollback">rollback() (Connection method)</a></dt>
+  <dd><dl>
+    <dt><a href="python-db-api-compliance.html#kinterbasdb.Connection.rollback">(kinterbasdb.Connection method)</a></dt>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.ConnectionGroup.rollback">(kinterbasdb.ConnectionGroup method)</a></dt>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.Transaction.rollback">(kinterbasdb.Transaction method)</a></dt>
+  </dl></dd></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Conenction.rollbackLimboTransaction">rollbackLimboTransaction() (kinterbasdb.services.Conenction method)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#Cursor.rowcount">rowcount (Cursor attribute)</a></dt>
+  <dd><dl>
+    <dt><a href="python-db-api-compliance.html#kinterbasdb.Cursor.rowcount">(kinterbasdb.Cursor attribute)</a></dt>
+  </dl></dd>
+<dt><a href="Python-DB-API-2.0.html#ROWID">ROWID (built-in variable)</a></dt>
+</dl></td></tr></table>
+
+<h2 id="S">S</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Connection.savepoint">savepoint() (kinterbasdb.Connection method)</a></dt>
+  <dd><dl>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.Transaction.savepoint">(kinterbasdb.Transaction method)</a></dt>
+  </dl></dd>
+<dt><a href="python-db-api-compliance.html#kinterbasdb.Connection.server_version">server_version (kinterbasdb.Connection attribute)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Connection.set_type_trans_in">set_type_trans_in() (kinterbasdb.Connection method)</a></dt>
+  <dd><dl>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.Cursor.set_type_trans_in">(kinterbasdb.Cursor method)</a></dt>
+  </dl></dd>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Conenction.setAccessMode">setAccessMode() (kinterbasdb.services.Conenction method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Conenction.setDefaultPageBuffers">setDefaultPageBuffers() (kinterbasdb.services.Conenction method)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#Cursor.setinputsizes">setinputsizes() (Cursor method)</a></dt>
+  <dd><dl>
+    <dt><a href="python-db-api-compliance.html#kinterbasdb.Cursor.setinputsizes">(kinterbasdb.Cursor method)</a></dt>
+  </dl></dd>
+<dt><a href="Python-DB-API-2.0.html#Cursor.setoutputsize">setoutputsize() (Cursor method)</a></dt>
+  <dd><dl>
+    <dt><a href="python-db-api-compliance.html#kinterbasdb.Cursor.setoutputsize">(kinterbasdb.Cursor method)</a></dt>
+  </dl></dd></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Conenction.setShouldReservePageSpace">setShouldReservePageSpace() (kinterbasdb.services.Conenction method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Conenction.setSQLDialect">setSQLDialect() (kinterbasdb.services.Conenction method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Connection.setSweepInterval">setSweepInterval() (kinterbasdb.services.Connection method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Conenction.setWriteMode">setWriteMode() (kinterbasdb.services.Conenction method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Conenction.shutdown">shutdown() (kinterbasdb.services.Conenction method)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.PreparedStatement.sql">sql (kinterbasdb.PreparedStatement attribute)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.PreparedStatement.statement_type">statement_type (kinterbasdb.PreparedStatement attribute)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#STRING">STRING (built-in variable)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Connection.sweep">sweep() (kinterbasdb.services.Connection method)</a></dt>
+</dl></td></tr></table>
+
+<h2 id="T">T</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="beyond-python-db-api.html#kinterbasdb.TPB.table_reservation">table_reservation (kinterbasdb.TPB attribute)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.TableReservation">TableReservation (class in kinterbasdb)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#threadsafety">threadsafety (built-in variable)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#Time">Time() (built-in function)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#TimeFromTicks">TimeFromTicks() (built-in function)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#Timestamp">Timestamp() (built-in function)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#TimestampFromTicks">TimestampFromTicks() (built-in function)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.TPB">TPB (class in kinterbasdb)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Connection.trans">trans() (kinterbasdb.Connection method)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Connection.trans_info">trans_info() (kinterbasdb.Connection method)</a></dt>
+  <dd><dl>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.Transaction.trans_info">(kinterbasdb.Transaction method)</a></dt>
+  </dl></dd>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Transaction">Transaction (class in kinterbasdb)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Cursor.transaction">transaction (kinterbasdb.Cursor attribute)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Connection.transaction_info">transaction_info() (kinterbasdb.Connection method)</a></dt>
+  <dd><dl>
+    <dt><a href="beyond-python-db-api.html#kinterbasdb.Transaction.transaction_info">(kinterbasdb.Transaction method)</a></dt>
+  </dl></dd>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.Connection.transactions">transactions (kinterbasdb.Connection attribute)</a></dt>
+</dl></td></tr></table>
+
+<h2 id="U">U</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.User">User (class in kinterbasdb.services)</a></dt>
+<dt><a href="beyond-python-db-api.html#kinterbasdb.services.Conenction.userExists">userExists() (kinterbasdb.services.Conenction method)</a></dt></dl></td><td width="33%" valign="top"><dl>
+</dl></td></tr></table>
+
+<h2 id="W">W</h2>
+<table width="100%" class="indextable"><tr><td width="33%" valign="top">
+<dl>
+
+<dt><a href="beyond-python-db-api.html#kinterbasdb.EventConduit.wait">wait() (kinterbasdb.EventConduit method)</a></dt>
+<dt><a href="Python-DB-API-2.0.html#Warning">Warning</a></dt></dl></td><td width="33%" valign="top"><dl>
+</dl></td></tr></table>
+
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+
+   
+
+          <h3>Quick search</h3>
+            <form class="search" action="search.html" method="get">
+              <input type="text" name="q" size="18" /> <input type="submit" value="Go" />
+              <input type="hidden" name="check_keywords" value="yes" />
+              <input type="hidden" name="area" value="default" />
+            </form>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li><a href="index.html">KInterbasDB v3.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, David Rushby, Pavel Cisar.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.5.1.
+    </div>
+  </body>
+</html>

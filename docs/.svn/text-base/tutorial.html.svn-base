@@ -1,0 +1,335 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Quick-start Guide / Tutorial &mdash; KInterbasDB v3.3.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '3.3.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="KInterbasDB v3.3.0 documentation" href="index.html" />
+    <link rel="next" title="Python Database API Specification 2.0" href="Python-DB-API-2.0.html" />
+    <link rel="prev" title="KInterbasDB Installation Guide" href="installation.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="Python-DB-API-2.0.html" title="Python Database API Specification 2.0"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="KInterbasDB Installation Guide"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">KInterbasDB v3.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  
+  <div class="section" id="quick-start-guide-tutorial">
+<h1>Quick-start Guide / Tutorial<a class="headerlink" href="#quick-start-guide-tutorial" title="Permalink to this headline">¶</a></h1>
+<p>This brief tutorial aims to get the reader started by demonstrating
+elementary usage of KInterbasDB. It is not a comprehensive Python
+Database API tutorial, nor is it comprehensive in its coverage of
+anything else.</p>
+<p>The numerous advanced features of KInterbasDB are covered in another
+section of this documentation, which is not in a tutorial format, though it
+is replete with examples.</p>
+<div class="section" id="connecting-to-a-database">
+<h2>Connecting to a Database<a class="headerlink" href="#connecting-to-a-database" title="Permalink to this headline">¶</a></h2>
+<p><strong>Example 1</strong></p>
+<p>A database connection is typically established with code such as this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">kinterbasdb</span>
+
+<span class="c"># The server is named &#39;bison&#39;; the database file is at &#39;/temp/test.db&#39;.</span>
+<span class="n">con</span> <span class="o">=</span> <span class="n">kinterbasdb</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s">&#39;bison:/temp/test.db&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;pass&#39;</span><span class="p">)</span>
+
+<span class="c"># Or, equivalently:</span>
+<span class="n">con</span> <span class="o">=</span> <span class="n">kinterbasdb</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+    <span class="n">host</span><span class="o">=</span><span class="s">&#39;bison&#39;</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="s">&#39;/temp/test.db&#39;</span><span class="p">,</span>
+    <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;pass&#39;</span>
+  <span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Example 2</strong></p>
+<p>Suppose we want to connect to the database in SQL Dialect 1 and specifying
+UTF-8 as the character set of the connection:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">kinterbasdb</span>
+
+<span class="n">con</span> <span class="o">=</span> <span class="n">kinterbasdb</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+    <span class="n">dsn</span><span class="o">=</span><span class="s">&#39;bison:/temp/test.db&#39;</span><span class="p">,</span>
+    <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;pass&#39;</span><span class="p">,</span>
+    <span class="n">dialect</span><span class="o">=</span><span class="mf">1</span><span class="p">,</span> <span class="c"># necessary for all dialect 1 databases</span>
+    <span class="n">charset</span><span class="o">=</span><span class="s">&#39;UTF8&#39;</span> <span class="c"># specify a character set for the connection</span>
+  <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="executing-sql-statements">
+<h2>Executing SQL Statements<a class="headerlink" href="#executing-sql-statements" title="Permalink to this headline">¶</a></h2>
+<p>For this section, suppose we have a table defined and populated by the
+following SQL code:</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="k">create</span> <span class="k">table</span> <span class="n">languages</span>
+<span class="p">(</span>
+  <span class="n">name</span>               <span class="nb">varchar</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span>
+  <span class="n">year_released</span>      <span class="nb">integer</span>
+<span class="p">);</span>
+
+<span class="k">insert</span> <span class="k">into</span> <span class="n">languages</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">year_released</span><span class="p">)</span> <span class="k">values</span> <span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">,</span>        <span class="mi">1972</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">languages</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">year_released</span><span class="p">)</span> <span class="k">values</span> <span class="p">(</span><span class="s1">&#39;Python&#39;</span><span class="p">,</span>   <span class="mi">1991</span><span class="p">);</span>
+</pre></div>
+</div>
+<p><strong>Example 1</strong></p>
+<p>This example shows the <em>simplest</em> way to print the entire contents of
+the <cite>languages</cite> table:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">kinterbasdb</span>
+
+<span class="n">con</span> <span class="o">=</span> <span class="n">kinterbasdb</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s">&#39;/temp/test.db&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;masterkey&#39;</span><span class="p">)</span>
+
+<span class="c"># Create a Cursor object that operates in the context of Connection con:</span>
+<span class="n">cur</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+
+<span class="c"># Execute the SELECT statement:</span>
+<span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s">&quot;select * from languages order by year_released&quot;</span><span class="p">)</span>
+
+<span class="c"># Retrieve all rows as a sequence and print that sequence:</span>
+<span class="k">print</span> <span class="n">cur</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Sample output:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[(</span><span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="mf">1972</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;Python&#39;</span><span class="p">,</span> <span class="mf">1991</span><span class="p">)]</span>
+</pre></div>
+</div>
+<p><strong>Example 2</strong></p>
+<p>Here&#8217;s another trivial example that demonstrates various ways of
+fetching a single row at a time from a <cite>SELECT</cite>-cursor:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">kinterbasdb</span>
+
+<span class="n">con</span> <span class="o">=</span> <span class="n">kinterbasdb</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s">&#39;/temp/test.db&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;masterkey&#39;</span><span class="p">)</span>
+
+<span class="n">cur</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+<span class="n">SELECT</span> <span class="o">=</span> <span class="s">&quot;select name, year_released from languages order by year_released&quot;</span>
+
+<span class="c"># 1. Iterate over the rows available from the cursor, unpacking the</span>
+<span class="c"># resulting sequences to yield their elements (name, year_released):</span>
+<span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">SELECT</span><span class="p">)</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">year_released</span><span class="p">)</span> <span class="ow">in</span> <span class="n">cur</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> has been publicly available since </span><span class="si">%d</span><span class="s">.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">year_released</span><span class="p">)</span>
+
+<span class="c"># 2. Equivalently:</span>
+<span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">SELECT</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">cur</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> has been publicly available since </span><span class="si">%d</span><span class="s">.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mf">0</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="mf">1</span><span class="p">])</span>
+
+<span class="c"># 3. Using mapping-iteration rather than sequence-iteration:</span>
+<span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">SELECT</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">cur</span><span class="o">.</span><span class="n">itermap</span><span class="p">():</span>
+    <span class="k">print</span> <span class="s">&#39;</span><span class="si">%(name)s</span><span class="s"> has been publicly available since %(year_released)d.&#39;</span> <span class="o">%</span> <span class="n">row</span>
+</pre></div>
+</div>
+<p>Sample output:</p>
+<div class="highlight-python"><pre>C has been publicly available since 1972.
+Python has been publicly available since 1991.
+C has been publicly available since 1972.
+Python has been publicly available since 1991.
+C has been publicly available since 1972.
+Python has been publicly available since 1991.</pre>
+</div>
+<p><strong>Example 3</strong></p>
+<p>The following program is a simplistic table printer (applied in this
+example to <cite>languages</cite>):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">kinterbasdb</span> <span class="kn">as</span> <span class="nn">k</span>
+
+<span class="n">TABLE_NAME</span> <span class="o">=</span> <span class="s">&#39;languages&#39;</span>
+<span class="n">SELECT</span> <span class="o">=</span> <span class="s">&#39;select * from </span><span class="si">%s</span><span class="s"> order by year_released&#39;</span> <span class="o">%</span> <span class="n">TABLE_NAME</span>
+
+<span class="n">con</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s">&#39;/temp/test.db&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;masterkey&#39;</span><span class="p">)</span>
+
+<span class="n">cur</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+<span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">SELECT</span><span class="p">)</span>
+
+<span class="c"># Print a header.</span>
+<span class="k">for</span> <span class="n">fieldDesc</span> <span class="ow">in</span> <span class="n">cur</span><span class="o">.</span><span class="n">description</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">fieldDesc</span><span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">DESCRIPTION_NAME</span><span class="p">]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="n">fieldDesc</span><span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">DESCRIPTION_DISPLAY_SIZE</span><span class="p">])</span> <span class="p">,</span>
+<span class="k">print</span> <span class="c"># Finish the header with a newline.</span>
+<span class="k">print</span> <span class="s">&#39;-&#39;</span> <span class="o">*</span> <span class="mf">78</span>
+
+<span class="c"># For each row, print the value of each field left-justified within</span>
+<span class="c"># the maximum possible width of that field.</span>
+<span class="n">fieldIndices</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cur</span><span class="o">.</span><span class="n">description</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">cur</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">fieldIndex</span> <span class="ow">in</span> <span class="n">fieldIndices</span><span class="p">:</span>
+        <span class="n">fieldValue</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">fieldIndex</span><span class="p">])</span>
+        <span class="n">fieldMaxWidth</span> <span class="o">=</span> <span class="n">cur</span><span class="o">.</span><span class="n">description</span><span class="p">[</span><span class="n">fieldIndex</span><span class="p">][</span><span class="n">k</span><span class="o">.</span><span class="n">DESCRIPTION_DISPLAY_SIZE</span><span class="p">]</span>
+
+        <span class="k">print</span> <span class="n">fieldValue</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="n">fieldMaxWidth</span><span class="p">)</span> <span class="p">,</span>
+
+    <span class="k">print</span> <span class="c"># Finish the row with a newline.</span>
+</pre></div>
+</div>
+<p>Sample output:</p>
+<div class="highlight-python"><pre>NAME                 YEAR_RELEASED
+------------------------------------------------------------------------------
+C                    1972
+Python               1991</pre>
+</div>
+<p><strong>Example 4</strong></p>
+<p>Let&#8217;s insert more languages:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">kinterbasdb</span>
+
+<span class="n">con</span> <span class="o">=</span> <span class="n">kinterbasdb</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s">&#39;/temp/test.db&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;masterkey&#39;</span><span class="p">)</span>
+
+<span class="n">cur</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+
+<span class="n">newLanguages</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s">&#39;Lisp&#39;</span><span class="p">,</span>  <span class="mf">1958</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&#39;Dylan&#39;</span><span class="p">,</span> <span class="mf">1995</span><span class="p">),</span>
+  <span class="p">]</span>
+
+<span class="n">cur</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span><span class="s">&quot;insert into languages (name, year_released) values (?, ?)&quot;</span><span class="p">,</span>
+    <span class="n">newLanguages</span>
+  <span class="p">)</span>
+
+<span class="c"># The changes will not be saved unless the transaction is committed explicitly:</span>
+<span class="n">con</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Note the use of a <em>parameterized</em> SQL statement above. When dealing
+with repetitive statements, this is much faster and less error-prone
+than assembling each SQL statement manually. (You can read more about
+parameterized SQL statements in the section on <cite>Prepared Statements</cite>.)</p>
+<p>After running Example 4, the table printer from Example 3 would print:</p>
+<div class="highlight-python"><pre>NAME                 YEAR_RELEASED
+------------------------------------------------------------------------------
+Lisp                 1958
+C                    1972
+Python               1991
+Dylan                1995</pre>
+</div>
+</div>
+<div class="section" id="calling-stored-procedures">
+<h2>Calling Stored Procedures<a class="headerlink" href="#calling-stored-procedures" title="Permalink to this headline">¶</a></h2>
+<p>Firebird supports stored procedures written in a proprietary procedural
+SQL language. Firebird stored procedures can have <em>input</em> parameters and/or
+<em>output</em> parameters. Some databases support <em>input/output</em> parameters,
+where the same parameter is used for both input and output; Firebird does
+not support this.</p>
+<p>It is important to distinguish between procedures that <em>return a
+result set</em> and procedures that <em>populate and return their output
+parameters exactly once</em>. Conceptually, the latter &#8220;return their
+output parameters&#8221; like a Python function, whereas the former &#8220;yield
+result rows&#8221; like a Python generator.</p>
+<p>Firebird&#8217;s <em>server-side</em> procedural SQL syntax makes no such distinction,
+but <em>client-side</em> SQL code (and C API code) must. A result set is
+retrieved from a stored procedure by <cite>SELECT`ing from the procedure,
+whereas output parameters are retrieved with an `EXECUTE PROCEDURE</cite>
+statement.</p>
+<p>To <em>retrieve a result set</em> from a stored procedure with KInterbasDB,
+use code such as this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s">&quot;select output1, output2 from the_proc(?, ?)&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">input1</span><span class="p">,</span> <span class="n">input2</span><span class="p">))</span>
+
+<span class="c"># Ordinary fetch code here, such as:</span>
+<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">cur</span><span class="p">:</span>
+    <span class="o">...</span> <span class="c"># process row</span>
+
+<span class="n">con</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span> <span class="c"># If the procedure had any side effects, commit them.</span>
+</pre></div>
+</div>
+<p>To <em>execute</em> a stored procedure and <em>access its output parameters</em>,
+use code such as this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">cur</span><span class="o">.</span><span class="n">callproc</span><span class="p">(</span><span class="s">&quot;the_proc&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">input1</span><span class="p">,</span> <span class="n">input2</span><span class="p">))</span>
+
+<span class="c"># If there are output parameters, retrieve them as though they were the</span>
+<span class="c"># first row of a result set.  For example:</span>
+<span class="n">outputParams</span> <span class="o">=</span> <span class="n">cur</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+<span class="n">con</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span> <span class="c"># If the procedure had any side effects, commit them.</span>
+</pre></div>
+</div>
+<p>This latter is not very elegant; it would be preferable to access the
+procedure&#8217;s output parameters as the return value of
+<cite>Cursor.callproc()</cite>. The Python DB API specification requires the
+current behavior, however.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">Quick-start Guide / Tutorial</a><ul>
+<li><a class="reference external" href="#connecting-to-a-database">Connecting to a Database</a></li>
+<li><a class="reference external" href="#executing-sql-statements">Executing SQL Statements</a></li>
+<li><a class="reference external" href="#calling-stored-procedures">Calling Stored Procedures</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="installation.html" title="previous chapter">KInterbasDB Installation Guide</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="Python-DB-API-2.0.html" title="next chapter">Python Database API Specification 2.0</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/tutorial.txt">Show Source</a></li>
+            </ul>
+          <h3>Quick search</h3>
+            <form class="search" action="search.html" method="get">
+              <input type="text" name="q" size="18" /> <input type="submit" value="Go" />
+              <input type="hidden" name="check_keywords" value="yes" />
+              <input type="hidden" name="area" value="default" />
+            </form>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="Python-DB-API-2.0.html" title="Python Database API Specification 2.0"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="KInterbasDB Installation Guide"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">KInterbasDB v3.3.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, David Rushby, Pavel Cisar.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.5.1.
+    </div>
+  </body>
+</html>

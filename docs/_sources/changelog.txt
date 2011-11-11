@@ -1,0 +1,1560 @@
+#####################
+KInterbasDB Changelog
+#####################
+
+Version 3.3
+===========
+
+New Features
+------------
+
+    - It is now possible to use multiple transactions simultaneously on a
+      single kinterbasdb.Connection.
+      See discussion:
+      http://sourceforge.net/forum/forum.php?thread_id=1597658&forum_id=30917
+
+    - If a unicode object is passed as the SQL statement to any of
+
+        + kinterbasdb.create_database
+        + Connection.execute_immediate
+        + Cursor.prep
+        + Cursor.execute
+
+      KInterbasDB will attempt to encode it to the character set of file system
+      (in the case of kinterbasdb.create_database), or to the character set of
+      the connection, in the other cases.  Previously, only unicode objects
+      that could be encoded to ASCII were accepted.
+
+    - Documentation was extended and completely redone using reStructured text
+      and Sphinx (http://sphinx.pocoo.org)
+
+Backward-incompatibilities
+--------------------------
+
+    - Default type conversion setting was changed to `type_conv=200`. Applications
+      that doesn't call :func:`kinterbasdb.init()` and rely on Python older than 2.4
+      and/or mx.DateTime and/or explicit unicode conversion must call 
+      :func:`kinterbasdb.init()` with `type_conv=1` as first thing after `kinterbasdb`
+      import. Applications that explicitly call :func:`kinterbasdb.init()` doesn't need
+      to be changed at all.
+
+      Details about new default setting are described in `Parameter Conversion` section
+      `Deferred Loading of Dynamic Type Translators` of KInterbasDB documentation.
+
+
+Version 3.2.2
+=============
+
+Bug Fixes
+---------
+
+    - Fixed bug with wrong Transaction Parameter Block structure. It surfaces with
+      Firebird 2.1 that's more strict about TPB correctness.
+
+    - Fixed bug with Services under Firebird 2.1.
+
+Version 3.2.1
+=============
+
+Bug Fixes
+---------
+
+    - Inadequate compatibility with Interbase 7's boolean data type.
+      All official Win32 binaries are compiled and linked against Firebird, not
+      Interbase.  Typically, Interbase users either compile their own
+      KInterbasDB binaries or use the official Firebird 1.0-oriented binaries.
+      Previously, the latter were not fully compatible with Interbase 7's
+      boolean type.
+
+      `Thanks to rmacdurmon for reporting this problem.`
+
+    - Conditionalized C reference to some constants not included in the
+      Interbase C API.
+
+      SF bug 1631461:
+      http://sourceforge.net/tracker/index.php?func=detail&aid=1631461&group_id=9913&atid=109913
+
+    - The "Signature Specifications for Input and Output Translators" section
+      of the Usage Guide specified the Dynamic Type Translator signature of the
+      TIMESTAMP type incorrectly.
+
+      SF bug 1554643:
+      http://sourceforge.net/tracker/index.php?func=detail&aid=1554643&group_id=9913&atid=109913
+
+    - Removed unnecessary reference to <semaphore.h> that prevented KInterbasDB
+      from compiling on some primitive Unixy operating systems.
+
+    - An assertion was triggered when BLOB DTT {'mode': 'materialized'} was set
+      explicitly.  This did not actually affect 3.2.0-final binaries, since
+      they were delivered with assertions off, but it is now fixed.
+
+      SF bug 1652413:
+      http://sourceforge.net/tracker/index.php?func=detail&aid=1652413&group_id=9913&atid=109913
+
+    - KInterbasDB had various problems when any of the following were installed
+      at a path that contained non-ASCII characters:
+
+        - Python
+        - KInterbasDB
+        - Firebird
+
+      It now works properly.
+      See discussion:
+      http://sourceforge.net/forum/forum.php?thread_id=1695175&forum_id=30917
+
+      - As a side effect of that change, SF bug 1676482 was fixed:
+        http://sourceforge.net/tracker/index.php?func=detail&aid=1676482&group_id=9913&atid=109913
+
+
+Version 3.2
+===========
+
+Bug Fixes
+---------
+
+    - At concurrency_level 1, it was possible for a deadlock to occur if
+      KInterbasDB simultaneously raised an exception in one thread while
+      executing a SQL statement in another.  This problem did not affect
+      concurrency_level 2.
+
+      `Thanks to Atsuo Ishimoto for reporting this bug.`
+
+    - The official implementation of the automagic TEXT_UNICODE type translator
+      (in the kinterbasdb.typeconv_text_unicode module) was missing support for
+      the new character sets introduced in Firebird 2.0 (namely, the corrected
+      version of UTF8, plus KOI8-R, KOI8-U, and WIN1258).
+
+      `Thanks to Oleg Deribas for bringing this to my attention.`
+
+
+Version 3.2rc1
+==============
+
+Bug Fixes
+---------
+
+    - KInterbasDB's "Implicit Conversion of Input Parameters from Strings" now
+      accepts not only str objects, but also unicode objects, as long as
+      they're convertible to ASCII.
+
+      `Thanks to Ronald Lew for reporting this bug.`
+
+      For general info about the "Implicit Conversion of Input Parameters
+      from Strings" feature, see:
+      http://kinterbasdb.sf.net/dist_docs/usage.html#adv_param_conv_implicit_from_string
+
+New Features
+------------
+
+    - KInterbasDB now stores and retrieves the undocumented sub-second
+      component of TIME and TIMESTAMP fields.
+
+      `Thanks to Petr Jakes and Helen Borrie for bringing the availability of
+      the sub-second data to my attention.`
+
+    - Passing None to Cursor.execute (instead of a SQL string or a
+      PreparedStatement) now executes the most recently prepared/executed
+      statement, if any.  This can enhance convenience because it frees the
+      client programmer from the responsibility of separately tracking the most
+      recent statement in order to execute it again.
+
+      `Thanks to Igor Youdytsky for suggesting this feature.`
+
+    - PreparedStatements now have a read-only 'description' property that
+      contains a Python DB API 2.0 description sequence of the same format as
+      Cursor.description.
+
+      `Thanks to Alexandr Zamaraev for suggesting this feature.`
+      For more info, see:
+      http://kinterbasdb.sf.net/dist_docs/usage.html#PreparedStatement_description
+
+    - The following query and resolution methods for limbo transactions have
+      been added to the kinterbasdb.services.Connection class:
+      getLimboTransactionIDs, commitLimboTransaction, rollbackLimboTransaction.
+
+Backward-incompatibilities
+--------------------------
+
+    - Dynamic Type Translators for TIME and TIMESTAMP fields must now
+      accomodate an additional tuple element:  an integer which represents
+      microseconds.  The official TIME and TIMESTAMP type translators in
+      typeconv_datetime_naked.py, typeconv_datetime_stdlib.py, and
+      typeconv_datetime_mx.py have been updated, and can be used as a guide.
+
+
+Version 3.2b1
+=============
+
+Bug Fixes
+---------
+
+    - Previously, if KInterbasDB detected that the field to which a NULL value
+      was bound was defined as NOT NULL, KInterbasDB itself immediately raised
+      an exception.  This caused problems for fields defined as NOT NULL but
+      populated by BEFORE triggers, so KInterbasDB now submits the illegal NULL
+      and allows the database engine to make the decision.
+
+    - Fixed an obscure memory leak in Connection.drop_database.
+
+    - Fixed a few more compatibility problems with Interbase 7.x.
+
+    - kinterbasdb.Cursor can again be used as a base class for user-defined
+      subclasses.  This capability had been removed in KInterbasDB 3.2a1.
+
+New Features
+------------
+
+    - Connection timeouts:  KInterbasDB connections can now be asked to time
+      out after a specified period of inactivity.  This feature is not
+      supported by the Firebird C API, so it is implemented entirely at the
+      KInterbasDB level.
+      For more info, see:
+      http://kinterbasdb.sf.net/dist_docs/usage.html#adv_ct
+
+    - Added a TPB class to assist with the construction of complex Transaction
+      Parameter Buffers.
+
+      This feature has not yet been documented.  In the meantime, you can
+      find example code in the test_transactions.py module of the KInterbasDB
+      test suite:
+      http://kinterbasdb.sf.net/test-suite/releases/
+
+    - Added methods Connection.transaction_info and Connection.trans_info.
+      transaction_info is a thin wrapper around the C function
+      isc_transaction_info, while trans_info is a Pythonic wrapper around
+      transaction_info.
+
+      This feature has not yet been documented.  In the meantime, you can
+      find example code in the test_services.py module of the KInterbasDB test
+      suite:
+      http://kinterbasdb.sf.net/test-suite/releases/
+
+    - Exposed the Firebird header constant FB_API_VER as
+      kinterbasdb.FB_API_VER.  This integer represents the version of Firebird
+      against which KInterbasDB was compiled, as follows:
+
+        - Any version of Interbase, or Firebird 1.0.x:      10
+        - Firebird 1.5.x:                                   15
+        - Firebird 2.0.x:                                   20
+
+    - KInterbasDB now raises a kinterbasdb.TransactionConflict exception
+      (instead of the rather generic ProgrammingError) when it receives a
+      server-side transaction conflict notification.  This makes it easier for
+      the client programmer to detect and resolve deadlocks.
+
+      TransactionConflict is a subclass of kinterbasdb.OperationalError.
+
+Backward-incompatibilities
+--------------------------
+
+    - Client programs that encounter transaction conflicts in routine
+      operation, *and* which contain logic to deal with this type of exception
+      specifically (on the basis of the payload of the ProgrammingError) should
+      be updated to use::
+
+        try:
+          ...
+        except kinterbasdb.TransactionConflict:
+          ...
+
+      instead.
+
+      For more info, see the last item under "New Features" above.
+
+
+Version 3.2a1
+=============
+
+New Features
+------------
+
+    - Better concurrency support.  This requires a capable database client
+      library, and must be explicitly activated by specifying keyword argument
+      concurrency_level to function kinterbasdb.init.
+      For more info, see:
+      http://kinterbasdb.sf.net/dist_docs/usage.html#special_issue_concurrency
+
+    - Streaming blob support (blobs can now be handled without fully
+      materializing them in memory).
+      For more info, see:
+      http://kinterbasdb.sf.net/dist_docs/usage.html#adv_param_conv_blobs
+
+    - Support for manual creation and manipulation of prepared statements.
+      KInterbasDB has always used prepared statements under the hood, but now
+      they're directly manipulable by the client programmer.  The implicit
+      prepared statement cache has also become more sophisticated.
+      For more info, see:
+      http://kinterbasdb.sf.net/dist_docs/usage.html#adv_prepared_statements
+
+    - Database event system entirely rewritten.  Client programs can now create
+      any number of EventConduits per process, and a given conduit can listen
+      for more than 15 events (the limit is in the hundreds, but the specific
+      limit depends on the database server version and operating system rather
+      than on KInterbasDB).
+      For more info, see:
+      http://kinterbasdb.sf.net/dist_docs/usage.html#adv_event
+
+    - Added method Connection.db_info, a Pythonic wrapper around
+      Connection.database_info.  Thanks to Pavel Cisar for implementing this.
+      For more info, see:
+      http://kinterbasdb.sf.net/dist_docs/usage.html#adv_prog_maint_db_info
+
+    - Positional Dynamic Type Translation:  It's now possible to specify DTT
+      settings at the Cursor-column level in addition to the previously
+      available levels.
+      For more info, see:
+      http://kinterbasdb.sf.net/dist_docs/usage.html#adv_param_conv_dynamic_type_translation_positional
+
+    - Added official support for the Python 2.4+ standard library decimal
+      module, including a new kinterbasdb.init(type_conv=200) convenience code.
+      For more info, see:
+      http://kinterbasdb.sf.net/dist_docs/usage.html#adv_param_conv_dynamic_type_translation_deferred_loading
+
+    - KInterbasDB now detects the "PSQL Stack Trace" generated by FB 2.0+, and
+      includes a nicely formatted rendition of the stack trace in the exception
+      message.
+      For more info, see:
+      Firebird 2.0 Release Notes, section "PSQL Stack Trace"
+
+
+Bug Fixes
+---------
+
+    - KInterbasDB should now compile and run out of the box with Interbase
+      7.x.  DSR doesn't have that version of Interbase, however, so KInterbasDB
+      is not actually tested with it.
+
+
+Backward-incompatibilities
+--------------------------
+
+    - KInterbasDB 3.2 has dropped support for Python versions earlier than 2.3,
+      and (officially) supports only Firebird 1.0 and later.  However,
+      Interbase 7.x support has been considerably enhanced, so it could be said
+      that Interbase is "unofficially" supported.
+
+    - Most Python classes in KInterbasDB have become new-style, for symmetry
+      with the new-style C classes added in 3.2.  Notably, kinterbasdb.Cursor
+      is now a new-style class written in pure C.
+
+        Impact rating:  Low (There is practically no reason for a client
+        program to access the affected KInterbasDB classes in such a way that
+        this change would matter.)
+
+    - Previously, the "infinite timeout value" for EventConduit.wait was 0.0.
+      The choice of that value was a terrible mistake, because attempting to
+      specify an extremely short timeout with a value such as 0.000000000000001
+      in fact created an infinite timeout.  The new "infinite timeout value" is
+      -1.0.
+
+        Impact rating:  Low-Medium (The Usage Guide for KInterbasDB 3.1
+        specified that "The default timeout is infinite.", but it did not
+        guarantee a particular value.  Client programs that use both events and
+        event timeouts should be checked, however.)
+
+
+Version 3.1.3
+=============
+
+Bug Fixes
+---------
+
+    - Fixed leak of weak reference objects used by a Connection to track its
+      Cursors.  These objects were collected when the Connection closed, but
+      never earlier.
+
+      `Thanks to Robby Dermody for reporting this bug.`
+      Refs:
+      http://sf.net/forum/forum.php?thread_id=1380653&forum_id=30917
+
+    - The database engine's Services API makes no provision for Unicode
+      handling.  kinterbasdb should have gracefully rejected Python unicode
+      objects submitted to the Services API, but instead, it choked.
+
+      `Thanks to Garrett Smith for reporting this bug.`
+      Refs:
+      http://sf.net/forum/forum.php?thread_id=1366918&forum_id=30917
+
+
+Version 3.1.2
+=============
+
+Bug Fixes
+---------
+
+    - Attempting to apply dynamic type translation settings dictionaries that
+      had non-string keys caused a segfault under some some circumstances.
+
+    - kinterbasdb's Services API infrastructure parsed integer results from
+      the engine as recommended by the IB 6 API Guide, but this was
+      inappropriate on non-Windows x86-64, and could cause invalid memory
+      access.
+
+    - Input handling of INTEGER ARRAY fields did not work correctly on
+      non-Windows x86-64.
+
+    - Overridding a connection's dynamic type translation settings for a
+      particular slot with the "naked" translator by passing None as the
+      translator to Cursor.set_type_trans_[in|out] did not work.
+
+    - The FIXED dynamic type translation slot was not handled properly on
+      dialect 1 connections (dialect 1 databases store NUMERIC/DECIMAL values
+      with precisions 10-18 internally as floating point).
+
+    - Documentation bug:  The "Using KInterbasDB with Embedded Firebird"
+      section of the Usage Guide stated that the Services API did not work with
+      the embedded server architecture.  That was written when Firebird 1.5 was
+      in alpha; the Services API *does* work with embedded Firebird 1.5.2.
+
+
+Version 3.1.1
+=============
+
+Bug Fixes
+---------
+
+    - kinterbasdb.init(type_conv=100|200) didn't work under Python 2.4.
+      Late in the Python 2.4 development cycle, additional constraints were
+      introduced in Python's funcobject.c that defeated kinterbasdb's attempts
+      to manipulate the 'func_code' attribute of some functions during the
+      execution of kinterbasdb.init.
+
+    - C type ConnectionType's destructor was called directly (rather than as a
+      result of DECREF) if an error arose in kinterbasdb.connect or
+      kinterbasdb.create_database.  This triggered a refcount assertion in
+      debug builds of Python.
+
+    - Fixed a reference count leak in the C layer's central exception-raising
+      function.
+
+    - Fixed some potential memory handling problems in exceptional situations
+      in the event handling code.
+
+    - A trivial problem prevented kinterbasdb 3.1 from compiling with the
+      prereleases of Firebird 2.0.
+
+
+New Features
+------------
+
+    - In typeconv_text_unicode.py, enabled auto-translation of some Asian
+      Unicode codecs that didn't enter the Python standard library until Python
+      2.4.
+
+
+Version 3.1
+===========
+
+Bug Fixes
+---------
+
+    - Fixed minor problems with the Connection.database_info method.
+
+
+Version 3.1_pre9
+================
+
+Version 3.1_pre9 is being released instead of 3.1 final primarily to test
+Python 2.4 compatibility.  Since the first beta of Python 2.4 has now been
+released, it is expected that these binaries will continue to work throughout
+2.4's lifespan (including maintenance releases - 2.4.x).
+
+New Features
+------------
+
+    - Python 2.4 support (that is, a few build script changes and the
+      availability of official Windows binaries for Python 2.4).
+
+Bug Fixes
+---------
+
+    - kinterbasdb sometimes caused an exception to be raised during the Python
+      interpreter's shutdown process.
+      Refs:
+      http://sourceforge.net/tracker/index.php?func=detail&aid=1011513&group_id=9913&atid=109913
+
+    - Fixed a potential concurrency problem regarding memory allocation in
+      kinterbasdb's event handling code.
+
+
+Version 3.1_pre8
+================
+
+Version 3.1_pre8 is the recommended stable version of kinterbasdb.
+
+New Features
+------------
+
+    - kinterbasdb._RowMapping has a richer dict-like interface (now implements
+      __len__, __getitem__, get, __contains__, keys, values, items, __iter__,
+      iterkeys, itervalues, iteritems).
+
+Bug Fixes
+---------
+
+    - The kinterbasdb.typeconv_fixed_fixedpoint.fixed_conv_out_precise dynamic
+      type translator was unable to convert some NUMERIC/DECIMAL database
+      values.
+      Refs:
+      http://sourceforge.net/tracker/index.php?func=detail&aid=949669&group_id=9913&atid=109913
+
+    - The kinterbasdb.typeconv_text_unicode.unicode_conv_[in|out] dynamic type
+      translators did not work with non-default collations.
+      Refs:
+      http://sourceforge.net/tracker/index.php?func=detail&aid=876564&group_id=9913&atid=109913
+
+    - The kinterbasdb.services.Connection.getLog method should not have
+      accepted a database parameter; it no longer does.
+
+    - The kinterbasdb.services.Connection.backup method now returns a
+      gbak-style log string (as the kinterbasdb.services.Connection.restore
+      method has done all along).
+
+    - Applied Mac OS X compatibility patch to setup.py.
+      Refs:
+      http://sourceforge.net/tracker/index.php?func=detail&aid=909886&group_id=9913&atid=309913
+
+    - Ported to the AMD64 architecture.  Tested with a prerelease version of
+      Firebird 1.5.1/AMD64 on Fedora Core 1/AMD64.
+      Refs:
+      http://firebird.sourceforge.net/download/prerelease/1.5.1
+      http://firebird.sourceforge.net/download/prerelease/1.5.1/FirebirdSS-1.5.1.4424-public3.amd64.rpm
+
+Backward-incompatibilities
+--------------------------
+
+    - The kinterbasdb.services.Connection.getEnvironmentMessage method has been
+      renamed to getMessageFileDir.
+
+    - The kinterbasdb.services.Connection.getLog method should not have
+      accepted a database parameter; it no longer does.
+
+DOCUMENTATION CHANGES
+---------------------
+
+    - Documented about 66% of the Services API (kinterbasdb.services module) in
+      the KInterbasDB Usage Guide.
+
+KNOWN ISSUES
+------------
+
+    - The third-party fixedpoint.py module contains an incompatibility with
+      Python 2.1 that is exposed by a bugfix applied to the
+      kinterbasdb.typeconv_fixed_fixedpoint module in 3.1_pre8.
+
+      No attempt will be made to fix this problem (which is a fixedpoint bug,
+      not a kinterbasdb bug); users should either upgrade to a newer version of
+      Python or refrain from using fixedpoint.
+
+
+Version 3.1_pre7
+================
+
+Version 3.1_pre7 should be considered a release candidate.  It is thought
+to be ready for production use.
+
+New Features
+------------
+
+    - Introduced dynamic type translation slot TEXT_UNICODE, which applies to
+      all CHAR/VARCHAR fields except those with character sets NONE, OCTETS,
+      or ASCII.  Used in combination with the official translators in the
+      kinterbasdb.typeconv_text_unicode module, TEXT_UNICODE enables automatic
+      encoding/decoding of Unicode values.
+
+      This translator is not active by default except when kinterbasdb is
+      initialized with kinterbasdb.init(type_conv=100); the backward
+      compatibility implications are discussed in detail in the
+      Backward-incompatibilities section below.
+
+      Refs:
+      docs/usage.html#faq_fep_unicode
+
+    - Added read-only .charset attribute to Connection.
+
+    - On Windows, kinterbasdb now conforms to the client library loading scheme
+      introduced in FB 1.5 RC7, so fbclient.dll need not be explicitly placed
+      in a directory on the PATH if the registry settings are present.
+
+Bug Fixes
+---------
+
+    - The type slot in cursor.description is now updated dynamically to reflect
+      dynamic type translation settings.
+      Refs:
+      http://sourceforge.net/tracker/index.php?func=detail&aid=814276&group_id=9913&atid=109913
+
+    - Added logic to prevent inappropriate calls to isc_dsql_free_statement,
+      which were observed to cause a segfault in a heavily multithreaded
+      environment.
+
+    - Added special case to field precision determination code to accommodate
+      the database client library's irregular handling of RDB$DATABASE.RDB$DB_KEY
+      Refs:
+      http://sourceforge.net/tracker/index.php?func=detail&aid=818609&group_id=9913&atid=109913
+
+Backward-incompatibilities
+--------------------------
+
+    - Programs that use BOTH of the following:
+
+        - the TEXT dynamic type translation slot
+        - unicode database fields
+
+      will need to be updated to take the new TEXT_UNICODE slot into account.
+      Since the TEXT slot is not particularly useful, this incompatibility is
+      expected to affect very few existing programs.
+
+      Refs:
+      docs/usage.html#faq_fep_unicode
+
+    - Convenience code 100 for the kinterbasdb.init function now activates the
+      new TEXT_UNICODE translation slot, so unicode values are automatically
+      encoded and decoded.
+
+      Convenience code 1 remains the default, however, and it does not
+      activate the TEXT_UNICODE slot.  Programs that do BOTH of the following:
+
+        - invoke kinterbasdb.init(type_conv=100)
+        - use unicode database fields
+
+      will need to be updated to take the new TEXT_UNICODE slot into account.
+
+      Refs:
+      docs/usage.html#adv_param_conv_dynamic_type_translation_tbl_convenience_codes
+
+
+Version 3.1_pre6
+================
+
+Version 3.1_pre6 should be considered a release candidate.  It is thought
+to be stable.
+
+New Features
+------------
+
+    - Added support for manual control over the phases of two-phase commit.
+      The client programmer now has the option of triggering the first phase
+      manually via Connection.prepare() or ConnectionGroup.prepare().
+
+      This is useful when integrating with third-party transaction managers.
+
+    - KInterbasDB can now be compiled "out of the box" with MinGW when building
+      against Firebird 1.5 (but not Firebird 1.0 or Interbase).
+
+      See docs/installation-source.html for instructions.
+
+Bug Fixes
+---------
+
+    - Connection.drop_database() now rolls back the connection's active
+      transaction (if any) before dropping the database.
+
+      Previously, the database could be dropped with the transaction still
+      active; when the connection was subsequently garbage collected, a rollback
+      request was issued for the transaction (in a nonexistent database),
+      resulting in memory corruption.
+
+    - String values returned by input dynamic type translators were sometimes
+      prematurely garbage collected before the database engine had read their
+      contents.
+
+    - SQL fields with dynamic definitions (such as expressions in a SELECT list)
+      that involved fixed point data types (NUMERIC or DECIMAL) didn't get
+      passed through the FIXED dynamic type translator because the database
+      engine does not flag dynamically defined fields properly.
+
+      Though this is a bug in the database engine rather than KInterbasDB, a
+      workaround was added to KInterbasDB.
+
+      `Thanks to Bert Hughes for reporting this bug.`
+
+    - The installation action of the setup script ('setup.py install') did not
+      place the supporting files (documentation) in the proper directory on
+      Linux.
+
+      `Thanks to Treeve Jelbert for reporting this bug.`
+
+
+Version 3.1_pre5
+================
+
+Version 3.1_pre5 should be considered a release candidate.  It is thought
+to be stable.
+
+New Features
+------------
+
+    - Deferred loading of dynamic type translators:
+
+      KInterbasDB's choice of initial dynamic type translators for date/time
+      and fixed point types is now deferred as late as possible, and the
+      programmer has the *option* of controlling the choice via the type_conv
+      parameter of the new kinterbasdb.init function.
+
+      This feature is documented in the Usage Guide at:
+      usage.html#adv_param_conv_dynamic_type_translation_deferred_loading
+
+    - KInterbasDB's setup script is now capable of compiling the source
+      distribution "out of the box" with MinGW on Windows, but only with
+      Firebird 1.5 or later (Borland C++ can be used with Firebird 1.0).
+
+      This feature is documented in the installation guide for the source
+      distribution at:
+
+      installation-source.html#compiler_specific_compilation_notes
+
+Bug Fixes
+---------
+
+    - During blob insertion, not enough memory was allocated to hold the
+      blob ID returned by the database engine, resulting in an overflow.
+
+    - Implicit conversion of DATE/TIME/TIMESTAMP input parameters from strings
+      to the appropriate internal types was accidentally disallowed in
+      3.1_pre4.  This feature has been enabled again.
+
+    - The Services API method kinterbasdb.services.Connection.restore was
+      incapable of restoring a backup into a multi-file database because it
+      sent the wrong cluster identifier for destination file page counts.
+
+Backward-incompatibilities
+--------------------------
+
+    - Because of the new "Deferred loading of dynamic type translators" feature,
+      the DB API type comparison singleton kinterbasdb.DATETIME will not compare
+      equal to *any* type until the kinterbasdb.init function has been called
+      (whether explicitly or implicitly).
+
+      This issue--which is expected to affect little or no existing code--is
+      documented in the Usage Guide at:
+
+      usage.html#adv_param_conv_dynamic_type_translation_deferred_loading_backcompat
+
+    - The dynamic type translation module typeconv_preferred has been renamed
+      to typeconv_23plus.
+
+
+Version 3.1_pre4
+================
+
+Version 3.1_pre4 should be considered a late beta release.  It is thought
+to be stable, and there are no plans to add new features before 3.1 final
+(only to fix bugs and finish updating the documentation).
+
+Note that the KInterbasDB Usage Guide has been considerably updated, though
+it is not quite complete.  When complete, it will document all of the
+numerous new features in kinterbasdb 3.1; it's a "must read" even now.
+
+The Usage Guide is distributed with KInterbasDB
+(kinterbasdb-installation-dir/docs/usage.html), and is available online at:
+http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/*checkout*/kinterbasdb/Kinterbasdb-3.0/docs/usage.html
+
+
+New Features
+------------
+
+    - DATABASE EVENT HANDLING has been reinstated, ported to POSIX, and timeout
+      support has been added.
+
+      This feature is thoroughly documented in the updated Usage Guide.
+
+      Refs:
+      http://sourceforge.net/tracker/index.php?func=detail&aid=637796&group_id=9913&atid=109913
+
+    - DISTRIBUTED TRANSACTIONS are now supported via the
+      kinterbasdb.ConnectionGroup class.
+
+      Although the Usage Guide does not yet fully document this feature, it
+      does contain an example program and a few hints:
+      http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/*checkout*/kinterbasdb/Kinterbasdb-3.0/docs/usage.html#adv_trans_control_distributed
+
+    - DYNAMIC TYPE TRANSLATION
+
+      KInterbasDB 3.1_pre4 implements two-way "dynamic type translation".
+      This feature allows the client programmer to change the type conversion
+      methods for specific SQL data types and achieve complete "type
+      transparency".  For example, KInterbasDB 3.1_pre4 includes reference
+      implementations of converters for both input and output of
+      'mx.DateTime' and Python 2.3 stdlib 'datetime' for TIME/DATE/TIMESTAMP
+      fields.
+
+      One consequence of two-way dynamic type translation support is that
+      KInterbasDB 3.1_pre4 can be used with Python 2.3's datetime module
+      occupying the former role mx.DateTime.  For backward compatibility,
+      mx.DateTime is still the default, and it will remain so.
+
+      This feature is documented in the updated Usage Guide.
+
+    - Cursor.rowcount support has been added (insofar as the database engine
+      supports it).
+
+      This feature is documented in the updated Usage Guide.
+
+      Refs:
+      http://sourceforge.net/forum/forum.php?thread_id=866629&forum_id=30917
+
+    - SAVEPOINTs (a Firebird 1.5 feature) are exposed at the Python level via
+      the Connection.savepoint(savepoint='name') method and the optional
+      $savepoint argument to the Cursor.rollback method.
+
+      This feature is documented in the updated Usage Guide.
+
+    - New attributes suggested by the "Optional DB API Extensions" section
+      of PEP 249:
+
+        - Access to a cursor's connection via the Cursor.connection attribute.
+        - Access to kinterbasdb's exception classes via connection attributes.
+
+      Refs:
+      http://www.python.org/peps/pep-0249.html
+
+    - A cursor can now be reused after it has caused an exception.
+
+Bug Fixes
+---------
+
+    - Passing the wrong number of parameters for a parameterized SQL statement
+      sometimes caused a crash instead of an exception with kinterbasdb 3.1_pre3.
+      This would not have affected client programs that were written correctly,
+      but it was still a bug.
+
+    - The kinterbasdb.create_database function leaked memory if it encountered
+      an error.
+
+    - Additional Windows binaries are being released to avoid dynamic linking
+      problems with Interbase 5.5 and Firebird 1.5-embedded.
+
+      Refs:
+      http://sourceforge.net/tracker/index.php?func=detail&aid=707644&group_id=9913&atid=109913
+      http://sourceforge.net/forum/forum.php?thread_id=855348&forum_id=30917
+
+    - kinterbasdb now builds with less hassle on FreeBSD.
+
+      Refs:
+      http://sourceforge.net/tracker/index.php?func=detail&aid=720021&group_id=9913&atid=109913
+
+    - Whenever a transactional context is needed, a transaction is now started
+      implicitly if the Python programmer has not started one explicitly
+      with Connection.begin.  This implicit behavior is implicitly required
+      by the Python DB API specification.
+
+      Refs:
+      http://mail.python.org/pipermail/db-sig/2003-February/003158.html
+
+    - The mapping objects returned from the Cursor.fetch*map() method now
+      accept "double-quoted" field names (lookup keys).  If the field name is
+      double-quoted, its original case will be preserved--instead of being
+      normalized to upper case--when the result set is searched for a field
+      with that name.
+
+      For example, if a table were defined this way::
+
+          create table tbl ("sTRanGelyCasEDfieldnAme" integer)
+
+      and the statement::
+
+          cur.execute("select * from tbl")
+
+      were executed against it, the mapping objects returned by::
+
+          cur.fetchonemap()
+
+      would have rejected the lookup key 'sTRanGelyCasEDfieldnAme', converting
+      it instead to 'STRANGELYCASEDFIELDNAME' and then failing to find the
+      upper-cased field name.
+
+      The solution available in 3.1_pre4 is to perform the lookup this way::
+
+          cur.execute("select * from tbl")
+          mapping = cur.fetchonemap()
+          mapping['"sTRanGelyCasEDfieldnAme"']
+                   ^-----double-quoted-----^
+
+      which will force the preservation of the field name's case.
+
+      An easy way to avoid problems such as this is to refrain from using
+      quoted identifiers; in that case, the database engine will treat
+      identifiers in a case-insensitive manner.
+
+      Refs:
+      http://sourceforge.net/tracker/index.php?func=detail&aid=720130&group_id=9913&atid=109913
+
+INTERNAL CHANGES
+----------------
+
+    - kinterbasdb now implements its standard date/time and fixed point
+      handling via the new, general-purpose dynamic type translation feature.
+
+      This eliminates the C-compile-time dependency on mx.DateTime.  Although
+      mx.DateTime (for date/time types) and Connection.precision_mode (for
+      precise fixed point types) still function as before, dynamic type
+      translation allows other types to be transparently substituted (such as
+      those in Python 2.3's standard library datetime module for date/time
+      types, or those in the fixedpoint module for precise fixed point types).
+
+      For more information, see the Usage Guide.
+
+Backward-incompatibilities
+--------------------------
+
+    There are no outright incompatibilities, but there is one deprecation:
+
+    - Although Connection.precision_mode continues to function as in earlier
+      versions, it is deprecated in favor of dynamic type translation.  The
+      functionality that Connection.precision_mode delivers (precise I/O of
+      fixed point values) is now implemented at the Python level via dynamic
+      type translation, rather than at the C level.
+
+      If you explicitly use both Connection.precision_mode *and* dynamic
+      type translation, beware that changing the value of
+      `Connection.precision_mode` will cause changes to the registered dynamic
+      type converters under the hood.
+
+      For more information, see the INTERNAL CHANGES section above, and the
+      Usage Guide.
+
+
+Version 3.1_pre3
+================
+
+Version 3.1_pre3 should be considered a beta release.
+
+New Features
+------------
+
+    - database array support
+
+      Database arrays are mapped from Python sequences (except strings) on
+      input; to Python lists on output.  On output, the lists will be nested
+      if the database array has multiple dimensions.
+
+      I'm not impressed by the Interbase/Firebird implementation of database
+      arrays.  The database engine claims to support up to 16 dimensions, but
+      actually malfunctions catastrophically* above 10.
+
+      The arrays are of fixed size, with a predeclared number of dimensions
+      and number of elements per dimension.  Individual array elements cannot
+      be set to NULL/None**, so the mapping between Python lists (which have
+      dynamic length and are therefore not normally null-padded) and
+      non-trivial database arrays is clumsy.
+
+      Arrays cannot be passed as parameters to, or returned from, stored
+      procedures.
+
+      Finally, many interface libraries, GUIs, and even the isql command line
+      utility do not support arrays.
+      Refs:
+
+         * http://sourceforge.net/tracker/?func=detail&aid=659610&group_id=9028&atid=109028
+        ** Interbase 6 API Guide page 153.
+
+    - retaining commit/retaining rollback
+
+      The commit() and rollback() methods of kinterbasdb.Connection now
+      accept an optional boolean parameter 'retaining' (default False).  If
+      retaining is True, the infrastructural support for the transaction active
+      at the time of the method call will be "retained" (efficiently and
+      transparently recycled) after the database server has committed or rolled
+      back the conceptual transaction.
+
+      In code that commits or rolls back frequently, 'retaining' the
+      transaction yields considerably better performance.  'retaining' will
+      become the default at some point in the future if the switch can be made
+      without serious backward compatibility issues.
+
+      Refs:
+      http://sourceforge.net/forum/forum.php?thread_id=799246&forum_id=30917
+      Interbase 6 API Guide page 74.
+
+    - unicode strings can now be executed via:
+
+        - kinterbasdb.Cursor.execute[many]()
+        - kinterbasdb.Cursor.callproc()
+        - kinterbasdb.Connection.execute_immediate()
+
+      However, the encoding of the incoming unicode string is rather
+      simplistic--via PyUnicode_AsASCIIString.
+
+
+Bug Fixes
+---------
+
+    - Addressed buffer overflow potential in:
+
+      - kinterbasdb.create_database()
+      - kinterbasdb.connect()
+      - kinterbasdb.Connection.begin()
+      - kinterbasdb.Connection.execute_immediate()
+      - kinterbasdb.Cursor.execute() (and thence, executemany() and callproc())
+
+    - Fixed reference count leaks in:
+
+      - exception handling (_exception_functions.c)
+      - field precision determination (_kiconversion_field_precision.c)
+
+    - Fixed kinterbasdb.Connection.close() bug:  The physical connection to
+      the database server was not actually closed until the
+      kinterbasdb.Connection instance was garbage collected.
+
+    - Fixed a bug in the kinterbasdb.services.Connection.userExists() method.
+      Usernames are now normalized to upper case.
+
+    - Database version compatibility:
+
+      - kinterbasdb compiles properly against Firebird 1.5.
+      - kinterbasdb compiles against and ought to work with (but has not been
+        tested with) Interbase 5.5, albeit with some lost functionality,
+        namely:
+
+          - field precision determination (the precision entry in cursor.description)
+          - Services API support
+          - retaining rollback
+          - various data storage options, such as precise 64-bit integer storage
+            of NUMERIC and DECIMAL values (IB 5.5 uses doubles instead, which
+            is not really adequate) and more diverse date/time types.
+
+      Refs:
+      http://sourceforge.net/tracker/index.php?func=detail&aid=627816&group_id=9913&atid=109913
+      IB 6 Data Definition Guide page 65.
+
+    - Improved DB API compliance:
+
+      - Now, there need not be an active transaction before any execute(),
+        commit(), or rollback() call; transaction establishment is implicit in
+        these cases.
+      - Cursors no longer need to be discarded after an exception; the same
+        cursor can be reused.  Of course if the cursor was in the process of
+        fetching a result set, the remainder of the set will not be available
+        after the exception.
+
+INTERNAL CHANGES
+----------------
+
+    - Numerous modest optimizations, especially with regard to memory handling.
+      Among these is a move to take advantage of Python 2.3's specialized,
+      Python-oriented memory manager.
+    - MAJOR code refactoring and tidying.
+
+
+Backward-incompatibilities
+--------------------------
+
+    - Invalid argument combinations to the connect() function now raise a
+      ProgrammingError rather than an InterfaceError.  Note that this refers to
+      invalid *combinations* of arguments, not necessarily to invalid *values*
+      for those arguments.
+
+    - Non-keyword-argument forms of connect() are now deprecated; passing
+      non-keyword arguments to connect() results in a DeprecationWarning being
+      issued via the standard Python warning framework.  This is a warning, not
+      an incompatibility in the strict sense.
+
+      Refs:
+      http://www.python.org/doc/current/lib/module-warnings.html
+
+    - Official support for database event handling has been deferred until 3.2.
+      A Win32-only prototype will still be included with the kinterbasdb 3.1
+      source distribution (but not compiled by default).
+
+      Refs:
+      docs/usage.html#database_events_unsupported
+
+
+Version 3.1_pre2
+================
+
+New Features
+------------
+
+    - Global Interpreter Lock management
+
+      Previously, kinterbasdb operated in a serial manner, with the sole
+      exception of the event handling code, whose parallelism is "under the
+      hood".  Aside from event handling, all kinterbasdb operations, including
+      potentially long-running Firebird API calls, were serialized by the
+      Python GIL.
+
+      With the advent of kinterbasdb 3.1_pre2, kinterbasdb releases the GIL
+      where appropriate--that is, when it is about to make a potentially long-
+      running Firebird API call, and can do so without invoking the Python API,
+      or otherwise operating on Python structures.
+
+      However, the Firebird client library itself is not threadsafe, so
+      Firebird API calls must also be serialized.  To that end, kinterbasdb
+      maintains a process-wide thread lock around which all Firebird API calls
+      are serialized.
+
+      When kinterbasdb is about to make a potentially long-running Firebird
+      API call, it follows these steps:
+
+        1.  Extract necessary parameter data from Python structures
+        2.  Release the Python GIL
+        3.  Acquire the kinterbasdb process-wide Firebird client thread lock
+        4.  Execute the Firebird API call
+        5.  Release the kinterbasdb process-wide Firebird client thread lock
+        6.  Acquire the Python GIL
+        7.  Modify Python structures to reflect the results of the Firebird API
+              call
+
+      The addition of GIL management should improve kinterbasdb's maximum
+      possible throughput for multi-threaded Python programs on multi-processor
+      systems (one processor can run the Python interpreter while another
+      executes a Firebird client library operation).  GIL management may also
+      yield greater "responsiveness" for multi-threaded Python programs running
+      on single-processor systems.
+
+      The addition of GIL management required fairly extensive internal
+      changes, and therefore warranted a whole prerelease version virtually
+      unto itself.
+
+    - Cursor name support
+
+      The read/write property Cursor.name allows the Python programmer to
+      perform scrolling UPDATEs or DELETions via the "SELECT ... FOR UPDATE"
+      syntax.  If you don't know what this means, refer to the database SQL
+      syntax documentation of the FOR UPDATE clause of the SELECT statement.
+      The Cursor.name property can be ignored entirely if you don't need to
+      use it.
+
+      Here's an example code fragment:
+
+      .. sourcecode:: python
+
+          con = ... # establish a kinterbasdb.Connection
+          curScroll = con.cursor()
+          curUpdate = con.cursor()
+
+          curScroll.execute('select city from customer for update')
+          curScroll.name = 'city_scroller'
+          update = 'update customer set city=? where current of ' + curScroll.name
+
+          for (city,) in curScroll:
+              city = ... # make some changes to city
+              curUpdate.execute( update, (city,) )
+
+
+Version 3.1_pre1
+================
+
+Version 3.1_pre1 should be considered an early alpha release.
+
+New Features
+------------
+
+This list of new features represents the state of kinterbasdb 3.1_pre1,
+which does not include some features slated for inclusion in the final
+release of kinterbasdb 3.1.  For a discussion of the ultimate goals of
+version 3.1, see:
+http://sourceforge.net/forum/forum.php?thread_id=696302&forum_id=30917
+
+Also, the documentation has not yet been updated to cover these new
+features, nor will it be for at least another month.  In the meantime,
+those who need to use the new features must refer to the source code.
+
+
+    - Cursor Iteration Support
+        When used with Python 2.2 or later, kinterbasdb's Cursors now support
+      "natural" iteration.  For example:
+
+      .. sourcecode:: python
+
+         # Index-based field lookup (based on Cursor.fetchone):
+         cur = con.cursor()
+         cur.execute("select col1, col2 from the_table")
+         for row in cur:
+             col1 = row[0]
+
+         # Key-based field lookup (based on Cursor.fetchonemap):
+         cur = con.cursor()
+         cur.execute("select col1, col2 from the_table")
+         for rowMap in cur.itermap():
+             col1 = rowMap['col1']
+
+      The iterator-based pattern supercedes the ugly fetch pattern of old
+      (though of course the old pattern will still work):
+
+      .. sourcecode:: python
+
+         # Index-based field lookup (based on Cursor.fetchone):
+         cur = con.cursor()
+         cur.execute("select col1, col2 from the_table")
+         while 1:
+             row = cur.fetchone()
+             if not row:
+                 break
+
+             col1 = row[0]
+
+
+    - Implicit Parameter Conversion
+
+      Implicit parameter conversion allows any SQL datatype supported by
+      kinterbasdb to be passed to the database engine as a Python string.
+
+      This is especially useful for parameterized statements that involve
+      date/time datatypes, because they can now accept server-computed "magic"
+      values such as 'now' and 'current_date' more naturally.  Implicit
+      parameter conversion is also likely to yield a speedup for programs that
+      load external data from flat files into the database, since the incoming
+      values do not need to be converted from their original string
+      representation into an acceptable Python type before being forwarded to
+      the database.
+
+      For a more thorough discussion of this new feature, see:
+      http://sourceforge.net/tracker/index.php?func=detail&aid=531828&group_id=9913&atid=309913
+
+    - Services API Support (see IB 6 API Guide Chapter 12)
+
+      The database engine provides an API (the Services API) to facilitate
+      programmatic invocation of the maintenance tasks available through the
+      command-line tools gbak, gfix, etc.
+
+      I've wrapped nearly the entire Services API in a thick Python API of
+      my own design.  My API design is only provisional; I seek feedback as
+      to how it could be made more elegant.  The Services API support is
+      accessible via the kinterbasdb.services module.
+
+    - Database Event Support (see IB 6 API Guide Chapter 11)
+
+      The database engine allows client programs to register to be informed
+      of the occurrence of database events, which can be raised with the
+      POST_EVENT statement in stored procedures or triggers.  kinterbasdb 3.1
+      supports a subset of this functionality (synchronous waiting only) via
+      the Connection.wait(eventNames) method.
+
+      The current implementation is only a rough prototype; though usable,
+      it is not recommended for production environments.
+
+      The current implementation suffers from a major limitation:  only one
+      thread per process is allowed to listen for event notification.  This is
+      so because the current implementation resorts to some roundabout trickery
+      to circumvent the lack of database API support for synchronous event
+      notification on Windows.  Because the database API only starts one
+      asynchronous event handler thread per process, I doubt that support for
+      multiple event-listening threads in a single process will materialize.
+
+Bug Fixes
+---------
+
+    - In the past, the opaque mapping object returned by the Cursor.fetch*map
+      methods returned None when asked for a field not in its select list,
+      rather than raising a KeyError.  It now raises a KeyError in such a case.
+      For example:
+
+      .. sourcecode:: python
+
+         cur = con.cursor()
+         cur.execute("select col1, col2 from the_table")
+         for rowMap in cur.itermap():
+             x = rowMap['col3'] # Used to return None.  Now raises KeyError,
+                                # because col3 was not SELECTed.
+
+
+Backward-incompatibilities
+--------------------------
+
+    - Although kinterbasdb 3.1 is significantly different internally, there is
+      only one known API incompatibility with version 3.0.2.  It would only arise
+      in code that relies on the erroneous behavior of the mapping-fetch bug
+      mentioned above.
+
+    - Python versions prior to 2.1 are no longer officially supported.
+      Although kinterbasdb might still compile against Python 2.0 and earlier,
+      I will not go out of my way to ensure that it does.
+
+
+Version 3.0.2
+=============
+
+Bug Fixes
+---------
+
+    - Fixed a CHAR-handling bug that caused CHAR values inserted into the
+      database to lack their trailing spaces.  Instead, the values were null-
+      terminated.  This left CHAR values inserted by kinterbasdb incompatible
+      with standard tools, which expect trailing spaces.
+
+      For more information, see
+      http://sourceforge.net/tracker/index.php?func=detail&aid=594908&group_id=9913&atid=109913
+
+
+Version 3.0.1
+=============
+
+Bug Fixes
+---------
+
+    - Adjusted input handling of NULL values.  The new scheme raises an
+      exception immediately when it detects that a Python None value has
+      arrived for storage in a database field or parameter that disallows
+      NULL values.
+
+      The old scheme simply accepted the Python None value and then tried
+      to execute the query, relying on the database API to detect the error.
+      With certain data types, the database API would silently insert a bogus
+      value rather than detecting the error.
+
+    - Scrutinized the datetime input/output facilities, found some
+      incompatibilities with the DB API, and corrected them.  These changes
+      are backward-incompatible, but are warranted because the previous
+      behavior was in defiance of the specification.  See further notes about
+      the nature of these changes in the backward-incompatibilities section.
+
+    - Fixed a memory leak that affected the storage of Python string input
+      parameters in BLOB fields.
+
+    - Fixed a rollback-related bug that arose if a connection to a database
+      was established, but a transaction was never started on that connection.
+      In such a case, a spurious exception was raised when the connection was
+      garbage collected.
+
+      Normal code would not have invoked this bug, but it was still a bug.
+
+Backward-incompatibilities
+--------------------------
+
+    - Datetime input/output has changed to better comply with the DB API (see
+      datetime bugfix discussion above).
+
+      Code that uses the mx.DateTime module directly (rather than the
+      kinterbasdb DB API datetime constructors) should not be affected.
+
+      For details, see the comments in the code block in __init__.py tagged
+      with "DSR:2002.07.19".
+
+Version 3.0.1_pre3
+==================
+
+Bug Fixes
+---------
+
+    - Bug #572326 (which was not present in kinterbasdb 3.0 and never affected
+      Python 2.2+) caused several numeric types to not be transferred from
+      Python to the database engine when they were passed as query parameters.
+
+      This was a serious bug; it caused even such fundamental operations as:
+      cursor.execute("insert into the_table values (?)", (1,))
+      to not work correctly.
+
+
+Version 3.0.1_pre2
+==================
+
+Bug Fixes
+---------
+
+    - CHAR output now doesn't have such problems with multibyte character sets
+      and values shorter than the maximum declared length of the field.
+
+      CHARs are no longer returned with their trailing blanks intact.  The
+      trailing blanks have been abandoned because they were in fact NULL
+      characters, not spaces.  kinterbasdb would fill in the spaces manually,
+      except for the problems that approach causes with multibyte character
+      sets.
+
+    - Fixed a potential buffer overflow, but the fix only applies when compiled
+      against Python 2.2 or later.
+
+Backward-incompatibilities
+--------------------------
+
+    - See coverage of CHAR output changes in the 'Bug Fixes' section.  In a
+      nutshell:  CHAR output values no longer have trailing NULL bytes.
+
+
+Version 3.0.1_pre1
+==================
+
+New Features
+------------
+
+    - It is now possible to connect to a database under a specific role by using
+      the 'role' keyword argument of the kinterbasdb.connect function.
+
+    - The following methods now accept any sequence except a string for their
+      'parameter' argument, rather than demanding a tuple:  Cursor.execute,
+      Cursor.executemany and Cursor.callproc.
+
+Bug Fixes
+---------
+
+    - kinterbasdb supports IB 5.x again.
+
+      Various identifiers specific to IB 6.x/Firebird had crept into unguarded
+      areas of __init__.py and _kinterbasdb.c, but this has been changed so
+      that kinterbasdb compiles gracefully with IB 5.x.
+      See:
+      http://sourceforge.net/tracker/index.php?func=detail&aid=553184&group_id=9913&atid=209913
+
+    - The distutils setup script no longer raises a ValueError on Windows 2000
+      or XP.
+
+    - The precision slot in Cursor.description was always zero.  It now contains
+      the correct value if that value can reasonably be determined.
+
+      Note that the database engine records the precision of some fields as
+      zero (e.g., FLOAT), and the slot will also be zero in cases where the
+      database engine does not expose the precision of the field (e.g., dynamic
+      fields such as "SELECT 33.5 FROM RDB$DATABASE").
+
+      Since the database API does not provide the field's precision figure in
+      the XSQLVAR structure, it is necessary to query the system tables.  In
+      order to minimize the performance hit, precision figures are cached per
+      Connection; the determination of a given field's precision figure in the
+      context of a given Connection will require only dictionary lookups after
+      it is determined the first time with a system table query.
+
+      An unfortunate side effect of this caching is that if a field's
+      precision is altered after the figure has been cached in by a Connection,
+      cursors based on that Connection will still show the old precision figure.
+      In practice, this situation will almost never arise.
+      See:
+      http://sourceforge.net/tracker/index.php?func=detail&aid=549982&group_id=9913&atid=109913
+
+    - On Linux, attempting to fetch immediately after having executed a
+      non-query statement resulted in a segfault.  An exception is now raised
+      instead.  The problem did not afflict Windows, which always raised the
+      exception.
+      See:
+      http://sourceforge.net/tracker/index.php?func=detail&aid=551098&group_id=9913&atid=109913
+
+      - The message carried by this exception grew without bound in on both
+        Windows and Linux.  It no longer does.
+
+    - Under some circumstances, the fetched values of CHAR fields were
+      incorrect.  CHAR values now appear as expected (they are left-padded with
+      spaces and always of length equal to their field's designated maximum
+      length).
+
+    - Cursor.fetchmany raised an error if there were no remaining values to
+      fetch.  It now returns an empty sequence instead, as required by the DB
+      API Specification.
+
+    - Field domains are checked more strictly.  It is now impossible to (for
+      example) issue a statement that attempts to insert a 12-character string
+      into a 10-character CHAR field without encountering an exception.
+
+      This checking is not perfect, since it validates against the field's
+      internal storage type rather than the field's declared type.  For example,
+      a NUMERIC(1,1), which is stored internally as a short, will erroneously
+      accept the value 12.5 because 125 fits in a short.
+
+    - When operating in imprecise mode (connection.precision_mode == 0),
+      kinterbasdb 3.0 sometimes interpreted integer values as though it were
+      operating in precise mode.
+
+
+Version 3.0 versus 2.0-0.3.1
+============================
+
+New Features
+------------
+
+    The new features are thoroughly documented in the KInterbasDB Usage Guide
+    (usage.html); they need not be reiterated here.
+    However, backward-incompatible changes *have* been documented in this
+    changelog (see the Backward-incompatibilities section).
+
+Bug Fixes
+---------
+
+    Many bugs have been fixed, including (but not limited to) the following,
+    which were registered with the KInterbasDB bug tracker at SourceForge
+    ( http://sourceforge.net/tracker/index.php?group_id=9913&atid=109913 ):
+
+      - 433090  cannot connect to firebird server
+      - 438130  cursor.callproc not adding param code
+      - 468304  fetchmany return all record
+      - 498086  ignores column aliases in select
+      - 498403  fetching after a callproc hangs program
+      - 498414  execute procedure message length error
+      - 505950  inconsistent fetch* return types
+      - 515974  Wrong decoding of FB isc_version
+      - 517093  broken fixed-point handling in 3.0
+      - 517840  C function normalize_double inf. loop
+      - 517842  fetch bug - program hangs
+      - 520793  poor DB API compliance
+        ^ a *BIG* fix that entailed many changes
+      - 522230  error with blobs larger than (2^16) - 1
+      - 522774  inconsistent fixed-point conv in 3.0-rc2
+      - 523348  memory leak in Blob2PyObject
+
+      - immediate execution facilities unreliable in 2.x
+
+Backward-incompatibilities
+--------------------------
+
+    As a result of the changes required for some of the bugfixes (especially
+    #520793 - "poor DB API compliance") and general reengineering, several
+    areas of backward-incompatibility have arisen:
+
+      - fetch* return types
+
+        The standard fetch(one|many|all) methods now return just a sequence,
+        not a combined sequence/mapping.  If you want a mapping, use one of
+        the fetch(one|many|all)map methods.
+
+        Note the "'absolutely no guarantees' except..." caveats in the
+        KInterbasDB Usage Guide regarding the return types of the
+        Cursor.fetch* methods and the contents of the Cursor.description
+        attribute.
+
+        This is a significant backward-incompatibility, and was not
+        undertaken without serious consideration (for evidence see
+        http://sourceforge.net/forum/forum.php?thread_id=622782&forum_id=30919
+        ).
+
+      - Fixed point number handling
+
+        Fixed point number handling has been remodelled.  By default, fixed
+        point numbers (NUMERIC/DECIMAL field values) are now represented
+        (with a potential loss of precision) as Python floats.
+
+        A Connection.precision_mode attribute has been added so that precise
+        representation of fixed point values as scaled Python integers (as in
+        KInterbasDB 2.x) can be used at will.
+
+        For more information, see the KInterbasDB Usage Guide.
+
+      - Connection.dialect
+
+        In KInterbasDB 2.x, the default connection dialect was 1 (the
+        backward-compatibility dialect for use with Interbase 5.5 and earlier).
+
+        KInterbasDB 3.0 is being released into quite a different climate.
+        Interbase 6.0 was released nearly two years ago, and Firebird 1.0 has
+        recently been released.  Because it is expected that KInterbasDB 3.0
+        will be used most frequently with Interbase 6.0+ and Firebird, the
+        default connection dialect is 3.
+
+        Using KInterbasDB 3.0 with Interbase 5.5 and earlier is still
+        possible, though untested by the developers of KInterbasDB 3.0.  See
+        the Connection.dialect documentation in the KInterbasDB Usage Guide
+        for an explanation of how to initialize a connection with a dialect
+        other than 3.
+
+      - Connection.server_version
+
+        The Connection.server_version attribute is now a string rather than
+        an integer.  An integer simply was not expressive enough to represent
+        the numerous Interbase variants that exist today (including Firebird,
+        which does not fit neatly into the Interbase version progression).
+
+        For more information, see the KInterbasDB Usage Guide.
+
+      - kinterbasdb.execute_immediate
+
+        The kinterbasdb.execute_immediate function has been removed.  A
+        similar function named kinterbasdb.create_database has been added.
+        The primary differences between kinterbasdb.execute_immediate and
+        kinterbasdb.create_database are:
+
+          - kinterbasdb.create_database is not as general
+          - kinterbasdb.create_database actually works
+
+        The execute_immediate method of the Connection class has been
+        retained.
+
+        For more information, see the KInterbasDB Usage Guide.
+
