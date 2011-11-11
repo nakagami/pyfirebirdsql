@@ -54,23 +54,23 @@
   <div class="section" id="quick-start-guide-tutorial">
 <h1>Quick-start Guide / Tutorial<a class="headerlink" href="#quick-start-guide-tutorial" title="Permalink to this headline">¶</a></h1>
 <p>This brief tutorial aims to get the reader started by demonstrating
-elementary usage of KInterbasDB. It is not a comprehensive Python
+elementary usage of pyFirebirdSQL. It is not a comprehensive Python
 Database API tutorial, nor is it comprehensive in its coverage of
 anything else.</p>
-<p>The numerous advanced features of KInterbasDB are covered in another
+<p>The numerous advanced features of pyFirebirdSQL are covered in another
 section of this documentation, which is not in a tutorial format, though it
 is replete with examples.</p>
 <div class="section" id="connecting-to-a-database">
 <h2>Connecting to a Database<a class="headerlink" href="#connecting-to-a-database" title="Permalink to this headline">¶</a></h2>
 <p><strong>Example 1</strong></p>
 <p>A database connection is typically established with code such as this:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">kinterbasdb</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">firebirdsql</span>
 
 <span class="c"># The server is named &#39;bison&#39;; the database file is at &#39;/temp/test.db&#39;.</span>
-<span class="n">con</span> <span class="o">=</span> <span class="n">kinterbasdb</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s">&#39;bison:/temp/test.db&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;pass&#39;</span><span class="p">)</span>
+<span class="n">con</span> <span class="o">=</span> <span class="n">firebirdsql</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s">&#39;bison:/temp/test.db&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;pass&#39;</span><span class="p">)</span>
 
 <span class="c"># Or, equivalently:</span>
-<span class="n">con</span> <span class="o">=</span> <span class="n">kinterbasdb</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+<span class="n">con</span> <span class="o">=</span> <span class="n">firebirdsql</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
     <span class="n">host</span><span class="o">=</span><span class="s">&#39;bison&#39;</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="s">&#39;/temp/test.db&#39;</span><span class="p">,</span>
     <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;pass&#39;</span>
   <span class="p">)</span>
@@ -79,9 +79,9 @@ is replete with examples.</p>
 <p><strong>Example 2</strong></p>
 <p>Suppose we want to connect to the database in SQL Dialect 1 and specifying
 UTF-8 as the character set of the connection:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">kinterbasdb</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">firebirdsql</span>
 
-<span class="n">con</span> <span class="o">=</span> <span class="n">kinterbasdb</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+<span class="n">con</span> <span class="o">=</span> <span class="n">firebirdsql</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
     <span class="n">dsn</span><span class="o">=</span><span class="s">&#39;bison:/temp/test.db&#39;</span><span class="p">,</span>
     <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;pass&#39;</span><span class="p">,</span>
     <span class="n">dialect</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="c"># necessary for all dialect 1 databases</span>
@@ -107,9 +107,9 @@ following SQL code:</p>
 <p><strong>Example 1</strong></p>
 <p>This example shows the <em>simplest</em> way to print the entire contents of
 the <cite>languages</cite> table:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">kinterbasdb</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">firebirdsql</span>
 
-<span class="n">con</span> <span class="o">=</span> <span class="n">kinterbasdb</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s">&#39;/temp/test.db&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;masterkey&#39;</span><span class="p">)</span>
+<span class="n">con</span> <span class="o">=</span> <span class="n">firebirdsql</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s">&#39;/temp/test.db&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;masterkey&#39;</span><span class="p">)</span>
 
 <span class="c"># Create a Cursor object that operates in the context of Connection con:</span>
 <span class="n">cur</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
@@ -128,9 +128,9 @@ the <cite>languages</cite> table:</p>
 <p><strong>Example 2</strong></p>
 <p>Here&#8217;s another trivial example that demonstrates various ways of
 fetching a single row at a time from a <cite>SELECT</cite>-cursor:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">kinterbasdb</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">firebirdsql</span>
 
-<span class="n">con</span> <span class="o">=</span> <span class="n">kinterbasdb</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s">&#39;/temp/test.db&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;masterkey&#39;</span><span class="p">)</span>
+<span class="n">con</span> <span class="o">=</span> <span class="n">firebirdsql</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s">&#39;/temp/test.db&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;masterkey&#39;</span><span class="p">)</span>
 
 <span class="n">cur</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
 <span class="n">SELECT</span> <span class="o">=</span> <span class="s">&quot;select name, year_released from languages order by year_released&quot;</span>
@@ -163,7 +163,7 @@ Python has been publicly available since 1991.</pre>
 <p><strong>Example 3</strong></p>
 <p>The following program is a simplistic table printer (applied in this
 example to <cite>languages</cite>):</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">kinterbasdb</span> <span class="kn">as</span> <span class="nn">k</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">firebirdsql</span> <span class="kn">as</span> <span class="nn">k</span>
 
 <span class="n">TABLE_NAME</span> <span class="o">=</span> <span class="s">&#39;languages&#39;</span>
 <span class="n">SELECT</span> <span class="o">=</span> <span class="s">&#39;select * from </span><span class="si">%s</span><span class="s"> order by year_released&#39;</span> <span class="o">%</span> <span class="n">TABLE_NAME</span>
@@ -200,9 +200,9 @@ Python               1991</pre>
 </div>
 <p><strong>Example 4</strong></p>
 <p>Let&#8217;s insert more languages:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">kinterbasdb</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">firebirdsql</span>
 
-<span class="n">con</span> <span class="o">=</span> <span class="n">kinterbasdb</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s">&#39;/temp/test.db&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;masterkey&#39;</span><span class="p">)</span>
+<span class="n">con</span> <span class="o">=</span> <span class="n">firebirdsql</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s">&#39;/temp/test.db&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;masterkey&#39;</span><span class="p">)</span>
 
 <span class="n">cur</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
 
