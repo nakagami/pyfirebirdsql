@@ -359,9 +359,6 @@ class PreparedStatement:
         self.statement_type = bytes_to_int(buf[i+3:i+7])
         self._xsqlda = parse_xsqlda(buf[i:], connection, self.stmt_handle)
 
-        # TODO: implement later
-        self.n_input_params = None
-
     def __getattr__(self, attrname):
         if attrname == 'description':
             if len(self._xsqlda) == 0:
