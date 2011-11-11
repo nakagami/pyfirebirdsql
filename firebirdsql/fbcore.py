@@ -499,6 +499,18 @@ class Cursor:
         except StopIteration:
             return None
 
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        r = self.fetchone()
+        if not r:
+            raise StopIteration()
+        return r
+
+    def next(self):
+        return self.__next__()
+
     def fetchall(self):
         return list(self._fetch_records)
 
