@@ -110,7 +110,10 @@ if __name__ == '__main__':
         print(r)
         for key in r:
             print (key, r[key])
+    print('cursor iteration')
     cur.execute("select * from foo")
+    for (a, b, c, d, e, f, g, h, i, j) in cur:
+        print(a, b, c)
     conn.close()
 
     conn = firebirdsql.connect(host=TEST_HOST, database=TEST_DATABASE,

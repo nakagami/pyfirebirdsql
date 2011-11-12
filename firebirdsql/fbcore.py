@@ -39,7 +39,7 @@ if PYTHON_MAJOR_VER == 2:
     def bytes(byte_array):
         return ''.join(chr(c) for c in byte_array)
 
-__version__ = '0.6.2'
+__version__ = '0.6.3'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
@@ -359,9 +359,6 @@ class PreparedStatement:
         self.statement_type = bytes_to_int(buf[i+3:i+7])
         self._xsqlda = parse_xsqlda(buf[i:], connection, self.stmt_handle)
 
-        # TODO: implement later
-        self.n_input_params = None
-
     def __getattr__(self, attrname):
         if attrname == 'description':
             if len(self._xsqlda) == 0:
@@ -498,6 +495,18 @@ class Cursor:
                 return self._fetch_records.next()
         except StopIteration:
             return None
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        r = self.fetchone()
+        if not r:
+            raise StopIteration()
+        return r
+
+    def next(self):
+        return self.__next__()
 
     def fetchall(self):
         return list(self._fetch_records)
