@@ -26,6 +26,20 @@ else:
     from collections import Mapping
     HAS_MAPPING = True
 
+try:
+    import fcntl
+except ImportError:
+    def setcloexec(sock):
+        pass
+else:
+    def setcloexec(sock):
+        """Set FD_CLOEXEC property on a file descriptors
+        """
+        fd = sock.fileno()
+        flags = fcntl.fcntl(fd, fcntl.F_GETFD)
+        fcntl.fcntl(fd, fcntl.F_SETFD, flags | fcntl.FD_CLOEXEC)
+
+
 def b2i(b):
     "byte to int"
     if PYTHON_MAJOR_VER == 3:
@@ -651,8 +665,7 @@ class Connection(WireProtocol):
 
     def __init__(self, dsn=None, user=None, password=None, host=None,
                     database=None, charset=DEFAULT_CHARSET, port=3050, 
-                    page_size=None,
-                    is_services = False):
+                    page_size=None, is_services = False, cloexec=False):
         if dsn:
             i = dsn.find(':')
             if i < 0:
@@ -681,6 +694,8 @@ class Connection(WireProtocol):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         self.sock.connect((self.hostname, self.port))
+        if cloexec:
+            setcloexec(self.sock)
 
         self.page_size = page_size
         self.is_services = is_services
