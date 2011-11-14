@@ -927,7 +927,11 @@ class Transaction:
             results = {}
             rs = self._trans_info(info_requests)
             for i in range(len(info_requests)):
-                results[info_requests[i]] = rs[i]
+                if info_requests[i] == isc_info_tra_isolation:
+                    v = (b2i(rs[i][0]), b2i(rs[i][1]))
+                else:
+                    v = bytes_to_int(rs[i])
+                results[info_requests[i]] = v
             return results
 
     def close(self):

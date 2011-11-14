@@ -118,6 +118,7 @@ if __name__ == '__main__':
 
     conn = firebirdsql.connect(host=TEST_HOST, database=TEST_DATABASE,
                         port=TEST_PORT, user=TEST_USER, password=TEST_PASS)
+    conn.begin()
 
     print('db_info:')
     requests = [isc_info_ods_version, 
