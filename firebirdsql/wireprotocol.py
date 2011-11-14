@@ -377,6 +377,7 @@ class WireProtocol:
         p = xdrlib.Packer()
         p.pack_int(self.op_info_transaction)
         p.pack_int(trans_handle)
+        p.pack_int(0)
         p.pack_bytes(b)
         p.pack_int(self.buffer_length)
         send_channel(self.sock, p.get_buffer())
