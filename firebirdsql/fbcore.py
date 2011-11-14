@@ -827,6 +827,11 @@ class Connection(WireProtocol):
                                                     info_requests[i], rs[i])
             return results
 
+    def trans_info(self, info_requests):
+        if self.main_transaction:
+            return self.main_transaction.trans_info(info_requests)
+        return {}
+
     def close(self):
         if self.closed:
             return
@@ -891,6 +896,38 @@ class Transaction:
             (h, oid, buf) = self.connection._op_response()
             delattr(self, "trans_handle")
             self.connection._transactions.remove(self)
+
+    def _trans_info(self, info_requests):
+        if info_requests[-1] == isc_info_end:
+            self._op_info_transaction(bytes(info_requests))
+        else:
+            self._op_info_transaction(
+                        bytes(info_requests+type(info_requests)([isc_info_end])))
+        (h, oid, buf) = self._op_response()
+        i = 0
+        i_request = 0
+        r = []
+        while i < len(buf):
+            req = b2i(buf[i])
+            if req == isc_info_end:
+                break
+            assert req == info_requests[i_request]
+            l = bytes_to_int(buf[i+1:i+3])
+            r.append(buf[i+3:i+3+l])
+            i = i + 3 + l
+            i_request += 1
+        return r
+
+    def trans_info(self, info_requests):
+        if type(info_requests) == int:  # singleton
+            r = self._trans_info(self.trans_handle, [info_requests])
+            return {info_requests: r[0]}
+        else:
+            results = {}
+            rs = self._trans_info(info_requests)
+            for i in range(len(info_requests)):
+                results[info_requests[i]] = rs[i]
+            return results
 
     def close(self):
         if self.closed:
