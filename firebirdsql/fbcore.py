@@ -677,14 +677,15 @@ class Connection(WireProtocol):
                 i = hostport.find('/')
                 if i < 0:
                     self.hostname = hostport
-                    self.port = port
                 else:
                     self.hostname = hostport[:i]
-                    self.port = int(hostport[i+1:])
+                    port = int(hostport[i+1:])
         else:
             self.hostname = host
             self.filename = database
-            self.port = port
+        if self.hostname is None:
+            self.hostname = 'localhost'
+        self.port = port
         self.user = user
         self.password = password
         self.charset = charset
