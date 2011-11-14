@@ -26,6 +26,20 @@ else:
     from collections import Mapping
     HAS_MAPPING = True
 
+try:
+    import fcntl
+except ImportError:
+    def setcloexec(sock):
+        pass
+else:
+    def setcloexec(sock):
+        """Set FD_CLOEXEC property on a file descriptors
+        """
+        fd = sock.fileno()
+        flags = fcntl.fcntl(fd, fcntl.F_GETFD)
+        fcntl.fcntl(fd, fcntl.F_SETFD, flags | fcntl.FD_CLOEXEC)
+
+
 def b2i(b):
     "byte to int"
     if PYTHON_MAJOR_VER == 3:
@@ -563,7 +577,7 @@ class Connection(WireProtocol):
             hostname = os.environ['COMPUTERNAME']
         else:
             user = os.environ['USER']
-            hostname = os.environ.get('HOSTNAME', '')
+            hostname = socket.gethostname()
         return bytes([1] + [len(user)] + [ord(c) for c in user] 
                 + [4] + [len(hostname)] + [ord(c) for c in hostname] + [6, 0])
 
@@ -651,8 +665,7 @@ class Connection(WireProtocol):
 
     def __init__(self, dsn=None, user=None, password=None, host=None,
                     database=None, charset=DEFAULT_CHARSET, port=3050, 
-                    page_size=None,
-                    is_services = False):
+                    page_size=None, is_services = False, cloexec=False):
         if dsn:
             i = dsn.find(':')
             if i < 0:
@@ -679,6 +692,8 @@ class Connection(WireProtocol):
         self.isolation_level = ISOLATION_LEVEL_READ_COMMITED
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if cloexec:
+            setcloexec(self.sock)
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         self.sock.connect((self.hostname, self.port))
 
