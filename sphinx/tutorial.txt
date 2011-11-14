@@ -123,18 +123,11 @@ fetching a single row at a time from a `SELECT`-cursor:
     for row in cur:
         print '%s has been publicly available since %d.' % (row[0], row[1])
 
-    # 3. Using mapping-iteration rather than sequence-iteration:
-    cur.execute(SELECT)
-    for row in cur.itermap():
-        print '%(name)s has been publicly available since %(year_released)d.' % row
-
 
 Sample output:
 
 .. sourcecode:: python
 
-    C has been publicly available since 1972.
-    Python has been publicly available since 1991.
     C has been publicly available since 1972.
     Python has been publicly available since 1991.
     C has been publicly available since 1972.
@@ -148,19 +141,19 @@ example to `languages`):
 
 .. sourcecode:: python
 
-    import firebirdsql as k
+    import firebirdsql as fb
 
     TABLE_NAME = 'languages'
     SELECT = 'select * from %s order by year_released' % TABLE_NAME
 
-    con = k.connect(dsn='/temp/test.db', user='sysdba', password='masterkey')
+    con = fb.connect(dsn='/temp/test.db', user='sysdba', password='masterkey')
 
     cur = con.cursor()
     cur.execute(SELECT)
 
     # Print a header.
     for fieldDesc in cur.description:
-        print fieldDesc[k.DESCRIPTION_NAME].ljust(fieldDesc[k.DESCRIPTION_DISPLAY_SIZE]) ,
+        print fieldDesc[fb.DESCRIPTION_NAME].ljust(fieldDesc[fb.DESCRIPTION_DISPLAY_SIZE]) ,
     print # Finish the header with a newline.
     print '-' * 78
 
@@ -170,7 +163,7 @@ example to `languages`):
     for row in cur:
         for fieldIndex in fieldIndices:
             fieldValue = str(row[fieldIndex])
-            fieldMaxWidth = cur.description[fieldIndex][k.DESCRIPTION_DISPLAY_SIZE]
+            fieldMaxWidth = cur.description[fieldIndex][fb.DESCRIPTION_DISPLAY_SIZE]
 
             print fieldValue.ljust(fieldMaxWidth) ,
 
