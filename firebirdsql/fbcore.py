@@ -899,11 +899,12 @@ class Transaction:
 
     def _trans_info(self, info_requests):
         if info_requests[-1] == isc_info_end:
-            self._op_info_transaction(bytes(info_requests))
+            self.connection._op_info_transaction(self.trans_handle,
+                    bytes(info_requests))
         else:
-            self._op_info_transaction(
-                        bytes(info_requests+type(info_requests)([isc_info_end])))
-        (h, oid, buf) = self._op_response()
+            self.connection._op_info_transaction(self.trans_handle,
+                    bytes(info_requests+type(info_requests)([isc_info_end])))
+        (h, oid, buf) = self.connection._op_response()
         i = 0
         i_request = 0
         r = []
@@ -920,7 +921,7 @@ class Transaction:
 
     def trans_info(self, info_requests):
         if type(info_requests) == int:  # singleton
-            r = self._trans_info(self.trans_handle, [info_requests])
+            r = self._trans_info([info_requests])
             return {info_requests: r[0]}
         else:
             results = {}
