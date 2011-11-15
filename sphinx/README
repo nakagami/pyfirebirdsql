@@ -1,0 +1,6 @@
+To build the html docs you need to run 
+
+sphinx$ make html
+
+For a intro to sphinx 
+See http://sphinx.pocoo.org/tutorial.html
