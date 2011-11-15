@@ -1,10 +1,10 @@
 
 pyFirebirdSQL Links
-=================
+===================
 
 
 pyFirebirdSQL
-^^^^^^^^^^^
+^^^^^^^^^^^^^
 + `Home Page <https://github.com/nakagami/pyfirebirdsql>`__
 
 
