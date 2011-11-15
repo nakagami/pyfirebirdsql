@@ -259,6 +259,8 @@ use code such as this:
     con.commit() # If the procedure had any side effects, commit them.
 
 
+This bellow is not implemented yet 
+-------------------------------------------------------------------------
 To *execute* a stored procedure and *access its output parameters*,
 use code such as this:
 
