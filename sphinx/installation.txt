@@ -1,0 +1,130 @@
+
+################################
+pyFirebirdSQL Installation Guide
+################################
+
+Dependencies
+************
+
+pyFirebirdSQL requires a valid combination of the dependencies in
+the list below.
+
+Detailed instructions on how to install each dependency are beyond the
+scope of this document; consult the dependency distributor for
+installation instructions.
+
+Satisfying the dependencies is not difficult! For mainstream
+operating systems -- including Windows and Linux -- easily installable
+binary distributions are available for *all* of pyFirebirdSQL's
+dependencies (see the download links below).
+
+
+#. Operating System - one of:
+
+    + Win32 
+    + Win64 
+    + Linux (Known to work fine on both x86 and x86-64.)
+    + Other Unix or Unix-like operating system
+
+#. `Firebird <http://www.firebirdsql.org>`__ 2.5.0 or later - client or server 
+   installation [`download here <http://sourceforge.net/project/showfiles.php?group_id=9028>`__]
+#. `Python <http://www.python.org>`__ [`download here
+   <http://www.python.org/download/>`__] 2.6 or later
+
+
+Linux and Other Unix Variants
+=============================
+
+Currently, Linux users must typically install from `source distribution`_
+
+The source distribution will *probably* also install (and function) on most 
+other POSIX-compliant Unix variants, as long as all of the dependencies_
+are also installed and functional.
+
+Because the pyFirebirdSQL source distribution supports the standard
+Python package installation facility (`distutils
+<http://www.python.org/sigs/distutils-sig/>`__), installing the source
+distribution on a typical Linux system is downright easy.
+
+
+.. _`source distribution`:
+
+Installation from source distribution
+*************************************
+
+Shortcut for the Experienced and Impatient::
+
+  (decompress pyFirebirdSQL into *temp_dir*)
+  cd *temp_dir*
+  python setup.py build
+  python setup.py install
+  python -c "import firebirdsql"
+  (delete *temp_dir*)
+
+Then hit the `Usage Guide <usage.html>`__.
+
+
+Install pyFirebirdSQL
+=====================
+
+During this step, the setup script moves the pyFirebirdSQL package
+(including the newly compiled C extensions) to the standard package
+directory of your Python installation so that Python will be able to
+:command:`import kinterbasdb` and :command:`import kinterbasdb.services`
+
+In addition to the Python code and shared library files actually used
+by the Python interpreter, the setup script typically installs some
+supporting files, such as documentation. Depending on your system
+configuration, these supporting files may be placed in the same
+directory or a different directory from the files used by the Python
+interpreter.
+
+Run the following command:
+:command:`python setup.py install`
+
+The setup script will install pyFirebirdSQL, listing each file it
+installs.
+
+Errors during this step are rare because compilation (the finicky part
+of this process) has already taken place; installation is really just
+a matter of copying files. However, there will be file system
+permission errors if the Python installation directory is not writable
+by the user running the setup script. If you encounter such an error,
+try one of the following:
+
+  - Log in as a user who has the required file system permissions and
+    repeat the installation step.
+
+  - Manually copy the directory :file:`build/lib.{platform}-{pyver}/firebirdsql` 
+    (which contains the Python modules and compiled library files created during 
+    the compilation step) to a directory in your PYTHONPATH. This approach will 
+    not install the supporting files, but they are for the benefit of the programmer 
+    rather than the Python interpreter anyway.
+
+
+Test your pyFirebirdSQL installation
+************************************
+
+pyFirebirdSQL has an extensive test suite, but it is not really intended for
+routine public use.
+
+To verify that pyFirebirdSQL is installed properly, switch to a
+directory *other than the temporary directory into which you
+decompressed the source distribution* (to avoid conflict between the
+copy of kinterbasdb in that directory and the copy placed under the
+standard Python `site-packages` directory), then verify the
+importability of your pyFirebirdSQL installation by issuing the
+following command::
+
+  python -c "import firebirdsql as fb; print fb.__version__"
+
+If the import attempt does not encounter any errors and the version
+number is what you expected, you are finished. Next, consider reading
+the pyFirebirdSQL Usage Guide.
+
+You should not encounter any errors at this stage since you have
+already completed the compilation and installation steps successfully.
+If you do, please report them to the `pyFirebirdSQL support list 
+<http://www.firebirdsql.org/index.php?op=lists#firebird-python>`__.
+
+
