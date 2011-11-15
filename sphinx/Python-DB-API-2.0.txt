@@ -3,13 +3,13 @@
 Python Database API Specification 2.0
 #####################################
 
-KInterbasDB is the Python Database API 2.0 compliant driver
+pyFirebirdSQL is the Python Database API 2.0 compliant driver
 for Firebird. The `Reference / Usage Guide` is therefore divided
 into three parts:
 
   * Python Database API 2.0 specification
-  * KInterbasDB Compliance to Python DB 2.0 API specification.
-  * KInterbasDB features beyond Python DB 2.0 API specification.
+  * pyFirebirdSQL Compliance to Python DB 2.0 API specification.
+  * pyFirebirdSQL features beyond Python DB 2.0 API specification.
 
 If you're familiar to Python DB 2.0 API specification, you may skip
 directly to the next topic.
