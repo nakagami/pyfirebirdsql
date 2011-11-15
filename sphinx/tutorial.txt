@@ -153,7 +153,8 @@ example to `languages`):
 
     # Print a header.
     for fieldDesc in cur.description:
-        print fieldDesc[fb.DESCRIPTION_NAME].ljust(fieldDesc[fb.DESCRIPTION_DISPLAY_SIZE]) ,
+        # Description name
+        print fieldDesc[0] ,
     print # Finish the header with a newline.
     print '-' * 78
 
@@ -163,7 +164,8 @@ example to `languages`):
     for row in cur:
         for fieldIndex in fieldIndices:
             fieldValue = str(row[fieldIndex])
-            fieldMaxWidth = cur.description[fieldIndex][fb.DESCRIPTION_DISPLAY_SIZE]
+            #DESCRIPTION_DISPLAY_SIZE
+            fieldMaxWidth = cur.description[fieldIndex][2]
 
             print fieldValue.ljust(fieldMaxWidth) ,
 
