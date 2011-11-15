@@ -145,17 +145,10 @@ fetching a single row at a time from a <cite>SELECT</cite>-cursor:</p>
 <span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">SELECT</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">cur</span><span class="p">:</span>
     <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> has been publicly available since </span><span class="si">%d</span><span class="s">.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-
-<span class="c"># 3. Using mapping-iteration rather than sequence-iteration:</span>
-<span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">SELECT</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">cur</span><span class="o">.</span><span class="n">itermap</span><span class="p">():</span>
-    <span class="k">print</span> <span class="s">&#39;</span><span class="si">%(name)s</span><span class="s"> has been publicly available since </span><span class="si">%(year_released)d</span><span class="s">.&#39;</span> <span class="o">%</span> <span class="n">row</span>
 </pre></div>
 </div>
 <p>Sample output:</p>
 <div class="highlight-python"><pre>C has been publicly available since 1972.
-Python has been publicly available since 1991.
-C has been publicly available since 1972.
 Python has been publicly available since 1991.
 C has been publicly available since 1972.
 Python has been publicly available since 1991.</pre>
@@ -163,19 +156,20 @@ Python has been publicly available since 1991.</pre>
 <p><strong>Example 3</strong></p>
 <p>The following program is a simplistic table printer (applied in this
 example to <cite>languages</cite>):</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">firebirdsql</span> <span class="kn">as</span> <span class="nn">k</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">firebirdsql</span> <span class="kn">as</span> <span class="nn">fb</span>
 
 <span class="n">TABLE_NAME</span> <span class="o">=</span> <span class="s">&#39;languages&#39;</span>
 <span class="n">SELECT</span> <span class="o">=</span> <span class="s">&#39;select * from </span><span class="si">%s</span><span class="s"> order by year_released&#39;</span> <span class="o">%</span> <span class="n">TABLE_NAME</span>
 
-<span class="n">con</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s">&#39;/temp/test.db&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;masterkey&#39;</span><span class="p">)</span>
+<span class="n">con</span> <span class="o">=</span> <span class="n">fb</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">dsn</span><span class="o">=</span><span class="s">&#39;/temp/test.db&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;sysdba&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s">&#39;masterkey&#39;</span><span class="p">)</span>
 
 <span class="n">cur</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
 <span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">SELECT</span><span class="p">)</span>
 
 <span class="c"># Print a header.</span>
 <span class="k">for</span> <span class="n">fieldDesc</span> <span class="ow">in</span> <span class="n">cur</span><span class="o">.</span><span class="n">description</span><span class="p">:</span>
-    <span class="k">print</span> <span class="n">fieldDesc</span><span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">DESCRIPTION_NAME</span><span class="p">]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="n">fieldDesc</span><span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">DESCRIPTION_DISPLAY_SIZE</span><span class="p">])</span> <span class="p">,</span>
+    <span class="c"># Description name</span>
+    <span class="k">print</span> <span class="n">fieldDesc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">,</span>
 <span class="k">print</span> <span class="c"># Finish the header with a newline.</span>
 <span class="k">print</span> <span class="s">&#39;-&#39;</span> <span class="o">*</span> <span class="mi">78</span>
 
@@ -185,7 +179,8 @@ example to <cite>languages</cite>):</p>
 <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">cur</span><span class="p">:</span>
     <span class="k">for</span> <span class="n">fieldIndex</span> <span class="ow">in</span> <span class="n">fieldIndices</span><span class="p">:</span>
         <span class="n">fieldValue</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">fieldIndex</span><span class="p">])</span>
-        <span class="n">fieldMaxWidth</span> <span class="o">=</span> <span class="n">cur</span><span class="o">.</span><span class="n">description</span><span class="p">[</span><span class="n">fieldIndex</span><span class="p">][</span><span class="n">k</span><span class="o">.</span><span class="n">DESCRIPTION_DISPLAY_SIZE</span><span class="p">]</span>
+        <span class="c">#DESCRIPTION_DISPLAY_SIZE</span>
+        <span class="n">fieldMaxWidth</span> <span class="o">=</span> <span class="n">cur</span><span class="o">.</span><span class="n">description</span><span class="p">[</span><span class="n">fieldIndex</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
 
         <span class="k">print</span> <span class="n">fieldValue</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="n">fieldMaxWidth</span><span class="p">)</span> <span class="p">,</span>
 
