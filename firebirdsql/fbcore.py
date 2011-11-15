@@ -136,6 +136,21 @@ class XSQLVAR:
         SQL_TYPE_INT64: 8
         }
     
+    type_display_length = {
+        SQL_TYPE_VARYING: -1,
+        SQL_TYPE_SHORT: 6,
+        SQL_TYPE_LONG: 11,
+        SQL_TYPE_FLOAT: 17,
+        SQL_TYPE_TIME: 11,
+        SQL_TYPE_DATE: 10,
+        SQL_TYPE_DOUBLE: 17,
+        SQL_TYPE_TIMESTAMP: 22,
+        SQL_TYPE_BLOB: 0,
+        SQL_TYPE_ARRAY: -1,
+        SQL_TYPE_QUAD: 20,
+        SQL_TYPE_INT64: 20
+        }
+
     def __init__(self, bytes_to_str):
         self.bytes_to_str = bytes_to_str
         self.sqltype = None
@@ -154,6 +169,16 @@ class XSQLVAR:
             return self.sqllen
         else:
             return self.type_length[sqltype]
+
+    def display_length(self):
+        sqltype = self.sqltype
+        if sqltype == SQL_TYPE_TEXT:
+            return self.sqllen
+        else:
+            return self.type_display_length[sqltype]
+
+    def precision(self):
+        return None
 
     def __str__(self):
         s  = '[' + str(self.sqltype) + ',' + str(self.sqlscale) + ',' \
@@ -379,7 +404,8 @@ class PreparedStatement:
                 return None
             r = []
             for x in self._xsqlda:
-                r.append((x.aliasname, x.sqltype, None, x.io_length(), None, 
+                r.append((x.aliasname, x.sqltype, x.diplay_length(), 
+                        x.io_length(), x.precision(), 
                         x.sqlscale, True if x.null_ok else False))
             return r
         elif attrname == 'n_output_params':
@@ -560,8 +586,8 @@ class Cursor:
     
     @property
     def description(self):
-        return [(x.aliasname, x.sqltype, None, x.io_length(), None, 
-                 x.sqlscale, True if x.null_ok else False)
+        return [(x.aliasname, x.sqltype, x.display_length(), x.io_length(), 
+                    x.precision(), x.sqlscale, True if x.null_ok else False)
                 for x in self._xsqlda]
         
     @property
