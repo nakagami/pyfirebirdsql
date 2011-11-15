@@ -3,3 +3,7 @@
 .project
 .pydevproject
 build
+.build
+_sources
+_static
+docs

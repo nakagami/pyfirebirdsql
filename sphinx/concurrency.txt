@@ -1,0 +1,180 @@
+###########
+Concurrency
+###########
+
+
+Overview
+========
+
+Note: This section will not be comprehensible unless you understand
+the basic characteristics of the Firebird server architectures. These
+are documented in the "Classic or Superserver?" section of the
+`doc/Firebird-1.5-QuickStart.pdf` file included with the Firebird
+distribution.
+
+Versions of KInterbasDB prior to 3.2 imposed a global lock over all
+database client library calls. This lock, referred to as the Global
+Database API Lock (GDAL), must be active for multithreaded client
+programs to work correctly with versions of the Firebird client
+library that do not properly support concurrency. Many such versions
+are still in use, so the GDAL remains active by default in KInterbasDB
+3.2. To determine whether the client library you're using can
+correctly handle concurrent database calls, read this `Overview of
+Firebird Client Library Thread-Safety <thread-safety-overview.html>`__.
+
+Note that a single client library might have different thread-safety
+properties depending on which *protocol* the client program specifies
+via the parameters of :func:`kinterbasdb.connect()`. For example,
+the Firebird 1.5 client library on Windows is thread-safe if the remote
+protocol is used, as in
+
+.. sourcecode:: python
+
+   kinterbasdb.connect(dsn=r'localhost:C:\temp\test.db', ...)
+
+but is *not* thread-safe if the local protocol is used, as in
+
+.. sourcecode:: python
+
+    kinterbasdb.connect(dsn=r'C:\temp\test.db', ...)
+
+
+Selecting and Activating a KInterbasDB Concurrency Level
+========================================================
+
+KInterbasDB 3.2 supports three levels of concurrency:
+
+
++ **Level 0:**  No lock management whatsoever If the C preprocessor
+  symbol `ENABLE_CONCURRENCY` is not defined when KInterbasDB is
+  compiled, no lock management at all is performed at runtime. In fact,
+  the code to initialize and manage the locks is not even compiled in.
+  Level 0 is intended only for compiling KInterbasDB on non-threaded
+  builds of the Python interpreter. It would not be desirable for a
+  client program running on a normal (threaded) build of the Python
+  interpreter to use Level 0, so no overhead is invested in making it
+  possible to transition to Level 0 at runtime. Since Level 0 is
+  intended for use in Python interpreters that have no Global
+  Interpreter Lock (GIL), the GIL is not manipulated.
++ **Level 1:**  Global Database API Lock (GDAL) is active    (this is
+  the default level) At Level 1, a global lock serializes all calls to
+  the database client library. This lock, called the Global Database API
+  Lock (GDAL), is to the database client library as the GIL is to the
+  Python interpreter: a mechanism to guarantee that at most one thread
+  is using the database client library at any time. Level 1 exists to
+  support those versions of Firebird in which the client library is not
+  thread-safe at the connection level (see the `Overview of Firebird
+  Client Library Thread-Safety <thread-safety-overview.html>`__ for
+  details). In environments where the author ofKInterbasDB creates
+  binaries and distributes them to client programmers, there is no way
+  of knowing at compile time which Firebird client library configuration
+  the KInterbasDB binaries will be used with. Level 1 protects client
+  programmers who are not aware of the thread-safety properties of their
+  version of the client library. For these reasons, Level 1 is the default,
+  but Level 2 can be selected at runtime via the :func:`kinterbasdb.init()`
+  function (see next section). At Level 1, the Python GIL is released and
+  reacquired around most database client library calls in order to avoid
+  blocking the entire Python process for the duration of the call.
++ **Level 2:**  Global Database API Lock (GDAL) is not active, but
+  connection and disconnection are serialized via the GCDL At Level 2,
+  calls to the database client library are not serialized, except for
+  calls to the connection attachment and detachment functions, which are
+  serialized by a lock called the Global Connection and Disconnection
+  Lock (GCDL). This limited form of serialization is necessary because
+  the Firebird client library makes no guarantees about the thread-
+  safety of connection and disconnection. Since most client programs
+  written with high concurrency in mind use a connection pool that
+  minimizes the need to physically connect and disconnect, the GCDL is
+  not a serious impediment to concurrency. Level 2, which can be
+  activated at runtime by calling
+  `kinterbasdb.init(concurrency_level=2)`, is appropriate for client
+  programmers who are aware of the thread-safety guarantees provided by
+  their version of the Firebird client library, and have written the
+  client program accordingly. For details about the thread-safety of
+  various Firebird client library versions, see the `Overview of
+  Firebird Client Library Thread-Safety <thread-safety-overview.html>`__.
+  At Level 2, the Python GIL is released and reacquired around most
+  database client library calls, just as it is at Level 1.
+
+
+Level 1 is the default, so if you don't understand these subtleties,
+or are using a client library configuration that is not thread-safe,
+you do not need to take any action to achieve thread-safety.
+
+Level 2 can greatly increase the throughput of a database-centric,
+multithreaded Python application, so you should use it if possible.
+Once you've determined that you're using an appropriate connection
+protocol with a capable client library, you can activate Level 2 at
+runtime with the following call:
+
+.. sourcecode:: python
+
+    kinterbasdb.init(concurrency_level=2)
+
+
+The `kinterbasdb.init` function can only be called once during the
+life of a process. If it has not been called explicitly, the function
+will be called implicitly when the client program tries to perform any
+database operation. Therefore, the recommended place to call
+`kinterbasdb.init` is at the top level of one of the main modules of
+your program. The importation infrastructure of the Python interpreter
+serializes all imports, so calling `kinterbasdb.init` at import time
+avoids the potential for multiple simultaneous calls, which could
+cause subtle problems.
+
+
+Caveats
+=======
+
+
++ `threadsafety` versus `concurrency_level` Make sure not to confuse
+  KInterbasDB's `concurrency_level` with its `threadsafety`.
+  `threadsafety`, a module-level property required by the Python DB API
+  Specification 2.0, represents the highest level of granularity at
+  which the DB API implementation remains thread-safe. KInterbasDB is
+  always "`thread-safe at the connection level 
+  <thread-safety-overview.html#definition>`__" (DB API `threadsafety 1`),
+  regardless of which `concurrency_level` is active. Think of
+  `threadsafety` as the level of thread-safety that KInterbasDB
+  guarantees, and `concurrency_level` as the degree to which
+  KInterbasDB's internals are able to exploit a client program's
+  potential for concurrency.
+
+
+
+Tips on Achieving High Concurrency
+==================================
+
+
++ Use the Classic server architecture, but the SuperServer client
+  library. At the time of this writing (December 2005), the thread-
+  centric Vulcan had not been released, so the multi-process Classic
+  architecture was the only Firebird server architecture that could take
+  advantage of multiple CPUs. This means that in most scenarios, Classic
+  is far more concurrency-friendly than SuperServer. The Windows version
+  of Firebird--whether Classic or SuperServer--offers a single client
+  library, so the following advice is not relevant to Windows. The non-
+  Windows versions of Firebird Classic include two client libraries:
+
+    + `fbclient` ( `libfbclient.so`) communicates with the server solely
+      via the network protocol (possibly over an emulated network such as
+      the local loopback). fbclient `is thread-safe in recent versions
+      <thread-safety-overview.html>`__ of Firebird.
+    + `fbembed` ( `libfbembed.so`) uses an in-process Classic server to
+      manipulate the database file directly. `fbembed` is not thread-safe in
+      any version of Firebird; it should never be used with KInterbasDB
+      concurrency level 2.
+  At present, the best way to achieve a concurrency-friendly
+  KInterbasDB/Firebird configuration is to use a version of KInterbasDB
+  linked against `a thread-safe fbclient <thread-safety-overview.html>`__,
+  running at concurrency level 2, and communicating with a Classic server.
+  On Linux, such a setup can be created by installing the Classic server,
+  then compiling KInterbasDB with the `database_lib_name` option in 
+  :file:`setup.cfg` set to `fbclient` (this is the default setting).
+  A version of KInterbasDB that was linked against `fbembed` (by setting
+  `database_lib_name=fbembed`) will not work in a multithreaded program
+  if the concurrency level is higher than 1. On Windows, use a Classic
+  server in combination with one of the standard KInterbasDB Windows
+  binaries for Firebird 1.5 or later, and be sure to set KInterbasDB's
+  concurrency level to 2.
+
