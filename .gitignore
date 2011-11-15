@@ -4,3 +4,5 @@
 .pydevproject
 build
 .build
+_sources
+_static
