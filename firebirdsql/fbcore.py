@@ -26,6 +26,20 @@ else:
     from collections import Mapping
     HAS_MAPPING = True
 
+try:
+    import fcntl
+except ImportError:
+    def setcloexec(sock):
+        pass
+else:
+    def setcloexec(sock):
+        """Set FD_CLOEXEC property on a file descriptors
+        """
+        fd = sock.fileno()
+        flags = fcntl.fcntl(fd, fcntl.F_GETFD)
+        fcntl.fcntl(fd, fcntl.F_SETFD, flags | fcntl.FD_CLOEXEC)
+
+
 def b2i(b):
     "byte to int"
     if PYTHON_MAJOR_VER == 3:
@@ -122,6 +136,21 @@ class XSQLVAR:
         SQL_TYPE_INT64: 8
         }
     
+    type_display_length = {
+        SQL_TYPE_VARYING: -1,
+        SQL_TYPE_SHORT: 6,
+        SQL_TYPE_LONG: 11,
+        SQL_TYPE_FLOAT: 17,
+        SQL_TYPE_TIME: 11,
+        SQL_TYPE_DATE: 10,
+        SQL_TYPE_DOUBLE: 17,
+        SQL_TYPE_TIMESTAMP: 22,
+        SQL_TYPE_BLOB: 0,
+        SQL_TYPE_ARRAY: -1,
+        SQL_TYPE_QUAD: 20,
+        SQL_TYPE_INT64: 20
+        }
+
     def __init__(self, bytes_to_str):
         self.bytes_to_str = bytes_to_str
         self.sqltype = None
@@ -140,6 +169,16 @@ class XSQLVAR:
             return self.sqllen
         else:
             return self.type_length[sqltype]
+
+    def display_length(self):
+        sqltype = self.sqltype
+        if sqltype == SQL_TYPE_TEXT:
+            return self.sqllen
+        else:
+            return self.type_display_length[sqltype]
+
+    def precision(self):
+        return None
 
     def __str__(self):
         s  = '[' + str(self.sqltype) + ',' + str(self.sqlscale) + ',' \
@@ -365,7 +404,8 @@ class PreparedStatement:
                 return None
             r = []
             for x in self._xsqlda:
-                r.append((x.aliasname, x.sqltype, None, x.io_length(), None, 
+                r.append((x.aliasname, x.sqltype, x.diplay_length(), 
+                        x.io_length(), x.precision(), 
                         x.sqlscale, True if x.null_ok else False))
             return r
         elif attrname == 'n_output_params':
@@ -546,8 +586,8 @@ class Cursor:
     
     @property
     def description(self):
-        return [(x.aliasname, x.sqltype, None, x.io_length(), None, 
-                 x.sqlscale, True if x.null_ok else False)
+        return [(x.aliasname, x.sqltype, x.display_length(), x.io_length(), 
+                    x.precision(), x.sqlscale, True if x.null_ok else False)
                 for x in self._xsqlda]
         
     @property
@@ -563,7 +603,7 @@ class Connection(WireProtocol):
             hostname = os.environ['COMPUTERNAME']
         else:
             user = os.environ['USER']
-            hostname = os.environ.get('HOSTNAME', '')
+            hostname = socket.gethostname()
         return bytes([1] + [len(user)] + [ord(c) for c in user] 
                 + [4] + [len(hostname)] + [ord(c) for c in hostname] + [6, 0])
 
@@ -651,8 +691,7 @@ class Connection(WireProtocol):
 
     def __init__(self, dsn=None, user=None, password=None, host=None,
                     database=None, charset=DEFAULT_CHARSET, port=3050, 
-                    page_size=None,
-                    is_services = False):
+                    page_size=None, is_services = False, cloexec=False):
         if dsn:
             i = dsn.find(':')
             if i < 0:
@@ -664,14 +703,15 @@ class Connection(WireProtocol):
                 i = hostport.find('/')
                 if i < 0:
                     self.hostname = hostport
-                    self.port = port
                 else:
                     self.hostname = hostport[:i]
-                    self.port = int(hostport[i+1:])
+                    port = int(hostport[i+1:])
         else:
             self.hostname = host
             self.filename = database
-            self.port = port
+        if self.hostname is None:
+            self.hostname = 'localhost'
+        self.port = port
         self.user = user
         self.password = password
         self.charset = charset
@@ -679,6 +719,8 @@ class Connection(WireProtocol):
         self.isolation_level = ISOLATION_LEVEL_READ_COMMITED
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if cloexec:
+            setcloexec(self.sock)
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         self.sock.connect((self.hostname, self.port))
 
@@ -827,6 +869,11 @@ class Connection(WireProtocol):
                                                     info_requests[i], rs[i])
             return results
 
+    def trans_info(self, info_requests):
+        if self.main_transaction:
+            return self.main_transaction.trans_info(info_requests)
+        return {}
+
     def close(self):
         if self.closed:
             return
@@ -891,6 +938,43 @@ class Transaction:
             (h, oid, buf) = self.connection._op_response()
             delattr(self, "trans_handle")
             self.connection._transactions.remove(self)
+
+    def _trans_info(self, info_requests):
+        if info_requests[-1] == isc_info_end:
+            self.connection._op_info_transaction(self.trans_handle,
+                    bytes(info_requests))
+        else:
+            self.connection._op_info_transaction(self.trans_handle,
+                    bytes(info_requests+type(info_requests)([isc_info_end])))
+        (h, oid, buf) = self.connection._op_response()
+        i = 0
+        i_request = 0
+        r = []
+        while i < len(buf):
+            req = b2i(buf[i])
+            if req == isc_info_end:
+                break
+            assert req == info_requests[i_request]
+            l = bytes_to_int(buf[i+1:i+3])
+            r.append(buf[i+3:i+3+l])
+            i = i + 3 + l
+            i_request += 1
+        return r
+
+    def trans_info(self, info_requests):
+        if type(info_requests) == int:  # singleton
+            r = self._trans_info([info_requests])
+            return {info_requests: r[0]}
+        else:
+            results = {}
+            rs = self._trans_info(info_requests)
+            for i in range(len(info_requests)):
+                if info_requests[i] == isc_info_tra_isolation:
+                    v = (b2i(rs[i][0]), b2i(rs[i][1]))
+                else:
+                    v = bytes_to_int(rs[i])
+                results[info_requests[i]] = v
+            return results
 
     def close(self):
         if self.closed:

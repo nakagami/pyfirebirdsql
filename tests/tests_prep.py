@@ -52,7 +52,6 @@ if __name__ == '__main__':
     prep = cur.prep("select * from foo where c=?")
     print('sql=', prep.sql)
     print('statement_type=', prep.statement_type)
-    print('n_input_params=', prep.n_input_params)
     print('n_output_params=', prep.n_output_params)
     print('plan=', prep.plan)
     print('description=', prep.description)

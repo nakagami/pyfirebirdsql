@@ -257,6 +257,16 @@ isc_action_svc_drop_mapping = 28
 isc_action_svc_display_user_adm = 29
 isc_action_svc_last = 30
 
+# Transaction informatino items
+isc_info_tra_id = 4
+isc_info_tra_oldest_interesting = 5
+isc_info_tra_oldest_snapshot = 6
+isc_info_tra_oldest_active = 7
+isc_info_tra_isolation = 8
+isc_info_tra_access = 9
+isc_info_tra_lock_timeout = 10
+
+# SQL information items
 isc_info_sql_select = 4
 isc_info_sql_bind = 5
 isc_info_sql_num_variables = 6

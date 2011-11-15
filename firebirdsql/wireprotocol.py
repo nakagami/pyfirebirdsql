@@ -124,6 +124,7 @@ class WireProtocol:
     op_get_segment = 36
     op_close_blob = 39
     op_info_database = 40
+    op_info_transaction = 42
     op_batch_segments = 44
     op_allocate_statement = 62
     op_create_blob2 = 57
@@ -370,6 +371,26 @@ class WireProtocol:
         p.pack_int(self.op_allocate_statement)
         p.pack_int(self.db_handle)
         send_channel(self.sock, p.get_buffer())
+
+    @wire_operation
+    def _op_info_transaction(self, trans_handle, b):
+        p = xdrlib.Packer()
+        p.pack_int(self.op_info_transaction)
+        p.pack_int(trans_handle)
+        p.pack_int(0)
+        p.pack_bytes(b)
+        p.pack_int(self.buffer_length)
+        send_channel(self.sock, p.get_buffer())
+    @wire_operation
+    def _op_info_database(self, b):
+        p = xdrlib.Packer()
+        p.pack_int(self.op_info_database)
+        p.pack_int(self.db_handle)
+        p.pack_int(0)
+        p.pack_bytes(b)
+        p.pack_int(self.buffer_length)
+        send_channel(self.sock, p.get_buffer())
+
 
     @wire_operation
     def _op_free_statement(self, stmt_handle, mode):

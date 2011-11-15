@@ -118,22 +118,31 @@ if __name__ == '__main__':
 
     conn = firebirdsql.connect(host=TEST_HOST, database=TEST_DATABASE,
                         port=TEST_PORT, user=TEST_USER, password=TEST_PASS)
+    conn.begin()
 
-    # db_info
-    print('isc_info_ods_version =', conn.db_info(isc_info_ods_version))
-    print('isc_info_base_level =', conn.db_info(isc_info_base_level))
-    print('isc_info_db_id =', conn.db_info(isc_info_db_id))
-    print('isc_info_implementation =', conn.db_info(isc_info_implementation))
-    print('isc_info_firebird_version =', conn.db_info(isc_info_firebird_version))
-    print('isc_info_user_names =', conn.db_info(isc_info_user_names))
-    print('isc_info_reqd_idx_count =', conn.db_info(isc_info_read_idx_count))
-    print('isc_info_creation_date =', conn.db_info(isc_info_creation_date))
-
+    print('db_info:')
     requests = [isc_info_ods_version, 
-                isc_info_user_names,
                 isc_info_ods_minor_version,
+                isc_info_base_level,
+                isc_info_db_id,
+                isc_info_implementation,
+                isc_info_firebird_version,
+                isc_info_user_names,
+                isc_info_read_idx_count,
+                isc_info_creation_date,
     ]
     print(conn.db_info(requests))
+
+    print('trans_info:')
+    requests = [isc_info_tra_id, 
+                isc_info_tra_oldest_interesting,
+                isc_info_tra_oldest_snapshot,
+                isc_info_tra_oldest_active,
+                isc_info_tra_isolation,
+                isc_info_tra_access,
+                isc_info_tra_lock_timeout,
+    ]
+    print(conn.trans_info(requests))
 
     conn.set_isolation_level(firebirdsql.ISOLATION_LEVEL_SERIALIZABLE)
     cur = conn.cursor()
