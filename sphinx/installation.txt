@@ -95,7 +95,7 @@ try one of the following:
   - Log in as a user who has the required file system permissions and
     repeat the installation step.
 
-  - Manually copy the directory :file:`build/lib.{platform}-{pyver}/kinterbasdb` 
+  - Manually copy the directory :file:`build/lib.{platform}-{pyver}/firebirdsql` 
     (which contains the Python modules and compiled library files created during 
     the compilation step) to a directory in your PYTHONPATH. This approach will 
     not install the supporting files, but they are for the benefit of the programmer 
