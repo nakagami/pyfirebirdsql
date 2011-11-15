@@ -245,7 +245,7 @@ retrieved from a stored procedure by `SELECT`ing from the procedure,
 whereas output parameters are retrieved with an `EXECUTE PROCEDURE`
 statement.
 
-To *retrieve a result set* from a stored procedure with KInterbasDB,
+To *retrieve a result set* from a stored procedure with pyFirebirdSQL,
 use code such as this:
 
 .. sourcecode:: python

@@ -83,7 +83,7 @@ Shortcut for the Experienced and Impatient::
 Then hit the `Usage Guide <usage.html>`__.
 
 Compile pyFirebirdSQL
-===================
+=====================
 
 You will need a C compiler for that. VC or MinGW to compile pyFirebirdSQL
 on Windows, and GCC to compile it on Linux/POSIX.
@@ -253,7 +253,7 @@ Compiler-Specific Notes
 
 
 Install pyFirebirdSQL
-===================
+=====================
 
 During this step, the setup script moves the pyFirebirdSQL package
 (including the newly compiled C extensions) to the standard package
@@ -291,7 +291,7 @@ try one of the following:
 
 
 Test your pyFirebirdSQL installation
-**********************************
+************************************
 
 pyFirebirdSQL has an extensive test suite, but it is not really intended for
 routine public use.

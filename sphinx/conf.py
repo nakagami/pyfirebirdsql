@@ -168,7 +168,7 @@ htmlhelp_basename = 'pyFirebirdSQLdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
 latex_documents = [
-  ('index', 'pyFirebirdSQL.tex', ur'KInterbasDB Documentation',
+  ('index', 'pyFirebirdSQL.tex', ur'pyFirebirdSQL Documentation',
    ur'David Rushby, Pavel Cisar', 'manual'),
 ]
 

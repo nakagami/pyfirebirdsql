@@ -1,10 +1,10 @@
-.. KInterbasDB documentation master file, created by sphinx-quickstart on Wed Jan  7 12:29:48 2009.
+.. pyFirebirdSQL documentation master file, created by sphinx-quickstart on Wed Jan  7 12:29:48 2009.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-#######################################
-Welcome to KInterbasDB's documentation!
-#######################################
+#########################################
+Welcome to pyFirebirdSQL's documentation!
+#########################################
 
 pyFirebirdSQL is a `Python <http://python.org>`__ extension package that
 implements `Python Database API 2.0`-compliant support for the open source relational
