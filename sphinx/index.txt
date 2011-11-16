@@ -21,10 +21,10 @@ rather, it is a topical presentation of pyFirebirdSQL's feature set,
 with example code to demonstrate basic usage patterns. For detailed
 information about Firebird features, see the `Firebird documentation 
 <http://www.firebirdsql.org/en/documentation/>`__, and especially the excellent
-`The Firebird Book <http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_firebird_book>`__ 
+`The Firebird Book <http://www.ibphoenix.com/products/books/firebird_book>`__ 
 written by Helen Borrie and published by APress.
 
-.. module:: kinterbasdb
+.. module:: firebirdsql
    :synopsis: Python Database API 2.0 Compliant driver for Firebird
 
 Documentation Contents:
