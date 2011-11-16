@@ -25,12 +25,12 @@ A database connection is typically established with code such as this:
 
     import firebirdsql
     
-    # The server is named 'bison'; the database file is at '/temp/test.db'.
-    con = firebirdsql.connect(dsn='bison:/temp/test.db', user='sysdba', password='pass')
+    # The server is named 'bison'; the database file is at '/temp/test.fdb'.
+    con = firebirdsql.connect(dsn='bison:/temp/test.fdb', user='sysdba', password='pass')
     
     # Or, equivalently:
     con = firebirdsql.connect(
-        host='bison', database='/temp/test.db',
+        host='bison', database='/temp/test.fdb',
         user='sysdba', password='pass'
       )
 
@@ -45,7 +45,7 @@ UTF-8 as the character set of the connection:
     import firebirdsql
     
     con = firebirdsql.connect(
-        dsn='bison:/temp/test.db',
+        dsn='bison:/temp/test.fdb',
         user='sysdba', password='pass',
         dialect=1, # necessary for all dialect 1 databases
         charset='UTF8' # specify a character set for the connection
@@ -79,7 +79,7 @@ the `languages` table:
 
     import firebirdsql
 
-    con = firebirdsql.connect(dsn='/temp/test.db', user='sysdba', password='masterkey')
+    con = firebirdsql.connect(dsn='/temp/test.fdb', user='sysdba', password='masterkey')
 
     # Create a Cursor object that operates in the context of Connection con:
     cur = con.cursor()
@@ -107,7 +107,7 @@ fetching a single row at a time from a `SELECT`-cursor:
 
     import firebirdsql
 
-    con = firebirdsql.connect(dsn='/temp/test.db', user='sysdba', password='masterkey')
+    con = firebirdsql.connect(dsn='/temp/test.fdb', user='sysdba', password='masterkey')
 
     cur = con.cursor()
     SELECT = "select name, year_released from languages order by year_released"
@@ -146,7 +146,7 @@ example to `languages`):
     TABLE_NAME = 'languages'
     SELECT = 'select * from %s order by year_released' % TABLE_NAME
 
-    con = fb.connect(dsn='/temp/test.db', user='sysdba', password='masterkey')
+    con = fb.connect(dsn='/temp/test.fdb', user='sysdba', password='masterkey')
 
     cur = con.cursor()
     cur.execute(SELECT)
@@ -190,7 +190,7 @@ Let's insert more languages:
 
     import firebirdsql
 
-    con = firebirdsql.connect(dsn='/temp/test.db', user='sysdba', password='masterkey')
+    con = firebirdsql.connect(dsn='/temp/test.fdb', user='sysdba', password='masterkey')
 
     cur = con.cursor()
 
