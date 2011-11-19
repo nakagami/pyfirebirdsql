@@ -48,11 +48,11 @@ if __name__ == '__main__':
     ''')
     conn.cursor().execute('''
         CREATE PROCEDURE foo_proc (param_a INTEGER, param_b VARCHAR(30))
-          RETURNS (ret_a INTEGER, ret_b VARCHAR(30))
+          RETURNS (out1 INTEGER, out2 VARCHAR(30))
           AS
           BEGIN
-            ret_a = param_a;
-            ret_b = param_b;
+            out1 = param_a;
+            out2 = param_b;
           END
     ''')
     conn.commit()
@@ -63,6 +63,8 @@ if __name__ == '__main__':
     cur.close()
 
     cur = conn.cursor()
+    for r in cur.execute("select out1, out2 from foo_proc(?, ?)", (1, "ABC")):
+        print r
     print(cur.callproc("foo_proc", (1, "ABC")))
     cur.close()
 
