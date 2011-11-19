@@ -2,7 +2,7 @@
 Native Database Engine Features and Extensions Beyond the Python DB API
 #######################################################################
 
-.. currentmodule:: kinterbasdb
+.. currentmodule:: firebirdsql
 
 Programmatic Database Creation and Deletion
 ===========================================
@@ -22,12 +22,12 @@ such as temporary sort files, and it may even have dependent shadow
 databases. Although the database engine recognizes a `DROP DATABASE`
 SQL statement, support for that statement is limited to the `isql`
 command-line administration utility. However, the engine supports the
-deletion of databases via an API call, which KInterbasDB exposes to
+deletion of databases via an API call, which pyFirebirdSQL exposes to
 Python (see below).
 
-KInterbasDB supports dynamic database creation and deletion via the
-module-level function :func:`kinterbasdb.create_database` and the method
-:meth:`~kinterbasdb.Connection.drop_database`. These are documented below,
+pyFirebirdSQL supports dynamic database creation and deletion via the
+module-level function :func:`firebirdsql.create_database` and the method
+:meth:`~firebirdsql.Connection.drop_database`. These are documented below,
 then demonstrated by a brief example.
 
 .. function:: create_database()
@@ -60,9 +60,9 @@ then demonstrated by a brief example.
 
    .. sourcecode:: python
 
-      import kinterbasdb
+      import firebirdsql
 
-      con = kinterbasdb.create_database(
+      con = firebirdsql.create_database(
             "create database '/temp/db.db' user 'sysdba' password 'pass'"
             )
       con.drop_database()
@@ -72,7 +72,7 @@ then demonstrated by a brief example.
 Advanced Transaction Control
 ============================
 
-For the sake of simplicity, KInterbasDB lets the Python programmer
+For the sake of simplicity, pyFirebirdSQL lets the Python programmer
 ignore transaction management to the greatest extent allowed by the
 Python Database API Specification 2.0. The specification says, "if the
 database supports an auto-commit feature, this must be initially off".
@@ -86,12 +86,12 @@ Remember that because of `ACID
 every data manipulation operation in the Firebird database engine
 takes place in the context of a transaction, including operations
 that are conceptually "read-only", such as a typical `SELECT`.
-The client programmer of KInterbasDB establishes a transaction
+The client programmer of pyFirebirdSQL establishes a transaction
 implicitly by using any SQL execution method, such as 
 :meth:`~Connection.execute_immediate()`,
 :meth:`Cursor.execute()`, or :meth:`Cursor.callproc()`.
 
-Although KInterbasDB allows the programmer to pay little attention to
+Although pyFirebirdSQL allows the programmer to pay little attention to
 transactions, it also exposes the full complement of the database
 engine's advanced transaction control features: transaction
 parameters, retaining transactions, savepoints, and distributed
@@ -101,7 +101,7 @@ Explicit transaction start
 --------------------------
 
 In addition to the implicit transaction initiation required by
-Python Database API, KInterbasDB allows the programmer to
+Python Database API, pyFirebirdSQL allows the programmer to
 start transactions explicitly via the `Connection.begin` method.
 
 .. method:: Connection.begin(tpb)
@@ -110,7 +110,7 @@ start transactions explicitly via the `Connection.begin` method.
    transaction will be started implicitly if necessary.
 
    :tpb: Optional transaction parameter buffer (TPB) populated with
-         `kinterbasdb.isc_tpb_*` constants. See the Firebird API guide
+         `firebirdsql.isc_tpb_*` constants. See the Firebird API guide
          for these constants' meanings.
 
 
@@ -135,12 +135,12 @@ that single transaction.
 For details about TPB construction, see the Firebird API documentation.
 In particular, the :file:`ibase.h` supplied with Firebird contains all
 possible TPB elements -- single bytes that the C API defines as
-constants whose names begin with `isc_tpb_`. KInterbasDB makes all of
+constants whose names begin with `isc_tpb_`. pyFirebirdSQL makes all of
 those TPB constants available (under the same names) as module-level
 constants in the form of single-character strings. A transaction
-parameter *buffer* is handled in C as a character array; KInterbasDB
+parameter *buffer* is handled in C as a character array; pyFirebirdSQL
 requires that TPBs be constructed as Python strings. Since the
-constants in the `kinterbasdb.isc_tpb_*` family are single-character
+constants in the `firebirdsql.isc_tpb_*` family are single-character
 Python strings, they can simply be concatenated to create a TPB.
 
 .. warning::
@@ -157,16 +157,16 @@ access to the database:
 
 .. sourcecode:: python
 
-    import kinterbasdb
+    import firebirdsql
 
-    con = kinterbasdb.connect(dsn='localhost:/temp/test.db', user='sysdba', password='pass')
+    con = firebirdsql.connect(dsn='localhost:/temp/test.db', user='sysdba', password='pass')
 
     # Construct a TPB by concatenating single-character strings (bytes)
-    # from the kinterbasdb.isc_tpb_* family.
+    # from the firebirdsql.isc_tpb_* family.
     customTPB = (
-          kinterbasdb.isc_tpb_read
-        + kinterbasdb.isc_tpb_read_committed
-        + kinterbasdb.isc_tpb_rec_version
+          firebirdsql.isc_tpb_read
+        + firebirdsql.isc_tpb_read_committed
+        + firebirdsql.isc_tpb_rec_version
       )
 
     # Explicitly start a transaction with the custom TPB:
@@ -183,7 +183,7 @@ access to the database:
     con.commit()
 
 
-For convenient and safe construction of custom `tpb_block`, KInterbasDB provides
+For convenient and safe construction of custom `tpb_block`, pyFirebirdSQL provides
 special utility class `TPB`.
 
 .. class:: TPB
@@ -215,7 +215,7 @@ special utility class `TPB`.
       .. sourcecode:: python
 
          tpbBuilder.table_reservation["MY_TABLE"] =
-           (kinterbasdb.isc_tpb_protected, kinterbasdb.isc_tpb_lock_write)
+           (firebirdsql.isc_tpb_protected, firebirdsql.isc_tpb_lock_write)
 
    .. method:: render()
 
@@ -224,16 +224,16 @@ special utility class `TPB`.
 
 .. sourcecode:: python
 
-    import kinterbasdb
+    import firebirdsql
 
-    con = kinterbasdb.connect(dsn='localhost:/temp/test.db', user='sysdba', password='pass')
+    con = firebirdsql.connect(dsn='localhost:/temp/test.db', user='sysdba', password='pass')
 
     # Use TPB to construct valid transaction parameter block
-    # from the kinterbasdb.isc_tpb_* family.
+    # from the firebirdsql.isc_tpb_* family.
     customTPB = TPB()
-    customTPB.access_mode = kinterbasdb.isc_tpb_read
-    customTPB.isolation_level = kinterbasdb.isc_tpb_read_committed
-        + kinterbasdb.isc_tpb_rec_version
+    customTPB.access_mode = firebirdsql.isc_tpb_read
+    customTPB.isolation_level = firebirdsql.isc_tpb_read_committed
+        + firebirdsql.isc_tpb_rec_version
 
     # Explicitly start a transaction with the custom TPB:
     con.begin(tpb=customTPB.render())
@@ -304,7 +304,7 @@ current transaction:
 Retaining Operations
 --------------------
 
-The `commit` and `rollback` methods of `kinterbasdb.Connection` accept
+The `commit` and `rollback` methods of `firebirdsql.Connection` accept
 an optional boolean parameter `retaining` (default `False`) to
 indicate whether to recycle the transactional context of the
 transaction being resolved by the method call.
@@ -336,27 +336,27 @@ providing "multi-level undo" functionality.
 
 Although Firebird savepoints are fully supported from SQL alone via
 the `SAVEPOINT 'name'` and `ROLLBACK TO 'name'` statements,
-KInterbasDB also exposes savepoints at the Python API level for the
+pyFirebirdSQL also exposes savepoints at the Python API level for the
 sake of convenience. 
 
 .. method::  Connection.savepoint(name)
 
    Establishes a savepoint with the specified `name`. To roll back to a
-   specific savepoint, call the :meth:`~kinterbasdb.Connection.rollback()`
+   specific savepoint, call the :meth:`~firebirdsql.Connection.rollback()`
    method and provide a value (the name of the savepoint) for the optional
    `savepoint` parameter. If the `savepoint` parameter of 
-   :meth:`~kinterbasdb.Connection.rollback()` is not specified, the active
+   :meth:`~firebirdsql.Connection.rollback()` is not specified, the active
    transaction is cancelled in its entirety, as required by the Python
    Database API Specification.
 
 The following program demonstrates savepoint manipulation via the
-KInterbasDB API, rather than raw SQL.
+pyFirebirdSQL API, rather than raw SQL.
 
 .. sourcecode:: python
 
-    import kinterbasdb
+    import firebirdsql
 
-    con = kinterbasdb.connect(dsn='localhost:/temp/test.db', user='sysdba', password='pass')
+    con = firebirdsql.connect(dsn='localhost:/temp/test.db', user='sysdba', password='pass')
     cur = con.cursor()
 
     cur.execute("recreate table test_savepoints (a integer)")
@@ -416,7 +416,6 @@ The output of the example program is shown below.
 Using multiple transactions with the same connection
 ----------------------------------------------------
 
-.. versionadded:: 3.3
 
 Python Database API 2.0 was created with assumption that connection
 can support only one transactions per single connection. However,
@@ -427,9 +426,9 @@ transaction openned simultaneously to perform various tasks, which
 would require to open multiple connections and thus consume more
 resources than necessary.
 
-KInterbasDB surfaces this Firebird feature through new class
+pyFirebirdSQL surfaces this Firebird feature through new class
 :class:`Transaction` and extensions to 
-:class:`~kinterbasdb.Connection` and :class:`~kinterbasdb.Cursor`
+:class:`~firebirdsql.Connection` and :class:`~firebirdsql.Cursor`
 classes.
 
 .. class:: Connection
@@ -481,7 +480,7 @@ classes.
 
    .. method:: __init__(connection,tpb=None)
 
-      Constructor requires open :class:`~kinterbasdb.Connection` object and optional
+      Constructor requires open :class:`~firebirdsql.Connection` object and optional
       `tpb` specification.
 
    .. attribute:: connection
@@ -530,7 +529,7 @@ classes.
 
    .. method:: commit(retaining=False)
 
-      See :meth:`kinterbasdb.Connection.commit()` for details.
+      See :meth:`firebirdsql.Connection.commit()` for details.
 
    .. method:: close()
 
@@ -544,7 +543,7 @@ classes.
 
    .. method:: rollback(retaining=False)
 
-      See :meth:`kinterbasdb.Connection.rollback()` for details.
+      See :meth:`firebirdsql.Connection.rollback()` for details.
 
    .. method:: savepoint()
 
@@ -570,17 +569,17 @@ associated with `Connection` and control it via transaction-management and curso
 methods of the :class:`Connection`.
 
 Alternatively, you can directly access the implicit transaction exposed as
-:attr:`~kinterbasdb.Connection.main_transaction` and control it via its
+:attr:`~firebirdsql.Connection.main_transaction` and control it via its
 transaction-management methods.
 
-To use additional transactions, create new :class:`~kinterbasdb.Transaction` object
+To use additional transactions, create new :class:`~firebirdsql.Transaction` object
 calling :meth:`Connection.trans()` method.
 
 
 Distributed Transactions
 ------------------------
 
-Distributed transactions are transactions that span multiple databases. KInterbasDB
+Distributed transactions are transactions that span multiple databases. pyFirebirdSQL
 provides this Firebird feature through `ConnectionGroup` class.
 
 .. class:: ConnectionGroup
@@ -664,18 +663,18 @@ provides this Firebird feature through `ConnectionGroup` class.
 
 .. sourcecode:: python
 
-    import kinterbasdb
+    import firebirdsql
 
     # Establish multiple connections the usual way:
-    con1 = kinterbasdb.connect(dsn='weasel:/temp/test.db', user='sysdba', password='pass')
-    con2 = kinterbasdb.connect(dsn='coyote:/temp/test.db', user='sysdba', password='pass')
+    con1 = firebirdsql.connect(dsn='weasel:/temp/test.db', user='sysdba', password='pass')
+    con2 = firebirdsql.connect(dsn='coyote:/temp/test.db', user='sysdba', password='pass')
 
     # Create a ConnectionGroup to associate multiple connections in such a
     # way that they can participate in a distributed transaction.
     # !!!
     # NO TWO MEMBERS OF A SINGLE CONNECTIONGROUP SHOULD BE ATTACHED TO THE SAME DATABASE!
     # !!!
-    group = kinterbasdb.ConnectionGroup( connections=(con1,con2) )
+    group = firebirdsql.ConnectionGroup( connections=(con1,con2) )
 
     # Start a distributed transaction involving all of the members of the group
     # (con1 and con2 in this case) with one of the following approaches:
@@ -746,9 +745,9 @@ and passing it to the database engine for parsing:
 
 
 Only the values change as each row is inserted; the statement remains
-the same. For many years, KInterbasDB has recognized situations
+the same. For many years, pyFirebirdSQL has recognized situations
 similar to this one and automatically reused the same prepared
-statement in each :meth:`Cursor.execute` call. In KInterbasDB 3.2, the
+statement in each :meth:`Cursor.execute` call. In pyFirebirdSQL 3.2, the
 scheme for automatically reusing prepared statements has become more
 sophisticated, and the API has been extended to offer the client
 programmer manual control over prepared statement creation and use.
@@ -774,7 +773,7 @@ method.
    .. attribute:: statement_type
 
       An integer code that can be matched against the statement type
-      constants in the `kinterbasdb.isc_info_sql_stmt_*` series.
+      constants in the `firebirdsql.isc_info_sql_stmt_*` series.
       The following statement type codes are currently available: 
 
         + `isc_info_sql_stmt_commit`
@@ -837,15 +836,15 @@ then submits it to :meth:`Cursor.executemany` for execution:
 
 The following program demonstrates the explicit use of
 PreparedStatements. It also benchmarks explicit `PreparedStatement`
-reuse against KInterbasDB's automatic `PreparedStatement` reuse, and
+reuse against pyFirebirdSQL's automatic `PreparedStatement` reuse, and
 against an input strategy that prevents `PreparedStatement` reuse.
 
 .. sourcecode:: python
 
     import time
-    import kinterbasdb
+    import firebirdsql
 
-    con = kinterbasdb.connect(dsn=r'localhost:D:\temp\test-20.firebird',
+    con = firebirdsql.connect(dsn=r'localhost:D:\temp\test-20.firebird',
         user='sysdba', password='masterkey'
       )
 
@@ -860,8 +859,8 @@ against an input strategy that prevents `PreparedStatement` reuse.
     # Explicitly prepare the insert statement:
     psIns = cur.prep("insert into t (a,b) values (?,?)")
     print 'psIns.sql: "%s"' % psIns.sql
-    print 'psIns.statement_type == kinterbasdb.isc_info_sql_stmt_insert:', (
-        psIns.statement_type == kinterbasdb.isc_info_sql_stmt_insert
+    print 'psIns.statement_type == firebirdsql.isc_info_sql_stmt_insert:', (
+        psIns.statement_type == firebirdsql.isc_info_sql_stmt_insert
       )
     print 'psIns.n_input_params: %d' % psIns.n_input_params
     print 'psIns.n_output_params: %d' % psIns.n_output_params
@@ -884,7 +883,7 @@ against an input strategy that prevents `PreparedStatement` reuse.
 
     iStart += N
 
-    # KInterbasDB automatically uses a PreparedStatement "under the hood":
+    # pyFirebirdSQL automatically uses a PreparedStatement "under the hood":
     startTime = time.time()
     for i in xrange(iStart, iStart + N):
         cur.execute("insert into t (a,b) values (?,?)", (i, str(i)))
@@ -897,7 +896,7 @@ against an input strategy that prevents `PreparedStatement` reuse.
     iStart += N
 
     # A new SQL string containing the inputs is submitted every time, so
-    # KInterbasDB is not able to implicitly reuse a PreparedStatement.  Also, in a
+    # pyFirebirdSQL is not able to implicitly reuse a PreparedStatement.  Also, in a
     # more complicated scenario where the end user supplied the string input
     # values, the program would risk SQL injection attacks:
     startTime = time.time()
@@ -914,8 +913,8 @@ against an input strategy that prevents `PreparedStatement` reuse.
     print
     psSel = cur.prep("select * from t where a = ?")
     print 'psSel.sql: "%s"' % psSel.sql
-    print 'psSel.statement_type == kinterbasdb.isc_info_sql_stmt_select:', (
-        psSel.statement_type == kinterbasdb.isc_info_sql_stmt_select
+    print 'psSel.statement_type == firebirdsql.isc_info_sql_stmt_select:', (
+        psSel.statement_type == firebirdsql.isc_info_sql_stmt_select
       )
     print 'psSel.n_input_params: %d' % psSel.n_input_params
     print 'psSel.n_output_params: %d' % psSel.n_output_params
@@ -933,7 +932,7 @@ Output:
 .. sourcecode:: python
 
     psIns.sql: "insert into t (a,b) values (?,?)"
-    psIns.statement_type == kinterbasdb.isc_info_sql_stmt_insert: True
+    psIns.statement_type == firebirdsql.isc_info_sql_stmt_insert: True
     psIns.n_input_params: 2
     psIns.n_output_params: 0
     psIns.plan: None
@@ -946,7 +945,7 @@ Output:
       1882.53 insertions per second.
 
     psSel.sql: "select * from t where a = ?"
-    psSel.statement_type == kinterbasdb.isc_info_sql_stmt_select: True
+    psSel.statement_type == firebirdsql.isc_info_sql_stmt_select: True
     psSel.n_input_params: 1
     psSel.n_output_params: 2
     psSel.plan: PLAN (T INDEX (UNIQUE_T_A))
@@ -955,7 +954,7 @@ Output:
     Traceback (most recent call last):
       File "adv_prepared_statements__overall_example.py", line 86, in ?
         cur2.execute(psSel)
-    kinterbasdb.ProgrammingError: (0, 'A PreparedStatement can only be used with the
+    firebirdsql.ProgrammingError: (0, 'A PreparedStatement can only be used with the
      Cursor that originally prepared it.')
 
 
@@ -965,7 +964,7 @@ a real application, SQL statements are likely to be far more
 complicated, so the speed advantage of using prepared statements would
 only increase.
 
-As the timings indicate, KInterbasDB does a good job of reusing
+As the timings indicate, pyFirebirdSQL does a good job of reusing
 prepared statements even if the client program is written in a style
 strictly compatible with the Python DB API 2.0 (which accepts only
 strings -- not :class:`PreparedStatement` objects -- to the :meth:`Cursor.execute()`
@@ -977,7 +976,7 @@ Named Cursors
 =============
 
 To allow the Python programmer to perform scrolling `UPDATE` or
-`DELETE` via the "`SELECT ... FOR UPDATE`" syntax, KInterbasDB
+`DELETE` via the "`SELECT ... FOR UPDATE`" syntax, pyFirebirdSQL
 provides the read/write property `Cursor.name`.
 
 .. attribute:: Cursor.name
@@ -989,9 +988,9 @@ provides the read/write property `Cursor.name`.
 
 .. sourcecode:: python
 
-    import kinterbasdb
+    import firebirdsql
 
-    con = kinterbasdb.connect(dsn='localhost:/temp/test.db', user='sysdba', password='pass')
+    con = firebirdsql.connect(dsn='localhost:/temp/test.db', user='sysdba', password='pass')
     curScroll = con.cursor()
     curUpdate = con.cursor()
 
@@ -1010,7 +1009,7 @@ provides the read/write property `Cursor.name`.
 Parameter Conversion
 ====================
 
-KInterbasDB converts bound parameters marked with a `?` in SQL code in
+pyFirebirdSQL converts bound parameters marked with a `?` in SQL code in
 a standard way. However, the module also offers several extensions to
 standard parameter binding, intended to make client code more readable
 and more convenient to write.
@@ -1030,7 +1029,7 @@ the same applies when `'123'` and `123` are to be inserted into a
 This weak typing model is quite unlike Python's dynamic yet strong
 typing. Although weak typing is regarded with suspicion by most
 experienced Python programmers, the database engine is in certain
-situations so aggressive about its typing model that KInterbasDB
+situations so aggressive about its typing model that pyFirebirdSQL
 must `compromise <http://sourceforge.net/tracker/index.php?func=detail&
 aid=531828&group_id=9913&atid=309913>`__ in order to remain an elegant
 means of programming the database engine.
@@ -1038,7 +1037,7 @@ means of programming the database engine.
 An example is the handling of "magic values" for date and time fields.
 The database engine interprets certain string values such as
 `'yesterday'` and `'now'` as having special meaning in a date/time
-context. If KInterbasDB did not accept strings as the values of
+context. If pyFirebirdSQL did not accept strings as the values of
 parameters destined for storage in date/time fields, the resulting
 code would be awkward. Consider the difference between the two Python
 snippets below, which insert a row containing an integer and a
@@ -1061,7 +1060,7 @@ timestamp into a table defined with the following DDL statement:
    t = 'now'
    cur.execute( "insert into test_table (i, t) values (?, ?)", (i, t) )
 
-If KInterbasDB did not support weak parameter typing, string
+If pyFirebirdSQL did not support weak parameter typing, string
 parameters that the database engine is to interpret as "magic values"
 would have to be rolled into the SQL statement in a separate operation
 from the binding of the rest of the parameters, as in the first Python
@@ -1069,14 +1068,14 @@ snippet above. Implicit conversion of parameter values from strings
 allows the consistency evident in the second snippet, which is both
 more readable and more general.
 
-It should be noted that KInterbasDB does not perform the conversion
+It should be noted that pyFirebirdSQL does not perform the conversion
 from string itself. Instead, it passes that responsibility to the
 database engine by changing the parameter metadata structure
 dynamically at the last moment, then restoring the original state of
 the metadata structure after the database engine has performed the
 conversion.
 
-A secondary benefit is that when one uses KInterbasDB to import large
+A secondary benefit is that when one uses pyFirebirdSQL to import large
 amounts of data from flat files into the database, the incoming values
 need not necessarily be converted to their proper Python types before
 being passed to the database engine. Eliminating this intermediate
@@ -1097,11 +1096,11 @@ Python programmer to transparently convert database field values to
 and from their internal representation.
 
 The client programmer can choose to ignore translators altogether, in
-which case KInterbasDB will manage them behind the scenes. Otherwise,
+which case pyFirebirdSQL will manage them behind the scenes. Otherwise,
 the client programmer can use any of several :ref:`standard type translators
-<included-translators>` included with KInterbasDB, register custom
+<included-translators>` included with pyFirebirdSQL, register custom
 translators, or set the translators to `None` to deal directly with
-the KInterbasDB-internal representation of the data type. When
+the pyFirebirdSQL-internal representation of the data type. When
 translators have been registered for a specific SQL data type, Python
 objects on their way into a database field of that type will be passed
 through the input translator before they are presented to the database
@@ -1114,8 +1113,8 @@ functions.
 Specifics of the Dynamic Type Translation API
 ---------------------------------------------
 
-Translators are managed with next methods of :class:`~kinterbasdb.Connection`
-and :class:`~kinterbasdb.Cursor`. 
+Translators are managed with next methods of :class:`~firebirdsql.Connection`
+and :class:`~firebirdsql.Cursor`. 
 
 .. method:: Connection.get_type_trans_in()
 
@@ -1172,16 +1171,16 @@ such as this:
 
 Notice that although the sample code registered only one type
 translator, there are four listed in the mapping returned by the
-`get_type_trans_in` method. By default, KInterbasDB uses dynamic type
+`get_type_trans_in` method. By default, pyFirebirdSQL uses dynamic type
 translation to implement the conversion of `DATE`, `TIME`,
 `TIMESTAMP`, `NUMERIC`, and `DECIMAL` values. For the source code
-locations of KInterbasDB's reference translators, see the :ref:`table 
+locations of pyFirebirdSQL's reference translators, see the :ref:`table 
 <included-translators>` in the next section.
 
 In the sample above, a translator is registered under the key
 `'FIXED'`, but Firebird has no SQL data type named `FIXED`. The
 following table lists the names of the database engine's SQL data
-types in the left column, and the corresponding KInterbasDB-specific
+types in the left column, and the corresponding pyFirebirdSQL-specific
 key under which client programmers can register translators in the
 right column.
 
@@ -1206,11 +1205,11 @@ TIMESTAMP                 'TIMESTAMP'
 ========================= ===========================================
 
 
-Consequences of the Dynamic Type Translation in KInterbasDB
------------------------------------------------------------
+Consequences of the Dynamic Type Translation in pyFirebirdSQL
+-------------------------------------------------------------
 
-Dynamic type translation haseliminated KInterbasDB's dependency on
-:class:`mx.DateTime`. Although KInterbasDB will continue to use 
+Dynamic type translation haseliminated pyFirebirdSQL's dependency on
+:class:`mx.DateTime`. Although pyFirebirdSQL will continue to use 
 :class:`mx.DateTime` as its default date/time representation for the
 sake of backward compatibility, dynamic type translation allows users
 to conveniently deal with database date/time values in terms of the new
@@ -1227,52 +1226,52 @@ of these representations are now implemented "under the hood" via
 dynamic type translation.
 
 Reference implementations of all of the translators discussed above
-are provided with KInterbasDB, in these modules:
+are provided with pyFirebirdSQL, in these modules:
 
 .. _included-translators:
 
-**Reference Translators Included with KInterbasDB**
+**Reference Translators Included with pyFirebirdSQL**
 
 +---------------------+-------------------------------------+---------------------------------------+
 | SQL Type(s)         | Python Type(s)                      | Reference Implementation In Module    |
 +=====================+=====================================+=======================================+
-| NUMERIC/DECIMAL     | float *(imprecise)* (default)       | kinterbasdb.typeconv_fixed_stdlib     |
+| NUMERIC/DECIMAL     | float *(imprecise)* (default)       | firebirdsql.typeconv_fixed_stdlib     |
 +                     +-------------------------------------+---------------------------------------+
-|                     | scaled `int` *(precise)*            | kinterbasdb.typeconv_fixed_stdlib     |
+|                     | scaled `int` *(precise)*            | firebirdsql.typeconv_fixed_stdlib     |
 +                     +-------------------------------------+---------------------------------------+
-|                     | `fixedpoint.FixedPoint` *(precise)* | kinterbasdb.typeconv_fixed_fixedpoint |
+|                     | `fixedpoint.FixedPoint` *(precise)* | firebirdsql.typeconv_fixed_fixedpoint |
 +                     +-------------------------------------+---------------------------------------+
-|                     | `decimal.Decimal` *(precise)*       | kinterbasdb.typeconv_fixed_decimal    |
+|                     | `decimal.Decimal` *(precise)*       | firebirdsql.typeconv_fixed_decimal    |
 +---------------------+-------------------------------------+---------------------------------------+
-| DATE/TIME/TIMESTAMP | `mx.DateTime` (default)             | kinterbasdb.typeconv_datetime_mx      |
+| DATE/TIME/TIMESTAMP | `mx.DateTime` (default)             | firebirdsql.typeconv_datetime_mx      |
 +                     +-------------------------------------+---------------------------------------+
-|                     | Python 2.4+ `datetime`              | kinterbasdb.typeconv_datetime_stdlib  |
+|                     | Python 2.4+ `datetime`              | firebirdsql.typeconv_datetime_stdlib  |
 +---------------------+-------------------------------------+---------------------------------------+
-| CHAR/VARCHAR (with  | `unicode`                           | kinterbasdb.typeconv_text_unicode     |
+| CHAR/VARCHAR (with  | `unicode`                           | firebirdsql.typeconv_text_unicode     |
 | any character set   |                                     |                                       |
 | except NONE, OCTETS,|                                     |                                       |
 | ASCII)              |                                     |                                       |
 +---------------------+-------------------------------------+---------------------------------------+
 
-.. module:: kinterbasdb.typeconv_fixed_stdlib
+.. module:: firebirdsql.typeconv_fixed_stdlib
    :synopsis: Type conversion: Fixed/Standard Library
 
-.. module:: kinterbasdb.typeconv_fixed_fixedpoint
+.. module:: firebirdsql.typeconv_fixed_fixedpoint
    :synopsis: Type conversion: Fixed/fixedpoint module (3rd party)
 
-.. module:: kinterbasdb.typeconv_fixed_decimal
+.. module:: firebirdsql.typeconv_fixed_decimal
    :synopsis: Type conversion: Fixed/Python 2.4+ Standard Library
 
-.. module:: kinterbasdb.typeconv_datetime_mx
+.. module:: firebirdsql.typeconv_datetime_mx
    :synopsis: Type conversion: DateTime/eGenix mx.DateTime
 
-.. module:: kinterbasdb.typeconv_datetime_stdlib
+.. module:: firebirdsql.typeconv_datetime_stdlib
    :synopsis: Type conversion: DateTIme/Python 2.4+ Standard Library
 
-.. module:: kinterbasdb.typeconv_text_unicode
+.. module:: firebirdsql.typeconv_text_unicode
    :synopsis: Type conversion: Text/Unicode
 
-.. currentmodule:: kinterbasdb
+.. currentmodule:: firebirdsql
 
 Writing Custom Translators
 --------------------------
@@ -1284,13 +1283,13 @@ keys. Python's native types map perfectly to `'TEXT'`,
 those cases the translator signatures are very simple. The signatures
 for `'FIXED'`, `'DATE'`, `'TIME'`, and `'TIMESTAMP'` are not as simple
 because Python (before 2.4) lacks native types to represent these
-values with both precision *and* convenience. KInterbasDB handles
+values with both precision *and* convenience. pyFirebirdSQL handles
 `'FIXED'` values internally as scaled integers; the date and time
 types as tuples.
 
-KInterbasDB itself uses translators implemented according to the rules
+pyFirebirdSQL itself uses translators implemented according to the rules
 in the table below; the code for these reference translators can be
-found in the Python modules named `kinterbasdb.typeconv_*` (see
+found in the Python modules named `firebirdsql.typeconv_*` (see
 the table in the previous section for details).
 
 Signature Specifications for Translators
@@ -1318,7 +1317,7 @@ Signature Specifications for Translators
   element (the  tuple is of the form `(val, dbCharacterSetCode)`). 
 
   The database character set codes (which are integers) are  defined in
-  RDB$CHARACTER_SETS system table. The module `kinterbasdb.typeconv_text_unicode`
+  RDB$CHARACTER_SETS system table. The module `firebirdsql.typeconv_text_unicode`
   contains a dictionary named  `DB_TO_PYTHON_ENCODING_MAP` that maps database
   character set codes to Python codec names.
 
@@ -1344,7 +1343,7 @@ Signature Specifications for Translators
 
 *Input Translator Argument / Return Value Signature:*
   By default, same signature as that of 'TEXT'. A special case was introduced in
-  KInterbasDB 3.2 to allow for :ref:`streaming blob handling <blob-conversion>`.
+  pyFirebirdSQL 3.2 to allow for :ref:`streaming blob handling <blob-conversion>`.
 
 *Output Translator Signature:*
   Same signature as input translator, except that return value is not constrained.
@@ -1442,25 +1441,25 @@ DATE/TIME/TIMESTAMP
 
     import datetime # Python 2.3 standard library module
 
-    import kinterbasdb
-    import kinterbasdb.typeconv_datetime_stdlib as tc_dt
+    import firebirdsql
+    import firebirdsql.typeconv_datetime_stdlib as tc_dt
 
     def connect(*args, **kwargs):
         """
-          This wrapper around kinterbasdb.connect creates connections that use
+          This wrapper around firebirdsql.connect creates connections that use
         the datetime module (which entered the standard library in Python 2.3)
         for both input and output of DATE, TIME, and TIMESTAMP database fields.
-          This wrapper simply registers kinterbasdb's official date/time
+          This wrapper simply registers firebirdsql's official date/time
         translators for the datetime module, which reside in the
-        kinterbasdb.typeconv_datetime_stdlib module.
-          An equivalent set of translators for mx.DateTime (which kinterbasdb
+        firebirdsql.typeconv_datetime_stdlib module.
+          An equivalent set of translators for mx.DateTime (which firebirdsql
         uses by default for backward compatibility) resides in the
-        kinterbasdb.typeconv_datetime_mx module.
+        firebirdsql.typeconv_datetime_mx module.
           Note that because cursors inherit their connection's dynamic type
         translation settings, cursors created upon connections returned by this
         function will also use the datetime module.
         """
-        con = kinterbasdb.connect(*args, **kwargs)
+        con = firebirdsql.connect(*args, **kwargs)
 
         con.set_type_trans_in({
             'DATE':             tc_dt.date_conv_in,
@@ -1517,29 +1516,29 @@ Sample output:
 Deferred Loading of Dynamic Type Translators
 --------------------------------------------
 
-KInterbasDB has existed since 1998, five years before the `datetime` module was
-available in the Python standard library. Therefore, KInterbasDB's default
+pyFirebirdSQL has existed since 1998, five years before the `datetime` module was
+available in the Python standard library. Therefore, pyFirebirdSQL's default
 representation for date and time values is the `mx.DateTime` module. This representation
 is recommended by the Python DB API 2.0 Specification, and was an entirely sensible
 choice during the many years before the advent of the standard library `datetime` module.
 
-Now that the `datetime` module is available in the standard library, many KInterbasDB
+Now that the `datetime` module is available in the standard library, many pyFirebirdSQL
 users prefer it to `mx.DateTime`. For the sake of backward-compatibility, it is
 necessary to continue to use `mx.DateTime` by default, but it's both burdensome and
 wasteful to import `mx.DateTime` in programs that don't use it. To address this
-situation, KInterbasDB's type translation initialization code defers the choice of
-a default set of translators until the :func:`kinterbasdb.init()` function is called. A client
-program can explicitly call `kinterbasdb.init` to forestall the import of `mx.DateTime`.
+situation, pyFirebirdSQL's type translation initialization code defers the choice of
+a default set of translators until the :func:`firebirdsql.init()` function is called. A client
+program can explicitly call `firebirdsql.init` to forestall the import of `mx.DateTime`.
 
 .. function:: init(type_conv=200)
 
    .. versionchanged:: 3.3
 
-   Takes a keyword argument `type_conv`, which controls KInterbasDB's initial choice
+   Takes a keyword argument `type_conv`, which controls pyFirebirdSQL's initial choice
    of type translators. `type_conv` can be either an integer or an object that has all
-   of the attributes named in :data:`kinterbasdb.BASELINE_TYPE_TRANSLATION_FACILITIES`
-   (an example of such an object is the module :mod:`kinterbasdb.typeconv_backcompat`).
-   If `type_conv` is an integer, it will cause KInterbasDB to use one of the following
+   of the attributes named in :data:`firebirdsql.BASELINE_TYPE_TRANSLATION_FACILITIES`
+   (an example of such an object is the module :mod:`firebirdsql.typeconv_backcompat`).
+   If `type_conv` is an integer, it will cause pyFirebirdSQL to use one of the following
    predefined type translator configurations:
 
    .. _typeconv-values:
@@ -1554,7 +1553,7 @@ program can explicitly call `kinterbasdb.init` to forestall the import of `mx.Da
    |                    |                                                                |
    |                    | Unicode values are **not** encoded or decoded automatically.   |
    |                    |                                                                |
-   |                    | Implemented by the :mod:`kinterbasdb.typeconv_naked` module.   |
+   |                    | Implemented by the :mod:`firebirdsql.typeconv_naked` module.   |
    +--------------------+----------------------------------------------------------------+
    | 1                  | Backward-compatible type translators that represent date/time  |
    |                    | values via the `mx.DateTime` module and fixed point values as  |
@@ -1563,10 +1562,10 @@ program can explicitly call `kinterbasdb.init` to forestall the import of `mx.Da
    |                    |                                                                |
    |                    | Unicode values are **not** encoded or decoded automatically.   |
    |                    |                                                                |
-   |                    | Implemented by the :mod:`kinterbasdb.typeconv_backcompat`      |
+   |                    | Implemented by the :mod:`firebirdsql.typeconv_backcompat`      |
    |                    |                                                                |
    |                    | This configuration, perfectly mimics the type translation      |
-   |                    | behavior of KInterbasDB 3.0.                                   |
+   |                    | behavior of pyFirebirdSQL 3.0.                                 |
    +--------------------+----------------------------------------------------------------+
    | 100                | This translator configuration, which is intended for use with  |
    |                    | Python 2.4 and later, represents date/time values via the      |
@@ -1575,7 +1574,7 @@ program can explicitly call `kinterbasdb.init` to forestall the import of `mx.Da
    |                    |                                                                |
    |                    | Unicode values **are** encoded and decoded automatically.      |
    |                    |                                                                |
-   |                    | Implemented by the :mod:`kinterbasdb.typeconv_23plus` module.  |
+   |                    | Implemented by the :mod:`firebirdsql.typeconv_23plus` module.  |
    +--------------------+----------------------------------------------------------------+
    | 200 (the default)  | This translator configuration represents date/time values via  |
    |                    | the standard library module `datetime` and fixed point values  |
@@ -1585,7 +1584,7 @@ program can explicitly call `kinterbasdb.init` to forestall the import of `mx.Da
    |                    |                                                                |
    |                    | Unicode values **are** encoded and decoded automatically.      |
    |                    |                                                                |
-   |                    | Implemented by the :mod:`kinterbasdb.typeconv_24plus` module.  |
+   |                    | Implemented by the :mod:`firebirdsql.typeconv_24plus` module.  |
    +--------------------+----------------------------------------------------------------+
    | 199                | This translator configuration is exactly like `200`, except    |
    |                    | that it represents fixed point values as `float` objects in    |
@@ -1599,7 +1598,7 @@ program can explicitly call `kinterbasdb.init` to forestall the import of `mx.Da
    |                    | don't want to suffer the memory overhead of the `decimal`      |
    |                    | module.                                                        |
    |                    |                                                                |
-   |                    | Implemented by the :mod:`kinterbasdb.typeconv_23plus_lowmem`   |
+   |                    | Implemented by the :mod:`firebirdsql.typeconv_23plus_lowmem`   |
    +--------------------+----------------------------------------------------------------+
    | 300 (the ideal for | This translator configuration is identical to 200, but textual |
    | Firebird 2.1 and   | blobs are handled in the same way as other textual types, so   |
@@ -1615,42 +1614,42 @@ program can explicitly call `kinterbasdb.init` to forestall the import of `mx.Da
 
    .. warning:: The default `type_conv` value was changed from 1 to 200 in version 3.3 !
 
-.. module:: kinterbasdb.typeconv_naked
+.. module:: firebirdsql.typeconv_naked
    :synopsis: Type conversion: Minimal
 
-.. module:: kinterbasdb.typeconv_backcompat
+.. module:: firebirdsql.typeconv_backcompat
    :synopsis: Type conversion: Backward-compatible
 
-.. module:: kinterbasdb.typeconv_23plus
+.. module:: firebirdsql.typeconv_23plus
    :synopsis: Type conversion: Progressive
 
-.. module:: kinterbasdb.typeconv_23plus_lowmem
+.. module:: firebirdsql.typeconv_23plus_lowmem
    :synopsis: Type conversion: Even More Progressive
 
-.. module:: kinterbasdb.typeconv_24plus
+.. module:: firebirdsql.typeconv_24plus
    :synopsis: Even More Progressive
 
-.. currentmodule:: kinterbasdb
+.. currentmodule:: firebirdsql
 
 
 Deferred Loading: Backward Compatibility Issues
 -----------------------------------------------
 
-The deferred type translator loading scheme introduced in KInterbasDB
+The deferred type translator loading scheme introduced in pyFirebirdSQL
 3.1 goes to great lengths to maintain backward compatibility. If the
-client programmer does not call :func:`kinterbasdb.init()`, KInterbasDB will
+client programmer does not call :func:`firebirdsql.init()`, pyFirebirdSQL will
 implicitly initialize itself in a backward-compatible manner (
 `type_conv=1`) the first time one of its public functions is called or
 one of its public classes is instantiated.
 
 The only known backward incompatibility is this: the DB API type
-comparison singleton :data:`~kinterbasdb.DATETIME` will not compare equal
-to any type until the `kinterbasdb.init()` function has been called (whether
-explicitly or implicitly). After `kinterbasdb.init()` has been called,
+comparison singleton :data:`~firebirdsql.DATETIME` will not compare equal
+to any type until the `firebirdsql.init()` function has been called (whether
+explicitly or implicitly). After `firebirdsql.init()` has been called,
 `DATETIME` will compare equal to the date, time, and timestamp types
 that were loaded.
 
-This issue should affect hardly any existing KInterbasDB-based programs.
+This issue should affect hardly any existing pyFirebirdSQL-based programs.
 
 
 Deferred Loading Example
@@ -1660,8 +1659,8 @@ Deferred Loading Example
 
     import datetime, decimal, os.path, string, sys
 
-    import kinterbasdb
-    kinterbasdb.init(type_conv=200)
+    import firebirdsql
+    firebirdsql.init(type_conv=200)
     # This program never imports mx.DateTime:
     assert 'mx' not in sys.modules
 
@@ -1671,7 +1670,7 @@ Deferred Loading Example
 
         # Connect with character set UNICODE_FSS, to match the default character
         # set of the test database.
-        con = kinterbasdb.connect(dsn=dbFilename,
+        con = firebirdsql.connect(dsn=dbFilename,
             user='sysdba', password='masterkey', charset='UNICODE_FSS'
           )
         cur = con.cursor()
@@ -1693,14 +1692,14 @@ Deferred Loading Example
         # Create an input value for each field in the test table.
         aIn = decimal.Decimal('4.53')
 
-        # Notice that the DB API date/time constructors in kinterbasdb generate
+        # Notice that the DB API date/time constructors in firebirdsql generate
         # datetime-based objects instead of mx-based objects because of our earlier
-        # call to kinterbasdb.init(type_conv=200).
-        bIn = kinterbasdb.Date(2004,1,4)
+        # call to firebirdsql.init(type_conv=200).
+        bIn = firebirdsql.Date(2004,1,4)
         assert isinstance(bIn, datetime.date)
-        cIn = kinterbasdb.Time(16,27,59)
+        cIn = firebirdsql.Time(16,27,59)
         assert isinstance(cIn, datetime.time)
-        dIn = kinterbasdb.Timestamp(2004,1,4, 16,27,59)
+        dIn = firebirdsql.Timestamp(2004,1,4, 16,27,59)
         assert isinstance(dIn, datetime.datetime)
 
         eIn = u'A unicod\u2211 object stored in a Unicode field.'
@@ -1728,12 +1727,12 @@ Deferred Loading Example
     def prepareTestDatabase(dbFilename):
         # Delete the test database if an old copy is already present.
         if os.path.isfile(dbFilename):
-            conOld = kinterbasdb.connect(dsn=dbFilename,
+            conOld = firebirdsql.connect(dsn=dbFilename,
                 user='sysdba', password='masterkey'
               )
             conOld.drop_database()
         # Create the test database afresh.
-        kinterbasdb.create_database("""
+        firebirdsql.create_database("""
               create database '%s'
               user 'sysdba' password 'masterkey'
               default character set UNICODE_FSS
@@ -1805,7 +1804,7 @@ Positional Dymanic Type Translation
 
 All forms of dynamic type translation discussed so far have used the
 *type* of the database field as the basis for selecting a translator.
-KInterbasDB 3.2 also allows the client programmer to control
+pyFirebirdSQL 3.2 also allows the client programmer to control
 translator selection on the basis of a field's *position* within a
 `Cursor`. Translator selection based on database field type is called
 " *typal* translation", while selection based on position is called "
@@ -1818,9 +1817,9 @@ program:
 
 .. sourcecode:: python
 
-    import kinterbasdb
+    import firebirdsql
 
-    con = kinterbasdb.connect(dsn=r'D:\temp\test-20.firebird',
+    con = firebirdsql.connect(dsn=r'D:\temp\test-20.firebird',
         user='sysdba', password='masterkey'
       )
     cur = con.cursor()
@@ -1861,7 +1860,7 @@ then overrides that setting for specific columns: the value in the
 second column (position `1`) is multiplied by `100`, while the value
 in the fourth column (position `3`) is multiplied by `1000`.
 
-KInterbasDB uses a cascading method of translator selection, listed
+pyFirebirdSQL uses a cascading method of translator selection, listed
 below in order from highest to lowest precedence:
 
 + *Positional* translation settings, which can only be activated at
@@ -1871,15 +1870,15 @@ below in order from highest to lowest precedence:
 + `Connection`-level translation settings take precedence over the
   module-level defaults.
 + The module-level defaults are established by the call to
-  :func:`kinterbasdb.init()`. If the client programmer does not call
-  :func:`kinterbasdb.init()` explicitly, KInterbasDB's internals will do so
+  :func:`firebirdsql.init()`. If the client programmer does not call
+  :func:`firebirdsql.init()` explicitly, pyFirebirdSQL's internals will do so
   implicitly.
 
 
 Database Arrays
 ---------------
 
-KInterbasDB converts database arrays *from* Python sequences (except
+pyFirebirdSQL converts database arrays *from* Python sequences (except
 strings) on input; *to* Python lists on output. On input, the Python
 sequence must be nested appropriately if the array field is multi-
 dimensional, and the incoming sequence must not fall short of its
@@ -1917,9 +1916,9 @@ single database field, then retrieves it.
 
 .. sourcecode:: python
 
-    import kinterbasdb
+    import firebirdsql
 
-    con = kinterbasdb.connect(dsn='localhost:/temp/test.db', user='sysdba', password='pass')
+    con = firebirdsql.connect(dsn='localhost:/temp/test.db', user='sysdba', password='pass')
     con.execute_immediate("recreate table array_table (a int[3,4])")
     con.commit()
 
@@ -1954,7 +1953,7 @@ Output:
 Blobs
 -----
 
-KInterbasDB supports the insertion and retrieval of blobs either
+pyFirebirdSQL supports the insertion and retrieval of blobs either
 wholly in memory ("materialized mode") or in chunks ("streaming mode")
 to reduce memory usage when handling large blobs. The default handling
 mode is "materialized"; the "streaming" method is selectable via a
@@ -1968,14 +1967,14 @@ id=1299756&forum_id=30917>`__ automatic Unicode conversion from
 applying to textual blobs in the way it applies to Unicode `CHAR` and
 `VARCHAR` fields in any Firebird version prior to version 2.1.
 
-.. note:: KInterbasDB 3.3 introduces new :ref:`type_conv mode 300
+.. note:: pyFirebirdSQL 3.3 introduces new :ref:`type_conv mode 300
   <typeconv-values>` that enables automatic type conversion for textual
   blobs when you're working with Firebird 2.1 and newer.
 
 In **streaming** mode, any Python "file-like" object is acceptable as
 input for a blob parameter. Obvious examples of such objects are
 instances of :class:`file` or :class:`StringIO`. Each output blob is represented by
-a :class:`kinterbasdb.BlobReader` object. 
+a :class:`firebirdsql.BlobReader` object. 
 
 .. class:: BlobReader 
 
@@ -1994,7 +1993,7 @@ a :class:`kinterbasdb.BlobReader` object.
     a smaller final chunk of `716928` bytes.
 
 Due to the combination of CPython's deterministic finalization with
-careful programming in KInterbasDB's internals, it is not strictly
+careful programming in pyFirebirdSQL's internals, it is not strictly
 necessary to close `BlobReader` instances explicitly. A `BlobReader`
 object will be automatically closed by its `__del__` method when it
 goes out of scope, or when its `Connection` closes, whichever comes
@@ -2014,9 +2013,9 @@ The following program demonstrates blob storage and retrieval in both
     import os.path
     from cStringIO import StringIO
 
-    import kinterbasdb
+    import firebirdsql
 
-    con = kinterbasdb.connect(dsn=r'localhost:D:\temp\test-20.firebird',
+    con = firebirdsql.connect(dsn=r'localhost:D:\temp\test-20.firebird',
         user='sysdba', password='masterkey'
       )
 
@@ -2036,7 +2035,7 @@ The following program demonstrates blob storage and retrieval in both
 
     cur.execute("delete from blob_test")
 
-    # --- Streaming mode (file-like objects for input; kinterbasdb.BlobReader
+    # --- Streaming mode (file-like objects for input; firebirdsql.BlobReader
     #     objects for output) ---
     cur.set_type_trans_in ({'BLOB': {'mode': 'stream'}})
     cur.set_type_trans_out({'BLOB': {'mode': 'stream'}})
@@ -2054,7 +2053,7 @@ The following program demonstrates blob storage and retrieval in both
 
     readerA = cur.fetchone()[0]
 
-    print '\nStreaming retrieval (via kinterbasdb.BlobReader):'
+    print '\nStreaming retrieval (via firebirdsql.BlobReader):'
 
     # Python "file-like" interface:
     print 'readerA.mode:    "%s"' % readerA.mode
@@ -2083,7 +2082,7 @@ Output:
     Materialized retrieval (as str):
     [('abcdef',), ('ghijklmnop',)]
 
-    Streaming retrieval (via kinterbasdb.BlobReader):
+    Streaming retrieval (via firebirdsql.BlobReader):
     readerA.mode:    "rb"
     readerA.closed:   False
     readerA.tell():   0
@@ -2113,9 +2112,9 @@ the following snippet:
 
 .. sourcecode:: python
 
-   import kinterbasdb
+   import firebirdsql
 
-   con = kinterbasdb.connect(dsn=r'localhost:D:\temp\test.db',
+   con = firebirdsql.connect(dsn=r'localhost:D:\temp\test.db',
        user='sysdba', password='masterkey',
        timeout={'period': 120.0} # time out after 120.0 seconds of inactivity
      )
@@ -2123,17 +2122,17 @@ the following snippet:
    ...
 
 The connection created in the example above is *eligible* to be
-automatically closed by KInterbasDB if it remains idle for at least
-120.0 consecutive seconds. KInterbasDB does not guarantee that the
+automatically closed by pyFirebirdSQL if it remains idle for at least
+120.0 consecutive seconds. pyFirebirdSQL does not guarantee that the
 connection will be closed immediately when the specified period has
 elapsed. On a busy system, there might be a considerable delay between
 the moment a connection becomes eligible for timeout and the moment
-KInterbasDB actually closes it. However, the thread that performs
+pyFirebirdSQL actually closes it. However, the thread that performs
 connection timeouts is programmed in such a way that on a lightly
 loaded system, it acts almost instantaneously to take advantage of a
 connection's eligibility for timeout.
 
-After a connection has timed out, KInterbasDB reacts to attempts to
+After a connection has timed out, pyFirebirdSQL reacts to attempts to
 reactivate the severed connection in a manner dependent on the state
 of the connection when it timed out. Consider the following example
 program:
@@ -2141,9 +2140,9 @@ program:
 .. sourcecode:: python
 
    import time
-   import kinterbasdb
+   import firebirdsql
 
-   con = kinterbasdb.connect(dsn=r'localhost:D:\temp\test.db',
+   con = firebirdsql.connect(dsn=r'localhost:D:\temp\test.db',
        user='sysdba', password='masterkey',
        timeout={'period': 3.0}
      )
@@ -2189,10 +2188,10 @@ might think.
 First of all, we cannot guarantee much about the example program's
 behavior because there is a race condition between the obvious thread
 that's executing the example code (which we'll call "UserThread" for
-the rest of this section) and the KInterbasDB-internal background
+the rest of this section) and the pyFirebirdSQL-internal background
 thread that actually closes connections that have timed out
 ("TimeoutThread"). If the operating system were to suspend UserThread
-just after the :func:`kinterbasdb.connect()` call for more than
+just after the :func:`firebirdsql.connect()` call for more than
 the specified timeout period of 3.0 seconds, the TimeoutThread might
 close the connection before UserThread had performed any preparatory
 operations on the database. Although such a scenario is extremely
@@ -2220,9 +2219,9 @@ User-Supplied Connection Timeout Callbacks
 ------------------------------------------
 
 In the context of a particular client program, it is not possible for
-KInterbasDB to know the best way for TimeoutThread to react when it
+pyFirebirdSQL to know the best way for TimeoutThread to react when it
 encounters a connection that is eligible for timeout, but has an
-unresolved transaction. For this reason, KInterbasDB's connection
+unresolved transaction. For this reason, pyFirebirdSQL's connection
 timeout system offers callbacks that the client programmer can use to
 guide the TimeoutThread's actions, or to log information about
 connection timeout patterns.
@@ -2234,10 +2233,10 @@ The "Before Timeout" Callback
 The client programmer can supply a "before timeout" callback that
 accepts a single dictionary parameter and returns an integer code to
 indicate how the TimeoutThread should proceed when it finds a
-connection eligible for timeout. Within the dictionary, KInterbasDB
+connection eligible for timeout. Within the dictionary, pyFirebirdSQL
 provides the following entries:
 
-:dsn:              The `dsn` parameter that was passed to `kinterbasdb.connect`
+:dsn:              The `dsn` parameter that was passed to `firebirdsql.connect`
                    when the connection was created.
 :has_transaction:  A boolean that indicates whether the connection has an unresolved
                    transaction.
@@ -2269,7 +2268,7 @@ the following codes:
 
    Directs the TimeoutThread to roll back the connection's unresolved
    transaction (if any), then close the connection. Any future attempt
-   to use the connection will raise a :exc:`kinterbasdb.ConnectionTimedOut`
+   to use the connection will raise a :exc:`firebirdsql.ConnectionTimedOut`
    exception.
 
 .. data:: CT_ROLLBACK
@@ -2278,9 +2277,9 @@ the following codes:
 
    Directs the TimeoutThread to roll back the connection's unresolved transaction
    (if any), then close the connection. Upon any future attempt to use the
-   connection, KInterbasDB will *attempt* to transparently reconnect to
+   connection, pyFirebirdSQL will *attempt* to transparently reconnect to
    the database and "resume where it left off" insofar as possible. Of
-   course, network problems and the like could prevent KInterbasDB's
+   course, network problems and the like could prevent pyFirebirdSQL's
    *attempt* at transparent resumption from succeeding. Also, highly
    state-dependent objects such as open result sets, 
    :class:`BlobReader`, and :class:`PreparedStatement`
@@ -2292,11 +2291,11 @@ the following codes:
 
    Directs the TimeoutThread to commit the connection's unresolved transaction
    (if any), then close the connection. Upon any future attempt to use the
-   connection, KInterbasDB will *attempt* to transparently reconnect to
+   connection, pyFirebirdSQL will *attempt* to transparently reconnect to
    the database and "resume where it left off" insofar as possible.
 
 
-If the user does not supply a "before timeout" callback, KInterbasDB
+If the user does not supply a "before timeout" callback, pyFirebirdSQL
 considers the timeout transparent only if the connection does not have
 an unresolved transaction.
 
@@ -2307,10 +2306,10 @@ been returned.
 
 You might have noticed that the input dictionary to the "before
 timeout" callback does *not* include a reference to the
-:class:`~kinterbasdb.Connection` object itself. This is a deliberate design
+:class:`~firebirdsql.Connection` object itself. This is a deliberate design
 decision intended to steer the client programmer away from writing
 callbacks that take a long time to complete, or that manipulate the
-:class:`~kinterbasdb.Connection` instance directly. See the caveats section for
+:class:`~firebirdsql.Connection` instance directly. See the caveats section for
 more information.
 
 
@@ -2319,9 +2318,9 @@ The "After Timeout" Callback
 
 The client programmer can supply an "after timeout" callback that
 accepts a single dictionary parameter. Within that dictionary,
-KInterbasDB currently provides the following entries:
+pyFirebirdSQL currently provides the following entries:
 
-:dsn:          The `dsn` parameter that was passed to :func:`kinterbasdb.connect()`
+:dsn:          The `dsn` parameter that was passed to :func:`firebirdsql.connect()`
                when the connection was created.
 :active_secs:  A `float` that indicates how many seconds elapsed between
                the point when the connection attached to the server and
@@ -2330,12 +2329,12 @@ KInterbasDB currently provides the following entries:
                the last client program activity on the connection and the moment
                the TimeoutThread closed the connection.
 
-KInterbasDB only calls the "after timeout" callback after the
+pyFirebirdSQL only calls the "after timeout" callback after the
 connection has actually been closed by the TimeoutThread. If the
 "before timeout" callback returns :data:`CT_VETO` to cancel the
 timeout attempt, the "after timeout" callback will not be called.
 
-KInterbasDB discards the return value of the "after timeout" callback,
+pyFirebirdSQL discards the return value of the "after timeout" callback,
 and ignores any exceptions.
 
 The same caveats that apply to the "before timeout" callback also
@@ -2367,7 +2366,7 @@ timeout" callback is also registered, it will never be called.
 .. sourcecode:: python
 
     import time
-    import kinterbasdb
+    import firebirdsql
 
     def callback_before(info):
         print
@@ -2376,12 +2375,12 @@ timeout" callback is also registered, it will never be called.
             print '  %s: %s' % (repr(key).ljust(20), repr(value))
         print
         # Unconditionally veto any timeout attempts:
-        return kinterbasdb.CT_VETO
+        return firebirdsql.CT_VETO
 
     def callback_after(info):
         assert False, 'This will never be called.'
 
-    con = kinterbasdb.connect(dsn=r'localhost:D:\temp\test.db',
+    con = firebirdsql.connect(dsn=r'localhost:D:\temp\test.db',
         user='sysdba', password='masterkey',
         timeout={
             'period': 3.0,
@@ -2439,11 +2438,11 @@ the connection out before the preparatory code has executed.
 .. sourcecode:: python
 
     import threading
-    import kinterbasdb
+    import firebirdsql
 
     class TimeoutAuthorizer(object):
         def __init__(self, opCodeWhenAuthorized):
-            self.currentOpCode = kinterbasdb.CT_VETO
+            self.currentOpCode = firebirdsql.CT_VETO
             self.opCodeWhenAuthorized = opCodeWhenAuthorized
 
             self.lock = threading.Lock()
@@ -2468,10 +2467,10 @@ the connection out before the preparatory code has executed.
 .. sourcecode:: python
 
     import threading, time
-    import kinterbasdb
+    import firebirdsql
     import timeout_authorizer
 
-    authorizer = timeout_authorizer.TimeoutAuthorizer(kinterbasdb.CT_NONTRANSPARENT)
+    authorizer = timeout_authorizer.TimeoutAuthorizer(firebirdsql.CT_NONTRANSPARENT)
     connectionTimedOut = threading.Event()
 
     def callback_after(info):
@@ -2480,7 +2479,7 @@ the connection out before the preparatory code has executed.
         print
         connectionTimedOut.set()
 
-    con = kinterbasdb.connect(dsn=r'localhost:D:\temp\test.db',
+    con = firebirdsql.connect(dsn=r'localhost:D:\temp\test.db',
         user='sysdba', password='masterkey',
         timeout={
             'period': 3.0,
@@ -2506,8 +2505,8 @@ the connection out before the preparatory code has executed.
     authorizer.authorize()
     connectionTimedOut.wait()
 
-    # This will raise a kinterbasdb.ConnectionTimedOut exception because the
-    # before callback returned kinterbasdb.CT_NONTRANSPARENT:
+    # This will raise a firebirdsql.ConnectionTimedOut exception because the
+    # before callback returned firebirdsql.CT_NONTRANSPARENT:
     cur.execute("select * from test")
 
 
@@ -2522,7 +2521,7 @@ Sample output:
     Traceback (most recent call last):
       File "connection_timeouts_ct_nontransparent.py", line 42, in ?
         cur.execute("select * from test")
-    kinterbasdb.ConnectionTimedOut: (0, 'A transaction was still unresolved when
+    firebirdsql.ConnectionTimedOut: (0, 'A transaction was still unresolved when
     this connection timed out, so it cannot be transparently reactivated.')
 
 
@@ -2531,10 +2530,10 @@ Sample output:
 .. sourcecode:: python
 
     import threading, time
-    import kinterbasdb
+    import firebirdsql
     import timeout_authorizer
 
-    authorizer = timeout_authorizer.TimeoutAuthorizer(kinterbasdb.CT_ROLLBACK)
+    authorizer = timeout_authorizer.TimeoutAuthorizer(firebirdsql.CT_ROLLBACK)
     connectionTimedOut = threading.Event()
 
     def callback_after(info):
@@ -2544,7 +2543,7 @@ Sample output:
         print
         connectionTimedOut.set()
 
-    con = kinterbasdb.connect(dsn=r'localhost:D:\temp\test.db',
+    con = firebirdsql.connect(dsn=r'localhost:D:\temp\test.db',
         user='sysdba', password='masterkey',
         timeout={
             'period': 3.0,
@@ -2597,10 +2596,10 @@ Sample output:
 .. sourcecode:: python
 
     import threading, time
-    import kinterbasdb
+    import firebirdsql
     import timeout_authorizer
 
-    authorizer = timeout_authorizer.TimeoutAuthorizer(kinterbasdb.CT_COMMIT)
+    authorizer = timeout_authorizer.TimeoutAuthorizer(firebirdsql.CT_COMMIT)
     connectionTimedOut = threading.Event()
 
     def callback_after(info):
@@ -2610,7 +2609,7 @@ Sample output:
         print
         connectionTimedOut.set()
 
-    con = kinterbasdb.connect(dsn=r'localhost:D:\temp\test.db',
+    con = firebirdsql.connect(dsn=r'localhost:D:\temp\test.db',
         user='sysdba', password='masterkey',
         timeout={
             'period': 3.0,
@@ -2778,13 +2777,13 @@ How events are exposed to the server and the client process?
 #. Client Process ("Send me a message when an event occurs.")
 
    .. note:: If you don't care about the gory details of event notification,
-             skip to the section that describes KInterbasDB's Python-level
+             skip to the section that describes pyFirebirdSQL's Python-level
              event handling API. 
 
    The Firebird C client library offers two forms of event notification.
    The first form is *synchronous* notification, by way of the function
    :cfunc:`isc_wait_for_event()`. This form is admirably simple for a C programmer
-   to use, but is inappropriate as a basis for KInterbasDB's event support,
+   to use, but is inappropriate as a basis for pyFirebirdSQL's event support,
    chiefly because it's not sophisticated enough to serve as the basis for
    a comfortable Python-level API. The other form of event notification
    offered by the database client library is *asynchronous*, by way of the
@@ -2816,12 +2815,12 @@ How events are exposed to the server and the client process?
 How events are exposed to the Python programmer?
 ------------------------------------------------
 
-The KInterbasDB database event API is comprised of the following: the
+The pyFirebirdSQL database event API is comprised of the following: the
 method `Connection.event_conduit` and the class :class:`EventConduit`.
 
 .. method:: Connection.event_conduit
 
-   Creates a conduit (an instance of :class:`~kinterbasdb.EventConduit`)
+   Creates a conduit (an instance of :class:`~firebirdsql.EventConduit`)
    through which database event notifications will flow into the Python program.
 
    `event_conduit` is a method of `Connection` rather than a module-level
@@ -2833,7 +2832,7 @@ method `Connection.event_conduit` and the class :class:`EventConduit`.
 
    :event_names: A sequence of string event names The :meth:`EventConduit.wait()`
                  method will block until the occurrence of at least one of the
-                 events named by the strings in `event_names`. KInterbasDB's
+                 events named by the strings in `event_names`. pyFirebirdSQL's
                  own event-related code is capable of operating with up to 2147483647
                  events per conduit. However, it has been observed that the Firebird
                  client library experiences catastrophic problems (including memory
@@ -2930,7 +2929,7 @@ Example Program
 ---------------
 
 The following code (a SQL table definition, a SQL trigger definition,
-and two Python programs) demonstrates KInterbasDB-based event
+and two Python programs) demonstrates pyFirebirdSQL-based event
 notification.
 
 The example is based on a database at `'localhost:/temp/test.db'`,
@@ -2988,11 +2987,11 @@ Python event *handler* program:
 
 .. sourcecode:: python
 
-    import kinterbasdb
+    import firebirdsql
 
     RELEVANT_EVENTS = ['test_event_a', 'test_event_b']
 
-    con = kinterbasdb.connect(dsn='localhost:/temp/test.db', user='sysdba', password='pass')
+    con = firebirdsql.connect(dsn='localhost:/temp/test.db', user='sysdba', password='pass')
     conduit = con.event_conduit(RELEVANT_EVENTS)
 
     print 'HANDLER: About to wait for the occurrence of one of %s...\n' % RELEVANT_EVENTS
@@ -3006,9 +3005,9 @@ Python event *producer* program:
 
 .. sourcecode:: python
 
-    import kinterbasdb
+    import firebirdsql
 
-    con = kinterbasdb.connect(dsn='localhost:/temp/test.db', user='sysdba', password='pass')
+    con = firebirdsql.connect(dsn='localhost:/temp/test.db', user='sysdba', password='pass')
     cur = con.cursor()
 
     cur.execute("insert into test_table values (1)")
@@ -3050,29 +3049,29 @@ Pitfalls and Limitations
   internal queue even if the Python programmer doesn't call
   :meth:`EventConduit.wait()` to receive the notifications or
   :meth:`EventConduit.flush()` to clear the queue. The ill-informed may
-  misinterpret this behavior as a memory leak in KInterbasDB; it is not.
+  misinterpret this behavior as a memory leak in pyFirebirdSQL; it is not.
 + NEVER use LOCAL-protocol connections in a multithreaded program that
   also uses event handling! The database client library implements the
   local protocol on some platforms in such a way that deadlocks may
   arise in bizarre places if you do this. *This no-LOCAL prohibition is
   not limited to connections that are used as the basis for event
   conduits; it applies to all connections throughout the process.* So
-  why doesn't KInterbasDB protect the Python programmer from this
+  why doesn't pyFirebirdSQL protect the Python programmer from this
   mistake? Because the event handling thread is started by the database
   client library, and it operates beyond the synchronization domain of
-  KInterbasDB at times.
+  pyFirebirdSQL at times.
 
 
 .. note:: The restrictions on the number of active `EventConduit`s in a
    process, and on the number of event names that a single `EventConduit`
-   can listen for, have been removed in KInterbasDB 3.2.
+   can listen for, have been removed in pyFirebirdSQL 3.2.
 
 
 The `database_info` API
 =======================
 
 Firebird provides various informations about server and connected database
-via `database_info` API call. KInterbasDB surfaces this API through next
+via `database_info` API call. pyFirebirdSQL surfaces this API through next
 methods on Connection object:
 
 .. method:: Connection.database_info(request,result_type)
@@ -3085,7 +3084,7 @@ methods on Connection object:
 
    .. sourcecode:: python
 
-      con.database_info(kinterbasdb.isc_info_user_names, 's')
+      con.database_info(firebirdsql.isc_info_user_names, 's')
 
    will return a binary string containing a *raw* succession of length-
    name pairs. A more convenient way to access the same functionality is
@@ -3093,7 +3092,7 @@ methods on Connection object:
 
    Arguments:
 
-   :request:     One of the `kinterbasdb.isc_info_*` constants.
+   :request:     One of the `firebirdsql.isc_info_*` constants.
    :result_type: Must be either `'s'` if you expect a string result,
                  or `'i'` if you expect an integer result.
 
@@ -3102,12 +3101,12 @@ methods on Connection object:
 
    .. sourcecode:: python
 
-      import kinterbasdb
+      import firebirdsql
 
-      con = kinterbasdb.connect(dsn='localhost:/temp/test.db', user='sysdba', password='pass')
+      con = firebirdsql.connect(dsn='localhost:/temp/test.db', user='sysdba', password='pass')
 
       # Retrieving an integer info item is quite simple.
-      bytesInUse = con.database_info(kinterbasdb.isc_info_current_memory, 'i')
+      bytesInUse = con.database_info(firebirdsql.isc_info_current_memory, 'i')
 
       print 'The server is currently using %d bytes of memory.' % bytesInUse
 
@@ -3118,22 +3117,22 @@ methods on Connection object:
       #
       # Often, the buffer contains a succession of length-string pairs
       # (one byte telling the length of s, followed by s itself).
-      # Function kinterbasdb.raw_byte_to_int is provided to convert a raw
+      # Function firebirdsql.raw_byte_to_int is provided to convert a raw
       # byte to a Python integer (see examples below).
-      buf = con.database_info(kinterbasdb.isc_info_db_id, 's')
+      buf = con.database_info(firebirdsql.isc_info_db_id, 's')
 
       # Parse the filename from the buffer.
       beginningOfFilename = 2
       # The second byte in the buffer contains the size of the database filename
       # in bytes.
-      lengthOfFilename = kinterbasdb.raw_byte_to_int(buf[1])
+      lengthOfFilename = firebirdsql.raw_byte_to_int(buf[1])
       filename = buf[beginningOfFilename:beginningOfFilename + lengthOfFilename]
 
       # Parse the host name from the buffer.
       beginningOfHostName = (beginningOfFilename + lengthOfFilename) + 1
       # The first byte after the end of the database filename contains the size
       # of the host name in bytes.
-      lengthOfHostName = kinterbasdb.raw_byte_to_int(buf[beginningOfHostName - 1])
+      lengthOfHostName = firebirdsql.raw_byte_to_int(buf[beginningOfHostName - 1])
       host = buf[beginningOfHostName:beginningOfHostName + lengthOfHostName]
 
       print 'We are connected to the database at %s on host %s.' % (filename, host)
@@ -3147,10 +3146,10 @@ methods on Connection object:
       We are connected to the database at C:\TEMP\TEST.DB on host WEASEL.
 
    As you can see, extracting data with the `database_info` function is
-   rather clumsy. In KInterbasDB 3.2, a higher-level means of accessing
+   rather clumsy. In pyFirebirdSQL 3.2, a higher-level means of accessing
    the same information is available: the :meth:`~Connection.db_info()`
    method. Also, the Services API (accessible to Python programmers via the
-   :mod:`kinterbasdb.services` module) provides high-level support for
+   :mod:`firebirdsql.services` module) provides high-level support for
    querying database statistics and performing maintenance.
 
 
@@ -3166,7 +3165,7 @@ methods on Connection object:
 
    .. sourcecode:: python
 
-      con.db_info(kinterbasdb.isc_info_user_names)
+      con.db_info(firebirdsql.isc_info_user_names)
 
    returns a dictionary that maps (username -> number of open
    connections). If `SYSDBA` has one open connection to the database to
@@ -3178,7 +3177,7 @@ methods on Connection object:
 
    :request:   must be either:
 
-                 + A single `kinterbasdb.isc_info_*` info request code.
+                 + A single `firebirdsql.isc_info_*` info request code.
                    In this case, a single result is returned.
                  + A sequence of such codes. In this case, a mapping of
                    (info request code -> result) is returned.
@@ -3189,7 +3188,7 @@ methods on Connection object:
 
       import os.path
 
-      import kinterbasdb
+      import firebirdsql
 
       DB_FILENAME = r'D:\temp\test-20.firebird'
       DSN = 'localhost:' + DB_FILENAME
@@ -3202,13 +3201,13 @@ methods on Connection object:
       # number of attachments by each user to the test database.
       testUserCons = []
       for i in range(3):
-          tCon = kinterbasdb.connect(dsn=DSN, user='test_user_1', password='pass')
+          tCon = firebirdsql.connect(dsn=DSN, user='test_user_1', password='pass')
           testUserCons.append(tCon)
 
-      con = kinterbasdb.connect(dsn=DSN, user='sysdba', password='masterkey')
+      con = firebirdsql.connect(dsn=DSN, user='sysdba', password='masterkey')
 
       print 'Open connections to this database:'
-      print con.db_info(kinterbasdb.isc_info_user_names)
+      print con.db_info(firebirdsql.isc_info_user_names)
 
       ###############################################################################
       # Querying multiple isc_info_* items at once:
@@ -3223,10 +3222,10 @@ methods on Connection object:
       #   - If the database is split across multiple files, db_info includes all of
       #     them.
       res = con.db_info(
-          [kinterbasdb.isc_info_page_size, kinterbasdb.isc_info_allocation]
+          [firebirdsql.isc_info_page_size, firebirdsql.isc_info_allocation]
         )
-      pagesAllocated = res[kinterbasdb.isc_info_allocation]
-      pageSize = res[kinterbasdb.isc_info_page_size]
+      pagesAllocated = res[firebirdsql.isc_info_allocation]
+      pageSize = res[firebirdsql.isc_info_page_size]
       print '\ndb_info indicates database size is', pageSize * pagesAllocated, 'bytes'
       print   'os.path.getsize indicates size is ', os.path.getsize(DB_FILENAME), 'bytes'
 
@@ -3245,7 +3244,7 @@ methods on Connection object:
 Using Firebird Services API
 ===========================
 
-.. module:: kinterbasdb.services
+.. module:: firebirdsql.services
    :synopsis: Access to Firebird Services API
 
 Database server maintenance tasks such as user management, load
@@ -3264,20 +3263,20 @@ The native Services API, though consistent, is much lower-level than a
 Pythonic API. If the native version were exposed directly,
 accomplishing a given task would probably require more Python code
 than scripting the traditional command-line tools. For this reason,
-KInterbasDB presents its own abstraction over the native API via the
-:mod:`kinterbasdb.services` module.
+pyFirebirdSQL presents its own abstraction over the native API via the
+:mod:`firebirdsql.services` module.
 
 Establishing Services API Connections
 -------------------------------------
 
 All Services API operations are performed in the context of a
 connection to a specific database server, represented by the
-:class:`kinterbasdb.services.Connection` class. 
+:class:`firebirdsql.services.Connection` class. 
 
 .. function:: connect(host='service_mgr', user='sysdba', password=None)
 
    Establish a connection to database server Services and returns
-   :class:`kinterbasdb.services.Connection` object.
+   :class:`firebirdsql.services.Connection` object.
 
    :host:      The network name of the computer on which the database
                server is running.
@@ -3290,12 +3289,12 @@ connection to a specific database server, represented by the
    `host` defaults to the local computer, and `user` defaults to
    `SYSDBA`.
 
-   The three calls to `kinterbasdb.services.connect()` in the following
+   The three calls to `firebirdsql.services.connect()` in the following
    program are equivalent:
 
    .. sourcecode:: python
 
-      from kinterbasdb import services
+      from firebirdsql import services
 
       con = services.connect(password='masterkey')
       con = services.connect(user='sysdba', password='masterkey')
@@ -3305,7 +3304,7 @@ connection to a specific database server, represented by the
 
    .. method:: close()
 
-      Explicitly terminates a :class:`~kinterbasdb.services.Connection`;
+      Explicitly terminates a :class:`~firebirdsql.services.Connection`;
       if this is not invoked, the underlying connection will be closed implicitly
       when the `Connection` object is garbage collected.
 
@@ -3321,7 +3320,7 @@ Server Configuration and Activity Levels
 
    .. sourcecode:: python
 
-      from kinterbasdb import services
+      from firebirdsql import services
       con = services.connect(host='localhost', user='sysdba', password='masterkey')
 
       print con.getServiceManagerVersion()
@@ -3332,7 +3331,7 @@ Server Configuration and Activity Levels
 
       2
 
-   `kinterbasdb.services` is a thick wrapper of the Services API that can
+   `firebirdsql.services` is a thick wrapper of the Services API that can
    shield its users from changes in the underlying C API, so this method
    is unlikely to be useful to the typical Python client programmer.
 
@@ -3343,7 +3342,7 @@ Server Configuration and Activity Levels
 
    .. sourcecode:: python
 
-      from kinterbasdb import services
+      from firebirdsql import services
       con = services.connect(host='localhost', user='sysdba', password='masterkey')
 
       print con.getServerVersion()
@@ -3355,8 +3354,8 @@ Server Configuration and Activity Levels
       WI-V1.5.0.4290 Firebird 1.5
 
    At first glance, thhis method appears to duplicate the functionality of the
-   :attr:`kinterbasdb.Connection.server_version` property, but when working
-   with Firebird, there is a difference. :attr:`kinterbasdb.Connection.server_version`
+   :attr:`firebirdsql.Connection.server_version` property, but when working
+   with Firebird, there is a difference. :attr:`firebirdsql.Connection.server_version`
    is based on a C API call (:cfunc:`isc_database_info()`) that existed long before
    the introduction of the Services API. Some programs written before the advent
    of Firebird test the version number in the return value of :cfunc:`isc_database_info()`,
@@ -3370,12 +3369,12 @@ Server Configuration and Activity Levels
 
    .. sourcecode:: python
 
-      import kinterbasdb
-      con = kinterbasdb.connect(dsn='localhost:C:/temp/test.db', user='sysdba', password='masterkey')
+      import firebirdsql
+      con = firebirdsql.connect(dsn='localhost:C:/temp/test.db', user='sysdba', password='masterkey')
       print 'Interbase-compatible version string:', con.server_version
 
-      import kinterbasdb.services
-      svcCon = kinterbasdb.services.connect(host='localhost', user='sysdba', password='masterkey')
+      import firebirdsql.services
+      svcCon = firebirdsql.services.connect(host='localhost', user='sysdba', password='masterkey')
       print 'Actual Firebird version string:     ', svcCon.getServerVersion()
 
    Output (on Firebird 1.5.0/Win32):
@@ -3393,7 +3392,7 @@ Server Configuration and Activity Levels
 
    .. sourcecode:: python
 
-      from kinterbasdb import services
+      from firebirdsql import services
       con = services.connect(host='localhost', user='sysdba', password='masterkey')
 
       print con.getArchitecture()
@@ -3423,7 +3422,7 @@ Server Configuration and Activity Levels
 
    .. sourcecode:: python
 
-      from kinterbasdb import services
+      from firebirdsql import services
       con = services.connect(host='localhost', user='sysdba', password='masterkey')
 
       print con.getHomeDir()
@@ -3450,7 +3449,7 @@ Server Configuration and Activity Levels
 
    .. sourcecode:: python
 
-      from kinterbasdb import services
+      from firebirdsql import services
       con = services.connect(host='localhost', user='sysdba', password='masterkey')
 
       print con.getSecurityDatabasePath()
@@ -3471,13 +3470,13 @@ Server Configuration and Activity Levels
 .. method:: Connection.getLockFileDir()
 
    The database engine `uses a lock file
-   <http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_locking>`__ to
+   <http://www.ibphoenix.com/resources/documents/general/doc_48>`__ to
    coordinate interprocess communication; `getLockFileDir()` returns the
    directory in which that file resides:
 
    .. sourcecode:: python
 
-      from kinterbasdb import services
+      from firebirdsql import services
       con = services.connect(host='localhost', user='sysdba', password='masterkey')
 
       print con.getLockFileDir()
@@ -3500,7 +3499,7 @@ Server Configuration and Activity Levels
    The Services API offers "a bitmask representing the capabilities
    currently enabled on the server", but the only availabledocumentation
    for this bitmask suggests that it is "reserved for future implementation".
-   kinterbasdb exposes this bitmask as a Python `int` returned from the
+   firebirdsql exposes this bitmask as a Python `int` returned from the
    `getCapabilityMask()` method.
 
 
@@ -3514,7 +3513,7 @@ Server Configuration and Activity Levels
 
    .. sourcecode:: python
 
-      from kinterbasdb import services
+      from firebirdsql import services
       con = services.connect(host='localhost', user='sysdba', password='masterkey')
 
       print con.getMessageFileDir()
@@ -3536,20 +3535,20 @@ Server Configuration and Activity Levels
 
    Returns the number of active connections to databases managed by the server.
    This count only includes *database* connections (such as open instances of
-   :class:`kinterbasdb.Connection`), not *services manager* connections (such
-   as open instances of :class:`kinterbasdb.services.Connection`).
+   :class:`firebirdsql.Connection`), not *services manager* connections (such
+   as open instances of :class:`firebirdsql.services.Connection`).
 
    .. sourcecode:: python
 
-      import kinterbasdb, kinterbasdb.services
-      svcCon = kinterbasdb.services.connect(host='localhost', user='sysdba', password='masterkey')
+      import firebirdsql, firebirdsql.services
+      svcCon = firebirdsql.services.connect(host='localhost', user='sysdba', password='masterkey')
 
       print 'A:', svcCon.getConnectionCount()
 
-      con1 = kinterbasdb.connect(dsn='localhost:C:/temp/test.db', user='sysdba', password='masterkey')
+      con1 = firebirdsql.connect(dsn='localhost:C:/temp/test.db', user='sysdba', password='masterkey')
       print 'B:', svcCon.getConnectionCount()
 
-      con2 = kinterbasdb.connect(dsn='localhost:C:/temp/test.db', user='sysdba', password='masterkey')
+      con2 = firebirdsql.connect(dsn='localhost:C:/temp/test.db', user='sysdba', password='masterkey')
       print 'C:', svcCon.getConnectionCount()
 
       con1.close()
@@ -3578,18 +3577,18 @@ Server Configuration and Activity Levels
 
    .. sourcecode:: python
 
-      import kinterbasdb, kinterbasdb.services
-      svcCon = kinterbasdb.services.connect(host='localhost', user='sysdba', password='masterkey')
+      import firebirdsql, firebirdsql.services
+      svcCon = firebirdsql.services.connect(host='localhost', user='sysdba', password='masterkey')
 
       print 'A:', svcCon.getAttachedDatabaseNames()
 
-      con1 = kinterbasdb.connect(dsn='localhost:C:/temp/test.db', user='sysdba', password='masterkey')
+      con1 = firebirdsql.connect(dsn='localhost:C:/temp/test.db', user='sysdba', password='masterkey')
       print 'B:', svcCon.getAttachedDatabaseNames()
 
-      con2 = kinterbasdb.connect(dsn='localhost:C:/temp/test2.db', user='sysdba', password='masterkey')
+      con2 = firebirdsql.connect(dsn='localhost:C:/temp/test2.db', user='sysdba', password='masterkey')
       print 'C:', svcCon.getAttachedDatabaseNames()
 
-      con3 = kinterbasdb.connect(dsn='localhost:C:/temp/test2.db', user='sysdba', password='masterkey')
+      con3 = firebirdsql.connect(dsn='localhost:C:/temp/test2.db', user='sysdba', password='masterkey')
       print 'D:', svcCon.getAttachedDatabaseNames()
 
       con1.close()
@@ -3622,7 +3621,7 @@ Server Configuration and Activity Levels
 
    .. sourcecode:: python
 
-      from kinterbasdb import services
+      from firebirdsql import services
       con = services.connect(host='localhost', user='sysdba', password='masterkey')
 
       print con.getLog()
@@ -3665,13 +3664,13 @@ Database Statistics
    The following program presents several `getStatistics` calls and their
    `gstat`-command-line equivalents. In this context, output is
    considered "equivalent" even if their are some whitespace differences.
-   When collecting textual output from the Services API, kinterbasdb
+   When collecting textual output from the Services API, firebirdsql
    terminates lines with `\n` regardless of the platform's convention;
    `gstat` is platform-sensitive.
 
    .. sourcecode:: python
 
-      from kinterbasdb import services
+      from firebirdsql import services
       con = services.connect(user='sysdba', password='masterkey')
 
       # Equivalent to 'gstat -u sysdba -p masterkey C:/temp/test.db':
@@ -3697,7 +3696,7 @@ Database Statistics
 Backup and Restoration
 ----------------------
 
-KInterbasDB offers convenient programmatic control over database
+pyFirebirdSQL offers convenient programmatic control over database
 backup and restoration via the `backup` and `restore` methods.
 
 At the time of this writing, released versions of Firebird/Interbase®
@@ -3706,7 +3705,7 @@ do not implement incremental backup, so we can simplistically define
 of a live database, and *restoration* as the inverse. The
 backup/restoration process exposes numerous parameters, which are
 properly documented in Firebird Documentation to :command:`gbak`.
-The KInterbasDB API to these parameters is presented with minimal
+The pyFirebirdSQL API to these parameters is presented with minimal
 documentation in the sample code below.
 
 .. method:: Connection.backup(sourceDatabase, destFilenames, destFileSizes=(), <options>)
@@ -3721,7 +3720,7 @@ documentation in the sample code below.
 
    .. sourcecode:: python
 
-      from kinterbasdb import services
+      from firebirdsql import services
       con = services.connect(user='sysdba', password='masterkey')
 
       backupLog = con.backup('C:/temp/test.db', 'C:/temp/test_backup.fbk')
@@ -3736,7 +3735,7 @@ documentation in the sample code below.
 
    .. sourcecode:: python
 
-      from kinterbasdb import services
+      from firebirdsql import services
       con = services.connect(user='sysdba', password='masterkey')
 
       # Pass an invalid backup path to the engine:
@@ -3748,13 +3747,13 @@ documentation in the sample code below.
       Traceback (most recent call last):
         File "adv_services_backup_simplest_witherror.py", line 5, in ?
           backupLog = con.backup('C:/temp/test.db', 'BOGUS/PATH/test_backup.fbk')
-        File "C:\code\projects\kinterbasdb\Kinterbasdb-3.0\build\lib.win32-2.3\kinterbasdb\services.py", line 269, in backup
+        File "C:\code\projects\firebirdsql\Kinterbasdb-3.0\build\lib.win32-2.3\firebirdsql\services.py", line 269, in backup
           return self._actAndReturnTextualResults(request)
-        File "C:\code\projects\kinterbasdb\Kinterbasdb-3.0\build\lib.win32-2.3\kinterbasdb\services.py", line 613, in _actAndReturnTextualResults
+        File "C:\code\projects\firebirdsql\Kinterbasdb-3.0\build\lib.win32-2.3\firebirdsql\services.py", line 613, in _actAndReturnTextualResults
           self._act(requestBuffer)
-        File "C:\code\projects\kinterbasdb\Kinterbasdb-3.0\build\lib.win32-2.3\kinterbasdb\services.py", line 610, in _act
+        File "C:\code\projects\firebirdsql\Kinterbasdb-3.0\build\lib.win32-2.3\firebirdsql\services.py", line 610, in _act
           return _ksrv.action_thin(self._C_conn, requestBuffer.render())
-      kinterbasdb.OperationalError: (-902, '_kiservices could not perform the action: cannot open backup file BOGUS/PATH/test_backup.fbk. ')
+      firebirdsql.OperationalError: (-902, '_kiservices could not perform the action: cannot open backup file BOGUS/PATH/test_backup.fbk. ')
 
    **Multifile Form**
 
@@ -3762,7 +3761,7 @@ documentation in the sample code below.
    multiple files, which is useful for circumventing operating system
    file size limits or spreading the backup across multiple discs.
 
-   KInterbasDB exposes this facility via the `Connection.backup`
+   pyFirebirdSQL exposes this facility via the `Connection.backup`
    parameters `destFilenames` and `destFileSizes`. `destFilenames` (the
    second positional parameter of `Connection.backup`) can be either a
    string (as in the example above, when creating the backup as a single
@@ -3778,9 +3777,9 @@ documentation in the sample code below.
    convenient means of calculating the total size of a database backup
    before its creation. The page size of the database and the number of
    pages in the database are available via 
-   :meth:`~kinterbasdb.Connection.database_info()` calls:
-   `database_info(kinterbasdb.isc_info_page_size, 'i')` and 
-   `database_info(kinterbasdb.isc_info_db_size_in_pages, 'i')`,
+   :meth:`~firebirdsql.Connection.database_info()` calls:
+   `database_info(firebirdsql.isc_info_page_size, 'i')` and 
+   `database_info(firebirdsql.isc_info_db_size_in_pages, 'i')`,
    respectively, but the size of the backup file is usually smaller than
    the size of the database.
 
@@ -3789,7 +3788,7 @@ documentation in the sample code below.
    excess constituents. However, at the time of this writing, released
    versions of the database engine hang the backup task if more than 11
    constituents are specified (that is, if `len(destFilenames) > 11`).
-   KInterbasDB does not prevent the programmer from submitting more than
+   pyFirebirdSQL does not prevent the programmer from submitting more than
    11 constituents, but it does issue a warning.
 
    The following program directs the engine to split the backup of the
@@ -3800,7 +3799,7 @@ documentation in the sample code below.
 
    .. sourcecode:: python
 
-      from kinterbasdb import services
+      from firebirdsql import services
       con = services.connect(user='sysdba', password='masterkey')
 
       con.backup('C:/temp/test.db',
@@ -3842,7 +3841,7 @@ documentation in the sample code below.
 
    .. sourcecode:: python
 
-      from kinterbasdb import services
+      from firebirdsql import services
       con = services.connect(user='sysdba', password='masterkey')
 
       restoreLog = con.restore('C:/temp/test_backup.fbk', 'C:/temp/test_restored.db')
@@ -3858,7 +3857,7 @@ documentation in the sample code below.
    operating system file size limits or spreading the database across
    multiple discs.
 
-   KInterbasDB exposes this facility via the `Connection.restore`
+   pyFirebirdSQL exposes this facility via the `Connection.restore`
    parameters `destFilenames` and `destFilePages`. `destFilenames` (the
    second positional argument of `Connection.restore`) can be either a
    string (as in the example above, when restoring to a single database
@@ -3882,7 +3881,7 @@ documentation in the sample code below.
 
    .. sourcecode:: python
 
-      from kinterbasdb import services
+      from firebirdsql import services
       con = services.connect(user='sysdba', password='masterkey')
 
       con.restore('C:/temp/test_backup.fbk',
