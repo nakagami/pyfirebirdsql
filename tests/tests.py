@@ -69,7 +69,7 @@ if __name__ == '__main__':
         print('Cursor.callproc() not support')
 
     for r in cur.execute("select out1, out2 from foo_proc(?, ?)", (1, "ABC")):
-        print r
+        print(r)
     cur.close()
 
     cur = conn.cursor()
