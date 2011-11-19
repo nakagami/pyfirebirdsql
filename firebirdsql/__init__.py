@@ -10,7 +10,7 @@
 from firebirdsql.consts import *
 
 class Error(Exception):
-    def __init__(self, message, gds_codes, sql_code=0):
+    def __init__(self, message, gds_codes=0, sql_code=0):
         self.message = message
         self.gds_codes = gds_codes
         self.sql_code = sql_code
@@ -44,7 +44,7 @@ class DataError(DatabaseError):
 
 class NotSupportedError(DatabaseError):
     def __init__(self):
-        NotSupportedError.__init__(self, 'NotSupportedError')
+        DatabaseError.__init__(self, 'NotSupportedError')
 
 from firebirdsql.fbcore import ( __version__, apilevel, threadsafety, 
     paramstyle, Transaction, Cursor, Connection,
