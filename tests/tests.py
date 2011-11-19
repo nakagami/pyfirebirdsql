@@ -46,11 +46,24 @@ if __name__ == '__main__':
             CONSTRAINT CHECK_A CHECK (a <> 0)
         )
     ''')
+    conn.cursor().execute('''
+        CREATE PROCEDURE foo_proc (param_a INTEGER, param_b VARCHAR(30))
+          RETURNS (ret_a INTEGER, ret_b VARCHAR(30))
+          AS
+          BEGIN
+            ret_a = param_a;
+            ret_b = param_b;
+          END
+    ''')
     conn.commit()
 
     cur = conn.cursor()
     cur.execute("select * from foo")
     assert cur.fetchone() is None
+    cur.close()
+
+    cur = conn.cursor()
+    print(cur.callproc("foo_proc", (1, "ABC")))
     cur.close()
 
     cur = conn.cursor()
