@@ -596,7 +596,7 @@ class WireProtocol:
             n = bytes_to_bint(recv_channel(self.sock, 4))
 
         if sql_code or message:
-            raise OperationalError(message, gds_codes, sql_code)
+            raise OperationalError(message, gds_code, sql_code)
 
         return (h, oid, buf)
 
