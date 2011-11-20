@@ -68,8 +68,11 @@ if __name__ == '__main__':
     except firebirdsql.NotSupportedError:
         print('Cursor.callproc() not support')
 
-    for r in cur.execute("select out1, out2 from foo_proc(?, ?)", (1, "ABC")):
-        print(r)
+    try:
+        for r in cur.execute("select out1, out2 from foo_proc(?, ?)", (1, "ABC")):
+            print(r)
+    except firebirdsql.OperationalError:
+        print('foo_proc not selectable')
     cur.close()
 
     cur = conn.cursor()
