@@ -55,6 +55,17 @@ if __name__ == '__main__':
             out2 = param_b;
           END
     ''')
+    conn.cursor().execute('''
+        CREATE PROCEDURE bar_proc(param_a INTEGER)
+          RETURNS (out1 INTEGER, out2 VARCHAR(30))
+          AS
+          BEGIN
+            SELECT a, b FROM foo
+              WHERE a= :param_a
+              INTO :out1, :out2;
+            SUSPEND;
+          END
+    ''')
     conn.commit()
 
     cur = conn.cursor()
@@ -86,6 +97,13 @@ if __name__ == '__main__':
         values (2, 'A', 'B', '1999-01-25', '00:00:01', 0.1, 0.1)""")
     conn.cursor().execute("""insert into foo(a, b, c, e, g, i, j) 
         values (3, 'X', 'Y', '2001-07-05', '00:01:02', 0.2, 0.2)""")
+
+    print("select from stored procedure")
+    cur = conn.cursor()
+    cur.execute("select out1, out2 from bar_proc(?)", (1, ))
+    for r in cur.fetchall():
+        print(r)
+    cur.close()
 
     # 1 record insert and rollback to savepoint
     cur = conn.cursor()
