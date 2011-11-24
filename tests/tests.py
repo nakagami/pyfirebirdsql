@@ -39,7 +39,7 @@ if __name__ == '__main__':
             e DATE DEFAULT '1967-08-11',
             f TIMESTAMP DEFAULT '1967-08-11 23:45:01',
             g TIME DEFAULT '23:45:01',
-            h BLOB SUB_TYPE 0, 
+            h BLOB SUB_TYPE 1, 
             i DOUBLE PRECISION DEFAULT 0.0,
             j FLOAT DEFAULT 0.0,
             PRIMARY KEY (a),
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     cur.close()
 
     # 3 records insert
-    conn.cursor().execute("insert into foo(a, b, c) values (1, 'a', 'b')")
+    conn.cursor().execute("insert into foo(a, b, c,h) values (1, 'a', 'b','This is a memo')")
     conn.cursor().execute("""insert into foo(a, b, c, e, g, i, j) 
         values (2, 'A', 'B', '1999-01-25', '00:00:01', 0.1, 0.1)""")
     conn.cursor().execute("""insert into foo(a, b, c, e, g, i, j) 

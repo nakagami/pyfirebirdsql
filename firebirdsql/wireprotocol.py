@@ -513,18 +513,18 @@ class WireProtocol:
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
-    def _op_open_blob(self, blob_id):
+    def _op_open_blob(self, blob_id, trans_handle):
         p = xdrlib.Packer()
         p.pack_int(self.op_open_blob)
-        p.pack_int(self.trans_handle)
+        p.pack_int(trans_handle)
         send_channel(self.sock, p.get_buffer() + blob_id)
 
     @wire_operation
-    def _op_create_blob2(self):
+    def _op_create_blob2(self, trans_handle):
         p = xdrlib.Packer()
         p.pack_int(self.op_create_blob2)
         p.pack_int(0)
-        p.pack_int(self.trans_handle)
+        p.pack_int(trans_handle)
         p.pack_int(0)
         p.pack_int(0)
         send_channel(self.sock, p.get_buffer())

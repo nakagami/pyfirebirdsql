@@ -434,7 +434,7 @@ class Cursor:
                 param = self.transaction.connection.str_to_bytes(param)
             cooked_params.append(param)
             continue
-            self.transaction.connection._op_create_blob2()
+            self.transaction.connection._op_create_blob2(self.transaction.trans_handle)
             (blob_handle, blob_id, buf2) = self.transaction.connection._op_response()
             seg_size = self.transaction.connection.buffer_length
             (seg, remains) = param[:seg_size], param[seg_size:]
@@ -502,7 +502,7 @@ class Cursor:
                     if x.sqltype == SQL_TYPE_BLOB:    
                         if not r[i]:
                             continue
-                        connection._op_open_blob(r[i])
+                        connection._op_open_blob(r[i], self.transaction.trans_handle)
                         (h, oid, buf) = connection._op_response()
                         v = bytes([])
                         n = 1   # 1:mora data 2:no more data
