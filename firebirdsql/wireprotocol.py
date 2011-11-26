@@ -136,6 +136,7 @@ class WireProtocol:
     op_prepare_statement = 68
     op_info_sql = 70
     op_execute2 = 76
+    op_sql_response = 78
     op_drop_database = 81
     op_service_attach = 82
     op_service_detach = 83
@@ -620,3 +621,16 @@ class WireProtocol:
 
         return (h, oid, buf)
 
+    @wire_operation
+    def _op_sql_response(self):
+        b = recv_channel(self.sock, 4)
+        while bytes_to_bint(b) == self.op_dummy:
+            b = recv_channel(self.sock, 4)
+        if bytes_to_bint(b) != self.op_sql_response:
+            raise InternalError
+
+        b = recv_channel(self.sock, 8)
+        count = bytes_to_bint(b[0:4])
+        buf_len = bytes_to_bint(b[4:])
+        buf = recv_channel(self.sock, buf_len, True)
+        return buf
