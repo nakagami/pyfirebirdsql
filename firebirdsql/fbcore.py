@@ -424,9 +424,6 @@ class Cursor:
     def transaction(self):
         return self._transaction
 
-    def callproc(self, procname, *params):
-        raise NotSupportedError()
-
     def _convert_params(self, params):
         cooked_params = []
         for param in params:        # Convert str/bytes parameter to blob id
@@ -475,6 +472,22 @@ class Cursor:
                 raise IntegrityError(e.message, e.gds_codes, e.sql_code)
         return stmt_type, stmt_handle
 
+    def _callproc(self, query, params):
+        raise NotSupportedError()
+
+        cooked_params = self._convert_params(params)
+
+        self.transaction.connection._op_execute2(stmt_handle,
+                                self.transaction.trans_handle, cooked_params)
+        try:
+            (h, oid, buf) = self.transaction.connection._op_response()
+        except OperationalError:
+            e = sys.exc_info()[1]
+            if 335544665 in e.gds_codes:
+                raise IntegrityError(e.message, e.gds_codes, e.sql_code)
+        return stmt_type, stmt_handle
+
+
     def prep(self, query):
         prepared_statement = PreparedStatement(self, query)
         return prepared_statement
@@ -483,6 +496,13 @@ class Cursor:
         stmt_type, stmt_handle = self._execute(query, params)
         if stmt_type == isc_info_sql_stmt_select:
             self._fetch_records = self._fetch_generator(stmt_handle)
+
+    def callproc(self, procname, params = []):
+        query = 'EXECUTE PROCEDURE ' + procname + ' ' + ','.join('?'*len(params))
+        stmt_type, stmt_handle = self._callproc(query, params)
+        if stmt_type == isc_info_sql_stmt_select:
+            self._fetch_records = self._fetch_generator(stmt_handle)
+
 
     def executemany(self, query, seq_of_params):
         for params in seq_of_params:

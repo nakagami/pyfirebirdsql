@@ -135,6 +135,7 @@ class WireProtocol:
     op_free_statement = 67
     op_prepare_statement = 68
     op_info_sql = 70
+    op_execute2 = 76
     op_drop_database = 81
     op_service_attach = 82
     op_service_detach = 83
@@ -427,6 +428,25 @@ class WireProtocol:
     def _op_execute(self, stmt_handle, trans_handle, params):
         p = xdrlib.Packer()
         p.pack_int(self.op_execute)
+        p.pack_int(stmt_handle)
+        p.pack_int(trans_handle)
+
+        if len(params) == 0:
+            p.pack_bytes(bytes([]))
+            p.pack_int(0)
+            p.pack_int(0)
+            send_channel(self.sock, p.get_buffer())
+        else:
+            (blr, values) = self.params_to_blr(params)
+            p.pack_bytes(blr)
+            p.pack_int(0)
+            p.pack_int(1)
+            send_channel(self.sock, p.get_buffer() + values)
+
+    @wire_operation
+    def _op_execute2(self, stmt_handle, trans_handle, params):
+        p = xdrlib.Packer()
+        p.pack_int(self.op_execute2)
         p.pack_int(stmt_handle)
         p.pack_int(trans_handle)
 
