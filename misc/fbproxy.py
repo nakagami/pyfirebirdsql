@@ -887,6 +887,8 @@ isc_info_names += [
   'isc_info_oldest_transaction', 'isc_info_oldest_active',
   'isc_info_oldest_snapshot', 'isc_info_next_transaction',
   'isc_info_db_provider', 'isc_info_active_transactions',
+  'isc_info_active_tran_count', 'isc_info_creation_date',
+  'isc_info_db_file_size',
 ]
 
 isc_tpb_names = [
