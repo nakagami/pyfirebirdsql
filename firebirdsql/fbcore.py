@@ -477,6 +477,15 @@ class Cursor:
 
         cooked_params = self._convert_params(params)
 
+        stmt_handle = self.stmt_handle
+        self.transaction.connection._op_prepare_statement(stmt_handle, 
+                                        self.transaction.trans_handle, query)
+        (h, oid, buf) = self.transaction.connection._op_response()
+        assert buf[:3] == bytes([0x15,0x04,0x00]) # isc_info_sql_stmt_type
+        stmt_type = bytes_to_int(buf[3:7])
+        self._xsqlda = parse_xsqlda(buf, self.transaction.connection, 
+                                                                stmt_handle)
+
         self.transaction.connection._op_execute2(stmt_handle,
                                 self.transaction.trans_handle, cooked_params)
         try:
