@@ -44,6 +44,13 @@ thread_xsqlda_statement = {}
 def get_xsqlda_statement():
     return thread_xsqlda_statement.setdefault(thread.get_ident(), {})
 
+def asc_dump(s):
+    r = ''
+    for c in s:
+        r += c if ord(c) < 128 else '.'
+    if r:
+        print '[' + r + ']'
+
 def hex_dump(s):
     print '\t', '-' * 55
     i = 0
