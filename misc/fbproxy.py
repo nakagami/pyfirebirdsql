@@ -47,9 +47,9 @@ def get_xsqlda_statement():
 def asc_dump(s):
     r = ''
     for c in s:
-        r += c if ord(c) < 128 else '.'
+        r += c if (ord(c) >= 32 and ord(c) < 128) else '.'
     if r:
-        print '[' + r + ']'
+        print '\t[' + r + ']'
 
 def hex_dump(s):
     print '\t', '-' * 55
@@ -1353,6 +1353,7 @@ def op_response(sock):
     sv = sock.recv(bufsize)
     i = 0
     print '\tStatus vector['+binascii.b2a_hex(sv)+']'
+    asc_dump(sv)
     print '\t',
     while i < len(sv):
         s = isc_status_names[_bytes_to_bint32(sv, i)]
@@ -1379,6 +1380,7 @@ def op_response(sock):
     if i < len(sv):
         i += ((4-i) & 3)
         print '\tpiggyback[' + binascii.b2a_hex(sv[i:]) + ']', len(sv) - i
+        asc_dump(sv[i:])
     return head + bytes + sv
 
 op_response_piggyback = op_response
@@ -1570,7 +1572,8 @@ def op_info_sql(sock):
 def op_allocate_statement(sock):
     msg = sock.recv(bufsize)
     print '\tDatabase<%x>' % (_bytes_to_bint32(msg, 0),),
-    print '[' + binascii.b2a_hex(msg[4:]) + ']'
+    print '[' + binascii.b2a_hex(msg[24:]) + ']'
+    asc_dump(msg[24:])
     return msg
 
 def op_free_statement(sock):
