@@ -47,7 +47,16 @@ if __name__ == '__main__':
         )
     ''')
     conn.cursor().execute('''
-        CREATE PROCEDURE foo_proc (param_a INTEGER, param_b VARCHAR(30))
+        CREATE PROCEDURE foo_proc
+          RETURNS (out1 INTEGER, out2 VARCHAR(30))
+          AS
+          BEGIN
+            out1 = 1;
+            out2 = 'ABC';
+          END
+    ''')
+    conn.cursor().execute('''
+        CREATE PROCEDURE bar_proc (param_a INTEGER, param_b VARCHAR(30))
           RETURNS (out1 INTEGER, out2 VARCHAR(30))
           AS
           BEGIN
@@ -56,7 +65,7 @@ if __name__ == '__main__':
           END
     ''')
     conn.cursor().execute('''
-        CREATE PROCEDURE bar_proc(param_a INTEGER)
+        CREATE PROCEDURE baz_proc(param_a INTEGER)
           RETURNS (out1 INTEGER, out2 VARCHAR(30))
           AS
           BEGIN
@@ -74,16 +83,17 @@ if __name__ == '__main__':
     cur.close()
 
     cur = conn.cursor()
-    try:
-        print(cur.callproc("foo_proc", (1, "ABC")))
-    except firebirdsql.NotSupportedError:
-        print('Cursor.callproc() not support')
+    print 'call foo_proc'
+    cur.callproc("foo_proc")
 
     try:
-        for r in cur.execute("select out1, out2 from foo_proc(?, ?)", (1, "ABC")):
+        for r in cur.execute("select out1, out2 from foo_proc"):
             print(r)
     except firebirdsql.OperationalError:
         print('foo_proc not selectable')
+
+    cur.callproc("foo_proc", (1, "ABC"))
+
     cur.close()
 
     cur = conn.cursor()
@@ -100,7 +110,7 @@ if __name__ == '__main__':
 
     print("select from stored procedure")
     cur = conn.cursor()
-    cur.execute("select out1, out2 from bar_proc(?)", (1, ))
+    cur.execute("select out1, out2 from baz_proc(?)", (1, ))
     for r in cur.fetchall():
         print(r)
     cur.close()

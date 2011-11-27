@@ -473,8 +473,6 @@ class Cursor:
         return stmt_type, stmt_handle
 
     def _callproc(self, query, params):
-        raise NotSupportedError()
-
         cooked_params = self._convert_params(params)
 
         stmt_handle = self.stmt_handle
