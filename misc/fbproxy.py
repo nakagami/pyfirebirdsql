@@ -1605,7 +1605,23 @@ def op_execute(sock):
         _parse_param(blr, msg[up.get_position():])
     return msg
 
-op_execute2 = op_execute
+def op_execute2(sock):
+    msg = sock.recv(bufsize)
+    up = xdrlib.Unpacker(msg)
+    print '\tStatement<%x>Trans<%x>' % (up.unpack_uint(), up.unpack_uint())
+    blr = up.unpack_bytes()
+    print '\tparam BLR[' + binascii.b2a_hex(blr) + ']'
+    message_number = up.unpack_int()
+    number_of_messages = up.unpack_int()
+    print '\t<%d,%d>' % (message_number, number_of_messages)
+    if number_of_messages:
+        print '\tparam value['+binascii.b2a_hex(msg[up.get_position():])+']'
+        _parse_param(blr, msg[up.get_position():])
+    out_blr = up.unpack_bytes()
+    print '\toutput BLR[' + binascii.b2a_hex(out_blr) + ']'
+    message_number = up.unpack_int()
+    print '\toutput_message_number<%d>' % (message_number)
+    return msg
 
 def op_execute_immediate(sock):
     msg = sock.recv(bufsize)
