@@ -69,3 +69,8 @@ if __name__ == '__main__':
     svc.close()
 
     conn.close()
+
+    # drop database
+    conn = firebirdsql.connect(host=TEST_HOST, database=TEST_RESTORE_DATABASE,
+                        port=TEST_PORT, user=TEST_USER, password=TEST_PASS)
+    conn.drop_database()
