@@ -352,7 +352,8 @@ def parse_select_items(buf, xsqlda, connection):
 def parse_xsqlda(buf, connection, stmt_handle):
     assert buf[:3] == bytes([0x15,0x04,0x00]) # isc_info_sql_stmt_type
     stmt_type = bytes_to_int(buf[3:7])
-    if stmt_type != isc_info_sql_stmt_select:
+    if (stmt_type != isc_info_sql_stmt_select and
+        stmt_type != isc_info_sql_stmt_exec_procedure):
         return []
 
     assert buf[7:9] == bytes([0x04,0x07])
