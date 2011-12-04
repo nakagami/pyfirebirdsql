@@ -486,7 +486,8 @@ class Cursor:
                                                                 stmt_handle)
 
         self.transaction.connection._op_execute2(stmt_handle,
-                                self.transaction.trans_handle, cooked_params)
+            self.transaction.trans_handle, cooked_params,
+            calc_blr(self._xsqlda))
         return self.transaction.connection._op_sql_response()
 
     def prep(self, query):
