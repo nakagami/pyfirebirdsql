@@ -112,8 +112,8 @@ def params_to_blr(params):
     values = bytes([])
     for p in params:
         t = type(p)
-        if ((PYTHON_MAJOR_VER == 2 and t == str) or
-            (PYTHON_MAJOR_VER == 3 and t == bytes)):
+        if ((sys.version_info[0] == 2 and t == str) or
+            (sys.version_info[0] == 3 and t == bytes)):
             v = p
             nbytes = len(v)
             pad_length = ((4-nbytes) & 3)
