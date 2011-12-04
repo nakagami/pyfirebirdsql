@@ -17,8 +17,6 @@ from firebirdsql.wireprotocol import (WireProtocol,
     bytes_to_bint, bytes_to_int, bint_to_bytes, int_to_bytes, 
     INFO_SQL_SELECT_DESCRIBE_VARS,)
 
-PYTHON_MAJOR_VER = sys.version_info[0]
-
 if sys.version_info < (2, 6):
     from UserDict import DictMixin as Mapping
     HAS_MAPPING = False
@@ -42,12 +40,12 @@ else:
 
 def b2i(b):
     "byte to int"
-    if PYTHON_MAJOR_VER == 3:
+    if sys.version_info[0] == 3:
         return b
     else:
         return ord(b)
 
-if PYTHON_MAJOR_VER == 2:
+if sys.version_info[0] == 2:
     __metaclass__ = type
 
     def bytes(byte_array):
@@ -95,7 +93,7 @@ class DBAPITypeObject:
         else:
             return -1
 STRING = DBAPITypeObject(str)
-if PYTHON_MAJOR_VER==3:
+if sys.version_info[0]==3:
     BINARY = DBAPITypeObject(bytes)
 else:
     BINARY = DBAPITypeObject(str)
@@ -548,7 +546,7 @@ class Cursor:
 
     def fetchone(self):
         try:
-            if PYTHON_MAJOR_VER==3:
+            if sys.version_info[0] == 3:
                 return next(self._fetch_records)
             else:
                 return self._fetch_records.next()
