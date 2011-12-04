@@ -83,7 +83,7 @@ if __name__ == '__main__':
     cur.close()
 
     cur = conn.cursor()
-    print 'call foo_proc'
+    print('call foo_proc')
     cur.callproc("foo_proc")
 
     try:
