@@ -515,7 +515,7 @@ class WireProtocol:
             send_channel(self.sock, p.get_buffer() + values)
 
         p = xdrlib.Packer()
-        p.pack_bytes(bytes(output_blr))
+        p.pack_bytes(output_blr)
         p.pack_int(0)
         send_channel(self.sock, p.get_buffer())
 
