@@ -473,7 +473,6 @@ class Cursor:
 
     def _callproc(self, query, params):
         cooked_params = self._convert_params(params)
-
         stmt_handle = self.stmt_handle
         self.transaction.connection._op_prepare_statement(stmt_handle, 
                                         self.transaction.trans_handle, query)
@@ -486,7 +485,7 @@ class Cursor:
         self.transaction.connection._op_execute2(stmt_handle,
             self.transaction.trans_handle, cooked_params,
             calc_blr(self._xsqlda))
-        return self.transaction.connection._op_sql_response()
+        return self.transaction.connection._op_sql_response(self._xsqlda)
 
     def prep(self, query):
         prepared_statement = PreparedStatement(self, query)

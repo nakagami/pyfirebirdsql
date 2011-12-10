@@ -678,15 +678,25 @@ class WireProtocol:
         return (h, oid, buf)
 
     @wire_operation
-    def _op_sql_response(self):
+    def _op_sql_response(self, xsqlda):
         b = recv_channel(self.sock, 4)
         while bytes_to_bint(b) == self.op_dummy:
             b = recv_channel(self.sock, 4)
         if bytes_to_bint(b) != self.op_sql_response:
             raise InternalError
 
-        b = recv_channel(self.sock, 8)
+        b = recv_channel(self.sock, 4)
         count = bytes_to_bint(b[0:4])
-        buf_len = bytes_to_bint(b[4:])
-        buf = recv_channel(self.sock, buf_len, True)
-        return buf
+
+        r = [None] * len(xsqlda)
+        for i in range(len(xsqlda)):
+            x = xsqlda[i]
+            if x.io_length() < 0:
+                b = recv_channel(self.sock, 4)
+                ln = bytes_to_bint(b)
+            else:
+                ln = x.io_length()
+            raw_value = recv_channel(self.sock, ln, True)
+            if recv_channel(self.sock, 4) == bytes([0]) * 4: # Not NULL
+                r[i] = x.value(raw_value)
+        return r
