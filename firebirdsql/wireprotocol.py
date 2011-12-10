@@ -686,9 +686,9 @@ class WireProtocol:
             raise InternalError
 
         b = recv_channel(self.sock, 4)
-        count = bytes_to_bint(b[0:4])
+        count = bytes_to_bint(b[:4])
 
-        r = [None] * len(xsqlda)
+        r = []
         for i in range(len(xsqlda)):
             x = xsqlda[i]
             if x.io_length() < 0:
@@ -698,5 +698,10 @@ class WireProtocol:
                 ln = x.io_length()
             raw_value = recv_channel(self.sock, ln, True)
             if recv_channel(self.sock, 4) == bytes([0]) * 4: # Not NULL
-                r[i] = x.value(raw_value)
+                r.append(x.value(raw_value))
+            else:
+                r.append(None)
+
+        b = recv_channel(self.sock, 32)     # ??? why 32 bytes skip
+
         return r
