@@ -83,8 +83,8 @@ if __name__ == '__main__':
     cur.close()
 
     cur = conn.cursor()
-    print('call foo_proc')
-    cur.callproc("foo_proc")
+
+    print(cur.callproc("foo_proc"))
 
     try:
         for r in cur.execute("select out1, out2 from foo_proc"):
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     except firebirdsql.OperationalError:
         print('foo_proc not selectable')
 
-    cur.callproc("foo_proc", (1, "ABC"))
+    print(cur.callproc("bar_proc", (1, "ABC")))
 
     cur.close()
 
