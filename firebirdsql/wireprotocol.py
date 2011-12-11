@@ -6,7 +6,6 @@
 #
 # Python DB-API 2.0 module for Firebird. 
 ##############################################################################
-import sys, os, socket
 import xdrlib, time, datetime, decimal, struct
 from firebirdsql.fberrmsgs import messages
 from firebirdsql import (DatabaseError, InternalError, OperationalError, 
@@ -16,7 +15,7 @@ from firebirdsql.consts import *
 
 DEBUG = False
 
-if sys.version_info[0] == 2:
+if PYTHON_MAJOR_VER == 2:
     __metaclass__ = type
 
     def bytes(byte_array):
@@ -112,8 +111,8 @@ def params_to_blr(params):
     values = bytes([])
     for p in params:
         t = type(p)
-        if ((sys.version_info[0] == 2 and t == str) or
-            (sys.version_info[0] == 3 and t == bytes)):
+        if ((PYTHON_MAJOR_VER == 2 and t == str) or
+            (PYTHON_MAJOR_VER == 3 and t == bytes)):
             v = p
             nbytes = len(v)
             pad_length = ((4-nbytes) & 3)
@@ -246,7 +245,7 @@ class WireProtocol:
 
     def bytes_to_str(self, b):
         "convert bytes array to raw string"
-        if sys.version_info[0] == 3:
+        if PYTHON_MAJOR_VER == 3:
             return b.decode(self.charset_map.get(self.charset, self.charset))
         return b
 
