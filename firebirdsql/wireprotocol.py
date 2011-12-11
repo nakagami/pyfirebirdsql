@@ -15,12 +15,6 @@ from firebirdsql.consts import *
 
 DEBUG = False
 
-if PYTHON_MAJOR_VER == 2:
-    __metaclass__ = type
-
-    def bytes(byte_array):
-        return ''.join([chr(c) for c in byte_array])
-
 INFO_SQL_SELECT_DESCRIBE_VARS = bytes([
     isc_info_sql_select,
     isc_info_sql_describe_vars,
@@ -89,6 +83,13 @@ def int_to_bytes(val, nbytes):  # Convert int value to little endian bytes.
                 b[i] = 0
                 b[i+1] += 1
     return bytes(b)
+
+def byte_to_int(b):
+    "byte to int"
+    if PYTHON_MAJOR_VER == 3:
+        return b
+    else:
+        return ord(b)
 
 def recv_channel(sock, nbytes, word_alignment=False):
     n = nbytes

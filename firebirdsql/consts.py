@@ -10,6 +10,10 @@ import sys
 
 PYTHON_MAJOR_VER = sys.version_info[0]
 
+if PYTHON_MAJOR_VER == 2:
+    def bytes(byte_array):
+        return ''.join([chr(c) for c in byte_array])
+
 DEFAULT_CHARSET='UTF8'
 
 ISC_TIME_SECONDS_PRECISION = 10000
