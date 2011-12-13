@@ -47,7 +47,6 @@ UTF-8 as the character set of the connection:
     con = firebirdsql.connect(
         dsn='bison:/temp/test.fdb',
         user='sysdba', password='pass',
-        dialect=1, # necessary for all dialect 1 databases
         charset='UTF8' # specify a character set for the connection
       )
 
@@ -258,9 +257,6 @@ use code such as this:
 
     con.commit() # If the procedure had any side effects, commit them.
 
-
-This bellow is not implemented yet 
--------------------------------------------------------------------------
 To *execute* a stored procedure and *access its output parameters*,
 use code such as this:
 

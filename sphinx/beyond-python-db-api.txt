@@ -39,8 +39,6 @@ then demonstrated by a brief example.
 
    :sql:     string containing the `CREATE DATABASE` statement. Note that
              this statement may need to include a username and password.
-   :dialect: `optional` - the SQL dialect under which to execute the
-             statement (defaults to `3`).
 
 .. method:: Connection.drop_database()
 
@@ -574,129 +572,6 @@ transaction-management methods.
 
 To use additional transactions, create new :class:`~firebirdsql.Transaction` object
 calling :meth:`Connection.trans()` method.
-
-
-Distributed Transactions
-------------------------
-
-Distributed transactions are transactions that span multiple databases. PyFirebirdSQL
-provides this Firebird feature through `ConnectionGroup` class.
-
-.. class:: ConnectionGroup
-
-   .. method:: __init__(connections=())
-
-      Constructor accepts optional list of database connections.
-      Connections cannot be in closed state.
-
-   .. method:: disband()
-
-      Forcefully deletes all connections from connection group.
-      If transaction is active, it's canceled (rollback).
-
-   .. method:: add(con)
-
-      Adds active connection to the group. If connection altready
-      belong to this or any other ConnectionGroup, has active
-      transaction, or timeout for it is defined, an exception
-      is raised. Group also cannot accept new members when in
-      unresolved transactions.
-
-   .. method:: remove(con)
-
-      Removes specified connection from group. Raises an exception
-      if connection doesn't belong to this group or if group has
-      unresolved transaction.
-
-   .. method:: clear()
-
-      Removes all connections from group. Raises an exception
-      if group has unresolved transaction.
-
-   .. method:: members()
-
-      Returns list of connection objects that belong to this group.
-
-   .. method:: count()
-
-      Returns number of connection objects that belong to this group.
-
-   .. method:: contains(con)
-
-      Returns True if specified connection belong to this group.
-
-   .. method:: begin()
-
-      Starts distributed transaction over member connections.
-
-   .. method:: commit(retaining=False)
-
-      Commits distributed transaction over member connections using 2PC.
-
-   .. method:: prepare()
-
-      Manually triggers the first phase of a two-phase commit (2PC).  Use
-      of this method is optional; if preparation is not triggered manually,
-      it will be performed implicitly by commit() in a 2PC.
-
-   .. method:: rollback(retaining=False)
-
-      Rollbacks distributed transaction over member connections.
-
-.. note::  While a `Connection` belongs to a `ConnectionGroup`, any calls
-           to the connection's transactional methods ( `begin`, `prepare`,
-           `commit`, `rollback`) will "bubble upward" to apply to the distributed
-           transaction shared by the group as a whole.
-
-
-.. rubric:: Pitfalls and Limitations
-
-+ Never add more than one connection to the same database to the same
-  `ConnectionGroup`!
-
-+ Current implementation works only with connection objects and their main
-  transactions. Secondary transaction objects obrained from connection cannot
-  participate in distributed transaction.
-
-
-**Example:**
-
-.. sourcecode:: python
-
-    import firebirdsql
-
-    # Establish multiple connections the usual way:
-    con1 = firebirdsql.connect(dsn='weasel:/temp/test.db', user='sysdba', password='pass')
-    con2 = firebirdsql.connect(dsn='coyote:/temp/test.db', user='sysdba', password='pass')
-
-    # Create a ConnectionGroup to associate multiple connections in such a
-    # way that they can participate in a distributed transaction.
-    # !!!
-    # NO TWO MEMBERS OF A SINGLE CONNECTIONGROUP SHOULD BE ATTACHED TO THE SAME DATABASE!
-    # !!!
-    group = firebirdsql.ConnectionGroup( connections=(con1,con2) )
-
-    # Start a distributed transaction involving all of the members of the group
-    # (con1 and con2 in this case) with one of the following approaches:
-    #   - Call  group.begin()
-    #   - Call  con1.begin(); the operation will "bubble upward" and apply to the group.
-    #   - Call  con2.begin(); the operation will "bubble upward" and apply to the group.
-    #   - Just start executing some SQL statements on either con1 or con2.
-    #     A transaction will be started implicitly; it will be a distributed
-    #     transaction because con1 and con2 are members of a ConnectionGroup.
-    group.begin()
-
-    # Perform some database changes the usual way (via cursors on con1 and con2):
-    ...
-
-    # Commit or roll back the distributed transaction by calling the commit
-    # or rollback method of the ConnectionGroup itself, or the commit or
-    # rollback method of any member connection (con1 or con2 in this case).
-    group.commit()
-
-    # Unless you want to perform another distributed transaction, disband the
-    # group so that member connections can operate independently again.
-    group.clear()
 
 
 Prepared Statements
@@ -3937,10 +3812,6 @@ Database Operating Modes, Sweeps, and Repair
    Not yet documented.
 
 .. method:: Conenction.setAccessMode(database, mode)
-
-   Not yet documented.
-
-.. method:: Conenction.setSQLDialect(database, dialect)
 
    Not yet documented.
 

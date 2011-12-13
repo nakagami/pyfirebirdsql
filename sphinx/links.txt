@@ -23,12 +23,6 @@ Python + Databases
     + `PEP 249 - Augmented Python DB-API Spec 2.0
       <http://www.python.org/peps/pep-0249.html>`__
 
-+ `Google's Python Database Module Directory <http://directory.google.
-  com/Top/Computers/Programming/Languages/Python/Modules/Databases_and_P
-  ersistence/>`__
-+ `Vaults of Parnassus - Database section
-  <http://py.vaults.ca/parnassus/apyllo.py/973100124>`__
-
 Zope Database Adapters for Firebird
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -60,12 +54,6 @@ Help
 
 + `Brief Python DB API Tutorial <http://www.amk.ca/python/writing/DB-
   API.html>`__
-+ `SQL Tutorials <http://directory.google.com/Top/Computers/Programmin
-  g/Languages/SQL/FAQs,_Help,_and_Tutorials/>`__
-
-    + `An Especially Good SQL Tutorial
-      <http://www.onlamp.com/pub/ct/19>`__
-
 + `Firebird-Python list <http://groups.yahoo.com/group/firebird-
   python/>`__ (Yahoo Group)
 + `Firebird-Support list <http://groups.yahoo.com/group/firebird-
