@@ -49,7 +49,7 @@ if __name__ == '__main__':
                         port=TEST_PORT, user=TEST_USER, password=TEST_PASS)
     cur = conn.cursor()
 
-    prep = cur.prep("select * from foo where c=?")
+    prep = cur.prep("select * from foo where c=?", get_plan=True)
     print('sql=', prep.sql)
     print('statement_type=', prep.statement_type)
     print('n_output_params=', prep.n_output_params)
