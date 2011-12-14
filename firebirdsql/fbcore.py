@@ -489,10 +489,13 @@ class Cursor:
         stmt_type, stmt_handle = self._execute(query, params)
         if stmt_type == isc_info_sql_stmt_select:
             self._fetch_records = self._fetch_generator(stmt_handle)
+        else:
+            self._fetch_records = None
 
     def callproc(self, procname, params = []):
         query = 'EXECUTE PROCEDURE ' + procname + ' ' + ','.join('?'*len(params))
-        return self._callproc(query, params)
+        self._callproc_result = self._callproc(query, params)
+        self._fetch_records = None
 
     def executemany(self, query, seq_of_params):
         for params in seq_of_params:
@@ -538,6 +541,14 @@ class Cursor:
         raise StopIteration()
 
     def fetchone(self):
+        # callproc or not select statement
+        if not self._fetch_records:
+            if self._callproc_result:
+                r = self._callproc_result
+                self._callproc_result = None
+                return r
+            return None
+        # select statement
         try:
             if PYTHON_MAJOR_VER == 3:
                 return next(self._fetch_records)
@@ -559,11 +570,27 @@ class Cursor:
         return self.__next__()
 
     def fetchall(self):
+        # callproc or not select statement
+        if not self._fetch_records:
+            if self._callproc_result:
+                r = [self._callproc_result]
+                self._callproc_result = None
+                return r
+            return None
+        # select statement
         return list(self._fetch_records)
 
     def fetchmany(self, size=None):
         if not size:
             size = self.arraysize
+        # callproc or not select statement
+        if not self._fetch_records:
+            if self._callproc_result:
+                r = [self._callproc_result]
+                self._callproc_result = None
+                return r
+            return None
+        # select statement
         return list(itertools.islice(self._fetch_records, size))
     
     # kinterbasdb extended API
@@ -572,7 +599,7 @@ class Cursor:
     
     def fetchallmap(self):
         desc = self.description
-        return [RowMapping(row, desc) for row in self._fetch_records]
+        return [RowMapping(row, desc) for row in self.fetchall()]
     
     def fetchmanymap(self, size=None):
         desc = self.description
