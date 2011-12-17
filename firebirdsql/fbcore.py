@@ -39,7 +39,7 @@ else:
         fcntl.fcntl(fd, fcntl.F_SETFD, flags | fcntl.FD_CLOEXEC)
 
 
-__version__ = '0.6.4'
+__version__ = '0.6.5'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
