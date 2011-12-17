@@ -41,8 +41,8 @@ source_suffix = '.txt'
 master_doc = 'index'
 
 # General information about the project.
-project = u'pyFirebirdSQL'
-copyright = u'2009, David Rushby, Pavel Cisar'
+project = u'PyFirebirdSQL'
+copyright = u'2011, Hajime Nakagami'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -133,7 +133,7 @@ html_static_path = ['.static']
 #html_additional_pages = {}
 
 # If false, no module index is generated.
-#html_use_modindex = True
+html_use_modindex = False
 
 # If false, no index is generated.
 #html_use_index = True
@@ -147,7 +147,7 @@ html_static_path = ['.static']
 # If true, an OpenSearch description file will be output, and all pages will
 # contain a <link> tag referring to it.  The value of this option must be the
 # base URL from which the finished HTML is served.
-#html_use_opensearch = ''
+# html_use_opensearch = ''
 
 # If nonempty, this is the file name suffix for HTML files (e.g. ".xhtml").
 #html_file_suffix = ''
@@ -168,8 +168,8 @@ htmlhelp_basename = 'pyFirebirdSQLdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
 latex_documents = [
-  ('index', 'pyFirebirdSQL.tex', ur'pyFirebirdSQL Documentation',
-   ur'David Rushby, Pavel Cisar', 'manual'),
+  ('index', 'PyFirebirdSQL.tex', ur'PyFirebirdSQL Documentation',
+   ur'Hajime Nakagami', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

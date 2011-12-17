@@ -38,8 +38,6 @@ Documentation Contents:
    Python-DB-API-2.0
    python-db-api-compliance
    beyond-python-db-api
-   concurrency
-   thread-safety-overview
    links
 
    changelog
@@ -49,6 +47,3 @@ Indices and tables
 ******************
 
 * :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-

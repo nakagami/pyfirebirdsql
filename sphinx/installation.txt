@@ -124,7 +124,7 @@ the PyFirebirdSQL Usage Guide.
 
 You should not encounter any errors at this stage since you have
 already completed the compilation and installation steps successfully.
-If you do, please report them to the `PyFirebirdSQL support list 
+If you do, please report them to the `firebird-python  support list
 <http://tech.groups.yahoo.com/group/firebird-python/>`__.
 
 
