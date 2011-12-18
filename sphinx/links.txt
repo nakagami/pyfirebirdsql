@@ -44,7 +44,7 @@ Firebird
     + `IBPhoenix Tools Downloads Area <http://ibphoenix.com/download/tools/>`__
 
 + `Dmoz's Firebird Directory <http://www.dmoz.org/Computers/Software/Databases/Firebird/>`__
-+ `Turbobird - nice, open source cross platform  GUI for Firebird
++ `Turbobird - nice open source cross platform  GUI for Firebird
   <http://code.sd/turbobird/>`__
 + `Flamerobin - nice open source and cross platform GUI for Firebird <http://flamerobin.org>`__
 
