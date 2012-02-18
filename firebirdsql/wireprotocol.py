@@ -254,6 +254,42 @@ class WireProtocol:
         "convert bytes array to unicode string"
         return b.decode(self.charset_map.get(self.charset, self.charset))
 
+    def _parse_op_response(self):
+        b = recv_channel(self.sock, 16)
+        h = bytes_to_bint(b[0:4])         # Object handle
+        oid = b[4:12]                       # Object ID
+        buf_len = bytes_to_bint(b[12:])   # buffer length
+        buf = recv_channel(self.sock, buf_len, True)
+
+        # Parse status vector
+        sql_code = 0
+        gds_codes = set()
+        message = ''
+        n = bytes_to_bint(recv_channel(self.sock, 4))
+        while n != isc_arg_end:
+            if n == isc_arg_gds:
+                gds_code = bytes_to_bint(recv_channel(self.sock, 4))
+                if gds_code:
+                    gds_codes.add(gds_code)
+                    message += messages.get(gds_code, '@1')
+                    num_arg = 0
+            elif n == isc_arg_number:
+                num = bytes_to_bint(recv_channel(self.sock, 4))
+                if gds_code == 335544436:
+                    sql_code = num
+                num_arg += 1
+                message = message.replace('@' + str(num_arg), str(num))
+            elif n == isc_arg_string or n == isc_arg_interpreted:
+                nbytes = bytes_to_bint(recv_channel(self.sock, 4))
+                n = str(recv_channel(self.sock, nbytes, True))
+                num_arg += 1
+                message = message.replace('@' + str(num_arg), n)
+            n = bytes_to_bint(recv_channel(self.sock, 4))
+
+        if sql_code or message:
+            raise OperationalError(message, gds_codes, sql_code)
+
+        return (h, oid, buf)
 
     @wire_operation
     def _op_connect(self):
@@ -557,6 +593,8 @@ class WireProtocol:
         b = recv_channel(self.sock, 4)
         while bytes_to_bint(b) == self.op_dummy:
             b = recv_channel(self.sock, 4)
+        if bytes_to_bint(b) == self.op_response:
+            return self._parse_op_response()    # error occured
         if bytes_to_bint(b) != self.op_fetch_response:
             raise InternalError
         b = recv_channel(self.sock, 8)
@@ -641,41 +679,7 @@ class WireProtocol:
             b = recv_channel(self.sock, 4)
         if bytes_to_bint(b) != self.op_response:
             raise InternalError
-        b = recv_channel(self.sock, 16)
-        h = bytes_to_bint(b[0:4])         # Object handle
-        oid = b[4:12]                       # Object ID
-        buf_len = bytes_to_bint(b[12:])   # buffer length
-        buf = recv_channel(self.sock, buf_len, True)
-
-        # Parse status vector
-        sql_code = 0
-        gds_codes = set()
-        message = ''
-        n = bytes_to_bint(recv_channel(self.sock, 4))
-        while n != isc_arg_end:
-            if n == isc_arg_gds:
-                gds_code = bytes_to_bint(recv_channel(self.sock, 4))
-                if gds_code:
-                    gds_codes.add(gds_code)
-                    message += messages.get(gds_code, '@1')
-                    num_arg = 0
-            elif n == isc_arg_number:
-                num = bytes_to_bint(recv_channel(self.sock, 4))
-                if gds_code == 335544436:
-                    sql_code = num
-                num_arg += 1
-                message = message.replace('@' + str(num_arg), str(num))
-            elif n == isc_arg_string or n == isc_arg_interpreted:
-                nbytes = bytes_to_bint(recv_channel(self.sock, 4))
-                n = str(recv_channel(self.sock, nbytes, True))
-                num_arg += 1
-                message = message.replace('@' + str(num_arg), n)
-            n = bytes_to_bint(recv_channel(self.sock, 4))
-
-        if sql_code or message:
-            raise OperationalError(message, gds_codes, sql_code)
-
-        return (h, oid, buf)
+        return self._parse_op_response()
 
     @wire_operation
     def _op_sql_response(self, xsqlda):

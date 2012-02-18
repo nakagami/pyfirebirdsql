@@ -145,6 +145,16 @@ if __name__ == '__main__':
     cur.close()
 
     cur = conn.cursor()
+    cur.execute("select * from foo")
+    conn.commit()
+    try:
+        for r in cur.fetchall():
+            print r
+    except firebirdsql.OperationalError:
+        e = sys.exc_info()[1]
+        assert e.sql_code == -504 # Invalid cursor reference Corsor is not open.
+
+    cur = conn.cursor()
     try:
         conn.cursor().execute("insert into foo(a, b, c) values (1, 'a', 'b')")
     except firebirdsql.IntegrityError:
