@@ -595,6 +595,9 @@ class Cursor:
     
     # kinterbasdb extended API
     def fetchonemap(self):
+        r = self.fetchone()
+        if r is None:
+            return {}
         return RowMapping(self.fetchone(), self.description)
     
     def fetchallmap(self):

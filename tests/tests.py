@@ -170,12 +170,28 @@ if __name__ == '__main__':
     print(cur.description)
     for c in cur.fetchall():
         print(c)
+
+    print('fetchallmap()')
     cur.execute("select * from foo")
     for r in cur.fetchallmap():
         print(r)
         for key in r:
             print (key, r[key])
+
+    print('fetchonemap()')
+    cur = conn.cursor()
+    cur.execute("select * from foo")
+    for k,v in cur.fetchonemap().items():
+        print k, v
+
+    print('fetchonemap() empty record')
+    cur = conn.cursor()
+    cur.execute("select * from rdb$roles")
+    for k,v in cur.fetchonemap().items():
+        print k, v
+
     print('cursor iteration')
+    cur = conn.cursor()
     cur.execute("select * from foo")
     for (a, b, c, d, e, f, g, h, i, j) in cur:
         print(a, b, c)
