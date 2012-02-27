@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2009-2011 Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2009-2012 Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 # Licensed under the New BSD License
 # (http://www.freebsd.org/copyright/freebsd-license.html)
@@ -39,7 +39,7 @@ else:
         fcntl.fcntl(fd, fcntl.F_SETFD, flags | fcntl.FD_CLOEXEC)
 
 
-__version__ = '0.6.5'
+__version__ = '0.6.6'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
