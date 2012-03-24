@@ -827,6 +827,8 @@ isc_dpb_names = [
   'isc_dpb_gfix_attach', 'isc_dpb_gstat_attach', 'isc_dpb_set_db_charset',
   'isc_dpb_gsec_attach', 'isc_dpb_address_path', 'isc_dpb_process_id',
   'isc_dpb_no_db_triggers', 'isc_dpb_trusted_auth', 'isc_dpb_process_name',
+  'isc_dpb_trusted_role', 'isc_dpb_org_filename', 'isc_dpb_utf8_filename',
+  'isc_dpb_ext_call_depth',
 ]
 
 isc_spb_names = {
