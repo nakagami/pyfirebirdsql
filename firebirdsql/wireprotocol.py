@@ -167,8 +167,6 @@ class WireProtocol:
     op_detach = 21
     op_transaction = 29
     op_commit = 30
-    op_commit_retaining = 50
-    op_rollback_retaining = 86
     op_rollback = 31
     op_open_blob = 35
     op_get_segment = 36
@@ -176,8 +174,14 @@ class WireProtocol:
     op_info_database = 40
     op_info_transaction = 42
     op_batch_segments = 44
-    op_allocate_statement = 62
+    op_que_events = 48
+    op_cancel_event = 49
+    op_commit_retaining = 50
+    op_event = 52
+    op_connect_request = 53
+    op_aux_connect = 53
     op_create_blob2 = 57
+    op_allocate_statement = 62
     op_execute = 63
     op_execute_immediate = 64
     op_fetch = 65
@@ -192,6 +196,7 @@ class WireProtocol:
     op_service_detach = 83
     op_service_info = 84
     op_service_start = 85
+    op_rollback_retaining = 86
 
     charset_map = {
     # DB CHAR SET NAME    :   PYTHON CODEC NAME (CANONICAL)
