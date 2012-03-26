@@ -1766,6 +1766,16 @@ def op_create(sock):
     up.done()
     return msg
 
+def op_que_events(sock):
+    msg = sock.recv(bufsize)
+    up = xdrlib.Unpacker(msg)
+    print '\tdb_handle=', up.unpack_int()
+    print '\tEventParameterBuffer<%s>' % (up.unpack_string())
+    print '\tast=', up.unpack_int()
+    print '\tevent_args=', up.unpack_int()
+    print '\tevent_rid=', up.unpack_int()
+    return msg
+
 def op_dummy(sock):
     return None
 
