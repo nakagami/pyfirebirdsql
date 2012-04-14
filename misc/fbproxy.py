@@ -1770,7 +1770,17 @@ def op_que_events(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
     print '\tdb_handle=', up.unpack_int()
-    print '\tEventParameterBuffer<%s>' % (up.unpack_string())
+    prs = up.unpack_string()    # param raw strings
+    param_strings = []
+    assert ord(prs[0]) == 1
+    i = 1
+    while i < len(prs):
+        ln = ord(prs[i])
+        s = prs[i+1:i+1+ln]
+        param_strings.append(s)
+        i += 5+ln
+
+    print '\tparam=', param_strings
     print '\tast=', up.unpack_int()
     print '\tevent_args=', up.unpack_int()
     print '\tevent_rid=', up.unpack_int()
