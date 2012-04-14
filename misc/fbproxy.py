@@ -1776,6 +1776,15 @@ def op_que_events(sock):
     print '\tevent_rid=', up.unpack_int()
     return msg
 
+def op_cancel_events(sock):
+    msg = sock.recv(bufsize)
+    up = xdrlib.Unpacker(msg)
+    print '\tdb_handle=', up.unpack_int()
+    print '\tevent_id<%x>' % (up.unpack_uint())
+    up.done()
+    return msg
+
+
 def op_dummy(sock):
     return None
 
