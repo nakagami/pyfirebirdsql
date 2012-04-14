@@ -4,16 +4,16 @@
 # Licensed under the New BSD License
 # (http://www.freebsd.org/copyright/freebsd-license.html)
 #
-# Python DB-API 2.0 module for Firebird. 
+# Python DB-API 2.0 module for Firebird.
 ##############################################################################
 import sys, os, socket
 import xdrlib, time, datetime, decimal, struct
 import itertools
 from firebirdsql.fberrmsgs import messages
-from firebirdsql import (DatabaseError, InternalError, OperationalError, 
+from firebirdsql import (DatabaseError, InternalError, OperationalError,
     ProgrammingError, IntegrityError, DataError, NotSupportedError,)
 from firebirdsql.consts import *
-from firebirdsql.wireprotocol import (WireProtocol, 
+from firebirdsql.wireprotocol import (WireProtocol,
     bytes_to_bint, bytes_to_int, bint_to_bytes, int_to_bytes, byte_to_int,
     INFO_SQL_SELECT_DESCRIBE_VARS,)
 
@@ -116,12 +116,12 @@ class XSQLVAR:
         SQL_TYPE_DATE: 4,
         SQL_TYPE_DOUBLE: 8,
         SQL_TYPE_TIMESTAMP: 8,
-        SQL_TYPE_BLOB: 8, 
-        SQL_TYPE_ARRAY: 8, 
+        SQL_TYPE_BLOB: 8,
+        SQL_TYPE_ARRAY: 8,
         SQL_TYPE_QUAD: 8,
         SQL_TYPE_INT64: 8
         }
-    
+
     type_display_length = {
         SQL_TYPE_VARYING: -1,
         SQL_TYPE_SHORT: 6,
@@ -208,16 +208,21 @@ class XSQLVAR:
 
     def value(self, raw_value):
         if self.sqltype == SQL_TYPE_TEXT:
-            if self.sqlsubtype in (4, 69):  # UTF8 and GB18030 
-                reallength = self.sqllen // 4 
+            if self.sqlsubtype in (4, 69):  # UTF8 and GB18030
+                reallength = self.sqllen // 4
                 return self.bytes_to_str(raw_value)[:reallength]
-            elif self.sqlsubtype == 3:      # UNICODE_FSS 
+            elif self.sqlsubtype == 3:      # UNICODE_FSS
                 reallength = self.sqllen // 3
                 return self.bytes_to_str(raw_value)[:reallength]
+            elif self.sqlsubtype == 1:      # OCTETS
+                return raw_value
             else:
-                return self.bytes_to_str(raw_value) 
+                return self.bytes_to_str(raw_value)
         elif self.sqltype == SQL_TYPE_VARYING:
-                return self.bytes_to_str(raw_value) 
+            if self.sqlsubtype == 1:      # OCTETS
+                return raw_value
+            else:
+                return self.bytes_to_str(raw_value)
         elif self.sqltype in (SQL_TYPE_SHORT, SQL_TYPE_LONG, SQL_TYPE_INT64):
             n = bytes_to_bint(raw_value)
             if self.sqlscale:
@@ -372,7 +377,7 @@ class PreparedStatement:
 
         if get_plan:
             connection._op_prepare_statement(
-                self.stmt_handle, transaction.trans_handle, sql, 
+                self.stmt_handle, transaction.trans_handle, sql,
                 option_items=bytes([isc_info_sql_get_plan]))
         else:
             connection._op_prepare_statement(
@@ -397,8 +402,8 @@ class PreparedStatement:
                 return None
             r = []
             for x in self._xsqlda:
-                r.append((x.aliasname, x.sqltype, x.display_length(), 
-                        x.io_length(), x.precision(), 
+                r.append((x.aliasname, x.sqltype, x.display_length(),
+                        x.io_length(), x.precision(),
                         x.sqlscale, True if x.null_ok else False))
             return r
         elif attrname == 'n_output_params':
@@ -447,15 +452,15 @@ class Cursor:
             self._xsqlda = query._xsqlda
         else:
             stmt_handle = self.stmt_handle
-            self.transaction.connection._op_prepare_statement(stmt_handle, 
+            self.transaction.connection._op_prepare_statement(stmt_handle,
                                         self.transaction.trans_handle, query)
             (h, oid, buf) = self.transaction.connection._op_response()
             assert buf[:3] == bytes([0x15,0x04,0x00]) # isc_info_sql_stmt_type
             stmt_type = bytes_to_int(buf[3:7])
-            self._xsqlda = parse_xsqlda(buf, self.transaction.connection, 
+            self._xsqlda = parse_xsqlda(buf, self.transaction.connection,
                                                                 stmt_handle)
 
-        self.transaction.connection._op_execute(stmt_handle, 
+        self.transaction.connection._op_execute(stmt_handle,
                                 self.transaction.trans_handle, cooked_params)
         try:
             (h, oid, buf) = self.transaction.connection._op_response()
@@ -468,12 +473,12 @@ class Cursor:
     def _callproc(self, query, params):
         cooked_params = self._convert_params(params)
         stmt_handle = self.stmt_handle
-        self.transaction.connection._op_prepare_statement(stmt_handle, 
+        self.transaction.connection._op_prepare_statement(stmt_handle,
                                         self.transaction.trans_handle, query)
         (h, oid, buf) = self.transaction.connection._op_response()
         assert buf[:3] == bytes([0x15,0x04,0x00]) # isc_info_sql_stmt_type
         stmt_type = bytes_to_int(buf[3:7])
-        self._xsqlda = parse_xsqlda(buf, self.transaction.connection, 
+        self._xsqlda = parse_xsqlda(buf, self.transaction.connection,
                                                                 stmt_handle)
 
         self.transaction.connection._op_execute2(stmt_handle,
@@ -509,10 +514,10 @@ class Cursor:
             (rows, more_data) = connection._op_fetch_response(
                                             stmt_handle, self._xsqlda)
             for r in rows:
-                # Convert BLOB handle to data    
-                for i in range(len(self._xsqlda)):    
-                    x = self._xsqlda[i]    
-                    if x.sqltype == SQL_TYPE_BLOB:    
+                # Convert BLOB handle to data
+                for i in range(len(self._xsqlda)):
+                    x = self._xsqlda[i]
+                    if x.sqltype == SQL_TYPE_BLOB:
                         if not r[i]:
                             continue
                         connection._op_open_blob(r[i], self.transaction.trans_handle)
@@ -592,18 +597,18 @@ class Cursor:
             return None
         # select statement
         return list(itertools.islice(self._fetch_records, size))
-    
+
     # kinterbasdb extended API
     def fetchonemap(self):
         r = self.fetchone()
         if r is None:
             return {}
         return RowMapping(self.fetchone(), self.description)
-    
+
     def fetchallmap(self):
         desc = self.description
         return [RowMapping(row, desc) for row in self.fetchall()]
-    
+
     def fetchmanymap(self, size=None):
         desc = self.description
         return [RowMapping(row, desc) for row in self.fetchmany(size)]
@@ -623,13 +628,13 @@ class Cursor:
 
     def setoutputsize(self, size, column):
         pass
-    
+
     @property
     def description(self):
-        return [(x.aliasname, x.sqltype, x.display_length(), x.io_length(), 
+        return [(x.aliasname, x.sqltype, x.display_length(), x.io_length(),
                     x.precision(), x.sqlscale, True if x.null_ok else False)
                 for x in self._xsqlda]
-        
+
     @property
     def rowcount(self):
         # to be implemented
@@ -644,7 +649,7 @@ class Connection(WireProtocol):
         else:
             user = os.environ['USER']
             hostname = socket.gethostname()
-        return bytes([1] + [len(user)] + [ord(c) for c in user] 
+        return bytes([1] + [len(user)] + [ord(c) for c in user]
                 + [4] + [len(hostname)] + [ord(c) for c in hostname] + [6, 0])
 
     def cursor(self):
@@ -681,7 +686,7 @@ class Connection(WireProtocol):
             self.main_transaction.rollback(retaining=retaining, savepoint=savepoint)
 
     def __init__(self, dsn=None, user=None, password=None, host=None,
-                    database=None, charset=DEFAULT_CHARSET, port=3050, 
+                    database=None, charset=DEFAULT_CHARSET, port=3050,
                     page_size=None, is_services = False, cloexec=False):
         if dsn:
             i = dsn.find(':')
@@ -765,25 +770,25 @@ class Connection(WireProtocol):
     def _db_info_convert_type(self, info_request, v):
         REQ_INT = set([
             isc_info_allocation, isc_info_no_reserve, isc_info_db_sql_dialect,
-            isc_info_ods_minor_version, isc_info_ods_version, 
+            isc_info_ods_minor_version, isc_info_ods_version,
             isc_info_page_size, isc_info_current_memory, isc_info_forced_writes,
             isc_info_max_memory, isc_info_num_buffers, isc_info_sweep_interval,
-            isc_info_limbo, isc_info_attachment_id, isc_info_fetches, 
-            isc_info_marks, isc_info_reads, isc_info_writes, 
+            isc_info_limbo, isc_info_attachment_id, isc_info_fetches,
+            isc_info_marks, isc_info_reads, isc_info_writes,
             isc_info_set_page_buffers, isc_info_db_read_only,
-            isc_info_db_size_in_pages, isc_info_page_errors, 
-            isc_info_record_errors, isc_info_bpage_errors, 
+            isc_info_db_size_in_pages, isc_info_page_errors,
+            isc_info_record_errors, isc_info_bpage_errors,
             isc_info_dpage_errors, isc_info_ipage_errors,
             isc_info_ppage_errors, isc_info_tpage_errors,
             # may not be available in some versions of Firebird
-            isc_info_oldest_transaction, isc_info_oldest_active, 
+            isc_info_oldest_transaction, isc_info_oldest_active,
             isc_info_oldest_snapshot, isc_info_next_transaction,
             isc_info_active_tran_count
         ])
         REQ_COUNT = set([
-            isc_info_backout_count, isc_info_delete_count, 
+            isc_info_backout_count, isc_info_delete_count,
             isc_info_expunge_count, isc_info_insert_count, isc_info_purge_count,
-            isc_info_read_idx_count, isc_info_read_seq_count, 
+            isc_info_read_idx_count, isc_info_read_seq_count,
             isc_info_update_count
         ])
 
@@ -988,7 +993,7 @@ class RowMapping(Mapping):
     """dict like interface to result rows
     """
     __slots__ = ("_description", "_fields")
-    
+
     def __init__(self, row, description):
         self._fields = fields = {}
         # result may contain multiple fields with the same name. The
@@ -1004,7 +1009,7 @@ class RowMapping(Mapping):
             return fields[key]
         except KeyError:
             pass
-        
+
         # normalize field name
         if key[0] == '"' and key[-1] == '"':
             # field names in quotes are case sensitive
@@ -1012,31 +1017,31 @@ class RowMapping(Mapping):
         else:
             # default is all upper case fields
             normkey = key.upper()
-        
+
         try:
             return fields[normkey]
         except KeyError:
             raise KeyError("RowMapping has no field names '%s'. Available "
-                           "field names are: %s" % 
+                           "field names are: %s" %
                            (key, ", ".join(self.keys())))
-            
+
     def __iter__(self):
         return iter(self._fields)
-    
+
     def __len__(self):
         return len(self._fields)
-    
+
     def __repr__(self):
         fields = self._fields
-        values = ["%s=%r" % (desc[0], fields[desc[0]]) 
+        values = ["%s=%r" % (desc[0], fields[desc[0]])
                   for desc in self._description]
-        return ("<RowMapping at 0x%08x with fields: %s>" % 
-                (id(self), ", ".join(values))) 
+        return ("<RowMapping at 0x%08x with fields: %s>" %
+                (id(self), ", ".join(values)))
 
     if not HAS_MAPPING:
         def keys(self):
             return list(self)
-        
+
         def __setitem__(self, key, value):
             raise NotImplementedError
 
