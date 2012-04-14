@@ -9,7 +9,7 @@
 ##############################################################################
 import os,sys
 sys.path.append('./../')
-import kinterbasdb
+from firebirdsql import *
 
 TEST_HOST = 'localhost'
 TEST_PORT = 3050
@@ -19,9 +19,7 @@ TEST_USER = 'sysdba'
 TEST_PASS = 'masterkey'
 
 def create():
-    conn = kinterbasdb.create_database(
-        "create database '%s' user '%s' password '%s' " % (
-                                        TEST_DATABASE, TEST_USER, TEST_PASS))
+    conn = create_database(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
 
     conn.cursor().execute('CREATE TABLE test_table (a integer)')
     conn.cursor().execute('''
@@ -37,7 +35,7 @@ def create():
     conn.commit()
 
 def handler():
-    conn = kinterbasdb.connect(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
+    conn = connect(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
     conduit = conn.event_conduit(['event_a', 'event_b', 'event_d'])
     result = conduit.wait()
     print('HANDLER: An event notification has arrived:')
@@ -45,7 +43,7 @@ def handler():
     conduit.close()
 
 def producer():
-    conn = kinterbasdb.connect(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
+    conn = connect(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
     conn.cursor().execute('insert into test_table values (1)')
     conn.commit()
 

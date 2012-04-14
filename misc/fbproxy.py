@@ -1235,8 +1235,8 @@ def _database_parameter_block(bytes):
             'isc_dpb_password_enc', 'isc_dpb_sql_role_name', 
             'isc_dpb_old_start_file', 'isc_dpb_set_db_charset',
             'isc_dpb_working_directory', 'isc_dpb_gbak_attach',
-            'isc_dpb_process_name',
-            'isc_spb_process_name']:
+            'isc_dpb_process_name', 'isc_spb_process_name',
+            'isc_dpb_utf8_filename']:
             l = ord(bytes[i+1])
             print '[' + bytes[i+2:i+2+l] + ']',
             i = i + 2 + l
@@ -1765,6 +1765,25 @@ def op_create(sock):
     _database_parameter_block(param)
     up.done()
     return msg
+
+def op_que_events(sock):
+    msg = sock.recv(bufsize)
+    up = xdrlib.Unpacker(msg)
+    print '\tdb_handle=', up.unpack_int()
+    print '\tEventParameterBuffer<%s>' % (up.unpack_string())
+    print '\tast=', up.unpack_int()
+    print '\tevent_args=', up.unpack_int()
+    print '\tevent_rid=', up.unpack_int()
+    return msg
+
+def op_cancel_events(sock):
+    msg = sock.recv(bufsize)
+    up = xdrlib.Unpacker(msg)
+    print '\tdb_handle=', up.unpack_int()
+    print '\tevent_id<%x>' % (up.unpack_uint())
+    up.done()
+    return msg
+
 
 def op_dummy(sock):
     return None

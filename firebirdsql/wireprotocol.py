@@ -175,7 +175,7 @@ class WireProtocol:
     op_info_transaction = 42
     op_batch_segments = 44
     op_que_events = 48
-    op_cancel_event = 49
+    op_cancel_events = 49
     op_commit_retaining = 50
     op_event = 52
     op_connect_request = 53
@@ -675,6 +675,14 @@ class WireProtocol:
         p = xdrlib.Packer()
         p.pack_int(self.op_close_blob)
         p.pack_int(blob_handle)
+        send_channel(self.sock, p.get_buffer())
+
+    @wire_operation
+    def _op_cancel_events(self, event_id):
+        p = xdrlib.Packer()
+        p.pack_int(self.op_cancel_events)
+        p.pack_int(self.db_handle)
+        p.pack_int(event_id)
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
