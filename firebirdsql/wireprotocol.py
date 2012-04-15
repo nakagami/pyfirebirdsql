@@ -678,6 +678,22 @@ class WireProtocol:
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
+    def _op_que_events(self, names, ast, args, event_id):
+        params = bytes([1])
+        for name in names:
+            params += bytes([len(name)])
+            params += self.str_to_bytes(name)
+            params += int_to_bytes(0, 4)
+        p = xdrlib.Packer()
+        p.pack_int(self.op_que_events)
+        p.pack_int(self.db_handle)
+        p.pack_string(self.str_to_bytes(params))
+        p.pack_int(ast)
+        p.pack_int(args)
+        p.pack_int(event_id)
+        send_channel(self.sock, p.get_buffer())
+
+    @wire_operation
     def _op_cancel_events(self, event_id):
         p = xdrlib.Packer()
         p.pack_int(self.op_cancel_events)
