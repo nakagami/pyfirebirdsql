@@ -149,7 +149,7 @@ if __name__ == '__main__':
     conn.commit()
     try:
         for r in cur.fetchall():
-            print r
+            print(r)
     except firebirdsql.OperationalError:
         e = sys.exc_info()[1]
         assert e.sql_code == -504 # Invalid cursor reference Corsor is not open.
@@ -182,13 +182,13 @@ if __name__ == '__main__':
     cur = conn.cursor()
     cur.execute("select * from foo")
     for k,v in cur.fetchonemap().items():
-        print k, v
+        print(k, v)
 
     print('fetchonemap() empty record')
     cur = conn.cursor()
     cur.execute("select * from rdb$roles")
     for k,v in cur.fetchonemap().items():
-        print k, v
+        print(k, v)
 
     print('cursor iteration')
     cur = conn.cursor()

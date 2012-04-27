@@ -371,7 +371,7 @@ class PreparedStatement:
         transaction = self.cur.transaction
         connection = transaction.connection
 
-        connection._op_allocate_statement(transaction)
+        connection._op_allocate_statement()
         (h, oid, buf) = connection._op_response()
         self.stmt_handle = h
 
@@ -413,7 +413,7 @@ class PreparedStatement:
 class Cursor:
     def __init__(self, trans, get_plan=False):
         self._transaction = trans
-        self.transaction.connection._op_allocate_statement(self.transaction)
+        self.transaction.connection._op_allocate_statement()
         (h, oid, buf) = self.transaction.connection._op_response()
         self.stmt_handle = h
         self.arraysize = 1
@@ -539,7 +539,7 @@ class Cursor:
         # recreate stmt_handle
         connection._op_free_statement(stmt_handle, 2) # DSQL_drop
         (h, oid, buf) = connection._op_response()
-        connection._op_allocate_statement(self.transaction)
+        connection._op_allocate_statement()
         (h, oid, buf) = connection._op_response()
         self.stmt_handle = h
 

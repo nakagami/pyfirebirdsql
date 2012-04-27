@@ -460,7 +460,7 @@ class WireProtocol:
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
-    def _op_allocate_statement(self, trans_handle):
+    def _op_allocate_statement(self):
         p = xdrlib.Packer()
         p.pack_int(self.op_allocate_statement)
         p.pack_int(self.db_handle)
