@@ -702,6 +702,15 @@ class WireProtocol:
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
+    def _op_connect_request(self):
+        p = xdrlib.Packer()
+        p.pack_int(self.op_connect_request)
+        p.pack_int(1)    # async
+        p.pack_int(self.db_handle)
+        p.pack_int(0)
+        send_channel(self.sock, p.get_buffer())
+
+    @wire_operation
     def _op_response(self):
         b = recv_channel(self.sock, 4)
         while bytes_to_bint(b) == self.op_dummy:

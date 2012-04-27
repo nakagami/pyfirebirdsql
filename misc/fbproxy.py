@@ -1794,6 +1794,14 @@ def op_cancel_events(sock):
     up.done()
     return msg
 
+def op_connect_request(sock):
+    msg = sock.recv(bufsize)
+    up = xdrlib.Unpacker(msg)
+    print '\ttype=',up.unpack_int()
+    print '\tdb_handle=', up.unpack_int()
+    asset up.unpack_int() == 0
+    up.done()
+    return msg
 
 def op_dummy(sock):
     return None
