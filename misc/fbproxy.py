@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 ##############################################################################
-# Copyright (c) 2010 Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2010-2012 Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 # Licensed under the New BSD License
 # (http://www.freebsd.org/copyright/freebsd-license.html)
