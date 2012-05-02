@@ -640,6 +640,24 @@ class Cursor:
         # to be implemented
         return -1
 
+class EventConduit:
+    def __init__(self, conn, names):
+        conn._op_que_events(names, 0, 0, conn.last_event_id)
+        (h, oid, buf) = conn._op_response()
+        self.event_id = h
+        conn.last_event_id += 1
+        self.connection = conn
+        self.event_names = names
+
+    def wait(self):
+        r = {}
+        for name in self.event_names:
+            r[name] = 1
+        return r
+
+    def close(self):
+        self.connection._op_cancel_events(self.event_id)
+        (h, oid, buf) = self.connection._op_response()
 
 class Connection(WireProtocol):
     def uid(self):
@@ -733,6 +751,7 @@ class Connection(WireProtocol):
         (h, oid, buf) = self._op_response()
         self.db_handle = h
         self.closed = False
+        self.last_event_id = 0
 
     def set_isolation_level(self, isolation_level):
         self.isolation_level = isolation_level
@@ -887,6 +906,9 @@ class Connection(WireProtocol):
         (h, oid, buf) = self._op_response()
         self.closed = True
         delattr(self, "db_handle")
+
+    def event_conduit(self, event_names):
+        return EventConduit(self, event_names)
 
     def __del__(self):
         if hasattr(self, "db_handle") and (not self.closed):
