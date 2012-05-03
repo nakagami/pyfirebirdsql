@@ -8,7 +8,8 @@
 ##############################################################################
 import xdrlib, time, datetime, decimal, struct
 from firebirdsql.fberrmsgs import messages
-from firebirdsql import (DatabaseError, InternalError, OperationalError, 
+from firebirdsql import (DisconnectByPeer,
+    DatabaseError, InternalError, OperationalError,
     ProgrammingError, IntegrityError, DataError, NotSupportedError,
 )
 from firebirdsql.consts import *
@@ -159,7 +160,9 @@ class WireProtocol:
     buffer_length = 1024
 
     op_connect = 1
+    op_exit = 2
     op_accept = 3
+    op_disconnect = 6
     op_response = 9
     op_dummy = 17
     op_attach = 19
@@ -295,6 +298,14 @@ class WireProtocol:
             raise OperationalError(message, gds_codes, sql_code)
 
         return (h, oid, buf)
+
+    def _parse_op_event(self):
+        b = recv_channel(self.sock, 4096) # too large TODO: read step by step
+        # TODO: parse event name
+        db_handle = bytes_to_bint(b[0:4])
+        event_id = bytes_to_bint(b[-4:])
+
+        return (db_handle, event_id, {})
 
     @wire_operation
     def _op_connect(self):
@@ -718,6 +729,19 @@ class WireProtocol:
         if bytes_to_bint(b) != self.op_response:
             raise InternalError
         return self._parse_op_response()
+
+    @wire_operation
+    def _op_event(self):
+        b = recv_channel(self.sock, 4)
+        while bytes_to_bint(b) == self.op_dummy:
+            b = recv_channel(self.sock, 4)
+        if bytes_to_bint(b) == self.op_response:
+            return self._parse_op_response()
+        if bytes_to_bint(b) == self.op_exit or bytes_to_bint(b) == self.op_exit:
+            raise DisconnectByPeer
+        if bytes_to_bint(b) != self.op_event:
+            raise InternalError
+        return self._parse_op_event()
 
     @wire_operation
     def _op_sql_response(self, xsqlda):

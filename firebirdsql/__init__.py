@@ -26,6 +26,9 @@ class InterfaceError(Error):
 class DatabaseError(Error):
     pass
 
+class DisconnectByPeer(Warning):
+    pass
+
 class InternalError(DatabaseError):
     def __init__(self):
         DatabaseError.__init__(self, 'InternalError')
