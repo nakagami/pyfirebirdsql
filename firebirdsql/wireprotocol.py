@@ -170,7 +170,6 @@ class WireProtocol:
     op_accept = 3
     op_disconnect = 6
     op_response = 9
-    op_dummy = 17
     op_attach = 19
     op_create = 20
     op_detach = 21
@@ -198,6 +197,7 @@ class WireProtocol:
     op_free_statement = 67
     op_prepare_statement = 68
     op_info_sql = 70
+    op_dummy = 71
     op_execute2 = 76
     op_sql_response = 78
     op_drop_database = 81
