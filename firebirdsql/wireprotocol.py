@@ -725,11 +725,22 @@ class WireProtocol:
         p.pack_int(0)
         send_channel(self.sock, p.get_buffer())
 
-        h = bytes_to_bint(recv_channel(self.sock, 4))
-        port = bytes_to_int(recv_channel(self.sock, 2))
-        family = recv_channel(self.sock, 2)
         b = recv_channel(self.sock, 4)
-        ip_address = "%d.%d.%d.%d" % (b[3], b[2], b[1], b[0])
+        while bytes_to_bint(b) == self.op_dummy:
+            b = recv_channel(self.sock, 4)
+        if bytes_to_bint(b) != self.op_response:
+            raise InternalError
+
+        h = bytes_to_bint(recv_channel(self.sock, 4))
+        recv_channel(self.sock, 8)  # garbase
+        ln = bytes_to_bint(recv_channel(self.sock, 4))
+        ln += ln % 4    # padding
+        family = bytes_to_int(recv_channel(self.sock, 2))
+        port = bytes_to_int(recv_channel(self.sock, 2))
+        b = recv_channel(self.sock, 4)
+        ip_address = '.'.join([str(bytes_to_int(c)) for c in b])
+        ln -= 8
+        recv_channel(self.sock, ln)
 
         (gds_codes, sql_code, message) = self._parse_status_vector()
         if sql_code or message:

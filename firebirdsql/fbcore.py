@@ -650,6 +650,8 @@ class EventConduit:
         self.event_names = names
 
     def wait(self):
+        (h, port, family, ip_address) = self.connection._op_connect_request()
+
         r = {}
         for name in self.event_names:
             r[name] = 1
