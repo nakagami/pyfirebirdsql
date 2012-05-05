@@ -804,3 +804,20 @@ class WireProtocol:
         b = recv_channel(self.sock, 32)     # ??? why 32 bytes skip
 
         return r
+
+    def _wait_event(self, sock):
+        event_id = 0
+        while True:
+            op = bytes_to_int(recv_channel(sock, 4))
+            if op == self.op_dummy:
+                pass
+            elif op == self.op_exit or op == self.op_disconnect:
+                break
+            elif op == self.op_event:
+                db_handle = bytes_to_int(recv_channel(sock, 4))
+                ln = bytes_to_int(recv_channel(sock, 4))
+                b = recv_channel(sock, ln)
+                event_id = bytes_to_int(recv_channel(sock, 4))
+                break
+
+        return (event_id, )

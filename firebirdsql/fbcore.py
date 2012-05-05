@@ -656,7 +656,8 @@ class EventConduit:
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         sock.connect((ip_address, port))
 
-        # DO SOMETHING
+        (event_id, ) = self.connection._wait_event(sock)
+        # TODO: SOMETHING
         for name in self.event_names:
             r[name] = 1
 
