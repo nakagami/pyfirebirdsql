@@ -262,14 +262,7 @@ class WireProtocol:
         "convert bytes array to unicode string"
         return b.decode(self.charset_map.get(self.charset, self.charset))
 
-    def _parse_op_response(self):
-        b = recv_channel(self.sock, 16)
-        h = bytes_to_bint(b[0:4])         # Object handle
-        oid = b[4:12]                       # Object ID
-        buf_len = bytes_to_bint(b[12:])   # buffer length
-        buf = recv_channel(self.sock, buf_len, True)
-
-        # Parse status vector
+    def _parse_status_vector(self):
         sql_code = 0
         gds_codes = set()
         message = ''
@@ -294,6 +287,17 @@ class WireProtocol:
                 message = message.replace('@' + str(num_arg), n)
             n = bytes_to_bint(recv_channel(self.sock, 4))
 
+        return (gds_codes, sql_code, message)
+
+
+    def _parse_op_response(self):
+        b = recv_channel(self.sock, 16)
+        h = bytes_to_bint(b[0:4])         # Object handle
+        oid = b[4:12]                       # Object ID
+        buf_len = bytes_to_bint(b[12:])   # buffer length
+        buf = recv_channel(self.sock, buf_len, True)
+
+        (gds_codes, sql_code, message) = self._parse_status_vector()
         if sql_code or message:
             raise OperationalError(message, gds_codes, sql_code)
 
@@ -720,6 +724,18 @@ class WireProtocol:
         p.pack_int(self.db_handle)
         p.pack_int(0)
         send_channel(self.sock, p.get_buffer())
+
+        h = bytes_to_bint(recv_channel(self.sock, 4))
+        port = bytes_to_int(recv_channel(self.sock, 2))
+        family = recv_channel(self.sock, 2)
+        b = recv_channel(self.sock, 4)
+        ip_address = "%d.%d.%d.%d" % (b[3], b[2], b[1], b[0])
+
+        (gds_codes, sql_code, message) = self._parse_status_vector()
+        if sql_code or message:
+            raise OperationalError(message, gds_codes, sql_code)
+
+        return (h, port, family, ip_address)
 
     @wire_operation
     def _op_response(self):
