@@ -1799,7 +1799,7 @@ def op_connect_request(sock):
     up = xdrlib.Unpacker(msg)
     print '\ttype=',up.unpack_int()
     print '\tdb_handle=', up.unpack_int()
-    asset up.unpack_int() == 0
+    assert up.unpack_int() == 0
     up.done()
     return msg
 
