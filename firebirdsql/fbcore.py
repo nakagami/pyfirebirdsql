@@ -650,11 +650,17 @@ class EventConduit:
         self.event_names = names
 
     def wait(self):
-        (h, port, family, ip_address) = self.connection._op_connect_request()
-
         r = {}
+        (h, port, family, ip_address) = self.connection._op_connect_request()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        sock.connect((ip_address, port))
+
+        # DO SOMETHING
         for name in self.event_names:
             r[name] = 1
+
+        sock.close()
         return r
 
     def close(self):

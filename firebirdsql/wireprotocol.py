@@ -41,15 +41,21 @@ def wire_operation(fn):
         return r
     return f
 
-def bytes_to_bint(b):           # Read as big endian
-    fmtmap = {1: 'b', 2: '>h', 4: '>l', 8: '>q'}
+def bytes_to_bint(b, u=False):           # Read as big endian
+    if u:
+        fmtmap = {1: 'B', 2: '>H', 4: '>L', 8: '>Q'}
+    else:
+        fmtmap = {1: 'b', 2: '>h', 4: '>l', 8: '>q'}
     fmt = fmtmap.get(len(b))
     if fmt is None:
         raise InternalError
     return struct.unpack(fmt, b)[0]
 
-def bytes_to_int(b):            # Read as little endian.
-    fmtmap = {1: 'b', 2: '<h', 4: '<l', 8: '<q'}
+def bytes_to_int(b, u=False):            # Read as little endian.
+    if u:
+        fmtmap = {1: 'B', 2: '<H', 4: '<L', 8: '<Q'}
+    else:
+        fmtmap = {1: 'b', 2: '<h', 4: '<l', 8: '<q'}
     fmt = fmtmap.get(len(b))
     if fmt is None:
         raise InternalError
@@ -735,8 +741,8 @@ class WireProtocol:
         recv_channel(self.sock, 8)  # garbase
         ln = bytes_to_bint(recv_channel(self.sock, 4))
         ln += ln % 4    # padding
-        family = bytes_to_int(recv_channel(self.sock, 2))
-        port = bytes_to_int(recv_channel(self.sock, 2))
+        family = bytes_to_bint(recv_channel(self.sock, 2))
+        port = bytes_to_bint(recv_channel(self.sock, 2), u=True)
         b = recv_channel(self.sock, 4)
         ip_address = '.'.join([str(bytes_to_int(c)) for c in b])
         ln -= 8
