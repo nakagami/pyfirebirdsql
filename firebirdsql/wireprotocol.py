@@ -805,7 +805,7 @@ class WireProtocol:
 
         return r
 
-    def _wait_event(self, sock):
+    def _wait_for_event(self, sock):
         event_id = 0
         while True:
             op = bytes_to_int(recv_channel(sock, 4))
