@@ -36,7 +36,8 @@ def create():
 
 def handler():
     conn = connect(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
-    conduit = conn.event_conduit(['event_a', 'event_b', 'event_d'])
+#    conduit = conn.event_conduit(['event_a', 'event_b', 'event_d'])
+    conduit = conn.event_conduit(['event_a'])
     result = conduit.wait()
     print('HANDLER: An event notification has arrived:')
     print(result)

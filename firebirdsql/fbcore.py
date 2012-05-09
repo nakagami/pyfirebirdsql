@@ -642,10 +642,6 @@ class Cursor:
 
 class EventConduit:
     def __init__(self, conn, names):
-        conn._op_que_events(names, 0, 0, conn.last_event_id)
-        (h, oid, buf) = conn._op_response()
-        self.event_id = h
-        conn.last_event_id += 1
         self.connection = conn
         self.event_names = names
 
@@ -655,6 +651,20 @@ class EventConduit:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         sock.connect((ip_address, port))
+
+        self.connection.last_event_id += 1
+        self.connection._op_que_events(self.event_names,
+                                        0, 0, self.connection.last_event_id)
+        (h, oid, buf) = self.connection._op_response()
+        self.event_id = h
+
+        self.connection.last_event_id += 1
+        self.connection._op_que_events(self.event_names,
+                                        0, 0, self.connection.last_event_id)
+        (h, oid, buf) = self.connection._op_response()
+        self.event_id = h
+        self.connection.last_event_id += 1
+
 
         (event_id, ) = self.connection._wait_for_event(sock)
         # TODO: SOMETHING
