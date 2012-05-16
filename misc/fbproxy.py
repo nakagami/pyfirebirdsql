@@ -1806,8 +1806,13 @@ def op_connect_request(sock):
 def op_dummy(sock):
     return None
 
+#-----------------------------------------------------------------------------
+# proxy tcp socket side by side
+def proxy_socket_forever(server_name, server_port, listen_port):
+    pass
 
 #-----------------------------------------------------------------------------
+# proxy wire protocol
 def process_wire(client_socket, server_name, server_port):
     # Socket to Firebird server.
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -1846,7 +1851,16 @@ def process_wire(client_socket, server_name, server_port):
         if get_last_op_name() in (
             'op_service_detach', 'op_detach'):
             break
-    
+
+def proxy_wire_forever(server_name, server_port, listen_port):
+    # Socket from client.
+    cs = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    cs.bind(('', listen_port))
+    cs.listen(5)
+    while True:
+        sock, addr = cs.accept()
+        thread.start_new_thread(process_wire, (sock, server_name, server_port))
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -1864,12 +1878,6 @@ if __name__ == '__main__':
         port = int(sys.argv[2])
     else:
         port = 3050
-    
-    # Socket from client.
-    cs = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    cs.bind(('', port))
-    cs.listen(5)
-    while True:
-        sock, addr = cs.accept()
-        thread.start_new_thread(process_wire, (sock, server_name, server_port))
+
+    proxy_wire_forever(server_name, server_port, port)
 
