@@ -1825,7 +1825,7 @@ def proxy_socket(client_socket, server_name, server_port):
             r = server_socket.recv(1)
             if r:
                 print '<%02x' % (ord(r),)
-                client_socket.send(s)
+                client_socket.send(r)
         except socket.error:
             pass
 
