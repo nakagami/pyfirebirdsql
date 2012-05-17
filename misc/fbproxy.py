@@ -1808,8 +1808,34 @@ def op_dummy(sock):
 
 #-----------------------------------------------------------------------------
 # proxy tcp socket side by side
+def proxy_socket(client_socket, server_name, server_port):
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.connect((server_name, server_port))
+    server_socket.setblocking(0)
+    client_socket.setblocking(0)
+    while True:
+        try:
+            s = client_socket.recv(1)
+            if s:
+                server_socket.send(s)
+                print '>%02x' % (ord(s),)
+        except socket.error:
+            pass
+        try:
+            r = server_socket.recv(1)
+            if r:
+                print '<%02x' % (ord(r),)
+                client_socket.send(s)
+        except socket.error:
+            pass
+
 def proxy_socket_forever(server_name, server_port, listen_port):
-    pass
+    cs = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    cs.bind(('', listen_port))
+    cs.listen(5)
+    while True:
+        sock, addr = cs.accept()
+        thread.start_new_thread(proxy_socket, (sock, server_name, server_port))
 
 #-----------------------------------------------------------------------------
 # proxy wire protocol
