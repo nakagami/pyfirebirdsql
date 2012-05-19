@@ -1022,6 +1022,37 @@ def _bytes_to_int(bytes, i, len): # Read as little endian
         val = ctypes.c_int(val).value
     return val
 
+def _bint_to_bytes(val, nbytes): # Convert int value to big endian bytes.
+    v = abs(val)
+    b = []
+    for n in range(nbytes):
+        b.append((v >> (8*(nbytes - n - 1)) & 0xff))
+    if val < 0:
+        for i in range(nbytes):
+            b[i] = ~b[i] + 256
+        b[-1] += 1
+        for i in range(nbytes):
+            if b[nbytes -i -1] == 256:
+                b[nbytes -i -1] = 0
+                b[nbytes -i -2] += 1
+    return ''.join([chr(c) for c in b])
+
+def _int_to_bytes(val, nbytes):  # Convert int value to little endian bytes.
+    v = abs(val)
+    b = []
+    for n in range(nbytes):
+        b.append((v >> (8 * n)) & 0xff)
+    if val < 0:
+        for i in range(nbytes):
+            b[i] = ~b[i] + 256
+        b[0] += 1
+        for i in range(nbytes):
+            if b[i] == 256:
+                b[i] = 0
+                b[i+1] += 1
+    return ''.join([chr(c) for c in b])
+
+
 def _calc_blr(xsqlda):  # calc from sqlda to BLR format data.
     ln = len(xsqlda) * 2
     blr = [5, 2, 4, 0, ln & 255, ln >> 8]
@@ -1351,8 +1382,20 @@ def op_response(sock):
     elif get_last_op_name() == 'op_info_sql':
         parse_sql_info(bs, get_prepare_statement())
     elif get_last_op_name() == 'op_connect_request':
-        print '\tport:', _bytes_to_bint(bs, 2, 2)
-        print '\tip address:%d.%d.%d.%d' % (ord(bs[4]), ord(bs[5]), ord(bs[6]), ord(bs[7]))
+        server_port = _bytes_to_bint(bs, 2, 2)
+        server_ip = '.'.join([str(ord(bs[i])) for i in (4, 5, 6, 7)])
+        print '\tport:', server_port
+        print '\tip address:', server_ip
+        # override new ip address in packet
+        if False:
+            port = server_port + 1
+            bs_new_ip = _bint_to_bytes(port, 2)
+            bs = bs[:2] + bs_new_ip + bs[4:]
+            print '\tnew->'
+            hex_dump(bs)
+            thread.start_new_thread(
+                proxy_socket_forever, (server_ip, server_port, port))
+
     # http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_60_upd_sv_fs
     sv = sock.recv(bufsize)
     i = 0
