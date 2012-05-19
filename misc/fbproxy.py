@@ -1319,13 +1319,13 @@ def op_response(sock):
     head = sock.recv(16)
     print '\thandle<' + binascii.b2a_hex(head[0:4]) + '>id<' + binascii.b2a_hex(head[4:12]) + '>',
     nbytes = _bytes_to_bint32(head, 12)
-    bytes = _need_nbytes_align(sock, nbytes)
+    bs = _need_nbytes_align(sock, nbytes)
     print 'Data len=%d' % (nbytes)
-    hex_dump(bytes)
+    hex_dump(bs)
     if get_last_op_name() == 'op_info_database':
         i = 0
-        while i < len(bytes):
-            s = isc_info_names[ord(bytes[i])]
+        while i < len(bs):
+            s = isc_info_names[ord(bs[i])]
             print '\t' + s,
             if s == 'isc_info_end':
                 print
@@ -1338,19 +1338,21 @@ def op_response(sock):
                 'isc_info_expunge_count', 'isc_info_page_size',
                 'isc_info_sweep_interval', 'isc_info_user_names',
                 ]:
-                l = _bytes_to_int(bytes, i+1, 2)
-                print '[' + binascii.b2a_hex(bytes[i+3:i+3+l]) + ']',
+                l = _bytes_to_int(bs, i+1, 2)
+                print '[' + binascii.b2a_hex(bs[i+3:i+3+l]) + ']',
                 if s == 'isc_info_firebird_version':
-                    print bytes[i+5:i+3+l],
+                    print bs[i+5:i+3+l],
                 i = i + 3 + l
             else:
                 i = i + 1
             print
     elif get_last_op_name() == 'op_prepare_statement':
-        parse_sql_info(bytes, get_prepare_statement())
+        parse_sql_info(bs, get_prepare_statement())
     elif get_last_op_name() == 'op_info_sql':
-        parse_sql_info(bytes, get_prepare_statement())
-
+        parse_sql_info(bs, get_prepare_statement())
+    elif get_last_op_name() == 'op_connect_request':
+        print '\tport:', _bytes_to_bint(bs, 2, 2)
+        print '\tip address:%d.%d.%d.%d' % (ord(bs[4]), ord(bs[5]), ord(bs[6]), ord(bs[7]))
     # http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_60_upd_sv_fs
     sv = sock.recv(bufsize)
     i = 0
@@ -1374,7 +1376,7 @@ def op_response(sock):
             print '<' + sv[i:i + nbytes] + '>',
             i += nbytes
             if nbytes % 4:
-                i += 4 - nbytes % 4  # 4 bytes word alignment
+                i += 4 - nbytes % 4  # 4 bs word alignment
         if s == 'isc_arg_end':
             i += 1
             break
@@ -1383,7 +1385,7 @@ def op_response(sock):
         i += ((4-i) & 3)
         print '\tpiggyback[' + binascii.b2a_hex(sv[i:]) + ']', len(sv) - i
         asc_dump(sv[i:])
-    return head + bytes + sv
+    return head + bs + sv
 
 op_response_piggyback = op_response
 
