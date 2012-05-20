@@ -1387,14 +1387,13 @@ def op_response(sock):
         print '\tport:', server_port
         print '\tip address:', server_ip
         # override new ip address in packet
-        if False:
+        if True:
             port = server_port + 1
             bs_new_ip = _bint_to_bytes(port, 2)
             bs = bs[:2] + bs_new_ip + bs[4:]
             print '\tnew->'
             hex_dump(bs)
-            thread.start_new_thread(
-                proxy_socket_forever, (server_ip, server_port, port))
+            thread.start_new_thread(recv_forever, (server_ip, server_port, port))
 
     # http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_60_upd_sv_fs
     sv = sock.recv(bufsize)
@@ -1850,6 +1849,23 @@ def op_connect_request(sock):
 
 def op_dummy(sock):
     return None
+
+#-----------------------------------------------------------------------------
+# recive and dump bytes
+def recv_forever(server_name, server_port, listen_port):
+    cs = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    cs.bind(('', listen_port))
+    cs.listen(1)
+    client_socket, addr = cs.accept()
+
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.connect((server_name, server_port))
+
+    while True:
+        r = server_socket.recv(1)
+        if r:
+            print '>%02x' % (ord(r),),
+            client_socket.send(r)
 
 #-----------------------------------------------------------------------------
 # proxy tcp socket side by side
