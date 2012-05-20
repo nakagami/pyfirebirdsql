@@ -640,7 +640,7 @@ class Cursor:
         # to be implemented
         return -1
 
-class EventConduit:
+class EventConduit(WireProtocol):
     def __init__(self, conn, names):
         self.connection = conn
         self.event_names = names
@@ -648,9 +648,8 @@ class EventConduit:
     def wait(self):
         r = {}
         (h, port, family, ip_address) = self.connection._op_connect_request()
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        sock.connect((ip_address, port))
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.connect((ip_address, port))
 
         self.connection.last_event_id += 1
         self.connection._op_que_events(self.event_names,
@@ -665,9 +664,9 @@ class EventConduit:
         self.event_id = h
         self.connection.last_event_id += 1
 
-
-        (event_id, ) = self.connection._wait_for_event(sock)
+        (event_id, buf) = self._wait_for_event()
         # TODO: SOMETHING
+        print buf
         for name in self.event_names:
             r[name] = 1
 
