@@ -1866,6 +1866,9 @@ def recv_forever(server_name, server_port, listen_port):
         if r:
             print '>%02x' % (ord(r),),
             client_socket.send(r)
+        else:
+            print 'recv thread exit'
+            thread.exit()
 
 #-----------------------------------------------------------------------------
 # proxy tcp socket side by side
