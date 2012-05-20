@@ -806,18 +806,28 @@ class WireProtocol:
         return r
 
     def _wait_for_event(self):
+        event_names = {}
         event_id = 0
         while True:
-            op = bytes_to_int(recv_channel(self.sock, 4))
+            op = bytes_to_bint(recv_channel(self.sock, 4))
             if op == self.op_dummy:
                 pass
             elif op == self.op_exit or op == self.op_disconnect:
                 break
             elif op == self.op_event:
                 db_handle = bytes_to_int(recv_channel(self.sock, 4))
-                ln = bytes_to_int(recv_channel(self.sock, 4))
+                ln = bytes_to_bint(recv_channel(self.sock, 4))
                 b = recv_channel(self.sock, ln)
+                assert byte_to_int(b[0]) == 1
+                i = 1
+                while i < len(b):
+                    ln = byte_to_int(b[i])
+                    s = self.connection.bytes_to_str(b[i+1:i+1+ln])
+                    n = bytes_to_int(b[i+1+ln:i+1+ln+4])
+                    event_names[s] = n
+                    i += ln + 5
+
                 event_id = bytes_to_int(recv_channel(self.sock, 4))
                 break
 
-        return (event_id, b)
+        return (event_id, event_names)

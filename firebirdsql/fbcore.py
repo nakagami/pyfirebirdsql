@@ -664,18 +664,15 @@ class EventConduit(WireProtocol):
         self.event_id = h
         self.connection.last_event_id += 1
 
-        (event_id, buf) = self._wait_for_event()
-        # TODO: SOMETHING
-        print buf
-        for name in self.event_names:
-            r[name] = 1
+        (event_id, event_names) = self._wait_for_event()
+        print event_names
 
-        sock.close()
-        return r
+        return (event_id, event_names)
 
     def close(self):
         self.connection._op_cancel_events(self.event_id)
         (h, oid, buf) = self.connection._op_response()
+        self.sock.close()
 
 class Connection(WireProtocol):
     def uid(self):
