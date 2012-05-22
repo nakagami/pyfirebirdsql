@@ -1815,6 +1815,7 @@ def op_que_events(sock):
     up = xdrlib.Unpacker(msg)
     print '\tdb_handle=', up.unpack_int()
     prs = up.unpack_string()    # param raw strings
+    print '\tprs=[' +  binascii.b2a_hex(prs) + ']'
     param_strings = []
     assert ord(prs[0]) == 1
     i = 1
@@ -1864,7 +1865,7 @@ def recv_forever(server_name, server_port, listen_port):
     while True:
         r = server_socket.recv(1)
         if r:
-            print '>%02x' % (ord(r),),
+            print '%02x' % (ord(r),),
             client_socket.send(r)
         else:
             print 'recv thread exit'
