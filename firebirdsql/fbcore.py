@@ -643,7 +643,9 @@ class Cursor:
 class EventConduit(WireProtocol):
     def __init__(self, conn, names):
         self.connection = conn
-        self.event_names = names
+        self.event_names = {}
+        for name in names:
+            self.event_names[name] = 0
 
     def wait(self):
         r = {}
@@ -657,6 +659,9 @@ class EventConduit(WireProtocol):
         (h, oid, buf) = self.connection._op_response()
         self.event_id = h
 
+        (event_id, event_names) = self._wait_for_event()
+        self.event_names.update(event_names)
+
         self.connection.last_event_id += 1
         self.connection._op_que_events(self.event_names,
                                         0, 0, self.connection.last_event_id)
@@ -665,7 +670,6 @@ class EventConduit(WireProtocol):
         self.connection.last_event_id += 1
 
         (event_id, event_names) = self._wait_for_event()
-        print event_names
 
         return (event_id, event_names)
 
