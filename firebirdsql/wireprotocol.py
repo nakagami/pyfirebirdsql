@@ -817,7 +817,7 @@ class WireProtocol:
             elif op == self.op_event:
                 db_handle = bytes_to_int(recv_channel(self.sock, 4))
                 ln = bytes_to_bint(recv_channel(self.sock, 4))
-                b = recv_channel(self.sock, ln)
+                b = recv_channel(self.sock, ln, True)
                 assert byte_to_int(b[0]) == 1
                 i = 1
                 while i < len(b):
@@ -826,8 +826,11 @@ class WireProtocol:
                     n = bytes_to_int(b[i+1+ln:i+1+ln+4])
                     event_names[s] = n
                     i += ln + 5
+                recv_channel(self.sock, 8)  # ignore AST info
 
-                event_id = bytes_to_int(recv_channel(self.sock, 4))
+                event_id = bytes_to_bint(recv_channel(self.sock, 4))
                 break
+            else:
+                raise InternalError
 
         return (event_id, event_names)
