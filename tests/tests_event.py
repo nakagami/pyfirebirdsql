@@ -9,7 +9,6 @@
 ##############################################################################
 import os
 import sys
-import thread
 import time
 sys.path.append('./../')
 from firebirdsql import *
