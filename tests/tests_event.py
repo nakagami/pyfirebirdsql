@@ -7,14 +7,23 @@
 #
 # Python DB-API 2.0 module for Firebird. 
 ##############################################################################
-import os,sys
+import os
+import sys
+import thread
+import time
 sys.path.append('./../')
 from firebirdsql import *
 
+if sys.platform in ('win32', 'darwin'):
+    fbase = os.path.abspath('.') + '/test'
+else:
+    import tempfile
+    fbase = tempfile.mktemp()
 TEST_HOST = 'localhost'
 TEST_PORT = 3050
-TEST_DATABASE = '/tmp/test_event.fdb'
+TEST_DATABASE = fbase + '.fdb'
 TEST_DSN = TEST_HOST + '/' + str(TEST_PORT) + ':' + TEST_DATABASE
+print('dsn=', TEST_DSN)
 TEST_USER = 'sysdba'
 TEST_PASS = 'masterkey'
 
@@ -48,14 +57,10 @@ def producer():
     conn.commit()
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print(sys.argv[0] + ' create|handler|producer')
-        sys.exit()
-    if sys.argv[1] == 'create':
-        create()
-    elif sys.argv[1] == 'handler':
+    create()
+    pid = os.fork()
+    if pid == 0:
         handler()
-    elif sys.argv[1] == 'producer':
-        producer()
     else:
-        print('Bad argument')
+        time.sleep(1)
+        producer()
