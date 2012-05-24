@@ -708,7 +708,7 @@ class WireProtocol:
         p = xdrlib.Packer()
         p.pack_int(self.op_que_events)
         p.pack_int(self.db_handle)
-        p.pack_string(self.str_to_bytes(params))
+        p.pack_bytes(params)
         p.pack_int(ast)
         p.pack_int(args)
         p.pack_int(event_id)
@@ -744,7 +744,7 @@ class WireProtocol:
         family = bytes_to_bint(recv_channel(self.sock, 2))
         port = bytes_to_bint(recv_channel(self.sock, 2), u=True)
         b = recv_channel(self.sock, 4)
-        ip_address = '.'.join([str(bytes_to_int(c)) for c in b])
+        ip_address = '.'.join([str(byte_to_int(c)) for c in b])
         ln -= 8
         recv_channel(self.sock, ln)
 
