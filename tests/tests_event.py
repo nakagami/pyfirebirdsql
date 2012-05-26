@@ -42,24 +42,32 @@ def create():
         END''')
     conn.commit()
 
-def handler():
-    conn = connect(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
-    conduit = conn.event_conduit(['event_a', 'event_b', 'event_d'])
-    result = conduit.wait()
-    print('HANDLER: An event notification has arrived:')
-    print(result)
-    conduit.close()
-
-def producer():
+def produce():
     conn = connect(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
     conn.cursor().execute('insert into test_table values (1)')
     conn.commit()
+
+
+def handle_event():
+    conn = connect(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
+    conduit = conn.event_conduit(['event_a', 'event_b', 'event_d'])
+
+    result = conduit.wait()
+    print('event has arrived 1:', result)
+    assert result == {'event_b': 1, 'event_a': 2, 'event_d': 0}
+
+    produce()
+    result = conduit.wait()
+    print('event has arrived 2:', result)
+    assert result == {'event_b': 1, 'event_a': 2, 'event_d': 0}
+
+    conduit.close()
 
 if __name__ == '__main__':
     create()
     pid = os.fork()
     if pid == 0:
-        handler()
+        handle_event()
     else:
         time.sleep(1)
-        producer()
+        produce()

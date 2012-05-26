@@ -647,31 +647,31 @@ class EventConduit(WireProtocol):
         for name in names:
             self.event_names[name] = 0
 
-    def wait(self):
-        r = {}
         (h, port, family, ip_address) = self.connection._op_connect_request()
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((ip_address, port))
-
         self.connection.last_event_id += 1
-        self.connection._op_que_events(self.event_names,
-                                        0, 0, self.connection.last_event_id)
+        self.event_id = self.connection.last_event_id
+
+        self.connection._op_que_events(self.event_names, 0, 0, self.event_id)
         (h, oid, buf) = self.connection._op_response()
-        self.event_id = h
 
         (event_id, event_names) = self._wait_for_event()
+        assert event_id == self.event_id   # treat only one event_id
         self.event_names.update(event_names)
 
-        self.connection.last_event_id += 1
-        self.connection._op_que_events(self.event_names,
-                                        0, 0, self.connection.last_event_id)
+    def wait(self):
+        self.connection._op_que_events(self.event_names, 0, 0, self.event_id)
         (h, oid, buf) = self.connection._op_response()
-        self.event_id = h
-        self.connection.last_event_id += 1
 
         (event_id, event_names) = self._wait_for_event()
+        assert event_id == self.event_id   # treat only one event_id
 
-        return (event_id, event_names)
+        r = {}
+        for k in event_names:
+            r[k] = event_names[k]-self.event_names[k]
+            self.event_names[k] = event_names[k]
+        return r
 
     def close(self):
         self.connection._op_cancel_events(self.event_id)
