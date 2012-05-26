@@ -365,7 +365,7 @@ def parse_xsqlda(buf, connection, stmt_handle):
     return xsqlda
 
 class PreparedStatement:
-    def __init__(self, cur, sql, get_plan=False):
+    def __init__(self, cur, sql, explain_plan=False):
         self.cur = cur
         self.sql = sql
         transaction = self.cur.transaction
@@ -375,7 +375,7 @@ class PreparedStatement:
         (h, oid, buf) = connection._op_response()
         self.stmt_handle = h
 
-        if get_plan:
+        if explain_plan:
             connection._op_prepare_statement(
                 self.stmt_handle, transaction.trans_handle, sql,
                 option_items=bytes([isc_info_sql_get_plan]))
@@ -411,7 +411,7 @@ class PreparedStatement:
         raise AttributeError
 
 class Cursor:
-    def __init__(self, trans, get_plan=False):
+    def __init__(self, trans):
         self._transaction = trans
         self.transaction.connection._op_allocate_statement()
         (h, oid, buf) = self.transaction.connection._op_response()
@@ -486,8 +486,9 @@ class Cursor:
             calc_blr(self._xsqlda))
         return self.transaction.connection._op_sql_response(self._xsqlda)
 
-    def prep(self, query, get_plan=False):
-        prepared_statement = PreparedStatement(self, query, get_plan=get_plan)
+    def prep(self, query, explain_plan=False):
+        prepared_statement = PreparedStatement(self, query,
+                                                explain_plan=explain_plan)
         return prepared_statement
 
     def execute(self, query, params = []):
