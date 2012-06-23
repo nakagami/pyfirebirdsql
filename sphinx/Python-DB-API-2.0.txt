@@ -3,13 +3,13 @@
 Python Database API Specification 2.0
 #####################################
 
-PyFirebirdSQL is the Python Database API 2.0 compliant driver
+pyfirebirdsql is the Python Database API 2.0 compliant driver
 for Firebird. The `Reference / Usage Guide` is therefore divided
 into three parts:
 
   * Python Database API 2.0 specification
-  * PyFirebirdSQL Compliance to Python DB 2.0 API specification.
-  * PyFirebirdSQL features beyond Python DB 2.0 API specification.
+  * pyfirebirdsql Compliance to Python DB 2.0 API specification.
+  * pyfirebirdsql features beyond Python DB 2.0 API specification.
 
 If you're familiar to Python DB 2.0 API specification, you may skip
 directly to the next topic.

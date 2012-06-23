@@ -1,12 +1,12 @@
 
 ################################
-PyFirebirdSQL Installation Guide
+pyfirebirdsql Installation Guide
 ################################
 
 Dependencies
 ************
 
-PyFirebirdSQL requires a valid combination of the dependencies in
+pyfirebirdsql requires a valid combination of the dependencies in
 the list below.
 
 Detailed instructions on how to install each dependency are beyond the
@@ -15,7 +15,7 @@ installation instructions.
 
 Satisfying the dependencies is not difficult! For mainstream
 operating systems -- including Windows and Linux -- easily installable
-binary distributions are available for *all* of PyFirebirdSQL's
+binary distributions are available for *all* of pyfirebirdsql's
 dependencies (see the download links below).
 
 
@@ -41,7 +41,7 @@ The source distribution will *probably* also install (and function) on most
 other POSIX-compliant Unix variants, as long as all of the dependencies_
 are also installed and functional.
 
-Because the PyFirebirdSQL source distribution supports the standard
+Because the pyfirebirdsql source distribution supports the standard
 Python package installation facility (`distutils
 <http://www.python.org/sigs/distutils-sig/>`__), installing the source
 distribution on a typical Linux system is downright easy.
@@ -54,7 +54,7 @@ Installation from source distribution
 
 Shortcut for the Experienced and Impatient::
 
-  (decompress PyFirebirdSQL into *temp_dir*)
+  (decompress pyfirebirdsql into *temp_dir*)
   cd *temp_dir*
   python setup.py build
   python setup.py install
@@ -64,10 +64,10 @@ Shortcut for the Experienced and Impatient::
 Then hit the `Usage Guide <usage.html>`__.
 
 
-Install PyFirebirdSQL
+Install pyfirebirdsql
 =====================
 
-During this step, the setup script moves the PyFirebirdSQL package
+During this step, the setup script moves the pyfirebirdsql package
 (including the newly compiled C extensions) to the standard package
 directory of your Python installation so that Python will be able to
 :command:`import firebirdsql` and :command:`import firebirdsql.services`
@@ -82,7 +82,7 @@ interpreter.
 Run the following command:
 :command:`python setup.py install`
 
-The setup script will install PyFirebirdSQL, listing each file it
+The setup script will install pyfirebirdsql, listing each file it
 installs.
 
 Errors during this step are rare because compilation (the finicky part
@@ -102,25 +102,25 @@ try one of the following:
     rather than the Python interpreter anyway.
 
 
-Test your PyFirebirdSQL installation
+Test your pyfirebirdsql installation
 ************************************
 
-PyFirebirdSQL has an extensive test suite, but it is not really intended for
+pyfirebirdsql has an extensive test suite, but it is not really intended for
 routine public use.
 
-To verify that PyFirebirdSQL is installed properly, switch to a
+To verify that pyfirebirdsql is installed properly, switch to a
 directory *other than the temporary directory into which you
 decompressed the source distribution* (to avoid conflict between the
 copy of firebirdsql in that directory and the copy placed under the
 standard Python `site-packages` directory), then verify the
-importability of your PyFirebirdSQL installation by issuing the
+importability of your pyfirebirdsql installation by issuing the
 following command::
 
   python -c "import firebirdsql as fb; print fb.__version__"
 
 If the import attempt does not encounter any errors and the version
 number is what you expected, you are finished. Next, consider reading
-the PyFirebirdSQL Usage Guide.
+the pyfirebirdsql Usage Guide.
 
 You should not encounter any errors at this stage since you have
 already completed the compilation and installation steps successfully.

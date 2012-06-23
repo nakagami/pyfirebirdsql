@@ -22,10 +22,10 @@ such as temporary sort files, and it may even have dependent shadow
 databases. Although the database engine recognizes a `DROP DATABASE`
 SQL statement, support for that statement is limited to the `isql`
 command-line administration utility. However, the engine supports the
-deletion of databases via an API call, which PyFirebirdSQL exposes to
+deletion of databases via an API call, which pyfirebirdsql exposes to
 Python (see below).
 
-PyFirebirdSQL supports dynamic database creation and deletion via the
+pyfirebirdsql supports dynamic database creation and deletion via the
 module-level function :func:`firebirdsql.create_database` and the method
 :meth:`~firebirdsql.Connection.drop_database`. These are documented below,
 then demonstrated by a brief example.
@@ -70,7 +70,7 @@ then demonstrated by a brief example.
 Advanced Transaction Control
 ============================
 
-For the sake of simplicity, PyFirebirdSQL lets the Python programmer
+For the sake of simplicity, pyfirebirdsql lets the Python programmer
 ignore transaction management to the greatest extent allowed by the
 Python Database API Specification 2.0. The specification says, "if the
 database supports an auto-commit feature, this must be initially off".
@@ -84,12 +84,12 @@ Remember that because of `ACID
 every data manipulation operation in the Firebird database engine
 takes place in the context of a transaction, including operations
 that are conceptually "read-only", such as a typical `SELECT`.
-The client programmer of PyFirebirdSQL establishes a transaction
+The client programmer of pyfirebirdsql establishes a transaction
 implicitly by using any SQL execution method, such as 
 :meth:`~Connection.execute_immediate()`,
 :meth:`Cursor.execute()`, or :meth:`Cursor.callproc()`.
 
-Although PyFirebirdSQL allows the programmer to pay little attention to
+Although pyfirebirdsql allows the programmer to pay little attention to
 transactions, it also exposes the full complement of the database
 engine's advanced transaction control features: transaction
 parameters, retaining transactions, savepoints, and distributed
@@ -99,7 +99,7 @@ Explicit transaction start
 --------------------------
 
 In addition to the implicit transaction initiation required by
-Python Database API, PyFirebirdSQL allows the programmer to
+Python Database API, pyfirebirdsql allows the programmer to
 start transactions explicitly via the `Connection.begin` method.
 
 .. method:: Connection.begin(tpb)
@@ -133,10 +133,10 @@ that single transaction.
 For details about TPB construction, see the Firebird API documentation.
 In particular, the :file:`ibase.h` supplied with Firebird contains all
 possible TPB elements -- single bytes that the C API defines as
-constants whose names begin with `isc_tpb_`. PyFirebirdSQL makes all of
+constants whose names begin with `isc_tpb_`. pyfirebirdsql makes all of
 those TPB constants available (under the same names) as module-level
 constants in the form of single-character strings. A transaction
-parameter *buffer* is handled in C as a character array; PyFirebirdSQL
+parameter *buffer* is handled in C as a character array; pyfirebirdsql
 requires that TPBs be constructed as Python strings. Since the
 constants in the `firebirdsql.isc_tpb_*` family are single-character
 Python strings, they can simply be concatenated to create a TPB.
@@ -181,7 +181,7 @@ access to the database:
     con.commit()
 
 
-For convenient and safe construction of custom `tpb_block`, PyFirebirdSQL provides
+For convenient and safe construction of custom `tpb_block`, pyfirebirdsql provides
 special utility class `TPB`.
 
 .. class:: TPB
@@ -334,7 +334,7 @@ providing "multi-level undo" functionality.
 
 Although Firebird savepoints are fully supported from SQL alone via
 the `SAVEPOINT 'name'` and `ROLLBACK TO 'name'` statements,
-PyFirebirdSQL also exposes savepoints at the Python API level for the
+pyfirebirdsql also exposes savepoints at the Python API level for the
 sake of convenience. 
 
 .. method::  Connection.savepoint(name)
@@ -348,7 +348,7 @@ sake of convenience.
    Database API Specification.
 
 The following program demonstrates savepoint manipulation via the
-PyFirebirdSQL API, rather than raw SQL.
+pyfirebirdsql API, rather than raw SQL.
 
 .. sourcecode:: python
 
@@ -424,7 +424,7 @@ transaction openned simultaneously to perform various tasks, which
 would require to open multiple connections and thus consume more
 resources than necessary.
 
-PyFirebirdSQL surfaces this Firebird feature through new class
+pyfirebirdsql surfaces this Firebird feature through new class
 :class:`Transaction` and extensions to 
 :class:`~firebirdsql.Connection` and :class:`~firebirdsql.Cursor`
 classes.
@@ -620,9 +620,9 @@ and passing it to the database engine for parsing:
 
 
 Only the values change as each row is inserted; the statement remains
-the same. For many years, PyFirebirdSQL has recognized situations
+the same. For many years, pyfirebirdsql has recognized situations
 similar to this one and automatically reused the same prepared
-statement in each :meth:`Cursor.execute` call. In PyFirebirdSQL 3.2, the
+statement in each :meth:`Cursor.execute` call. In pyfirebirdsql 3.2, the
 scheme for automatically reusing prepared statements has become more
 sophisticated, and the API has been extended to offer the client
 programmer manual control over prepared statement creation and use.
@@ -711,7 +711,7 @@ then submits it to :meth:`Cursor.executemany` for execution:
 
 The following program demonstrates the explicit use of
 PreparedStatements. It also benchmarks explicit `PreparedStatement`
-reuse against PyFirebirdSQL's automatic `PreparedStatement` reuse, and
+reuse against pyfirebirdsql's automatic `PreparedStatement` reuse, and
 against an input strategy that prevents `PreparedStatement` reuse.
 
 .. sourcecode:: python
@@ -758,7 +758,7 @@ against an input strategy that prevents `PreparedStatement` reuse.
 
     iStart += N
 
-    # PyFirebirdSQL automatically uses a PreparedStatement "under the hood":
+    # pyfirebirdsql automatically uses a PreparedStatement "under the hood":
     startTime = time.time()
     for i in xrange(iStart, iStart + N):
         cur.execute("insert into t (a,b) values (?,?)", (i, str(i)))
@@ -771,7 +771,7 @@ against an input strategy that prevents `PreparedStatement` reuse.
     iStart += N
 
     # A new SQL string containing the inputs is submitted every time, so
-    # PyFirebirdSQL is not able to implicitly reuse a PreparedStatement.  Also, in a
+    # pyfirebirdsql is not able to implicitly reuse a PreparedStatement.  Also, in a
     # more complicated scenario where the end user supplied the string input
     # values, the program would risk SQL injection attacks:
     startTime = time.time()
@@ -839,7 +839,7 @@ a real application, SQL statements are likely to be far more
 complicated, so the speed advantage of using prepared statements would
 only increase.
 
-As the timings indicate, PyFirebirdSQL does a good job of reusing
+As the timings indicate, pyfirebirdsql does a good job of reusing
 prepared statements even if the client program is written in a style
 strictly compatible with the Python DB API 2.0 (which accepts only
 strings -- not :class:`PreparedStatement` objects -- to the :meth:`Cursor.execute()`
@@ -851,7 +851,7 @@ Named Cursors
 =============
 
 To allow the Python programmer to perform scrolling `UPDATE` or
-`DELETE` via the "`SELECT ... FOR UPDATE`" syntax, PyFirebirdSQL
+`DELETE` via the "`SELECT ... FOR UPDATE`" syntax, pyfirebirdsql
 provides the read/write property `Cursor.name`.
 
 .. attribute:: Cursor.name
@@ -884,7 +884,7 @@ provides the read/write property `Cursor.name`.
 Parameter Conversion
 ====================
 
-PyFirebirdSQL converts bound parameters marked with a `?` in SQL code in
+pyfirebirdsql converts bound parameters marked with a `?` in SQL code in
 a standard way. However, the module also offers several extensions to
 standard parameter binding, intended to make client code more readable
 and more convenient to write.
@@ -904,7 +904,7 @@ the same applies when `'123'` and `123` are to be inserted into a
 This weak typing model is quite unlike Python's dynamic yet strong
 typing. Although weak typing is regarded with suspicion by most
 experienced Python programmers, the database engine is in certain
-situations so aggressive about its typing model that PyFirebirdSQL
+situations so aggressive about its typing model that pyfirebirdsql
 must `compromise <http://sourceforge.net/tracker/index.php?func=detail&
 aid=531828&group_id=9913&atid=309913>`__ in order to remain an elegant
 means of programming the database engine.
@@ -912,7 +912,7 @@ means of programming the database engine.
 An example is the handling of "magic values" for date and time fields.
 The database engine interprets certain string values such as
 `'yesterday'` and `'now'` as having special meaning in a date/time
-context. If PyFirebirdSQL did not accept strings as the values of
+context. If pyfirebirdsql did not accept strings as the values of
 parameters destined for storage in date/time fields, the resulting
 code would be awkward. Consider the difference between the two Python
 snippets below, which insert a row containing an integer and a
@@ -935,7 +935,7 @@ timestamp into a table defined with the following DDL statement:
    t = 'now'
    cur.execute( "insert into test_table (i, t) values (?, ?)", (i, t) )
 
-If PyFirebirdSQL did not support weak parameter typing, string
+If pyfirebirdsql did not support weak parameter typing, string
 parameters that the database engine is to interpret as "magic values"
 would have to be rolled into the SQL statement in a separate operation
 from the binding of the rest of the parameters, as in the first Python
@@ -943,14 +943,14 @@ snippet above. Implicit conversion of parameter values from strings
 allows the consistency evident in the second snippet, which is both
 more readable and more general.
 
-It should be noted that PyFirebirdSQL does not perform the conversion
+It should be noted that pyfirebirdsql does not perform the conversion
 from string itself. Instead, it passes that responsibility to the
 database engine by changing the parameter metadata structure
 dynamically at the last moment, then restoring the original state of
 the metadata structure after the database engine has performed the
 conversion.
 
-A secondary benefit is that when one uses PyFirebirdSQL to import large
+A secondary benefit is that when one uses pyfirebirdsql to import large
 amounts of data from flat files into the database, the incoming values
 need not necessarily be converted to their proper Python types before
 being passed to the database engine. Eliminating this intermediate
@@ -971,11 +971,11 @@ Python programmer to transparently convert database field values to
 and from their internal representation.
 
 The client programmer can choose to ignore translators altogether, in
-which case PyFirebirdSQL will manage them behind the scenes. Otherwise,
+which case pyfirebirdsql will manage them behind the scenes. Otherwise,
 the client programmer can use any of several :ref:`standard type translators
-<included-translators>` included with PyFirebirdSQL, register custom
+<included-translators>` included with pyfirebirdsql, register custom
 translators, or set the translators to `None` to deal directly with
-the PyFirebirdSQL-internal representation of the data type. When
+the pyfirebirdsql-internal representation of the data type. When
 translators have been registered for a specific SQL data type, Python
 objects on their way into a database field of that type will be passed
 through the input translator before they are presented to the database
@@ -1046,16 +1046,16 @@ such as this:
 
 Notice that although the sample code registered only one type
 translator, there are four listed in the mapping returned by the
-`get_type_trans_in` method. By default, PyFirebirdSQL uses dynamic type
+`get_type_trans_in` method. By default, pyfirebirdsql uses dynamic type
 translation to implement the conversion of `DATE`, `TIME`,
 `TIMESTAMP`, `NUMERIC`, and `DECIMAL` values. For the source code
-locations of PyFirebirdSQL's reference translators, see the :ref:`table 
+locations of pyfirebirdsql's reference translators, see the :ref:`table 
 <included-translators>` in the next section.
 
 In the sample above, a translator is registered under the key
 `'FIXED'`, but Firebird has no SQL data type named `FIXED`. The
 following table lists the names of the database engine's SQL data
-types in the left column, and the corresponding PyFirebirdSQL-specific
+types in the left column, and the corresponding pyfirebirdsql-specific
 key under which client programmers can register translators in the
 right column.
 
@@ -1082,7 +1082,7 @@ TIMESTAMP                 'TIMESTAMP'
 Database Arrays
 ---------------
 
-PyFirebirdSQL converts database arrays *from* Python sequences (except
+pyfirebirdsql converts database arrays *from* Python sequences (except
 strings) on input; *to* Python lists on output. On input, the Python
 sequence must be nested appropriately if the array field is multi-
 dimensional, and the incoming sequence must not fall short of its
@@ -1157,7 +1157,7 @@ Output:
 Blobs
 -----
 
-PyFirebirdSQL supports the insertion and retrieval of blobs either
+pyfirebirdsql supports the insertion and retrieval of blobs either
 wholly in memory ("materialized mode") or in chunks ("streaming mode")
 to reduce memory usage when handling large blobs. The default handling
 mode is "materialized"; the "streaming" method is selectable via a
@@ -1171,7 +1171,7 @@ id=1299756&forum_id=30917>`__ automatic Unicode conversion from
 applying to textual blobs in the way it applies to Unicode `CHAR` and
 `VARCHAR` fields in any Firebird version prior to version 2.1.
 
-.. note:: PyFirebirdSQL 3.3 introduces new :ref:`type_conv mode 300
+.. note:: pyfirebirdsql 3.3 introduces new :ref:`type_conv mode 300
   <typeconv-values>` that enables automatic type conversion for textual
   blobs when you're working with Firebird 2.1 and newer.
 
@@ -1197,7 +1197,7 @@ a :class:`firebirdsql.BlobReader` object.
     a smaller final chunk of `716928` bytes.
 
 Due to the combination of CPython's deterministic finalization with
-careful programming in PyFirebirdSQL's internals, it is not strictly
+careful programming in pyfirebirdsql's internals, it is not strictly
 necessary to close `BlobReader` instances explicitly. A `BlobReader`
 object will be automatically closed by its `__del__` method when it
 goes out of scope, or when its `Connection` closes, whichever comes
@@ -1326,17 +1326,17 @@ the following snippet:
    ...
 
 The connection created in the example above is *eligible* to be
-automatically closed by PyFirebirdSQL if it remains idle for at least
-120.0 consecutive seconds. PyFirebirdSQL does not guarantee that the
+automatically closed by pyfirebirdsql if it remains idle for at least
+120.0 consecutive seconds. pyfirebirdsql does not guarantee that the
 connection will be closed immediately when the specified period has
 elapsed. On a busy system, there might be a considerable delay between
 the moment a connection becomes eligible for timeout and the moment
-PyFirebirdSQL actually closes it. However, the thread that performs
+pyfirebirdsql actually closes it. However, the thread that performs
 connection timeouts is programmed in such a way that on a lightly
 loaded system, it acts almost instantaneously to take advantage of a
 connection's eligibility for timeout.
 
-After a connection has timed out, PyFirebirdSQL reacts to attempts to
+After a connection has timed out, pyfirebirdsql reacts to attempts to
 reactivate the severed connection in a manner dependent on the state
 of the connection when it timed out. Consider the following example
 program:
@@ -1392,7 +1392,7 @@ might think.
 First of all, we cannot guarantee much about the example program's
 behavior because there is a race condition between the obvious thread
 that's executing the example code (which we'll call "UserThread" for
-the rest of this section) and the PyFirebirdSQL-internal background
+the rest of this section) and the pyfirebirdsql-internal background
 thread that actually closes connections that have timed out
 ("TimeoutThread"). If the operating system were to suspend UserThread
 just after the :func:`firebirdsql.connect()` call for more than
@@ -1423,9 +1423,9 @@ User-Supplied Connection Timeout Callbacks
 ------------------------------------------
 
 In the context of a particular client program, it is not possible for
-PyFirebirdSQL to know the best way for TimeoutThread to react when it
+pyfirebirdsql to know the best way for TimeoutThread to react when it
 encounters a connection that is eligible for timeout, but has an
-unresolved transaction. For this reason, PyFirebirdSQL's connection
+unresolved transaction. For this reason, pyfirebirdsql's connection
 timeout system offers callbacks that the client programmer can use to
 guide the TimeoutThread's actions, or to log information about
 connection timeout patterns.
@@ -1437,7 +1437,7 @@ The "Before Timeout" Callback
 The client programmer can supply a "before timeout" callback that
 accepts a single dictionary parameter and returns an integer code to
 indicate how the TimeoutThread should proceed when it finds a
-connection eligible for timeout. Within the dictionary, PyFirebirdSQL
+connection eligible for timeout. Within the dictionary, pyfirebirdsql
 provides the following entries:
 
 :dsn:              The `dsn` parameter that was passed to `firebirdsql.connect`
@@ -1481,9 +1481,9 @@ the following codes:
 
    Directs the TimeoutThread to roll back the connection's unresolved transaction
    (if any), then close the connection. Upon any future attempt to use the
-   connection, PyFirebirdSQL will *attempt* to transparently reconnect to
+   connection, pyfirebirdsql will *attempt* to transparently reconnect to
    the database and "resume where it left off" insofar as possible. Of
-   course, network problems and the like could prevent PyFirebirdSQL's
+   course, network problems and the like could prevent pyfirebirdsql's
    *attempt* at transparent resumption from succeeding. Also, highly
    state-dependent objects such as open result sets, 
    :class:`BlobReader`, and :class:`PreparedStatement`
@@ -1495,11 +1495,11 @@ the following codes:
 
    Directs the TimeoutThread to commit the connection's unresolved transaction
    (if any), then close the connection. Upon any future attempt to use the
-   connection, PyFirebirdSQL will *attempt* to transparently reconnect to
+   connection, pyfirebirdsql will *attempt* to transparently reconnect to
    the database and "resume where it left off" insofar as possible.
 
 
-If the user does not supply a "before timeout" callback, PyFirebirdSQL
+If the user does not supply a "before timeout" callback, pyfirebirdsql
 considers the timeout transparent only if the connection does not have
 an unresolved transaction.
 
@@ -1522,7 +1522,7 @@ The "After Timeout" Callback
 
 The client programmer can supply an "after timeout" callback that
 accepts a single dictionary parameter. Within that dictionary,
-PyFirebirdSQL currently provides the following entries:
+pyfirebirdsql currently provides the following entries:
 
 :dsn:          The `dsn` parameter that was passed to :func:`firebirdsql.connect()`
                when the connection was created.
@@ -1533,12 +1533,12 @@ PyFirebirdSQL currently provides the following entries:
                the last client program activity on the connection and the moment
                the TimeoutThread closed the connection.
 
-PyFirebirdSQL only calls the "after timeout" callback after the
+pyfirebirdsql only calls the "after timeout" callback after the
 connection has actually been closed by the TimeoutThread. If the
 "before timeout" callback returns :data:`CT_VETO` to cancel the
 timeout attempt, the "after timeout" callback will not be called.
 
-PyFirebirdSQL discards the return value of the "after timeout" callback,
+pyfirebirdsql discards the return value of the "after timeout" callback,
 and ignores any exceptions.
 
 The same caveats that apply to the "before timeout" callback also
@@ -1981,13 +1981,13 @@ How events are exposed to the server and the client process?
 #. Client Process ("Send me a message when an event occurs.")
 
    .. note:: If you don't care about the gory details of event notification,
-             skip to the section that describes PyFirebirdSQL's Python-level
+             skip to the section that describes pyfirebirdsql's Python-level
              event handling API. 
 
    The Firebird C client library offers two forms of event notification.
    The first form is *synchronous* notification, by way of the function
    :cfunc:`isc_wait_for_event()`. This form is admirably simple for a C programmer
-   to use, but is inappropriate as a basis for PyFirebirdSQL's event support,
+   to use, but is inappropriate as a basis for pyfirebirdsql's event support,
    chiefly because it's not sophisticated enough to serve as the basis for
    a comfortable Python-level API. The other form of event notification
    offered by the database client library is *asynchronous*, by way of the
@@ -2019,7 +2019,7 @@ How events are exposed to the server and the client process?
 How events are exposed to the Python programmer?
 ------------------------------------------------
 
-The PyFirebirdSQL database event API is comprised of the following: the
+The pyfirebirdsql database event API is comprised of the following: the
 method `Connection.event_conduit` and the class :class:`EventConduit`.
 
 .. method:: Connection.event_conduit
@@ -2036,7 +2036,7 @@ method `Connection.event_conduit` and the class :class:`EventConduit`.
 
    :event_names: A sequence of string event names The :meth:`EventConduit.wait()`
                  method will block until the occurrence of at least one of the
-                 events named by the strings in `event_names`. PyFirebirdSQL's
+                 events named by the strings in `event_names`. pyfirebirdsql's
                  own event-related code is capable of operating with up to 2147483647
                  events per conduit. However, it has been observed that the Firebird
                  client library experiences catastrophic problems (including memory
@@ -2133,7 +2133,7 @@ Example Program
 ---------------
 
 The following code (a SQL table definition, a SQL trigger definition,
-and two Python programs) demonstrates PyFirebirdSQL-based event
+and two Python programs) demonstrates pyfirebirdsql-based event
 notification.
 
 The example is based on a database at `'localhost:/temp/test.db'`,
@@ -2253,29 +2253,29 @@ Pitfalls and Limitations
   internal queue even if the Python programmer doesn't call
   :meth:`EventConduit.wait()` to receive the notifications or
   :meth:`EventConduit.flush()` to clear the queue. The ill-informed may
-  misinterpret this behavior as a memory leak in PyFirebirdSQL; it is not.
+  misinterpret this behavior as a memory leak in pyfirebirdsql; it is not.
 + NEVER use LOCAL-protocol connections in a multithreaded program that
   also uses event handling! The database client library implements the
   local protocol on some platforms in such a way that deadlocks may
   arise in bizarre places if you do this. *This no-LOCAL prohibition is
   not limited to connections that are used as the basis for event
   conduits; it applies to all connections throughout the process.* So
-  why doesn't PyFirebirdSQL protect the Python programmer from this
+  why doesn't pyfirebirdsql protect the Python programmer from this
   mistake? Because the event handling thread is started by the database
   client library, and it operates beyond the synchronization domain of
-  PyFirebirdSQL at times.
+  pyfirebirdsql at times.
 
 
 .. note:: The restrictions on the number of active `EventConduit`s in a
    process, and on the number of event names that a single `EventConduit`
-   can listen for, have been removed in PyFirebirdSQL 3.2.
+   can listen for, have been removed in pyfirebirdsql 3.2.
 
 
 The `database_info` API
 =======================
 
 Firebird provides various informations about server and connected database
-via `database_info` API call. PyFirebirdSQL surfaces this API through next
+via `database_info` API call. pyfirebirdsql surfaces this API through next
 methods on Connection object:
 
 .. method:: Connection.database_info(request,result_type)
@@ -2350,7 +2350,7 @@ methods on Connection object:
       We are connected to the database at C:\TEMP\TEST.DB on host WEASEL.
 
    As you can see, extracting data with the `database_info` function is
-   rather clumsy. In PyFirebirdSQL 3.2, a higher-level means of accessing
+   rather clumsy. In pyfirebirdsql 3.2, a higher-level means of accessing
    the same information is available: the :meth:`~Connection.db_info()`
    method. Also, the Services API (accessible to Python programmers via the
    :mod:`firebirdsql.services` module) provides high-level support for
@@ -2467,7 +2467,7 @@ The native Services API, though consistent, is much lower-level than a
 Pythonic API. If the native version were exposed directly,
 accomplishing a given task would probably require more Python code
 than scripting the traditional command-line tools. For this reason,
-PyFirebirdSQL presents its own abstraction over the native API via the
+pyfirebirdsql presents its own abstraction over the native API via the
 :mod:`firebirdsql.services` module.
 
 Establishing Services API Connections
@@ -2900,7 +2900,7 @@ Database Statistics
 Backup and Restoration
 ----------------------
 
-PyFirebirdSQL offers convenient programmatic control over database
+pyfirebirdsql offers convenient programmatic control over database
 backup and restoration via the `backup` and `restore` methods.
 
 At the time of this writing, released versions of Firebird/Interbase®
@@ -2909,7 +2909,7 @@ do not implement incremental backup, so we can simplistically define
 of a live database, and *restoration* as the inverse. The
 backup/restoration process exposes numerous parameters, which are
 properly documented in Firebird Documentation to :command:`gbak`.
-The PyFirebirdSQL API to these parameters is presented with minimal
+The pyfirebirdsql API to these parameters is presented with minimal
 documentation in the sample code below.
 
 .. method:: Connection.backup(sourceDatabase, destFilenames, destFileSizes=(), <options>)
@@ -2965,7 +2965,7 @@ documentation in the sample code below.
    multiple files, which is useful for circumventing operating system
    file size limits or spreading the backup across multiple discs.
 
-   PyFirebirdSQL exposes this facility via the `Connection.backup`
+   pyfirebirdsql exposes this facility via the `Connection.backup`
    parameters `destFilenames` and `destFileSizes`. `destFilenames` (the
    second positional parameter of `Connection.backup`) can be either a
    string (as in the example above, when creating the backup as a single
@@ -2992,7 +2992,7 @@ documentation in the sample code below.
    excess constituents. However, at the time of this writing, released
    versions of the database engine hang the backup task if more than 11
    constituents are specified (that is, if `len(destFilenames) > 11`).
-   PyFirebirdSQL does not prevent the programmer from submitting more than
+   pyfirebirdsql does not prevent the programmer from submitting more than
    11 constituents, but it does issue a warning.
 
    The following program directs the engine to split the backup of the
@@ -3061,7 +3061,7 @@ documentation in the sample code below.
    operating system file size limits or spreading the database across
    multiple discs.
 
-   PyFirebirdSQL exposes this facility via the `Connection.restore`
+   pyfirebirdsql exposes this facility via the `Connection.restore`
    parameters `destFilenames` and `destFilePages`. `destFilenames` (the
    second positional argument of `Connection.restore`) can be either a
    string (as in the example above, when restoring to a single database

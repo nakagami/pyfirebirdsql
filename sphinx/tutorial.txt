@@ -4,11 +4,11 @@ Quick-start Guide / Tutorial
 ############################
 
 This brief tutorial aims to get the reader started by demonstrating
-elementary usage of PyFirebirdSQL. It is not a comprehensive Python
+elementary usage of pyfirebirdsql. It is not a comprehensive Python
 Database API tutorial, nor is it comprehensive in its coverage of
 anything else.
 
-The numerous advanced features of PyFirebirdSQL are covered in another
+The numerous advanced features of pyfirebirdsql are covered in another
 section of this documentation, which is not in a tutorial format, though it
 is replete with examples.
 
@@ -244,7 +244,7 @@ retrieved from a stored procedure by `SELECT`ing from the procedure,
 whereas output parameters are retrieved with an `EXECUTE PROCEDURE`
 statement.
 
-To *retrieve a result set* from a stored procedure with PyFirebirdSQL,
+To *retrieve a result set* from a stored procedure with pyfirebirdsql,
 use code such as this:
 
 .. sourcecode:: python

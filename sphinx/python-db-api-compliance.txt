@@ -10,7 +10,7 @@ Incompatibilities
 
 .. data:: DATETIME
 
-   PyFirebirdSQL's deferred loading of dynamic type translators causes
+   pyfirebirdsql's deferred loading of dynamic type translators causes
    this singleton to behave in violation of the standard until the 
    :func:`firebirdsql.init()` function has been called (whether explicitly or
    implicitly). For more information, see the documnation section about
@@ -50,7 +50,7 @@ Nominally Supported Optional Features
 Extensions and Caveats
 ======================
 
-PyFirebirdSQL offers a large feature set beyond the minimal requirements
+pyfirebirdsql offers a large feature set beyond the minimal requirements
 of the Python DB API. Most of these extensions are documented in the
 section of this document entitled `Native Database Engine Features and
 Extensions Beyond the Python DB API`.
@@ -76,8 +76,8 @@ subsection elsewhere.
 
    :charset:  For explicitly specifying the character set of the connection.
               See Firebird Documentation for a list of available character sets, and
-              `Unicode Fields and PyFirebirdSQL` section for information on handling
-              extended character sets with PyFirebirdSQL.
+              `Unicode Fields and pyfirebirdsql` section for information on handling
+              extended character sets with pyfirebirdsql.
 
    *Example:*
 
@@ -110,8 +110,8 @@ subsection elsewhere.
 
       *(read-only)* The character set of the connection (set via the `charset`
       parameter of :func:`firebirdsql.connect()`). See Firebird Documentation for a list
-      of available character sets, and `Unicode Fields and PyFirebirdSQL` section
-      for information on handling extended character sets with PyFirebirdSQL.
+      of available character sets, and `Unicode Fields and pyfirebirdsql` section
+      for information on handling extended character sets with pyfirebirdsql.
 
    .. attribute:: dialect 
 
@@ -140,7 +140,7 @@ subsection elsewhere.
 
    .. attribute:: precision_mode
 
-      Although this attribute is present in PyFirebirdSQL 3.1+ and works in a backward-compatible
+      Although this attribute is present in pyfirebirdsql 3.1+ and works in a backward-compatible
       fashion, it is deprecated in favor of the more general dynamic type translation feature.
 
    .. method:: commit(retaining=False)
@@ -160,11 +160,11 @@ subsection elsewhere.
 
    .. attribute:: description
 
-      PyFirebirdSQL makes absolutely no guarantees about `description` except those
+      pyfirebirdsql makes absolutely no guarantees about `description` except those
       required by the Python Database API Specification 2.0 (that is, `description`
       is either `None` or a sequence of 7-element sequences). Therefore, client
       programmers should *not* rely on `description` being an instance of a particular
-      class or type. PyFirebirdSQL provides several named positional constants to be
+      class or type. pyfirebirdsql provides several named positional constants to be
       used as indices into a given element of `description` . The contents
       of all `description` elements are defined by the DB API spec; these
       constants are provided merely for convenience.
@@ -191,7 +191,7 @@ subsection elsewhere.
 
    .. attribute:: rowcount
 
-      Although PyFirebirdSQL's `Cursor`s implement this
+      Although pyfirebirdsql's `Cursor`s implement this
       attribute, the database engine's own support for the determination of
       "rows affected"/"rows selected" is quirky. The database engine only
       supports the determination of rowcount for `INSERT`, `UPDATE`,
@@ -213,9 +213,9 @@ subsection elsewhere.
    .. method:: fetchmany()
    .. method:: fetchall()
 
-      PyFirebirdSQL makes absolutely no guarantees about
+      pyfirebirdsql makes absolutely no guarantees about
       the return value of the `fetchone` / `fetchmany` / `fetchall` methods
-      except that it is a sequence indexed by field position. PyFirebirdSQL
+      except that it is a sequence indexed by field position. pyfirebirdsql
       makes absolutely no guarantees about the return value of the
       `fetchonemap` / `fetchmanymap` / `fetchallmap` methods (documented
       below) except that it is a mapping of field name to field value.

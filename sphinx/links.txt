@@ -1,9 +1,9 @@
 
-PyFirebirdSQL Links
+pyfirebirdsql Links
 ===================
 
 
-PyFirebirdSQL
+pyfirebirdsql
 ^^^^^^^^^^^^^
 + `Home Page <https://github.com/nakagami/pyfirebirdsql>`__
 
@@ -23,18 +23,6 @@ Python + Databases
     + `PEP 249 - Augmented Python DB-API Spec 2.0
       <http://www.python.org/peps/pep-0249.html>`__
 
-Zope Database Adapters for Firebird
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-+ `kinterbasdbDA <http://old.zope.org/Members/mwoj/kinterbasdbDA>`__
-  (based on kinterbasdb)
-+ `ZKInterbasdbDA
-  <http://old.zope.org/Members/nakagami/ZKInterbasdbDA>`__ (based on
-  kinterbasdb)
-+ `ZFireBirdDA <http://savannah.nongnu.org/projects/zfirebirdda/>`__
-  (based on kinterbasdb)
-+ `gvibDA <http://www.zope.org/Members/bkc/gvibDA>`__ (based on gvib)
-
 Firebird
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -43,9 +31,6 @@ Firebird
 
     + `IBPhoenix Tools Downloads Area <http://ibphoenix.com/download/tools/>`__
 
-+ `Dmoz's Firebird Directory <http://www.dmoz.org/Computers/Software/Databases/Firebird/>`__
-+ `Turbobird - nice open source cross platform  GUI for Firebird
-  <http://code.sd/turbobird/>`__
 + `Flamerobin - nice open source and cross platform GUI for Firebird <http://flamerobin.org>`__
 
 Help
