@@ -3,10 +3,15 @@ pyfirebirdsql Links
 ===================
 
 
-pyfirebirdsql
-^^^^^^^^^^^^^
-+ `Home Page <https://github.com/nakagami/pyfirebirdsql>`__
+python firebird database adapters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++ `The Python Wiki >> Firebird <http://wiki.python.org/moin/Firebird>`__
 
+   + `pyfirebirdsql <https://github.com/nakagami/pyfirebirdsql>`__
+
+   + `KInterbasdb <http://www.firebirdsql.org/en/python-driver/>`__
+
+   + `FDB <http://pypi.python.org/pypi/fdb/>`__
 
 Python + Databases
 ^^^^^^^^^^^^^^^^^^
