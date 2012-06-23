@@ -5,9 +5,19 @@ PyFirebirdSQL Changelog
 Version 0.6.5
 =============
 
-New Features
-------------
-
    - callproc() is implemented.
-
    - document is prepared.
+
+Version 0.6.6
+=============
+
+   - fix issue #28 InternalError after commit
+   - fix issue #30 Incorrect handling empty row for RowMapping
+
+Version 0.7.0
+=============
+
+   - change parameter name 'explain_plan' in class PrepareStatement.__init__().
+   - issue #32 don't decode character set OCTETS
+   - issue #33 op_allocate_statement do not require a transaction handle.
+   - add event notification
