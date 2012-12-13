@@ -98,7 +98,10 @@ def byte_to_int(b):
     else:
         return ord(b)
 
-def recv_channel(sock, nbytes):
+def recv_channel(sock, nbytes, timeout=None):
+    if timeout and select.select([sock], [], [], timeout)[0] == []:
+        return None
+
     n = nbytes
     if (nbytes % 4):
         n += 4 - nbytes % 4  # 4 bytes word alignment
