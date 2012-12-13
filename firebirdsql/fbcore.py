@@ -604,7 +604,7 @@ class Cursor:
         r = self.fetchone()
         if r is None:
             return {}
-        return RowMapping(self.fetchone(), self.description)
+        return RowMapping(r, self.description)
 
     def fetchallmap(self):
         desc = self.description

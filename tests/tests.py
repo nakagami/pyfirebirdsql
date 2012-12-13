@@ -47,6 +47,11 @@ if __name__ == '__main__':
         )
     ''')
     conn.cursor().execute('''
+        CREATE TABLE bar_empty (
+            k INTEGER NOT NULL
+        )
+    ''')
+    conn.cursor().execute('''
         CREATE PROCEDURE foo_proc
           RETURNS (out1 INTEGER, out2 VARCHAR(30))
           AS
@@ -188,7 +193,7 @@ if __name__ == '__main__':
 
     print('fetchonemap() empty record')
     cur = conn.cursor()
-    cur.execute("select * from rdb$roles")
+    cur.execute("select * from bar_empty")
     for k,v in cur.fetchonemap().items():
         print(k, v)
 
