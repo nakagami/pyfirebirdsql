@@ -6,7 +6,7 @@
 #
 # Python DB-API 2.0 module for Firebird. 
 ##############################################################################
-import xdrlib, time, datetime, decimal, struct
+import xdrlib, time, datetime, decimal, struct, select
 from firebirdsql.fberrmsgs import messages
 from firebirdsql import (DisconnectByPeer,
     DatabaseError, InternalError, OperationalError,
