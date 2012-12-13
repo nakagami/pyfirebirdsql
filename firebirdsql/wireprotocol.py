@@ -808,11 +808,14 @@ class WireProtocol:
 
         return r
 
-    def _wait_for_event(self):
+    def _wait_for_event(self, timeout=None):
         event_names = {}
         event_id = 0
         while True:
-            op = bytes_to_bint(recv_channel(self.sock, 4))
+            b4 = recv_channel(self.sock, 4, timeout=timeout)
+            if b4 is None:
+                return None
+            op = bytes_to_bint(b4)
             if op == self.op_dummy:
                 pass
             elif op == self.op_exit or op == self.op_disconnect:

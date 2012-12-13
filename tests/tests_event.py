@@ -52,13 +52,16 @@ def handle_event():
     conn = connect(dsn=TEST_DSN, user=TEST_USER, password=TEST_PASS)
     conduit = conn.event_conduit(['event_a', 'event_b', 'event_d'])
 
+    result = conduit.wait(timeout=1)
+    assert result == {'event_b': 0, 'event_a': 0, 'event_d': 0}
+
     result = conduit.wait()
-    print('event has arrived 1:', result)
     assert result == {'event_b': 1, 'event_a': 2, 'event_d': 0}
 
     produce()
-    result = conduit.wait()
-    print('event has arrived 2:', result)
+
+    while result == {'event_b': 0, 'event_a': 0, 'event_d': 0}:
+        result = conduit.wait()
     assert result == {'event_b': 1, 'event_a': 2, 'event_d': 0}
 
     conduit.close()
@@ -69,5 +72,5 @@ if __name__ == '__main__':
     if pid == 0:
         handle_event()
     else:
-        time.sleep(1)
+        time.sleep(3)
         produce()
