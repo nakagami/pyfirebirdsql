@@ -191,6 +191,12 @@ if __name__ == '__main__':
     for k,v in cur.fetchonemap().items():
         print(k, v)
 
+    print('itermap()')
+    cur = conn.cursor()
+    cur.execute("select * from foo")
+    for r in cur.itermap():
+        print(r['a'], r['b'], r['c'])
+
     print('fetchonemap() empty record')
     cur = conn.cursor()
     cur.execute("select * from bar_empty")

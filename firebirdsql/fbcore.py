@@ -614,6 +614,12 @@ class Cursor:
         desc = self.description
         return [RowMapping(row, desc) for row in self.fetchmany(size)]
 
+    def itermap(self):
+        r = self.fetchonemap()
+        while r:
+            yield r
+            r = self.fetchonemap()
+
     def close(self):
         if not hasattr(self, "stmt_handle"):
             return
