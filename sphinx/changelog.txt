@@ -21,3 +21,9 @@ Version 0.7.0
    - issue #32 don't decode character set OCTETS
    - issue #33 op_allocate_statement do not require a transaction handle.
    - add event notification
+
+Version 0.7.1
+=============
+
+   - fix fetchonemap()
+   - issue #35 add timeout parameter to conduit.wait()
