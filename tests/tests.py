@@ -152,7 +152,9 @@ if __name__ == '__main__':
             print(r)
     except firebirdsql.OperationalError:
         e = sys.exc_info()[1]
-        assert e.sql_code == -504 # Invalid cursor reference Corsor is not open.
+        print e.sql_code
+        assert (e.sql_code == -504          # FB2.1 cursor is not open
+            or 335544332 in e.gds_codes)    # FB2.5 invalid transaction handle
 
     cur = conn.cursor()
     try:
