@@ -98,9 +98,9 @@ def byte_to_int(b):
     else:
         return ord(b)
 
-def recv_channel(sock, nbytes, word_alignment=False):
+def recv_channel(sock, nbytes):
     n = nbytes
-    if word_alignment and (n % 4):
+    if (nbytes % 4):
         n += 4 - nbytes % 4  # 4 bytes word alignment
     r = bytes([])
     while n:
@@ -288,7 +288,7 @@ class WireProtocol:
                 message = message.replace('@' + str(num_arg), str(num))
             elif n == isc_arg_string or n == isc_arg_interpreted:
                 nbytes = bytes_to_bint(recv_channel(self.sock, 4))
-                n = str(recv_channel(self.sock, nbytes, True))
+                n = str(recv_channel(self.sock, nbytes))
                 num_arg += 1
                 message = message.replace('@' + str(num_arg), n)
             n = bytes_to_bint(recv_channel(self.sock, 4))
@@ -301,7 +301,7 @@ class WireProtocol:
         h = bytes_to_bint(b[0:4])         # Object handle
         oid = b[4:12]                       # Object ID
         buf_len = bytes_to_bint(b[12:])   # buffer length
-        buf = recv_channel(self.sock, buf_len, True)
+        buf = recv_channel(self.sock, buf_len)
 
         (gds_codes, sql_code, message) = self._parse_status_vector()
         if sql_code or message:
@@ -636,7 +636,7 @@ class WireProtocol:
                     ln = bytes_to_bint(b)
                 else:
                     ln = x.io_length()
-                raw_value = recv_channel(self.sock, ln, True)
+                raw_value = recv_channel(self.sock, ln)
                 if recv_channel(self.sock, 4) == bytes([0]) * 4: # Not NULL
                     r[i] = x.value(raw_value)
             rows.append(r)
@@ -795,7 +795,7 @@ class WireProtocol:
                 ln = bytes_to_bint(b)
             else:
                 ln = x.io_length()
-            raw_value = recv_channel(self.sock, ln, True)
+            raw_value = recv_channel(self.sock, ln)
             if recv_channel(self.sock, 4) == bytes([0]) * 4: # Not NULL
                 r.append(x.value(raw_value))
             else:
@@ -817,7 +817,7 @@ class WireProtocol:
             elif op == self.op_event:
                 db_handle = bytes_to_int(recv_channel(self.sock, 4))
                 ln = bytes_to_bint(recv_channel(self.sock, 4))
-                b = recv_channel(self.sock, ln, True)
+                b = recv_channel(self.sock, ln)
                 assert byte_to_int(b[0]) == 1
                 i = 1
                 while i < len(b):
