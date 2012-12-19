@@ -27,3 +27,10 @@ Version 0.7.1
 
    - fix fetchonemap()
    - issue #35 add timeout parameter to conduit.wait()
+
+Version 0.7.2
+=============
+
+   - issue #36 add Cur.itermap() method
+   - run tests in FB 1.5 (error treatment db_info(), trans_info())
+   - issue #37 truncate field name from system table in FB 1.5
