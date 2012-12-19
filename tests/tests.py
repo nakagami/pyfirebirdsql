@@ -92,14 +92,23 @@ if __name__ == '__main__':
     print('foo_proc')
     cur.callproc("foo_proc")
     print(cur.fetchone())
+    cur.close()
 
+    cur = conn.cursor()
     try:
-        for r in cur.execute("select out1, out2 from foo_proc"):
-            print(r)
-    except firebirdsql.OperationalError:
+        rs = cur.execute("select out1, out2 from foo_proc")
+        if rs is None:  # FB1.5
+            print('foo_proc not selectable')
+        else:
+            for r in rs:
+                print(r)
+    except firebirdsql.OperationalError:    # FB2
         print('foo_proc not selectable')
+    finally:
+        cur.close()
 
     print('bar_proc')
+    cur = conn.cursor()
     cur.callproc("bar_proc", (1, "ABC"))
     for r in cur.fetchallmap():
         print(r)
