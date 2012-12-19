@@ -208,13 +208,7 @@ class XSQLVAR:
 
     def value(self, raw_value):
         if self.sqltype == SQL_TYPE_TEXT:
-            if self.sqlsubtype in (4, 69):  # UTF8 and GB18030
-                reallength = self.sqllen // 4
-                return self.bytes_to_str(raw_value)[:reallength]
-            elif self.sqlsubtype == 3:      # UNICODE_FSS
-                reallength = self.sqllen // 3
-                return self.bytes_to_str(raw_value)[:reallength]
-            elif self.sqlsubtype == 1:      # OCTETS
+            if self.sqlsubtype == 1:      # OCTETS
                 return raw_value
             else:
                 return self.bytes_to_str(raw_value)
