@@ -48,7 +48,8 @@ if __name__ == '__main__':
     ''')
     conn.cursor().execute('''
         CREATE TABLE bar_empty (
-            k INTEGER NOT NULL
+            k INTEGER NOT NULL,
+            abcdefghijklmnopqrstuvwxyz INTEGER
         )
     ''')
     conn.cursor().execute('''
@@ -208,6 +209,12 @@ if __name__ == '__main__':
     cur.execute("select * from foo")
     for (a, b, c, d, e, f, g, h, i, j) in cur:
         print(a, b, c)
+
+    print('long field name from system table')
+    cur = conn.cursor()
+    cur.execute("select rdb$field_name from rdb$relation_fields where rdb$field_name='ABCDEFGHIJKLMNOPQRSTUVWXYZ'")
+    cur.fetchone()[0] == 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
     conn.close()
 
     conn = firebirdsql.connect(host=TEST_HOST, database=TEST_DATABASE,
