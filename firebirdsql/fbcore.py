@@ -690,7 +690,7 @@ class Connection(WireProtocol):
             user = os.environ['USERNAME']
             hostname = os.environ['COMPUTERNAME']
         else:
-            user = os.environ['USER']
+            user = os.environ.get('USER', '')
             hostname = socket.gethostname()
         return bytes([1] + [len(user)] + [ord(c) for c in user]
                 + [4] + [len(hostname)] + [ord(c) for c in hostname] + [6, 0])
