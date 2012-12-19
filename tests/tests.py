@@ -222,7 +222,8 @@ if __name__ == '__main__':
     print('long field name from system table')
     cur = conn.cursor()
     cur.execute("select rdb$field_name from rdb$relation_fields where rdb$field_name='ABCDEFGHIJKLMNOPQRSTUVWXYZ'")
-    assert cur.fetchone()[0] == 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    v = cur.fetchone()[0]
+    assert v.strip() == 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
     conn.close()
 
