@@ -89,22 +89,6 @@ NUMBER = DBAPITypeObject(int, decimal.Decimal)
 DATETIME = DBAPITypeObject(datetime.datetime, datetime.date, datetime.time)
 ROWID = DBAPITypeObject()
 
-def convert_date(v):  # Convert datetime.date to BLR format data
-    i = v.month + 9
-    jy = v.year + (i // 12) -1
-    jm = i % 12
-    c = jy // 100
-    jy -= 100 * c
-    j = (146097*c) // 4 + (1461*jy) // 4 + (153*jm+2) // 5 + v.day - 678882
-    return bint_to_bytes(j, 4)
-
-def convert_time(v):  # Convert datetime.time to BLR format time
-    t = (v.hour*3600 + v.minute*60 + v.second) *10000 + v.microsecond // 100
-    return bint_to_bytes(t, 4)
-
-def convert_timestamp(v):   # Convert datetime.datetime to BLR format timestamp
-    return convert_date(v.date()) + convert_time(v.time())
-
 #------------------------------------------------------------------------------
 class XSQLVAR:
     type_length = {
