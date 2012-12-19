@@ -801,7 +801,7 @@ class Connection(WireProtocol):
             req = byte_to_int(buf[i])
             if req == isc_info_end:
                 break
-            assert req == info_requests[i_request]
+            assert req == info_requests[i_request] or req == isc_info_error
             if req == isc_info_user_names:
                 user_names = []
                 while req == isc_info_user_names:
@@ -809,10 +809,10 @@ class Connection(WireProtocol):
                     user_names.append(buf[i+3:i+3+l])
                     i = i + 3 + l
                     req = byte_to_int(buf[i])
-                r.append(user_names)
+                r.append((req, user_names))
             else:
                 l = bytes_to_int(buf[i+1:i+3])
-                r.append(buf[i+3:i+3+l])
+                r.append((req, buf[i+3:i+3+l]))
                 i = i + 3 + l
             i_request += 1
         return r
@@ -906,13 +906,16 @@ class Connection(WireProtocol):
     def db_info(self, info_requests):
         if type(info_requests) == int:  # singleton
             r = self._db_info([info_requests])
-            return self._db_info_convert_type(info_requests, r[0])
+            return self._db_info_convert_type(info_requests, r[0][1])
         else:
             results = {}
             rs = self._db_info(info_requests)
             for i in range(len(info_requests)):
-                results[info_requests[i]] =  self._db_info_convert_type(
-                                                    info_requests[i], rs[i])
+                if rs[i][0] == isc_info_error:
+                    results[info_requests[i]] = None
+                else:
+                    results[info_requests[i]] = self._db_info_convert_type(
+                                                    info_requests[i], rs[i][1])
             return results
 
     def trans_info(self, info_requests):
@@ -1003,25 +1006,28 @@ class Transaction:
             req = byte_to_int(buf[i])
             if req == isc_info_end:
                 break
-            assert req == info_requests[i_request]
+            assert req == info_requests[i_request] or req == isc_info_error
             l = bytes_to_int(buf[i+1:i+3])
-            r.append(buf[i+3:i+3+l])
+            r.append((req, buf[i+3:i+3+l]))
             i = i + 3 + l
+
             i_request += 1
         return r
 
     def trans_info(self, info_requests):
         if type(info_requests) == int:  # singleton
             r = self._trans_info([info_requests])
-            return {info_requests: r[0]}
+            return {info_requests: r[1][0]}
         else:
             results = {}
             rs = self._trans_info(info_requests)
             for i in range(len(info_requests)):
-                if info_requests[i] == isc_info_tra_isolation:
-                    v = (byte_to_int(rs[i][0]), byte_to_int(rs[i][1]))
+                if rs[i][0] == isc_info_tra_isolation:
+                    v = (byte_to_int(rs[i][1][0]), byte_to_int(rs[i][1][1]))
+                elif rs[i][0] == isc_info_error:
+                    v = None
                 else:
-                    v = bytes_to_int(rs[i])
+                    v = bytes_to_int(rs[i][1])
                 results[info_requests[i]] = v
             return results
 
