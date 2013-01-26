@@ -396,6 +396,12 @@ class Cursor:
         self.stmt_handle = h
         self.arraysize = 1
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc, value, traceback):
+        self.close()
+
     @property
     def transaction(self):
         return self._transaction
@@ -761,6 +767,15 @@ class Connection(WireProtocol):
         self.db_handle = h
         self.closed = False
         self.last_event_id = 0
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc, value, traceback):
+        if exc:
+            self.rollback()
+        else:
+            self.commit()
 
     def set_isolation_level(self, isolation_level):
         self.isolation_level = isolation_level
