@@ -50,9 +50,9 @@ def convert_timestamp(v):   # Convert datetime.datetime to BLR format timestamp
 def wire_operation(fn):
     if not DEBUG:
         return fn
-    def f(*args):
+    def f(*args, **kwargs):
         print('<----', fn, args)
-        r = fn(*args)
+        r = fn(*args, **kwargs)
         print(fn, '---->')
         return r
     return f
