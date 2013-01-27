@@ -228,8 +228,9 @@ if __name__ == '__main__':
     conn.close()
 
     with firebirdsql.connect(host=TEST_HOST, database=TEST_DATABASE,
-            port=TEST_PORT, user=TEST_USER, password=TEST_PASS).cursor() as cur:
-        cur.execute("update foo set c='Toshihide' where a=1")
+                    port=TEST_PORT, user=TEST_USER, password=TEST_PASS) as conn:
+        with conn.cursor() as cur:
+            cur.execute("update foo set c='Toshihide' where a=1")
 
     conn = firebirdsql.connect(host=TEST_HOST, database=TEST_DATABASE,
                         port=TEST_PORT, user=TEST_USER, password=TEST_PASS)
