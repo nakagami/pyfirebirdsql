@@ -10,11 +10,27 @@ for c in cur.fetchall():
     print(c)
 conn.close()
 """
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from distutils.core import setup, Command
 import firebirdsql
+
+class TestCommand(Command):
+    user_options = [ ]
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        '''
+        Finds all the tests modules in tests/, and runs them.
+        '''
+        from firebirdsql import tests
+        import unittest
+        unittest.main(tests, argv=sys.argv[:1])
+
+cmdclass = { 'test': TestCommand }
 
 
 classifiers = [
@@ -38,4 +54,5 @@ setup(name='firebirdsql',
         author_email='nakagami@gmail.com',
         packages = ['firebirdsql'],
         long_description=__doc__,
+        cmdclass = cmdclass,
 )
