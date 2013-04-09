@@ -10,6 +10,7 @@ for c in cur.fetchall():
     print(c)
 conn.close()
 """
+import sys
 from distutils.core import setup, Command
 import firebirdsql
 
