@@ -1,6 +1,6 @@
 import os
 import sys
-import firebridsql
+import firebirdsql
 import unittest
 
 class TestBasic(unittest.TestCase):
