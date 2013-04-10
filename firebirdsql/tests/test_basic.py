@@ -3,24 +3,13 @@ import sys
 import firebirdsql
 import unittest
 
-class TestBasic(unittest.TestCase):
+from firebirdsql.tests.base import BaseTestCase
+
+class TestBasic(BaseTestCase):
     def setUp(self):
-        if sys.platform in ('win32', 'darwin'):
-            fbase = os.path.abspath('.') + '/test'
-        else:
-            import tempfile
-            fbase = tempfile.mktemp()
-        TEST_HOST = 'localhost'
-        TEST_PORT = 3050
-        TEST_DATABASE = fbase + '.fdb'
-        TEST_DSN = TEST_HOST + '/' + str(TEST_PORT) + ':' + TEST_DATABASE
-        print('dsn=', TEST_DSN)
-        TEST_USER = 'sysdba'
-        TEST_PASS = 'masterkey'
-        conn = firebirdsql.create_database(dsn=TEST_DSN,
-                            user=TEST_USER, password=TEST_PASS, page_size=2<<13)
-    
-        conn.cursor().execute('''
+        super(BaseTestCase, self).setUp()
+        cur = self.connection.cursor()
+        cur.execute('''
             CREATE TABLE foo (
                 a INTEGER NOT NULL,
                 b VARCHAR(30) NOT NULL UNIQUE,
@@ -36,13 +25,13 @@ class TestBasic(unittest.TestCase):
                 CONSTRAINT CHECK_A CHECK (a <> 0)
             )
         ''')
-        conn.cursor().execute('''
+        cur.execute('''
             CREATE TABLE bar_empty (
                 k INTEGER NOT NULL,
                 abcdefghijklmnopqrstuvwxyz INTEGER
             )
         ''')
-        conn.cursor().execute('''
+        cur.execute('''
             CREATE PROCEDURE foo_proc
               RETURNS (out1 INTEGER, out2 VARCHAR(30))
               AS
@@ -51,7 +40,7 @@ class TestBasic(unittest.TestCase):
                 out2 = 'ABC';
               END
         ''')
-        conn.cursor().execute('''
+        cur.execute('''
             CREATE PROCEDURE bar_proc (param_a INTEGER, param_b VARCHAR(30))
               RETURNS (out1 INTEGER, out2 VARCHAR(30))
               AS
@@ -60,7 +49,7 @@ class TestBasic(unittest.TestCase):
                 out2 = param_b;
               END
         ''')
-        conn.cursor().execute('''
+        cur.execute('''
             CREATE PROCEDURE baz_proc(param_a INTEGER)
               RETURNS (out1 INTEGER, out2 VARCHAR(30))
               AS
@@ -71,10 +60,6 @@ class TestBasic(unittest.TestCase):
                 SUSPEND;
               END
         ''')
-        conn.commit()
+        self.connection.commit()
 
-        self.connection = conn
-
-        def tearDown(self):
-            self.connection.close()
 
