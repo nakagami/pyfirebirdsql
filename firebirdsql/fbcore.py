@@ -622,6 +622,8 @@ class Cursor:
 
     @property
     def description(self):
+        if not hasattr(self, "_xsqlda"):
+            return None
         return [(x.aliasname, x.sqltype, x.display_length(), x.io_length(),
                     x.precision(), x.sqlscale, True if x.null_ok else False)
                 for x in self._xsqlda]

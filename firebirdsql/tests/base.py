@@ -14,7 +14,6 @@ class BaseTestCase(unittest.TestCase):
         TEST_PORT = 3050
         TEST_DATABASE = fbase + '.fdb'
         TEST_DSN = TEST_HOST + '/' + str(TEST_PORT) + ':' + TEST_DATABASE
-        print('dsn=', TEST_DSN)
         TEST_USER = 'sysdba'
         TEST_PASS = 'masterkey'
         self.connection = firebirdsql.create_database(dsn=TEST_DSN,
