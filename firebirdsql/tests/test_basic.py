@@ -3,11 +3,21 @@ import sys
 import firebirdsql
 import unittest
 
-from firebirdsql.tests.base import BaseTestCase
-
-class TestBasic(BaseTestCase):
+class TestBasic(unittest.TestCase):
     def setUp(self):
-        super(BaseTestCase, self).setUp()
+        if sys.platform in ('win32', 'darwin'):
+            fbase = os.path.abspath('.') + '/test_basic'
+        else:
+            import tempfile
+            fbase = tempfile.mktemp()
+        TEST_HOST = 'localhost'
+        TEST_PORT = 3050
+        TEST_DATABASE = fbase + '.fdb'
+        TEST_DSN = TEST_HOST + '/' + str(TEST_PORT) + ':' + TEST_DATABASE
+        TEST_USER = 'sysdba'
+        TEST_PASS = 'masterkey'
+        self.connection = firebirdsql.create_database(dsn=TEST_DSN,
+                            user=TEST_USER, password=TEST_PASS, page_size=2<<13)
         cur = self.connection.cursor()
         cur.execute('''
             CREATE TABLE foo (
@@ -63,3 +73,5 @@ class TestBasic(BaseTestCase):
         self.connection.commit()
 
 
+    def tearDown(self):
+        self.connection.close()

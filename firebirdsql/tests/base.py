@@ -19,6 +19,6 @@ class BaseTestCase(unittest.TestCase):
         self.connection = firebirdsql.create_database(dsn=TEST_DSN,
                             user=TEST_USER, password=TEST_PASS, page_size=2<<13)
     
-        def tearDown(self):
-            self.connection.close()
+    def tearDown(self):
+        self.connection.close()
 
