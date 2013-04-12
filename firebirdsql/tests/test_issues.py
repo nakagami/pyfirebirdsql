@@ -1,17 +1,9 @@
 import firebirdsql
 import unittest
 import tempfile
+from firebirdsql.tests import base
 
-class TestIssues(unittest.TestCase):
-    def setUp(self):
-        self.connection = firebirdsql.create_database(
-                host='localhost',
-                port=3050,
-                database=tempfile.mktemp(),
-                user='sysdba',
-                password='masterkey',
-                page_size=2<<13)
-
+class TestIssues(base.TestBase):
     def test_issue_39(self):
         """
         .description attribute should be None when .execute has not run yet
