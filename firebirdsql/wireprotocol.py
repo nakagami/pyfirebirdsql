@@ -147,7 +147,7 @@ def params_to_blr(params):
             blr += bytes([14, nbytes & 255, nbytes >> 8])
         elif t == int:
             v = bint_to_bytes(p, 4)
-            blr += bytes([7, 0])
+            blr += bytes([8, 0])    # blr_long
         elif t == decimal.Decimal or t == float:
             if t == float:
                 p = decimal.Decimal(str(p))
