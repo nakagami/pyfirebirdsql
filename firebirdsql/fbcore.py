@@ -628,8 +628,32 @@ class Cursor:
 
     @property
     def rowcount(self):
-        # to be implemented
-        return -1
+        self.transaction.connection._op_info_sql(self.stmt_handle,
+                                     bytes([isc_info_sql_stmt_type]))
+        (h, oid, buf) = self.transaction.connection._op_response()
+        assert buf[:3] == bytes([0x15,0x04,0x00]) # isc_info_sql_stmt_type
+        stmt_type = bytes_to_int(buf[3:7])
+
+        self.transaction.connection._op_info_sql(self.stmt_handle,
+                                     bytes([isc_info_sql_records]))
+        (h, oid, buf) = self.transaction.connection._op_response()
+        assert buf[:3] == bytes([0x17,0x1d,0x00]) # isc_info_sql_records
+        if stmt_type == isc_info_sql_stmt_select:
+            # rowcount for select stmt changes based on num rows fetched
+            count = -1
+        elif stmt_type == isc_info_sql_stmt_insert:
+            assert buf[24:27] == bytes([0x0e,0x04,0x00])
+                                              # isc_info_req_insert_count
+            count = bytes_to_int(buf[27:31])
+        elif stmt_type == isc_info_sql_stmt_update:
+            assert buf[3:6] == bytes([0x0f,0x04,0x00])
+                                              # isc_info_req_update_count
+            count = bytes_to_int(buf[6:10])
+        elif stmt_type == isc_info_sql_stmt_delete:
+            assert buf[10:13] == bytes([0x10,0x04,0x00])
+                                              # isc_info_req_delete_count
+            count = bytes_to_int(buf[13:17])
+        return count
 
 class EventConduit(WireProtocol):
     def __init__(self, conn, names):
