@@ -5,12 +5,12 @@ import tempfile
 class TestBase(unittest.TestCase):
     host='localhost'
     port=3050
-    database=tempfile.mktemp()
     user='sysdba'
     password='masterkey'
     page_size=2<<13
 
     def setUp(self):
+        self.database=tempfile.mktemp()
         self.connection = firebirdsql.create_database(
                 host=self.host,
                 port=self.port,

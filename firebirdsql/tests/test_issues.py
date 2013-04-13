@@ -1,6 +1,6 @@
-import firebirdsql
 import unittest
 import tempfile
+import firebirdsql
 from firebirdsql.tests import base
 
 class TestIssues(base.TestBase):
@@ -44,6 +44,4 @@ class TestIssues(base.TestBase):
         self.assertEqual(cur.fetchone()[0], 'BAR')
         cur.close()
 
-    def tearDown(self):
-        self.connection.close()
 
