@@ -1,6 +1,7 @@
-import firebirdsql
+import os
 import unittest
 import tempfile
+import firebirdsql
 from firebirdsql.tests import base
 
 def test_callback(s):
@@ -27,6 +28,7 @@ class TestBackup(base.TestBase):
                             BACKUP_FILE,
                             callback=test_callback)
         svc.close()
+        self.assertEqual(True, os.access(BACKUP_FILE, os.F_OK))
 
         # restore
         svc = firebirdsql.services.connect(
@@ -39,6 +41,7 @@ class TestBackup(base.TestBase):
                             pageSize=4096,
                             callback=test_callback)
         svc.close()
+        self.assertEqual(True, os.access(RESTORE_DATABASE, os.F_OK))
     
         # drop database
         conn = firebirdsql.connect(
@@ -50,4 +53,5 @@ class TestBackup(base.TestBase):
 
         conn.drop_database()
         conn.close()
+        self.assertEqual(False, os.access(RESTORE_DATABASE, os.F_OK))
 
