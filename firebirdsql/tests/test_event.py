@@ -33,8 +33,16 @@ class TestEvent(base.TestBase):
         self.connection.commit()
 
     def _produce(self):
-        self.connection.cursor().execute('insert into test_table values (1)')
-        self.connection.commit()
+        conn = firebirdsql.connect(
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                user=self.user,
+                password=self.password)
+        cur = conn.cursor()
+        cur.execute('insert into test_table values (1)')
+        conn.commit()
+        conn.close()
 
     def _handle_event(self):
         conduit = self.connection.event_conduit(['event_a', 'event_b', 'event_d'])
