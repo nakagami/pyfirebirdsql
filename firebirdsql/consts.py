@@ -96,6 +96,12 @@ isc_info_active_tran_count = 110
 isc_info_creation_date = 111
 isc_info_db_file_size = 112
 
+# isc_info_sql_records items
+isc_info_req_select_count = 13
+isc_info_req_insert_count = 14
+isc_info_req_update_count = 15
+isc_info_req_delete_count = 16
+
 isc_info_svc_svr_db_info = 50
 isc_info_svc_get_license = 51
 isc_info_svc_get_license_mask = 52
