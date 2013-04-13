@@ -9,7 +9,7 @@ from firebirdsql.tests import base
 class TestEvent(base.TestBase):
     def setUp(self):
         self.database=tempfile.mktemp()
-        self.connection = firebirdsql.create_database(
+        conn = firebirdsql.create_database(
                 host=self.host,
                 port=self.port,
                 database=self.database,
@@ -17,7 +17,7 @@ class TestEvent(base.TestBase):
                 password=self.password,
                 page_size=self.page_size)
 
-        cur = self.connection.cursor()
+        cur = conn.cursor()
 
         cur.execute('CREATE TABLE test_table (a integer)')
         cur.execute('''
@@ -30,7 +30,11 @@ class TestEvent(base.TestBase):
                 post_event 'event_c';
                 post_event 'event_a';
             END''')
-        self.connection.commit()
+        conn.commit()
+        conn.close()
+
+    def tearDown(self):
+        pass
 
     def _produce(self):
         conn = firebirdsql.connect(
@@ -45,7 +49,13 @@ class TestEvent(base.TestBase):
         conn.close()
 
     def _handle_event(self):
-        conduit = self.connection.event_conduit(['event_a', 'event_b', 'event_d'])
+        conn = firebirdsql.connect(
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                user=self.user,
+                password=self.password)
+        conduit = conn.event_conduit(['event_a', 'event_b', 'event_d'])
     
         result = conduit.wait(timeout=1)
         assert result == {'event_b': 0, 'event_a': 0, 'event_d': 0}
@@ -60,6 +70,7 @@ class TestEvent(base.TestBase):
         assert result == {'event_b': 1, 'event_a': 2, 'event_d': 0}
     
         conduit.close()
+        conn.close()
 
     def test_event(self):
         pid = os.fork()
