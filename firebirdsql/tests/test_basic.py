@@ -12,14 +12,12 @@ class TestBasic(base.TestBase):
 
         cur = conn.cursor()
         cur.execute("select * from foo")
-        assert cur.fetchone() is None
+        self.assertEqual(cur.fetchone(), None)
         cur.close()
 
         cur = conn.cursor()
 
-        print('foo_proc')
-        cur.callproc("foo_proc")
-        print(cur.fetchone())
+        self.assertEqual(None, cur.callproc("foo_proc"))
         cur.close()
 
         cur = conn.cursor()
@@ -35,11 +33,12 @@ class TestBasic(base.TestBase):
         finally:
             cur.close()
 
-        print('bar_proc')
         cur = conn.cursor()
         cur.callproc("bar_proc", (1, "ABC"))
-        for r in cur.fetchallmap():
-            print(r)
+        rs = cur.fetchallmap()
+        self.assertEqual(len(rs), 1)
+        self.assertEqual(rs[0]['OUT1'], 1)
+        self.assertEqual(rs[0]['OUT2'], 'ABC')
    
         cur.close()
   
@@ -55,11 +54,11 @@ class TestBasic(base.TestBase):
         conn.cursor().execute("""insert into foo(a, b, c, e, g, i, j) 
             values (3, 'X', 'Y', '2001-07-05', '00:01:02', 0.2, 0.2)""")
 
-        print("select from stored procedure")
         cur = conn.cursor()
         cur.execute("select out1, out2 from baz_proc(?)", (1, ))
-        for r in cur.fetchall():
-            print(r)
+        rs = cur.fetchall()
+        self.assertEqual(len(rs), 1)
+        self.assertEqual([1, 'a'], rs[0])
         cur.close()
 
         # 1 record insert and rollback to savepoint
@@ -94,9 +93,9 @@ class TestBasic(base.TestBase):
                 print(r)
         except firebirdsql.OperationalError:
             e = sys.exc_info()[1]
-            print(e.sql_code)
-            assert (e.sql_code == -504          # FB2.1 cursor is not open
-                or 335544332 in e.gds_codes)    # FB2.5 invalid transaction handle
+            self.assertTrue(
+                e.sql_code == -504           # FB2.1 cursor is not open
+                or 335544332 in e.gds_codes) # FB2.5 invalid transaction handle
 
         cur = conn.cursor()
         try:
@@ -107,11 +106,12 @@ class TestBasic(base.TestBase):
             conn.cursor().execute("bad sql")
         except firebirdsql.OperationalError:
             e = sys.exc_info()[1]
-            assert e.sql_code == -104
+            self.assertEqual(e.sql_code, -104)
 
         cur = conn.cursor()
         cur.execute("select * from foo")
-        print(cur.description)
+        self.assertEqual(['A','B','C','D','E','F','G','H','I','J'],
+                        [d[0] for d in cur.description])
         for c in cur.fetchall():
             print(c)
 
