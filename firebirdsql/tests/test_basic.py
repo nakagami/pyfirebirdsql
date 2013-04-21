@@ -2,6 +2,8 @@ from __future__ import with_statement
 import sys
 import unittest
 import tempfile
+import datetime
+from decimal import Decimal
 import firebirdsql
 from firebirdsql.tests import base
 from firebirdsql.consts import *
@@ -23,13 +25,14 @@ class TestBasic(base.TestBase):
         cur = conn.cursor()
         try:
             rs = cur.execute("select out1, out2 from foo_proc")
-            if rs is None:  # FB1.5
-                print('foo_proc not selectable')
+            if rs is None:
+                # foo_proc not selectable with Firebird 1.5
+                pass
             else:
-                for r in rs:
-                    print(r)
-        except firebirdsql.OperationalError:    # FB2
-            print('foo_proc not selectable')
+                pass
+        except firebirdsql.OperationalError:
+            # foo_proc not selectable with Firebird 2.x
+            pass
         finally:
             cur.close()
 
@@ -89,8 +92,7 @@ class TestBasic(base.TestBase):
         cur.execute("select * from foo")
         conn.commit()
         try:
-            for r in cur.fetchall():
-                print(r)
+            list(cur.fetchall())
         except firebirdsql.OperationalError:
             e = sys.exc_info()[1]
             self.assertTrue(
@@ -112,45 +114,46 @@ class TestBasic(base.TestBase):
         cur.execute("select * from foo")
         self.assertEqual(['A','B','C','D','E','F','G','H','I','J'],
                         [d[0] for d in cur.description])
-        for c in cur.fetchall():
-            print(c)
+        self.assertEqual(['a','A','X'], [r[1] for r in cur.fetchall()])
 
-        print('fetchallmap()')
         cur.execute("select * from foo")
-        for r in cur.fetchallmap():
-            print(r)
-            for key in r:
-                print (key, r[key])
+        self.assertEqual(['a','A','X'], [r['B'] for r in cur.fetchallmap()])
 
-        print('fetchonemap()')
         cur = conn.cursor()
         cur.execute("select * from foo")
-        for k,v in cur.fetchonemap().items():
-            print(k, v)
+        self.assertEqual({
+            'A': 1,
+            'B': 'a',
+            'C': 'Hajime',
+            'D': Decimal('-0.123'),
+            'E': datetime.date(1967, 8, 11),
+            'F': datetime.datetime(1967, 8, 11, 23, 45, 1),
+            'G': datetime.time(23, 45, 1),
+            'H': 'This is a memo',
+            'I': 0.0,
+            'J': 0.0},
+            cur.fetchonemap()
+        )
 
-        print('itermap()')
         cur = conn.cursor()
         cur.execute("select * from foo")
-        for r in cur.itermap():
-            print(r['a'], r['b'], r['c'])
-   
-        print('fetchonemap() empty record')
+        self.assertEqual(['a','A','X'], [r['B'] for r in cur.itermap()])
+
         cur = conn.cursor()
         cur.execute("select * from bar_empty")
-        for k,v in cur.fetchonemap().items():
-            print(k, v)
+        self.assertEqual([], [r for r in cur.fetchonemap().items()])
 
-        print('cursor iteration')
         cur = conn.cursor()
         cur.execute("select * from foo")
-        for (a, b, c, d, e, f, g, h, i, j) in cur:
-            print(a, b, c)
+        rs = [r for r in cur]
+        self.assertEqual(rs[0][:3], [1, 'a', 'Hajime'])
+        self.assertEqual(rs[1][:3], [2, 'A', 'Nakagami'])
+        self.assertEqual(rs[2][:3], [3, 'X', 'Y'])
 
-        print('long field name from system table')
         cur = conn.cursor()
         cur.execute("select rdb$field_name from rdb$relation_fields where rdb$field_name='ABCDEFGHIJKLMNOPQRSTUVWXYZ'")
         v = cur.fetchone()[0]
-        assert v.strip() == 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        self.assertEqual(v.strip(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
         conn.close()
 
@@ -169,7 +172,6 @@ class TestBasic(base.TestBase):
                                     password=self.password)
         conn.begin()
 
-        print('db_info:')
         requests = [isc_info_ods_version,
                     isc_info_ods_minor_version,
                     isc_info_base_level,
@@ -180,9 +182,8 @@ class TestBasic(base.TestBase):
                     isc_info_read_idx_count,
                     isc_info_creation_date,
         ]
-        print(conn.db_info(requests))
+        self.assertEqual(9, len(conn.db_info(requests)))
    
-        print('trans_info:')
         requests = [isc_info_tra_id, 
                     isc_info_tra_oldest_interesting,
                     isc_info_tra_oldest_snapshot,
@@ -191,14 +192,14 @@ class TestBasic(base.TestBase):
                     isc_info_tra_access,
                     isc_info_tra_lock_timeout,
         ]
-        print(conn.trans_info(requests))
+        self.assertEqual(7, len(conn.trans_info(requests)))
     
         conn.set_isolation_level(firebirdsql.ISOLATION_LEVEL_SERIALIZABLE)
         cur = conn.cursor()
         cur.execute("select * from foo")
-        print(cur.description)
-        for c in cur.fetchall():
-            print(c)
+        self.assertEqual(['A','B','C','D','E','F','G','H','I','J'],
+                        [d[0] for d in cur.description])
+        self.assertEqual(['a','A','X'], [r[1] for r in cur.fetchall()])
 
     def test_prep(self):
         cur = self.connection.cursor()
@@ -208,6 +209,6 @@ class TestBasic(base.TestBase):
         self.assertEqual(prep.n_output_params, 10)
 
         cur.execute(prep, ('C parameter', ))
-        print(cur.fetchall())
+        self.assertEqual(0, len(cur.fetchall()))
         cur.close()
 
