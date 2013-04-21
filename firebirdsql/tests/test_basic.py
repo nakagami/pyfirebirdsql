@@ -129,10 +129,10 @@ class TestBasic(base.TestBase):
             'E': datetime.date(1967, 8, 11),
             'F': datetime.datetime(1967, 8, 11, 23, 45, 1),
             'G': datetime.time(23, 45, 1),
-            'H': 'This is a memo',
+            'H': b'This is a memo',
             'I': 0.0,
             'J': 0.0},
-            cur.fetchonemap()
+            dict(cur.fetchonemap())
         )
 
         cur = conn.cursor()
