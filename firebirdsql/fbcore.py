@@ -451,7 +451,7 @@ class Cursor:
         except OperationalError:
             e = sys.exc_info()[1]
             if 335544665 in e.gds_codes:
-                raise IntegrityError(e.message, e.gds_codes, e.sql_code)
+                raise IntegrityError(e._message, e.gds_codes, e.sql_code)
         return stmt_type, stmt_handle
 
     def _callproc(self, query, params):
