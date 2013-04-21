@@ -11,11 +11,11 @@ from firebirdsql.consts import *
 
 class Error(Exception):
     def __init__(self, message, gds_codes=0, sql_code=0):
-        self.message = message
+        self._message = message
         self.gds_codes = gds_codes
         self.sql_code = sql_code
     def __str__(self):
-        return self.message
+        return self._message
 
 class Warning(Exception):
     pass
