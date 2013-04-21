@@ -2,4 +2,4 @@ firebirdsql package is a set of Firebird RDBMS bindings for python.
 It works on Python 2.5+ (including Python 3.x)
 It was tested with cpython , jython, ironpython and pypy
 
-http://nakagami.github.io/pyfirebirdsql/
+https://pyfirebirdsql.readthedocs.org/en/latest/
