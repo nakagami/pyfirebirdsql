@@ -8,6 +8,11 @@ import firebirdsql
 from firebirdsql.tests import base
 from firebirdsql.consts import *
 
+def b(s):
+    if sys.version_info[0] == 3:
+        return bytes(s, 'utf8')
+    return s
+
 class TestBasic(base.TestBase):
     def test_basic(self):
         conn = self.connection
@@ -129,7 +134,7 @@ class TestBasic(base.TestBase):
             'E': datetime.date(1967, 8, 11),
             'F': datetime.datetime(1967, 8, 11, 23, 45, 1),
             'G': datetime.time(23, 45, 1),
-            'H': b'This is a memo',
+            'H': b('This is a memo'),
             'I': 0.0,
             'J': 0.0},
             dict(cur.fetchonemap())
