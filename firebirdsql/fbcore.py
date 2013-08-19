@@ -238,6 +238,7 @@ sqltype2blr = {
     SQL_TYPE_TIMESTAMP: [35],
     SQL_TYPE_BLOB: [9, 0],
     SQL_TYPE_ARRAY: [9, 0],
+    SQL_TYPE_BOOLEAN: [23],
     }
 
 def calc_blr(xsqlda):
