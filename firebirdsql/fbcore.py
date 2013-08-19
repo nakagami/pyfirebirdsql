@@ -103,7 +103,8 @@ class XSQLVAR:
         SQL_TYPE_BLOB: 8,
         SQL_TYPE_ARRAY: 8,
         SQL_TYPE_QUAD: 8,
-        SQL_TYPE_INT64: 8
+        SQL_TYPE_INT64: 8,
+        SQL_TYPE_BOOLEAN: 1,
         }
 
     type_display_length = {
@@ -118,7 +119,8 @@ class XSQLVAR:
         SQL_TYPE_BLOB: 0,
         SQL_TYPE_ARRAY: -1,
         SQL_TYPE_QUAD: 20,
-        SQL_TYPE_INT64: 20
+        SQL_TYPE_INT64: 20,
+        SQL_TYPE_BOOLEAN: 5,
         }
 
     def __init__(self, bytes_to_str):
