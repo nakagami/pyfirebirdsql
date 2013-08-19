@@ -416,6 +416,8 @@ class Cursor:
         for param in params:
             if type(param) == str:
                 param = self.transaction.connection.str_to_bytes(param)
+            elif type(param) == bool:
+                param = b'\01' if param else b'\00'
             cooked_params.append(param)
         return cooked_params
 
