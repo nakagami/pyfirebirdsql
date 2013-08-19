@@ -413,23 +413,10 @@ class Cursor:
 
     def _convert_params(self, params):
         cooked_params = []
-        for param in params:        # Convert str/bytes parameter to blob id
+        for param in params:
             if type(param) == str:
                 param = self.transaction.connection.str_to_bytes(param)
             cooked_params.append(param)
-            continue
-            self.transaction.connection._op_create_blob2(self.transaction.trans_handle)
-            (blob_handle, blob_id, buf2) = self.transaction.connection._op_response()
-            seg_size = self.transaction.connection.buffer_length
-            (seg, remains) = param[:seg_size], param[seg_size:]
-            while seg:
-                self.transaction.connection._op_batch_segments(blob_handle, seg)
-                (h3, oid3, buf3) = self.transaction.connection._op_response()
-                (seg, remains) = remains[:seg_size], remains[seg_size:]
-            self.transaction.connection._op_close_blob(blob_handle)
-            (h4, oid4, buf4) = self.transaction.connection._op_response()
-            assert blob_id == oid4
-            cooked_params.append(blob_id)
         return cooked_params
 
     def _execute(self, query, params):
