@@ -223,6 +223,8 @@ class XSQLVAR:
             return struct.unpack('!f', raw_value)[0]
         elif self.sqltype == SQL_TYPE_DOUBLE:
             return struct.unpack('!d', raw_value)[0]
+        elif self.sqltype == SQL_TYPE_BOOLEAN:
+            return True if raw_value[0] else False
         else:
             return raw_value
 
