@@ -172,7 +172,7 @@ def params_to_blr(params):
             v = convert_timestamp(p)
             blr += bytes([35])
         elif t == bool:
-            v = [1] if p else [0]
+            v = bytes([1]) if p else bytes([0])
             blr += bytes([23])
         elif p == None:
             v = bytes([0]) * 8
