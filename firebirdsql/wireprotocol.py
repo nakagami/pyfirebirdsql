@@ -518,16 +518,6 @@ class WireProtocol:
         p.pack_bytes(b)
         p.pack_int(self.buffer_length)
         send_channel(self.sock, p.get_buffer())
-    @wire_operation
-    def _op_info_database(self, b):
-        p = xdrlib.Packer()
-        p.pack_int(self.op_info_database)
-        p.pack_int(self.db_handle)
-        p.pack_int(0)
-        p.pack_bytes(b)
-        p.pack_int(self.buffer_length)
-        send_channel(self.sock, p.get_buffer())
-
 
     @wire_operation
     def _op_free_statement(self, stmt_handle, mode):
