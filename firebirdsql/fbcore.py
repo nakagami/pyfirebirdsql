@@ -324,27 +324,31 @@ def parse_select_items(buf, xsqlda, connection):
     return -1   # no more info
 
 def parse_xsqlda(buf, connection, stmt_handle):
-    assert buf[:3] == bytes([0x15,0x04,0x00]) # isc_info_sql_stmt_type
-    stmt_type = bytes_to_int(buf[3:7])
-    if (stmt_type != isc_info_sql_stmt_select and
-        stmt_type != isc_info_sql_stmt_exec_procedure):
-        return []
-
-    assert buf[7:9] == bytes([0x04,0x07])
-    l = bytes_to_int(buf[9:11])
-    col_len = bytes_to_int(buf[11:11+l])
-    xsqlda = [None] * col_len
-    next_index = parse_select_items(buf[11+l:], xsqlda, connection)
-    while next_index > 0:   # more describe vars
-        connection._op_info_sql(stmt_handle,
-                    bytes([isc_info_sql_sqlda_start, 2])
-                        + int_to_bytes(next_index, 2)
-                        + INFO_SQL_SELECT_DESCRIBE_VARS)
-        (h, oid, buf) = connection._op_response()
-        assert buf[:2] == bytes([0x04,0x07])
-        l = bytes_to_int(buf[2:4])
-        assert bytes_to_int(buf[4:4+l]) == col_len
-        next_index = parse_select_items(buf[4+l:], xsqlda, connection)
+    xsqlda = []
+    i = 0
+    while i < len(buf):
+        if buf[i:i+3] == bytes([isc_info_sql_stmt_type,0x04,0x00]):
+            stmt_type = bytes_to_int(buf[i+3:i+7])
+            i += 7
+        elif buf[i:i+2] == bytes([isc_info_sql_select, isc_info_sql_describe_vars]):
+            i += 2
+            l = bytes_to_int(buf[i:i+2])
+            i += 2
+            col_len = bytes_to_int(buf[i:i+l])
+            xsqlda = [None] * col_len
+            next_index = parse_select_items(buf[i+l:], xsqlda, connection)
+            while next_index > 0:   # more describe vars
+                connection._op_info_sql(stmt_handle,
+                            bytes([isc_info_sql_sqlda_start, 2])
+                                + int_to_bytes(next_index, 2)
+                                + INFO_SQL_SELECT_DESCRIBE_VARS)
+                (h, oid, buf) = connection._op_response()
+                assert buf[:2] == bytes([0x04,0x07])
+                l = bytes_to_int(buf[2:4])
+                assert bytes_to_int(buf[4:4+l]) == col_len
+                next_index = parse_select_items(buf[4+l:], xsqlda, connection)
+        else:
+            break
     return xsqlda
 
 class PreparedStatement:
