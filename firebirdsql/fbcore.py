@@ -325,6 +325,7 @@ def parse_select_items(buf, xsqlda, connection):
 
 def parse_xsqlda(buf, connection, stmt_handle):
     xsqlda = []
+    stmt_type = None
     i = 0
     while i < len(buf):
         if buf[i:i+3] == bytes([isc_info_sql_stmt_type,0x04,0x00]):
@@ -349,7 +350,7 @@ def parse_xsqlda(buf, connection, stmt_handle):
                 next_index = parse_select_items(buf[4+l:], xsqlda, connection)
         else:
             break
-    return xsqlda
+    return stmt_type, xsqlda
 
 class PreparedStatement:
     def __init__(self, cur, sql, explain_plan=False):
@@ -379,9 +380,8 @@ class PreparedStatement:
             self.plan = connection.bytes_to_str(buf[i+3:i+3+l])
             i += 3 + l
 
-        assert buf[i:i+3] == bytes([0x15,0x04,0x00]) # isc_info_sql_stmt_type (4 bytes)
-        self.statement_type = bytes_to_int(buf[i+3:i+7])
-        self._xsqlda = parse_xsqlda(buf[i:], connection, self.stmt_handle)
+        self.statement_type, self._xsqlda = parse_xsqlda(
+                                        buf[i:], connection, self.stmt_handle)
 
     def __getattr__(self, attrname):
         if attrname == 'description':
@@ -435,10 +435,8 @@ class Cursor:
             self.transaction.connection._op_prepare_statement(stmt_handle,
                                         self.transaction.trans_handle, query)
             (h, oid, buf) = self.transaction.connection._op_response()
-            assert buf[:3] == bytes([0x15,0x04,0x00]) # isc_info_sql_stmt_type
-            stmt_type = bytes_to_int(buf[3:7])
-            self._xsqlda = parse_xsqlda(buf, self.transaction.connection,
-                                                                stmt_handle)
+            stmt_type, self._xsqlda = parse_xsqlda(
+                                buf, self.transaction.connection, stmt_handle)
 
         self.transaction.connection._op_execute(stmt_handle,
                                 self.transaction.trans_handle, cooked_params)
@@ -456,10 +454,8 @@ class Cursor:
         self.transaction.connection._op_prepare_statement(stmt_handle,
                                         self.transaction.trans_handle, query)
         (h, oid, buf) = self.transaction.connection._op_response()
-        assert buf[:3] == bytes([0x15,0x04,0x00]) # isc_info_sql_stmt_type
-        stmt_type = bytes_to_int(buf[3:7])
-        self._xsqlda = parse_xsqlda(buf, self.transaction.connection,
-                                                                stmt_handle)
+        stmt_type, self._xsqlda = parse_xsqlda(
+                            buf, self.transaction.connection, stmt_handle)
 
         self.transaction.connection._op_execute2(stmt_handle,
             self.transaction.trans_handle, cooked_params,
