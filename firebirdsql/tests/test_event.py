@@ -5,6 +5,11 @@ import unittest
 import tempfile
 import firebirdsql
 from firebirdsql.tests import base
+from firebirdsql.consts import PYTHON_MAJOR_VER
+if PYTHON_MAJOR_VER == 3:
+    import _thread as thread
+else:
+    import thread
 
 class TestEvent(base.TestBase):
     def setUp(self):
@@ -73,9 +78,6 @@ class TestEvent(base.TestBase):
         conn.close()
 
     def test_event(self):
-        pid = os.fork()
-        if pid == 0:
-            self._handle_event()
-        else:
-            time.sleep(3)
-            self._produce()
+        thread.start_new_thread(self._handle_event, ())
+        time.sleep(3)
+        self._produce()
