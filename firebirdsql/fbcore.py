@@ -944,11 +944,13 @@ class Connection(WireProtocol):
         else:
             self._op_detach()
         (h, oid, buf) = self._op_response()
+        self.sock.close()
         self.closed = True
 
     def drop_database(self):
         self._op_drop_database()
         (h, oid, buf) = self._op_response()
+        self.sock.close()
         self.closed = True
         delattr(self, "db_handle")
 
