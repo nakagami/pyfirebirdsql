@@ -710,7 +710,7 @@ class Connection(WireProtocol):
         return c
 
     def begin(self):
-        if self.closed:
+        if not self.sock:
             raise InternalError
         trans = Transaction(self)
         trans.begin()
@@ -783,7 +783,6 @@ class Connection(WireProtocol):
             self._op_attach()
         (h, oid, buf) = self._op_response()
         self.db_handle = h
-        self.closed = False
         self.last_event_id = 0
 
     def __enter__(self):
@@ -935,7 +934,7 @@ class Connection(WireProtocol):
         return {}
 
     def close(self):
-        if self.closed:
+        if self.sock is None:
             return
         for trans in self._transactions:
             trans.close()
@@ -945,20 +944,20 @@ class Connection(WireProtocol):
             self._op_detach()
         (h, oid, buf) = self._op_response()
         self.sock.close()
-        self.closed = True
+        self.sock = None
 
     def drop_database(self):
         self._op_drop_database()
         (h, oid, buf) = self._op_response()
         self.sock.close()
-        self.closed = True
+        self.sock = None
         delattr(self, "db_handle")
 
     def event_conduit(self, event_names):
         return EventConduit(self, event_names)
 
     def __del__(self):
-        if hasattr(self, "db_handle") and (not self.closed):
+        if self.sock:
             self.close()
 
 class Transaction:
