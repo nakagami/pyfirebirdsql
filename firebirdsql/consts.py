@@ -337,3 +337,4 @@ isc_arg_next_mach = 15
 isc_arg_netware = 16
 isc_arg_win32 = 17
 isc_arg_warning = 18
+isc_arg_sql_state = 19

@@ -310,9 +310,12 @@ class WireProtocol:
                 message = message.replace('@' + str(num_arg), str(num))
             elif n == isc_arg_string or n == isc_arg_interpreted:
                 nbytes = bytes_to_bint(recv_channel(self.sock, 4))
-                n = str(recv_channel(self.sock, nbytes, word_alignment=True))
+                s = str(recv_channel(self.sock, nbytes, word_alignment=True))
                 num_arg += 1
-                message = message.replace('@' + str(num_arg), n)
+                message = message.replace('@' + str(num_arg), s)
+            elif n == isc_arg_sql_state:
+                nbytes = bytes_to_bint(recv_channel(self.sock, 4))
+                s = str(recv_channel(self.sock, nbytes, word_alignment=True))
             n = bytes_to_bint(recv_channel(self.sock, 4))
 
         return (gds_codes, sql_code, message)
