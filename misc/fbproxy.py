@@ -931,6 +931,7 @@ isc_status_names = [
   'isc_arg_domain', 'isc_arg_dos', 'isc_arg_mpexl', 'isc_arg_mpexl_ipc',
   None, None, None, 
   'isc_arg_next_mach', 'isc_arg_netware', 'isc_arg_win32', 'isc_arg_warning',
+  'isc_arg_sql_state',
 ]
 
 type_names = {
@@ -1412,7 +1413,7 @@ def op_response(sock):
         elif s == 'isc_arg_number':
             print _bytes_to_bint32(sv, i),
             i += 4 
-        elif s == 'isc_arg_string' or s == 'isc_arg_interpreted':
+        elif s in ['isc_arg_string', 'isc_arg_interpreted', 'isc_arg_sql_state']:
             nbytes = _bytes_to_bint32(sv, i)
             i += 4
             print '<' + sv[i:i + nbytes] + '>',
