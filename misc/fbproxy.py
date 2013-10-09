@@ -1280,7 +1280,7 @@ def _database_parameter_block(bytes):
             'isc_dpb_process_name', 'isc_spb_process_name',
             'isc_dpb_utf8_filename']:
             l = ord(bytes[i+1])
-            print('[' + bytes[i+2:i+2+l] + ']',)
+            print('[', bytes[i+2:i+2+l], ']',)
             i = i + 2 + l
         elif s in ['isc_dpb_dummy_packet_interval', 'isc_dpb_sql_dialect', 
             'isc_dpb_sweep', 'isc_dpb_connect_timeout', 'isc_dpb_page_size', 
@@ -1359,7 +1359,7 @@ def op_start_send_and_receive(sock):
 
 def op_response(sock):
     head = sock.recv(16)
-    print('\thandle<' + binascii.b2a_hex(head[0:4]) + '>id<' + binascii.b2a_hex(head[4:12]) + '>',)
+    print('\thandle<', binascii.b2a_hex(head[0:4]), '>id<', binascii.b2a_hex(head[4:12]), '>',)
     nbytes = _bytes_to_bint32(head, 12)
     bs = _need_nbytes_align(sock, nbytes)
     print('Data len=%d' % (nbytes))
@@ -1381,7 +1381,7 @@ def op_response(sock):
                 'isc_info_sweep_interval', 'isc_info_user_names',
                 ]:
                 l = _bytes_to_int(bs, i+1, 2)
-                print('[' + binascii.b2a_hex(bs[i+3:i+3+l]) + ']',)
+                print('[', binascii.b2a_hex(bs[i+3:i+3+l]), ']',)
                 if s == 'isc_info_firebird_version':
                     print(bs[i+5:i+3+l],)
                 i = i + 3 + l
