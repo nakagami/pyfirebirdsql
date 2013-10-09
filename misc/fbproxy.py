@@ -1049,7 +1049,10 @@ def _bint_to_bytes(val, nbytes): # Convert int value to big endian bytes.
             if b[nbytes -i -1] == 256:
                 b[nbytes -i -1] = 0
                 b[nbytes -i -2] += 1
-    return ''.join([chr(c) for c in b])
+    if PYTHON3:
+        return bytes(b)
+    else:
+        return ''.join([chr(c) for c in b])
 
 def _int_to_bytes(val, nbytes):  # Convert int value to little endian bytes.
     v = abs(val)
@@ -1832,7 +1835,7 @@ def op_que_events(sock):
     up = xdrlib.Unpacker(msg)
     print('\tdb_handle=', up.unpack_int())
     prs = up.unpack_string()    # param raw strings
-    print('\tprs=[' +  binascii.b2a_hex(prs) + ']')
+    print('\tprs=[', binascii.b2a_hex(prs), ']')
     param_strings = []
     assert ord(prs[0]) == 1
     i = 1
