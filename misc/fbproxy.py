@@ -1100,7 +1100,10 @@ def _calc_blr(xsqlda):  # calc from sqlda to BLR format data.
     blr += [255, 76]    # [blr_end, blr_eoc]
 
     # x.sqlscale value is sometimes negative, so b convert to unsigned char
-    blr = ''.join([chr(256 + b if b < 0 else b) for b in blr])
+    if PYTHON3:
+        blr = bytes([(256 + b if b < 0 else b) for b in blr])
+    else:
+        blr = ''.join([chr(256 + b if b < 0 else b) for b in blr])
     return blr
 
 def _parse_param(blr, bytes = None):   # Parse (bytes data with) BLR format
