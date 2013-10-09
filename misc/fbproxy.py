@@ -70,7 +70,7 @@ def hex_dump(s):
         print('  ' * (16 - len(r)),)
         for j in range(len(r)):
             if ord(r[j]) < 32 or ord(r[j]) > 127:
-                r = r[:j] + '.' + r[j+1:]
+                r = r[:j] + b'.' + r[j+1:]
         print(r)
         (r, s) = s[:16], s[16:]
         i = i + 16
@@ -1001,7 +1001,7 @@ def _need_nbytes_align(sock, nbytes): # Get nbytes with 4 bytes word alignment
     n = nbytes
     if n % 4:
         n += 4 - nbytes % 4  # 4 bytes word alignment
-    r = ''
+    r = b''
     while n:
         bytes = sock.recv(n)
         r += bytes
@@ -1409,7 +1409,7 @@ def op_response(sock):
     # http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_60_upd_sv_fs
     sv = sock.recv(bufsize)
     i = 0
-    print('\tStatus vector['+binascii.b2a_hex(sv)+']')
+    print('\tStatus vector[', binascii.b2a_hex(sv), ']')
     asc_dump(sv)
     print('\t',)
     while i < len(sv):
@@ -1426,7 +1426,7 @@ def op_response(sock):
         elif s in ['isc_arg_string', 'isc_arg_interpreted', 'isc_arg_sql_state']:
             nbytes = _bytes_to_bint32(sv, i)
             i += 4
-            print('<' + sv[i:i + nbytes] + '>',)
+            print('<', sv[i:i + nbytes], '>',)
             i += nbytes
             if nbytes % 4:
                 i += 4 - nbytes % 4  # 4 bs word alignment
@@ -1436,7 +1436,7 @@ def op_response(sock):
     print()
     if i < len(sv):
         i += ((4-i) & 3)
-        print('\tpiggyback[' + binascii.b2a_hex(sv[i:]) + ']', len(sv) - i)
+        print('\tpiggyback[', binascii.b2a_hex(sv[i:]), ']', len(sv) - i)
         asc_dump(sv[i:])
     return head + bs + sv
 
@@ -1567,7 +1567,7 @@ def op_transaction(sock):
     up = xdrlib.Unpacker(msg)
     print('\tDatabase<%x>' % (up.unpack_uint()),)
     bytes = up.unpack_bytes()
-    print('\t[' + binascii.b2a_hex(bytes) + ']=[',)
+    print('\t[', binascii.b2a_hex(bytes), ']=[',)
     for b in bytes:
         print(isc_tpb_names[ord(b)],)
     print(']')
@@ -1593,9 +1593,9 @@ def op_prepare_statement(sock):
     set_prepare_dialect(up.unpack_int())
     print('\tTrans<%x>Statement<%x>dialect<%d>' % (get_prepare_trans(),
             get_prepare_statement(), get_prepare_dialect()))
-    print('\t' + up.unpack_string())
+    print('\t', up.unpack_string())
     bytes = up.unpack_bytes() # AbstractJavaGDSImpl.java/sql_prepare_info
-    print('\t[' + binascii.b2a_hex(bytes) + ']=[',)
+    print('\t[', binascii.b2a_hex(bytes), ']=[',)
     for b in bytes:
         print(isc_info_sql_names[ord(b)],)
     print(']')
@@ -1629,7 +1629,7 @@ def op_info_sql(sock):
 def op_allocate_statement(sock):
     msg = sock.recv(bufsize)
     print('\tDatabase<%x>' % (_bytes_to_bint32(msg, 0),),)
-    print('[' + binascii.b2a_hex(msg[24:]) + ']')
+    print('[', binascii.b2a_hex(msg[24:]), ']')
     asc_dump(msg[24:])
     return msg
 
@@ -1653,12 +1653,12 @@ def op_execute(sock):
     up = xdrlib.Unpacker(msg)
     print('\tStatement<%x>Trans<%x>' % (up.unpack_uint(), up.unpack_uint()))
     blr = up.unpack_bytes()
-    print('\tparam BLR[' + binascii.b2a_hex(blr) + ']')
+    print('\tparam BLR[', binascii.b2a_hex(blr), ']')
     message_number = up.unpack_int()
     number_of_messages = up.unpack_int()
     print('\t<%d,%d>' % (message_number, number_of_messages))
     if number_of_messages:
-        print('\tparam value['+binascii.b2a_hex(msg[up.get_position():])+']')
+        print('\tparam value[', binascii.b2a_hex(msg[up.get_position():]), ']')
         _parse_param(blr, msg[up.get_position():])
     return msg
 
@@ -1930,7 +1930,7 @@ def process_wire(client_socket, server_name, server_port):
             client_msg = globals()[op_req_name](client_socket)
         else:
             client_msg = client_socket.recv(bufsize)
-            print('\t[[' + binascii.b2a_hex(client_msg) + ']]')
+            print('\t[[', binascii.b2a_hex(client_msg), ']]')
         server_socket.send(client_head)
         if client_msg:
             server_socket.send(client_msg)
