@@ -1512,9 +1512,9 @@ def op_info_database(sock):
     up = xdrlib.Unpacker(msg)
     print('\tDatabase<%x>' % (up.unpack_uint()))
     assert up.unpack_int() == 0 # Incarnation of object
-    bytes = up.unpack_bytes() # AbstractJavaGDSImpl.java/describe_database_info
-    print('\t[' + binascii.b2a_hex(bytes) + ']=[',)
-    for b in bytes:
+    bs = up.unpack_bytes() # AbstractJavaGDSImpl.java/describe_database_info
+    print('\t[', binascii.b2a_hex(bs), ']=[',)
+    for b in bs:
         print(isc_info_names[ord(b)],)
     print(']')
     print('\tbuffer len=%d' % up.unpack_int())
@@ -1716,7 +1716,7 @@ def op_execute_immediate(sock):
 
     print('\tdb_handle=', db_handle)
     print('\ttrans_handle=', trans_handle)
-    print('\tsql=[' + sql +']')
+    print('\tsql=[', sql, ']')
     print('\tdiarect=', dialect)
     print('\tin_msg=[%s]' % (in_msg, ))
     print('\tout_msg=[%s]' % (out_msg, ))
@@ -1728,7 +1728,7 @@ op_execute_immediate2 = op_execute_immediate
 
 def op_open_blob(sock):
     msg = sock.recv(bufsize)
-    print('\t[' + binascii.b2a_hex(msg) + ']')
+    print('\t[', binascii.b2a_hex(msg), ']')
     up = xdrlib.Unpacker(msg)
     print('\tTrans<%x>BlobID<%04x%04x>' % (
                     up.unpack_uint(), up.unpack_uint(), up.unpack_uint()))
