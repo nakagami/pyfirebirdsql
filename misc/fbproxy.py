@@ -12,8 +12,11 @@ import sys
 import socket
 import binascii
 import xdrlib
-import thread
 import ctypes
+try:
+    import thread
+except ImportError:
+    import _thread as thread
 
 bufsize = 65535
 
