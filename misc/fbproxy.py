@@ -988,8 +988,8 @@ class XSQLVar(object):
         s  = '[' + str(self.sqltype) + ',' + str(self.sqlscale) + ',' \
                 + str(self.sqlsubtype) + ',' + str(self.sqllen)  + ',' \
                 + str(self.sqlnullind) + ',' \
-                + self.sqlname + ',' + self.relname + ',' + self.ownname + ',' \
-                + self.aliasname + ']'
+                + str(self.sqlname) + ',' + str(self.relname) + ',' \
+                + str(self.ownname) + ',' + str(self.aliasname) + ']'
         if self.raw_value != None:
             if self.null_flag:
                 s += 'NULL'
@@ -1461,7 +1461,7 @@ def op_fetch(sock):
     print('\tStatement<%x>' % (statement))
     blr = up.unpack_bytes()
     assert blr == _calc_blr(get_xsqlda_statement()[statement])
-    print('\tBLR[' + binascii.b2a_hex(blr) + ']')
+    print('\tBLR[', binascii.b2a_hex(blr), ']')
     print('\tMessage No.<%d> size<%d>' % (up.unpack_int(), up.unpack_int()))
     up.done()
     return msg
@@ -1670,7 +1670,7 @@ def op_execute2(sock):
     up = xdrlib.Unpacker(msg)
     print('\tStatement<%x>Trans<%x>' % (up.unpack_uint(), up.unpack_uint()))
     blr = up.unpack_bytes()
-    print('\tparam BLR[' + binascii.b2a_hex(blr) + ']')
+    print('\tparam BLR[', binascii.b2a_hex(blr), ']')
     message_number = up.unpack_int()
     number_of_messages = up.unpack_int()
     print('\t<%d,%d>' % (message_number, number_of_messages))
@@ -1678,7 +1678,7 @@ def op_execute2(sock):
         print('\tparam value['+binascii.b2a_hex(msg[up.get_position():])+']')
         _parse_param(blr, msg[up.get_position():])
     out_blr = up.unpack_bytes()
-    print('\toutput BLR[' + binascii.b2a_hex(out_blr) + ']')
+    print('\toutput BLR[', binascii.b2a_hex(out_blr), ']')
     message_number = up.unpack_int()
     print('\toutput_message_number<%d>' % (message_number))
     return msg
