@@ -49,22 +49,22 @@ def asc_dump(s):
     for c in s:
         r += c if (ord(c) >= 32 and ord(c) < 128) else '.'
     if r:
-        print '\t[' + r + ']'
+        print('\t[' + r + ']')
 
 def hex_dump(s):
-    print '\t', '-' * 55
+    print('\t', '-' * 55)
     i = 0
     (r, s) = s[:16], s[16:]
     while r:
-        print '\t%04x' % (i,), binascii.b2a_hex(r),
-        print '  ' * (16 - len(r)),
+        print('\t%04x' % (i,), binascii.b2a_hex(r),)
+        print('  ' * (16 - len(r)),)
         for j in range(len(r)):
             if ord(r[j]) < 32 or ord(r[j]) > 127:
                 r = r[:j] + '.' + r[j+1:]
-        print r
+        print(r)
         (r, s) = s[:16], s[16:]
         i = i + 16
-    print '\t', '-' * 55
+    print('\t', '-' * 55)
 
 isc_gds_error_code = {
   335544321 : 'isc_arith_except',
@@ -1096,7 +1096,7 @@ def _calc_blr(xsqlda):  # calc from sqlda to BLR format data.
 def _parse_param(blr, bytes = None):   # Parse (bytes data with) BLR format
     assert [ord(blr[0]), ord(blr[1]), ord(blr[2]), ord(blr[3])] == [5, 2, 4, 0]
     param_len = _bytes_to_int(blr, 4, 2)
-    print '\t_parse_param len =', param_len
+    print('\t_parse_param len =', param_len)
     i = 6
     n = 0
     r = []
@@ -1148,25 +1148,25 @@ def _parse_param(blr, bytes = None):   # Parse (bytes data with) BLR format
             scale = ord(blr[i+1])
             i += 2
         else:
-            print 'Unknown data type', t, i
+            print('Unknown data type', t, i)
             assert False
         n += 1
         pad_length = ((4-io_length) & 3)
-        print '\t', dtype, io_length, '+', pad_length, 'scale =', scale
+        print('\t', dtype, io_length, '+', pad_length, 'scale =', scale)
         if bytes:
-            print '\t[' + binascii.b2a_hex(bytes[:io_length]) + ']'
+            print('\t[' + binascii.b2a_hex(bytes[:io_length]) + ']')
             bytes = bytes[io_length + pad_length:]
 
     assert [ord(blr[i]), ord(blr[i+1])] == [255, 76]    # [blr_end, blr_eoc]
 
 def _parse_trunc_sql_info(start, bytes, statement):
-    print '\n\t<-------- start byte index =', start
+    print('\n\t<-------- start byte index =', start)
     index = 0
     i = start
     l = _bytes_to_int(bytes, i, 2)
     col_len = _bytes_to_int(bytes, i + 2, l)
     i += 2 + l
-    print '\tcol_len=', col_len
+    print('\tcol_len=', col_len)
     xsqlda = get_xsqlda_statement()[statement]
     if not xsqlda:
         xsqlda = [None] * col_len
@@ -1177,92 +1177,92 @@ def _parse_trunc_sql_info(start, bytes, statement):
             l = _bytes_to_int(bytes, i + 1, 2)
             index = _bytes_to_int(bytes, i + 3, l)
             xsqlda[index-1] = XSQLVar()
-            print '\t', item, index
+            print('\t', item, index)
             i = i + 3 + l
         elif item == 'isc_info_sql_type':
             l = _bytes_to_int(bytes, i + 1, 2)
             xsqlda[index-1].sqltype = _bytes_to_int(bytes, i + 3, l)
-            print '\t', item, xsqlda[index-1].sqltype, 
-            print 'dtype=', xsqlda[index-1].sqltype & ~1
+            print('\t', item, xsqlda[index-1].sqltype, )
+            print('dtype=', xsqlda[index-1].sqltype & ~1)
             i = i + 3 + l
         elif item == 'isc_info_sql_sub_type':
             l = _bytes_to_int(bytes, i + 1, 2)
             xsqlda[index-1].sqlsubtype = _bytes_to_int(bytes, i + 3, l)
-            print '\t', item, xsqlda[index-1].sqlsubtype
+            print('\t', item, xsqlda[index-1].sqlsubtype)
             i = i + 3 + l
         elif item == 'isc_info_sql_scale':
             l = _bytes_to_int(bytes, i + 1, 2)
             xsqlda[index-1].sqlscale = _bytes_to_int(bytes, i + 3, l)
-            print '\t', item, xsqlda[index-1].sqlscale
+            print('\t', item, xsqlda[index-1].sqlscale)
             i = i + 3 + l
         elif item == 'isc_info_sql_length':
             l = _bytes_to_int(bytes, i + 1, 2)
             xsqlda[index-1].sqllen = _bytes_to_int(bytes, i + 3, l)
-            print '\t', item, xsqlda[index-1].sqllen
+            print('\t', item, xsqlda[index-1].sqllen)
             i = i + 3 + l
         elif item == 'isc_info_sql_null_ind':
             l = _bytes_to_int(bytes, i + 1, 2)
             xsqlda[index-1].sqlnullind = _bytes_to_int(bytes, i + 3, l)
-            print '\t', item, xsqlda[index-1].sqlnullind
+            print('\t', item, xsqlda[index-1].sqlnullind)
             i = i + 3 + l
         elif item == 'isc_info_sql_field':
             l = _bytes_to_int(bytes, i + 1, 2)
             xsqlda[index-1].sqlname = bytes[i + 3: i + 3 + l]
-            print '\t', item, xsqlda[index-1].sqlname
+            print('\t', item, xsqlda[index-1].sqlname)
             i = i + 3 + l
         elif item == 'isc_info_sql_relation':
             l = _bytes_to_int(bytes, i + 1, 2)
             xsqlda[index-1].relname = bytes[i + 3: i + 3 + l]
-            print '\t', item, xsqlda[index-1].relname
+            print('\t', item, xsqlda[index-1].relname)
             i = i + 3 + l
         elif item == 'isc_info_sql_owner':
             l = _bytes_to_int(bytes, i + 1, 2)
             xsqlda[index-1].ownname = bytes[i + 3: i + 3 + l]
-            print '\t', item, xsqlda[index-1].ownname
+            print('\t', item, xsqlda[index-1].ownname)
             i = i + 3 + l
         elif item == 'isc_info_sql_alias':
             l = _bytes_to_int(bytes, i + 1, 2)
             xsqlda[index-1].aliasname = bytes[i + 3: i + 3 + l]
-            print '\t', item, xsqlda[index-1].aliasname
+            print('\t', item, xsqlda[index-1].aliasname)
             i = i + 3 + l
         elif item == 'isc_info_truncated':
-            print '\t', item
+            print('\t', item)
             break
         elif item == 'isc_info_sql_describe_end':
-            print '\t', item
+            print('\t', item)
             i = i + 1
         elif item == 'isc_info_sql_num_variables':
             l = _bytes_to_int(bytes, i + 1, 2)
             num_variables = _bytes_to_int(bytes, i + 3, l)
-            print '\t', item, num_variables
+            print('\t', item, num_variables)
             i = i + 3 + l
         elif item == 'isc_info_sql_get_plan':
             l = _bytes_to_int(bytes, i + 1, 2)
             plan = bytes[i + 3: i + 3 + l]
-            print '\t', item, plan
+            print('\t', item, plan)
             i = i + 3 + l
         elif item == 'isc_info_sql_bind':
             i += 1
         else:
-            print '\t', item, 'Invalid item <%02x> ! i=%d' % (ord(bytes[i]), i)
+            print('\t', item, 'Invalid item <%02x> ! i=%d' % (ord(bytes[i]), i))
             i = i + 1
         item = isc_info_sql_names[ord(bytes[i])]
     get_xsqlda_statement()[statement] = xsqlda
-    print '\t-------->'
+    print('\t-------->')
     return index
 
 def _database_parameter_block(bytes):
     i = 0
     while i < len(bytes):
         n = ord(bytes[i])
-        print '\t', n,
+        print('\t', n,)
         if n == 110:
             s = 'isc_spb_process_id'
         elif n == 112:
             s = 'isc_spb_process_name'
         else:
             s = isc_dpb_names[n]
-        print '\t', s,
+        print('\t', s,)
         if s in ['isc_dpb_lc_ctype', 'isc_dpb_user_name', 'isc_dpb_password',
             'isc_dpb_password_enc', 'isc_dpb_sql_role_name', 
             'isc_dpb_old_start_file', 'isc_dpb_set_db_charset',
@@ -1270,39 +1270,39 @@ def _database_parameter_block(bytes):
             'isc_dpb_process_name', 'isc_spb_process_name',
             'isc_dpb_utf8_filename']:
             l = ord(bytes[i+1])
-            print '[' + bytes[i+2:i+2+l] + ']',
+            print('[' + bytes[i+2:i+2+l] + ']',)
             i = i + 2 + l
         elif s in ['isc_dpb_dummy_packet_interval', 'isc_dpb_sql_dialect', 
             'isc_dpb_sweep', 'isc_dpb_connect_timeout', 'isc_dpb_page_size', 
             'isc_dpb_force_write', 'isc_dpb_overwrite', 'isc_dpb_process_id',
             'isc_spb_process_id']:
             l = ord(bytes[i+1])
-            print _bytes_to_int(bytes, i+2, l),
+            print(_bytes_to_int(bytes, i+2, l),)
             i = i + 2 + l
         else:
             i = i + 1
-        print
+        print()
 
 def _service_parameter_block(bytes):
     i = 0
     while i < len(bytes):
-        print '\t', ord(bytes[i]),
+        print('\t', ord(bytes[i]),)
         s = isc_spb_names[ord(bytes[i])]
-        print '\t', s,
+        print('\t', s,)
         if s in ['isc_spb_bkp_file', 'isc_spb_command_line', 
             'isc_spb_dbname']:
             l = _bytes_to_int(bytes, i+1, 2)
-            print '[' + bytes[i+3:i+3+l] + ']'
+            print('[' + bytes[i+3:i+3+l] + ']')
             i += 3 + l
         elif s in ['isc_spb_bkp_length',
                 'isc_spb_res_buffers', 'isc_spb_res_page_size']:
-            print _bytes_to_int(bytes, i+1, 4)
+            print (_bytes_to_int(bytes, i+1, 4))
             i = i + 5
         elif s in ['isc_spb_options']:
-            print '[' + binascii.b2a_hex(bytes[i+1:i+5]) + ']'
+            print('[' + binascii.b2a_hex(bytes[i+1:i+5]) + ']')
             i = i + 5
         else:
-            print
+            print()
             i += 1
 
 def parse_sql_info(bytes, statement):
@@ -1315,52 +1315,52 @@ def parse_sql_info(bytes, statement):
            isc_info_sql_names[ord(bytes[i+1])] == 'isc_info_sql_describe_vars'):
             index = _parse_trunc_sql_info(i + 2, bytes, statement)
             if index:
-                print '\tmore info index=', index
+                print('\tmore info index=', index)
             break
-        print '\t' + isc_info_sql_names[ord(bytes[i])], 
+        print('\t' + isc_info_sql_names[ord(bytes[i])], )
         if isc_info_sql_names[ord(bytes[i])] == 'isc_info_sql_records':
             i += 3
             while isc_req_info_names[ord(bytes[i])] != 'isc_info_end':
-                print isc_req_info_names[ord(bytes[i])],
+                print(isc_req_info_names[ord(bytes[i])],)
                 l = _bytes_to_int(bytes, i + 1, 2)
-                print _bytes_to_int(bytes, i + 3, l),
+                print(_bytes_to_int(bytes, i + 3, l),)
                 i += 3 + l
-            print
+            print()
             break
         l = _bytes_to_int(bytes, i + 1, 2)
         n = _bytes_to_int(bytes, i + 3, l)
         if isc_info_sql_names[ord(bytes[i])] == 'isc_info_sql_stmt_type':
-            print isc_info_sql_stmt_names[n]
+            print(isc_info_sql_stmt_names[n])
         else:
-            print n
+            print(n)
         i += 3 + l
 
 def op_start_send_and_receive(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
-    print '\tInc<%x>Trans<%x>' % (up.unpack_uint(), up.unpack_uint())
+    print('\tInc<%x>Trans<%x>' % (up.unpack_uint(), up.unpack_uint()))
     message_number = up.unpack_int()
     number_of_messages = up.unpack_int()
-    print '\t<%d,%d>' % (message_number, number_of_messages)
+    print('\t<%d,%d>' % (message_number, number_of_messages))
     i = up.get_position()
     i += ((4-i) & 3)
-    print '\t', binascii.b2a_hex(msg[i:])
+    print('\t', binascii.b2a_hex(msg[i:]))
     return msg
 
 def op_response(sock):
     head = sock.recv(16)
-    print '\thandle<' + binascii.b2a_hex(head[0:4]) + '>id<' + binascii.b2a_hex(head[4:12]) + '>',
+    print('\thandle<' + binascii.b2a_hex(head[0:4]) + '>id<' + binascii.b2a_hex(head[4:12]) + '>',)
     nbytes = _bytes_to_bint32(head, 12)
     bs = _need_nbytes_align(sock, nbytes)
-    print 'Data len=%d' % (nbytes)
+    print('Data len=%d' % (nbytes))
     hex_dump(bs)
     if get_last_op_name() == 'op_info_database':
         i = 0
         while i < len(bs):
             s = isc_info_names[ord(bs[i])]
-            print '\t' + s,
+            print('\t' + s,)
             if s == 'isc_info_end':
-                print
+                print()
                 break
             if s in ['isc_info_db_sql_dialect', 'isc_info_firebird_version',
                 'isc_info_isc_version',
@@ -1371,13 +1371,13 @@ def op_response(sock):
                 'isc_info_sweep_interval', 'isc_info_user_names',
                 ]:
                 l = _bytes_to_int(bs, i+1, 2)
-                print '[' + binascii.b2a_hex(bs[i+3:i+3+l]) + ']',
+                print('[' + binascii.b2a_hex(bs[i+3:i+3+l]) + ']',)
                 if s == 'isc_info_firebird_version':
-                    print bs[i+5:i+3+l],
+                    print(bs[i+5:i+3+l],)
                 i = i + 3 + l
             else:
                 i = i + 1
-            print
+            print()
     elif get_last_op_name() == 'op_prepare_statement':
         parse_sql_info(bs, get_prepare_statement())
     elif get_last_op_name() == 'op_info_sql':
@@ -1385,48 +1385,48 @@ def op_response(sock):
     elif get_last_op_name() == 'op_connect_request':
         server_port = _bytes_to_bint(bs, 2, 2)
         server_ip = '.'.join([str(ord(bs[i])) for i in (4, 5, 6, 7)])
-        print '\tport:', server_port
-        print '\tip address:', server_ip
+        print('\tport:', server_port)
+        print('\tip address:', server_ip)
         # override new ip address in packet
         if True:
             port = server_port + 1
             bs_new_ip = _bint_to_bytes(port, 2)
             bs = bs[:2] + bs_new_ip + bs[4:]
-            print '\tnew->'
+            print('\tnew->')
             hex_dump(bs)
             thread.start_new_thread(recv_forever, (server_ip, server_port, port))
 
     # http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_60_upd_sv_fs
     sv = sock.recv(bufsize)
     i = 0
-    print '\tStatus vector['+binascii.b2a_hex(sv)+']'
+    print('\tStatus vector['+binascii.b2a_hex(sv)+']')
     asc_dump(sv)
-    print '\t',
+    print('\t',)
     while i < len(sv):
         s = isc_status_names[_bytes_to_bint32(sv, i)]
         i += 4
-        print s,
+        print(s,)
         if s == 'isc_arg_gds':
             err_code = _bytes_to_bint32(sv,i)
-            print isc_gds_error_code.get(err_code, err_code),
+            print( isc_gds_error_code.get(err_code, err_code),)
             i += 4 
         elif s == 'isc_arg_number':
-            print _bytes_to_bint32(sv, i),
+            print(_bytes_to_bint32(sv, i),)
             i += 4 
         elif s in ['isc_arg_string', 'isc_arg_interpreted', 'isc_arg_sql_state']:
             nbytes = _bytes_to_bint32(sv, i)
             i += 4
-            print '<' + sv[i:i + nbytes] + '>',
+            print('<' + sv[i:i + nbytes] + '>',)
             i += nbytes
             if nbytes % 4:
                 i += 4 - nbytes % 4  # 4 bs word alignment
         if s == 'isc_arg_end':
             i += 1
             break
-    print
+    print()
     if i < len(sv):
         i += ((4-i) & 3)
-        print '\tpiggyback[' + binascii.b2a_hex(sv[i:]) + ']', len(sv) - i
+        print('\tpiggyback[' + binascii.b2a_hex(sv[i:]) + ']', len(sv) - i)
         asc_dump(sv[i:])
     return head + bs + sv
 
@@ -1435,9 +1435,9 @@ op_response_piggyback = op_response
 def op_sql_response(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
-    print '\tcount=%d' % (up.unpack_int())
-#    print '\tData row', binascii.b2a_hex(up.unpack_bytes())
-    print '\t', binascii.b2a_hex(msg[up.get_position():])
+    print('\tcount=%d' % (up.unpack_int()))
+    print('\tData row', binascii.b2a_hex(up.unpack_bytes()))
+    print('\t', binascii.b2a_hex(msg[up.get_position():]))
     return msg
 
 def op_fetch(sock):
@@ -1445,11 +1445,11 @@ def op_fetch(sock):
     up = xdrlib.Unpacker(msg)
     statement = up.unpack_uint()
     set_prepare_statement(statement)
-    print '\tStatement<%x>' % (statement)
+    print('\tStatement<%x>' % (statement))
     blr = up.unpack_bytes()
     assert blr == _calc_blr(get_xsqlda_statement()[statement])
-    print '\tBLR[' + binascii.b2a_hex(blr) + ']'
-    print '\tMessage No.<%d> size<%d>' % (up.unpack_int(), up.unpack_int())
+    print('\tBLR[' + binascii.b2a_hex(blr) + ']')
+    print('\tMessage No.<%d> size<%d>' % (up.unpack_int(), up.unpack_int()))
     up.done()
     return msg
 
@@ -1458,14 +1458,14 @@ def op_fetch_response(sock):
     up = xdrlib.Unpacker(msg)
     status = up.unpack_int()
     count = up.unpack_int()
-    print '\tStatus<%d> count=<%d>' % (status, count)
+    print('\tStatus<%d> count=<%d>' % (status, count))
     up.done()
-    print '\tstatement=<%d>' % (get_prepare_statement())
+    print('\tstatement=<%d>' % (get_prepare_statement()))
     xsqlda = get_xsqlda_statement()[get_prepare_statement()]
     for x in xsqlda:
-        print '\t', x
+        print('\t', x)
     if status == 100:
-        print '\tNo more data'
+        print('\tNo more data')
     elif status == 0: # Has rows
         while True:
             for x in xsqlda:
@@ -1481,12 +1481,12 @@ def op_fetch_response(sock):
                 bytes = sock.recv(4)
                 x.null_flag = False if bytes == '\0\0\0\0' else True
                 msg += bytes
-                print '\t', x
+                print('\t', x)
             bytes = sock.recv(12)
             msg += bytes
-            print '\t{', _bytes_to_bint32(bytes, 0),
-            print _bytes_to_bint32(bytes, 4),
-            print _bytes_to_bint32(bytes, 8), '}'
+            print('\t{', _bytes_to_bint32(bytes, 0),)
+            print(_bytes_to_bint32(bytes, 4),)
+            print(_bytes_to_bint32(bytes, 8), '}')
             if _bytes_to_bint32(bytes, 8) == 0:
                 break
     return msg
@@ -1494,14 +1494,14 @@ def op_fetch_response(sock):
 def op_info_database(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
-    print '\tDatabase<%x>' % (up.unpack_uint())
+    print('\tDatabase<%x>' % (up.unpack_uint()))
     assert up.unpack_int() == 0 # Incarnation of object
     bytes = up.unpack_bytes() # AbstractJavaGDSImpl.java/describe_database_info
-    print '\t[' + binascii.b2a_hex(bytes) + ']=[',
+    print('\t[' + binascii.b2a_hex(bytes) + ']=[',)
     for b in bytes:
-        print isc_info_names[ord(b)],
-    print ']'
-    print '\tbuffer len=%d' % up.unpack_int()
+        print(isc_info_names[ord(b)],)
+    print(']')
+    print('\tbuffer len=%d' % up.unpack_int())
     up.done()
     return msg
 
@@ -1510,19 +1510,19 @@ def op_connect(sock):
     up = xdrlib.Unpacker(msg)
     assert op_names[up.unpack_int()] == 'op_attach'
     assert up.unpack_int() == 2     # CONNECT_VERSION2
-    print '\tArchitecture type', up.unpack_int()  # Architecture type (Generic = 1)
-    print '\tPath<%s>' % (up.unpack_string())
+    print('\tArchitecture type', up.unpack_int())  # Architecture type (Generic = 1)
+    print('\tPath<%s>' % (up.unpack_string()))
     pcount = up.unpack_int()
-    print '\tProtocol version understood count=', pcount 
-    print '\tuid=[' + binascii.b2a_hex(up.unpack_bytes()) + ']'
-    print '\tProtocol version', up.unpack_int()
-    print '\tArchitecture type', up.unpack_int()
-    print '\tMinimum type',  up.unpack_int()    # Minimum type (2) 
-    print '\tMaxiumum type',  up.unpack_int()   # Maximum type (3 to 5)
-    print '\tPreference weight', up.unpack_int()
+    print('\tProtocol version understood count=', pcount )
+    print('\tuid=[' + binascii.b2a_hex(up.unpack_bytes()) + ']')
+    print('\tProtocol version', up.unpack_int())
+    print('\tArchitecture type', up.unpack_int())
+    print('\tMinimum type',  up.unpack_int())   # Minimum type (2)
+    print('\tMaxiumum type',  up.unpack_int())  # Maximum type (3 to 5)
+    print('\tPreference weight', up.unpack_int())
     while pcount > 1:
-        print '\tmore protocol=', up.unpack_int(), up.unpack_int(),
-        print up.unpack_int(), up.unpack_int(), up.unpack_int()
+        print('\tmore protocol=', up.unpack_int(), up.unpack_int(),)
+        print(up.unpack_int(), up.unpack_int(), up.unpack_int())
         pcount -= 1
     up.done()
     return msg
@@ -1530,8 +1530,8 @@ def op_connect(sock):
 def op_accept(sock):
     msg = sock.recv(12)
     up = xdrlib.Unpacker(msg)
-    print '\tProtocol<%d>Archtecture<%d>MinimumType<%d>' % (
-            up.unpack_int(), up.unpack_int(), up.unpack_int())
+    print('\tProtocol<%d>Archtecture<%d>MinimumType<%d>' % (
+            up.unpack_int(), up.unpack_int(), up.unpack_int()))
     up.done()
     return msg
 
@@ -1539,7 +1539,7 @@ def op_attach(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
     assert up.unpack_uint() == 0    # Database Object ID (0)
-    print '\tPath<%s>' % (up.unpack_string())
+    print('\tPath<%s>' % (up.unpack_string()))
     bytes = up.unpack_bytes()
     _database_parameter_block(bytes)
     up.done()
@@ -1548,26 +1548,26 @@ def op_attach(sock):
 def op_detach(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
-    print '\tDatabase<%x>' % (up.unpack_uint())
+    print('\tDatabase<%x>' % (up.unpack_uint()))
     up.done()
     return msg
 
 def op_transaction(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
-    print '\tDatabase<%x>' % (up.unpack_uint()),
+    print('\tDatabase<%x>' % (up.unpack_uint()),)
     bytes = up.unpack_bytes()
-    print '\t[' + binascii.b2a_hex(bytes) + ']=[',
+    print('\t[' + binascii.b2a_hex(bytes) + ']=[',)
     for b in bytes:
-        print isc_tpb_names[ord(b)],
-    print ']'
+        print(isc_tpb_names[ord(b)],)
+    print(']')
     up.done()
     return msg
 
 def op_commit(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
-    print '\tTrans<%x>' % (up.unpack_uint())
+    print('\tTrans<%x>' % (up.unpack_uint()))
     up.done()
     return msg
 
@@ -1581,59 +1581,59 @@ def op_prepare_statement(sock):
     set_prepare_statement(statement)
     get_xsqlda_statement()[statement] = None
     set_prepare_dialect(up.unpack_int())
-    print '\tTrans<%x>Statement<%x>dialect<%d>' % (get_prepare_trans(), 
-            get_prepare_statement(), get_prepare_dialect())
-    print '\t' + up.unpack_string()
+    print('\tTrans<%x>Statement<%x>dialect<%d>' % (get_prepare_trans(),
+            get_prepare_statement(), get_prepare_dialect()))
+    print('\t' + up.unpack_string())
     bytes = up.unpack_bytes() # AbstractJavaGDSImpl.java/sql_prepare_info
-    print '\t[' + binascii.b2a_hex(bytes) + ']=[',
+    print('\t[' + binascii.b2a_hex(bytes) + ']=[',)
     for b in bytes:
-        print isc_info_sql_names[ord(b)],
-    print ']'
-    print '\tbuffer_len=', up.unpack_int()
+        print(isc_info_sql_names[ord(b)],)
+    print(']')
+    print('\tbuffer_len=', up.unpack_int())
     up.done()
     return msg
 
 def op_info_sql(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
-    print '\tStatement<%x>' % (up.unpack_uint())
+    print('\tStatement<%x>' % (up.unpack_uint()))
     assert up.unpack_int() == 0
     bytes = up.unpack_bytes()
-    print '\t[' + binascii.b2a_hex(bytes) + ']=[',
+    print('\t[' + binascii.b2a_hex(bytes) + ']=[',)
     i = 0
     while i < len(bytes):
         s = isc_info_sql_names[ord(bytes[i])]
-        print s,
+        print(s,)
         if s == 'isc_info_end':
             break
         if s in ['isc_info_truncated']:
-            print _bytes_to_int(bytes, i+1, 2),
+            print(_bytes_to_int(bytes, i+1, 2),)
             i = i + 3
         else:
             i = i + 1
-    print ']'
-    print '\tbuffer_len=', up.unpack_int()
+    print(']')
+    print('\tbuffer_len=', up.unpack_int())
     up.done()
     return msg
 
 def op_allocate_statement(sock):
     msg = sock.recv(bufsize)
-    print '\tDatabase<%x>' % (_bytes_to_bint32(msg, 0),),
-    print '[' + binascii.b2a_hex(msg[24:]) + ']'
+    print('\tDatabase<%x>' % (_bytes_to_bint32(msg, 0),),)
+    print('[' + binascii.b2a_hex(msg[24:]) + ']')
     asc_dump(msg[24:])
     return msg
 
 def op_free_statement(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
-    print '\tStatement<%x>' % (up.unpack_uint()),
+    print('\tStatement<%x>' % (up.unpack_uint()),)
     f = up.unpack_int()
     if f == 1:
-        print 'DSQL_close' 
+        print('DSQL_close')
     elif f == 2:
-        print 'DSQL_drop' 
+        print('DSQL_drop')
     else:
-        print 'Unknown!'
+        print('Unknown!')
     # unknown data remains
 #    up.done()
     return msg
@@ -1641,33 +1641,33 @@ def op_free_statement(sock):
 def op_execute(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
-    print '\tStatement<%x>Trans<%x>' % (up.unpack_uint(), up.unpack_uint())
+    print('\tStatement<%x>Trans<%x>' % (up.unpack_uint(), up.unpack_uint()))
     blr = up.unpack_bytes()
-    print '\tparam BLR[' + binascii.b2a_hex(blr) + ']'
+    print('\tparam BLR[' + binascii.b2a_hex(blr) + ']')
     message_number = up.unpack_int()
     number_of_messages = up.unpack_int()
-    print '\t<%d,%d>' % (message_number, number_of_messages)
+    print('\t<%d,%d>' % (message_number, number_of_messages))
     if number_of_messages:
-        print '\tparam value['+binascii.b2a_hex(msg[up.get_position():])+']'
+        print('\tparam value['+binascii.b2a_hex(msg[up.get_position():])+']')
         _parse_param(blr, msg[up.get_position():])
     return msg
 
 def op_execute2(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
-    print '\tStatement<%x>Trans<%x>' % (up.unpack_uint(), up.unpack_uint())
+    print('\tStatement<%x>Trans<%x>' % (up.unpack_uint(), up.unpack_uint()))
     blr = up.unpack_bytes()
-    print '\tparam BLR[' + binascii.b2a_hex(blr) + ']'
+    print('\tparam BLR[' + binascii.b2a_hex(blr) + ']')
     message_number = up.unpack_int()
     number_of_messages = up.unpack_int()
-    print '\t<%d,%d>' % (message_number, number_of_messages)
+    print('\t<%d,%d>' % (message_number, number_of_messages))
     if number_of_messages:
-        print '\tparam value['+binascii.b2a_hex(msg[up.get_position():])+']'
+        print('\tparam value['+binascii.b2a_hex(msg[up.get_position():])+']')
         _parse_param(blr, msg[up.get_position():])
     out_blr = up.unpack_bytes()
-    print '\toutput BLR[' + binascii.b2a_hex(out_blr) + ']'
+    print('\toutput BLR[' + binascii.b2a_hex(out_blr) + ']')
     message_number = up.unpack_int()
-    print '\toutput_message_number<%d>' % (message_number)
+    print('\toutput_message_number<%d>' % (message_number))
     return msg
 
 def op_execute_immediate(sock):
@@ -1698,13 +1698,13 @@ def op_execute_immediate(sock):
     i += out_msg_len
     possible_requests = _bytes_to_bint(msg, i, 4)
 
-    print '\tdb_handle=', db_handle
-    print '\ttrans_handle=', trans_handle
-    print '\tsql=[' + sql +']'
-    print '\tdiarect=', dialect
-    print '\tin_msg=[%s]' % (in_msg, )
-    print '\tout_msg=[%s]' % (out_msg, )
-    print '\tpossible_requests=', possible_requests
+    print('\tdb_handle=', db_handle)
+    print('\ttrans_handle=', trans_handle)
+    print('\tsql=[' + sql +']')
+    print('\tdiarect=', dialect)
+    print('\tin_msg=[%s]' % (in_msg, ))
+    print('\tout_msg=[%s]' % (out_msg, ))
+    print('\tpossible_requests=', possible_requests)
 
     return msg
 
@@ -1712,35 +1712,35 @@ op_execute_immediate2 = op_execute_immediate
 
 def op_open_blob(sock):
     msg = sock.recv(bufsize)
-    print '\t[' + binascii.b2a_hex(msg) + ']'
+    print('\t[' + binascii.b2a_hex(msg) + ']')
     up = xdrlib.Unpacker(msg)
-    print '\tTrans<%x>BlobID<%04x%04x>' % (
-                    up.unpack_uint(), up.unpack_uint(), up.unpack_uint())
+    print('\tTrans<%x>BlobID<%04x%04x>' % (
+                    up.unpack_uint(), up.unpack_uint(), up.unpack_uint()))
     up.done()
     return msg
 
 def op_open_blob2(sock):
     msg = sock.recv(bufsize)
-    print '\t[' + binascii.b2a_hex(msg) + ']'
+    print('\t[' + binascii.b2a_hex(msg) + ']')
     up = xdrlib.Unpacker(msg)
     buf = up.unpack_bytes()
-    print '\tbuf[' + binascii.b2a_hex(buf) + ']'
-    print '\tTrans<%x>BlobID<%04x%04x>' % (
-                    up.unpack_uint(), up.unpack_uint(), up.unpack_uint())
+    print('\tbuf[' + binascii.b2a_hex(buf) + ']')
+    print('\tTrans<%x>BlobID<%04x%04x>' % (
+                    up.unpack_uint(), up.unpack_uint(), up.unpack_uint()))
     up.done()
     return msg
 
 def op_close_blob(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
-    print '\tBlobHandle<%x>' % (up.unpack_uint())
+    print('\tBlobHandle<%x>' % (up.unpack_uint()))
     up.done()
     return msg
 
 def op_get_segment(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
-    print '\tBlobHandle<%x>len<%d>' % (up.unpack_uint(), up.unpack_int())
+    print('\tBlobHandle<%x>len<%d>' % (up.unpack_uint(), up.unpack_int()))
     assert up.unpack_int() == 0     # Data segment (0)
     up.done()
     return msg
@@ -1749,9 +1749,9 @@ def op_service_attach(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
     assert up.unpack_int() == 0 # object id
-    print '\tservice=[' + up.unpack_string() +']'
+    print('\tservice=[' + up.unpack_string() +']')
     param = up.unpack_bytes()
-    print '\tparam=[' +  binascii.b2a_hex(param) + ']'
+    print('\tparam=[' +  binascii.b2a_hex(param) + ']')
     _database_parameter_block(param)
     up.done()
     return msg
@@ -1759,29 +1759,29 @@ def op_service_attach(sock):
 def op_service_info(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
-    print '\tobject id<%08x>' % (up.unpack_int(),),
+    print('\tobject id<%08x>' % (up.unpack_int(),),)
     assert up.unpack_int() == 0 # object
-    print 'param=[' + binascii.b2a_hex(up.unpack_bytes()) +']',
-    print 'information items=[' + binascii.b2a_hex(up.unpack_bytes()) +']',
-    print 'buflen=', up.unpack_int()
+    print('param=[' + binascii.b2a_hex(up.unpack_bytes()) +']',)
+    print('information items=[' + binascii.b2a_hex(up.unpack_bytes()) +']',)
+    print('buflen=', up.unpack_int())
     up.done()
     return msg
 
 def op_service_detach(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
-    print '\thandle=', up.unpack_int()
+    print('\thandle=', up.unpack_int())
     up.done()
     return msg
 
 def op_service_start(sock):
     msg = sock.recv(bufsize)
-    print '\tmsg=[' +  binascii.b2a_hex(msg) + ']'
+    print('\tmsg=[' +  binascii.b2a_hex(msg) + ']')
     up = xdrlib.Unpacker(msg)
-    print '\thandle=', up.unpack_int()
+    print('\thandle=', up.unpack_int())
     assert up.unpack_int() == 0 # object
     param = up.unpack_bytes()
-    print '\tparam=[' +  binascii.b2a_hex(param) + ']'
+    print('\tparam=[' +  binascii.b2a_hex(param) + ']')
     _service_parameter_block(param)
     up.done()
     return msg
@@ -1789,7 +1789,7 @@ def op_service_start(sock):
 def op_release(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
-    print '\thandle=', up.unpack_int()
+    print('\thandle=', up.unpack_int())
     up.done()
     return msg
 
@@ -1805,7 +1805,7 @@ def op_create(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
     assert up.unpack_int() == 0 # Object ID
-    print '\tPath<%s>' % (up.unpack_string())
+    print('\tPath<%s>' % (up.unpack_string()))
     param = up.unpack_bytes()
     _database_parameter_block(param)
     up.done()
@@ -1814,9 +1814,9 @@ def op_create(sock):
 def op_que_events(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
-    print '\tdb_handle=', up.unpack_int()
+    print('\tdb_handle=', up.unpack_int())
     prs = up.unpack_string()    # param raw strings
-    print '\tprs=[' +  binascii.b2a_hex(prs) + ']'
+    print('\tprs=[' +  binascii.b2a_hex(prs) + ']')
     param_strings = []
     assert ord(prs[0]) == 1
     i = 1
@@ -1826,25 +1826,25 @@ def op_que_events(sock):
         param_strings.append(s)
         i += 5+ln
 
-    print '\tparam=', param_strings
-    print '\tast=', up.unpack_int()
-    print '\tevent_args=', up.unpack_int()
-    print '\tevent_rid=', up.unpack_int()
+    print('\tparam=', param_strings)
+    print('\tast=', up.unpack_int())
+    print('\tevent_args=', up.unpack_int())
+    print('\tevent_rid=', up.unpack_int())
     return msg
 
 def op_cancel_events(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
-    print '\tdb_handle=', up.unpack_int()
-    print '\tevent_id<%x>' % (up.unpack_uint())
+    print('\tdb_handle=', up.unpack_int())
+    print('\tevent_id<%x>' % (up.unpack_uint()))
     up.done()
     return msg
 
 def op_connect_request(sock):
     msg = sock.recv(bufsize)
     up = xdrlib.Unpacker(msg)
-    print '\ttype=',up.unpack_int()
-    print '\tdb_handle=', up.unpack_int()
+    print('\ttype=',up.unpack_int())
+    print('\tdb_handle=', up.unpack_int())
     assert up.unpack_int() == 0
     up.done()
     return msg
@@ -1866,10 +1866,10 @@ def recv_forever(server_name, server_port, listen_port):
     while True:
         r = server_socket.recv(1)
         if r:
-            print '%02x' % (ord(r),),
+            print('%02x' % (ord(r),),)
             client_socket.send(r)
         else:
-            print 'recv thread exit'
+            print('recv thread exit')
             thread.exit()
 
 #-----------------------------------------------------------------------------
@@ -1884,13 +1884,13 @@ def proxy_socket(client_socket, server_name, server_port):
             s = client_socket.recv(1)
             if s:
                 server_socket.send(s)
-                print '>%02x' % (ord(s),)
+                print('>%02x' % (ord(s),))
         except socket.error:
             pass
         try:
             r = server_socket.recv(1)
             if r:
-                print '<%02x' % (ord(r),)
+                print('<%02x' % (ord(r),))
                 client_socket.send(r)
         except socket.error:
             pass
@@ -1915,12 +1915,12 @@ def process_wire(client_socket, server_name, server_port):
         unpacker = xdrlib.Unpacker(client_head)
         op_req_code = unpacker.unpack_int()
         op_req_name = op_names[op_req_code]
-        print thread.get_ident(), '<--', op_req_code, op_req_name
+        print(thread.get_ident(), '<--', op_req_code, op_req_name)
         if op_req_name in globals():
             client_msg = globals()[op_req_name](client_socket)
         else:
             client_msg = client_socket.recv(bufsize)
-            print '\t[[' + binascii.b2a_hex(client_msg) + ']]'
+            print('\t[[' + binascii.b2a_hex(client_msg) + ']]')
         server_socket.send(client_head)
         if client_msg:
             server_socket.send(client_msg)
@@ -1931,12 +1931,12 @@ def process_wire(client_socket, server_name, server_port):
             unpacker = xdrlib.Unpacker(server_head)
             op_res_code = unpacker.unpack_int()
             op_res_name = op_names[op_res_code]
-            print thread.get_ident(), '-->', op_res_code, op_res_name
+            print(thread.get_ident(), '-->', op_res_code, op_res_name)
             if op_res_name in globals():
                 server_msg = globals()[op_res_name](server_socket)
             else:
                 server_msg = server_socket.recv(bufsize)
-                print '\t', binascii.b2a_hex(server_msg)
+                print('\t', binascii.b2a_hex(server_msg))
             client_socket.send(server_head)
             if server_msg:
                 client_socket.send(server_msg)
@@ -1956,7 +1956,7 @@ def proxy_wire_forever(server_name, server_port, listen_port):
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print 'Usage : ' + sys.argv[0] + ' fb_server[:fb_port] [listen_port]'
+        print('Usage : ' + sys.argv[0] + ' fb_server[:fb_port] [listen_port]')
         sys.exit()
     
     server = sys.argv[1].split(':')
