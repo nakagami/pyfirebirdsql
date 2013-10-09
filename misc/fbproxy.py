@@ -1109,7 +1109,7 @@ def _calc_blr(xsqlda):  # calc from sqlda to BLR format data.
         blr = ''.join([chr(256 + b if b < 0 else b) for b in blr])
     return blr
 
-def _parse_param(blr, bytes = None):   # Parse (bytes data with) BLR format
+def _parse_param(blr, bs = None):   # Parse (bytes data with) BLR format
     assert [ord(blr[0]), ord(blr[1]), ord(blr[2]), ord(blr[3])] == [5, 2, 4, 0]
     param_len = _bytes_to_int(blr, 4, 2)
     print('\t_parse_param len =', param_len)
@@ -1169,9 +1169,9 @@ def _parse_param(blr, bytes = None):   # Parse (bytes data with) BLR format
         n += 1
         pad_length = ((4-io_length) & 3)
         print('\t', dtype, io_length, '+', pad_length, 'scale =', scale)
-        if bytes:
-            print('\t[' + binascii.b2a_hex(bytes[:io_length]) + ']')
-            bytes = bytes[io_length + pad_length:]
+        if bs:
+            print('\t[', binascii.b2a_hex(bs[:io_length]), ']')
+            bs = bs[io_length + pad_length:]
 
     assert [ord(blr[i]), ord(blr[i+1])] == [255, 76]    # [blr_end, blr_eoc]
 
@@ -1678,7 +1678,7 @@ def op_execute2(sock):
     number_of_messages = up.unpack_int()
     print('\t<%d,%d>' % (message_number, number_of_messages))
     if number_of_messages:
-        print('\tparam value['+binascii.b2a_hex(msg[up.get_position():])+']')
+        print('\tparam value[', binascii.b2a_hex(msg[up.get_position():]), ']')
         _parse_param(blr, msg[up.get_position():])
     out_blr = up.unpack_bytes()
     print('\toutput BLR[', binascii.b2a_hex(out_blr), ']')
