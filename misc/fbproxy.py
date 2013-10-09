@@ -57,7 +57,10 @@ def get_xsqlda_statement():
 def asc_dump(s):
     r = ''
     for c in s:
-        r += c if (ord(c) >= 32 and ord(c) < 128) else '.'
+        if PYTHON3:
+            r += chr(c) if (ord(c) >= 32 and ord(c) < 128) else '.'
+        else:
+            r += c if (ord(c) >= 32 and ord(c) < 128) else '.'
     if r:
         print('\t[' + r + ']')
 
