@@ -1,6 +1,6 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 ##############################################################################
-# Copyright (c) 2010-2012 Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2010-2013 Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 # Licensed under the New BSD License
 # (http://www.freebsd.org/copyright/freebsd-license.html)
@@ -17,6 +17,12 @@ try:
     import thread
 except ImportError:
     import _thread as thread
+
+PYTHON3 = sys.version_info[0] > 2
+
+if PYTHON3:
+    def ord(c):
+        return c
 
 bufsize = 65535
 
@@ -1518,7 +1524,7 @@ def op_connect(sock):
     print('\tPath<%s>' % (up.unpack_string()))
     pcount = up.unpack_int()
     print('\tProtocol version understood count=', pcount )
-    print('\tuid=[' + binascii.b2a_hex(up.unpack_bytes()) + ']')
+    print('\tuid=[', binascii.b2a_hex(up.unpack_bytes()), ']')
     print('\tProtocol version', up.unpack_int())
     print('\tArchitecture type', up.unpack_int())
     print('\tMinimum type',  up.unpack_int())   # Minimum type (2)

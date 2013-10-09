@@ -4,7 +4,7 @@ import tempfile
 
 class TestBase(unittest.TestCase):
     host='localhost'
-    port=3050
+    port=3060
     user='sysdba'
     password='masterkey'
     page_size=2<<13
