@@ -7,6 +7,7 @@
 #
 # Firebird RDBMS (http://www.firebirdsql.org/) proxy tool for debug.
 ##############################################################################
+from __future__ import print_function
 import sys
 import socket
 import binascii
