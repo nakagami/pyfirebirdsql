@@ -1508,7 +1508,7 @@ def op_fetch_response(sock):
             bytes = sock.recv(12)
             msg += bytes
             print('\t{', _bytes_to_bint32(bytes, 0), end='')
-            print(_bytes_to_bint32(bytes, 4), end='')
+            print(_bytes_to_bint32(bytes, 4), end=',')
             print(_bytes_to_bint32(bytes, 8), '}')
             if _bytes_to_bint32(bytes, 8) == 0:
                 break
