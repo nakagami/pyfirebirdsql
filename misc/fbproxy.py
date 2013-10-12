@@ -1428,7 +1428,7 @@ def op_response(sock):
     while i < len(sv):
         s = isc_status_names[_bytes_to_bint32(sv, i)]
         i += 4
-        print(s, end='')
+        print(' ' + s + ' ', end='')
         if s == 'isc_arg_gds':
             err_code = _bytes_to_bint32(sv,i)
             print( isc_gds_error_code.get(err_code, err_code), end='')
