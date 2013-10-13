@@ -83,6 +83,9 @@ def hex_dump(s):
         i = i + 16
     print('\t', '-' * 55)
 
+def msg_dump(s):
+    hex_dump(s)
+
 isc_gds_error_code = {
   335544321 : 'isc_arith_except',
   335544322 : 'isc_bad_dbkey',
@@ -1360,6 +1363,7 @@ def parse_sql_info(bytes, statement):
 
 def op_start_send_and_receive(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tInc<%x>Trans<%x>' % (up.unpack_uint(), up.unpack_uint()))
     message_number = up.unpack_int()
@@ -1457,6 +1461,7 @@ op_response_piggyback = op_response
 
 def op_sql_response(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tcount=%d' % (up.unpack_int()))
     print('\tData row', binascii.b2a_hex(up.unpack_bytes()))
@@ -1465,6 +1470,7 @@ def op_sql_response(sock):
 
 def op_fetch(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     statement = up.unpack_uint()
     set_prepare_statement(statement)
@@ -1478,6 +1484,7 @@ def op_fetch(sock):
 
 def op_fetch_response(sock):
     msg = sock.recv(8)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     status = up.unpack_int()
     count = up.unpack_int()
@@ -1516,6 +1523,7 @@ def op_fetch_response(sock):
 
 def op_info_database(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tDatabase<%x>' % (up.unpack_uint()))
     assert up.unpack_int() == 0 # Incarnation of object
@@ -1530,6 +1538,7 @@ def op_info_database(sock):
 
 def op_connect(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     assert op_names[up.unpack_int()] == 'op_attach'
     assert up.unpack_int() == 2     # CONNECT_VERSION2
@@ -1552,6 +1561,7 @@ def op_connect(sock):
 
 def op_accept(sock):
     msg = sock.recv(12)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tProtocol<%d>Archtecture<%d>MinimumType<%d>' % (
             up.unpack_int(), up.unpack_int(), up.unpack_int()))
@@ -1560,6 +1570,7 @@ def op_accept(sock):
 
 def op_attach(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     assert up.unpack_uint() == 0    # Database Object ID (0)
     print('\tPath<%s>' % (up.unpack_string()))
@@ -1570,6 +1581,7 @@ def op_attach(sock):
 
 def op_detach(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tDatabase<%x>' % (up.unpack_uint()))
     up.done()
@@ -1577,6 +1589,7 @@ def op_detach(sock):
 
 def op_transaction(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tDatabase<%x>' % (up.unpack_uint()), end='')
     bytes = up.unpack_bytes()
@@ -1589,6 +1602,7 @@ def op_transaction(sock):
 
 def op_commit(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tTrans<%x>' % (up.unpack_uint()))
     up.done()
@@ -1598,6 +1612,7 @@ op_rollback = op_commit
 
 def op_prepare_statement(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     set_prepare_trans(up.unpack_uint())
     statement = up.unpack_int()
@@ -1618,6 +1633,7 @@ def op_prepare_statement(sock):
 
 def op_info_sql(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tStatement<%x>' % (up.unpack_uint()))
     assert up.unpack_int() == 0
@@ -1641,6 +1657,7 @@ def op_info_sql(sock):
 
 def op_allocate_statement(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     print('\tDatabase<%x>' % (_bytes_to_bint32(msg, 0),), end='')
     print('[', binascii.b2a_hex(msg[24:]), ']')
     asc_dump(msg[24:])
@@ -1648,6 +1665,7 @@ def op_allocate_statement(sock):
 
 def op_free_statement(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tStatement<%x>' % (up.unpack_uint()), end='')
     f = up.unpack_int()
@@ -1663,6 +1681,7 @@ def op_free_statement(sock):
 
 def op_execute(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tStatement<%x>Trans<%x>' % (up.unpack_uint(), up.unpack_uint()))
     blr = up.unpack_bytes()
@@ -1677,6 +1696,7 @@ def op_execute(sock):
 
 def op_execute2(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tStatement<%x>Trans<%x>' % (up.unpack_uint(), up.unpack_uint()))
     blr = up.unpack_bytes()
@@ -1695,7 +1715,7 @@ def op_execute2(sock):
 
 def op_execute_immediate(sock):
     msg = sock.recv(bufsize)
-    hex_dump(msg)
+    msg_dump(msg)
     i = 0
     trans_handle = _bytes_to_bint(msg, i, 4)
     i += 4
@@ -1735,7 +1755,7 @@ op_execute_immediate2 = op_execute_immediate
 
 def op_open_blob(sock):
     msg = sock.recv(bufsize)
-    print('\t[', binascii.b2a_hex(msg), ']')
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tTrans<%x>BlobID<%04x%04x>' % (
                     up.unpack_uint(), up.unpack_uint(), up.unpack_uint()))
@@ -1744,7 +1764,7 @@ def op_open_blob(sock):
 
 def op_open_blob2(sock):
     msg = sock.recv(bufsize)
-    print('\t[' + binascii.b2a_hex(msg) + ']')
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     buf = up.unpack_bytes()
     print('\tbuf[' + binascii.b2a_hex(buf) + ']')
@@ -1762,6 +1782,7 @@ def op_close_blob(sock):
 
 def op_get_segment(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tBlobHandle<%x>len<%d>' % (up.unpack_uint(), up.unpack_int()))
     assert up.unpack_int() == 0     # Data segment (0)
@@ -1781,6 +1802,7 @@ def op_service_attach(sock):
 
 def op_service_info(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tobject id<%08x>' % (up.unpack_int(),), end='')
     assert up.unpack_int() == 0 # object
@@ -1792,6 +1814,7 @@ def op_service_info(sock):
 
 def op_service_detach(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\thandle=', up.unpack_int())
     up.done()
@@ -1799,7 +1822,7 @@ def op_service_detach(sock):
 
 def op_service_start(sock):
     msg = sock.recv(bufsize)
-    print('\tmsg=[' +  binascii.b2a_hex(msg) + ']')
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\thandle=', up.unpack_int())
     assert up.unpack_int() == 0 # object
@@ -1811,6 +1834,7 @@ def op_service_start(sock):
 
 def op_release(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\thandle=', up.unpack_int())
     up.done()
@@ -1818,6 +1842,7 @@ def op_release(sock):
 
 def op_compile(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     assert up.unpack_int() == 0 # Object ID
     hex_dump(up.unpack_bytes())
@@ -1826,6 +1851,7 @@ def op_compile(sock):
 
 def op_create(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     assert up.unpack_int() == 0 # Object ID
     print('\tPath<%s>' % (up.unpack_string()))
@@ -1836,6 +1862,7 @@ def op_create(sock):
 
 def op_que_events(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tdb_handle=', up.unpack_int())
     prs = up.unpack_string()    # param raw strings
@@ -1857,6 +1884,7 @@ def op_que_events(sock):
 
 def op_cancel_events(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tdb_handle=', up.unpack_int())
     print('\tevent_id<%x>' % (up.unpack_uint()))
@@ -1865,6 +1893,7 @@ def op_cancel_events(sock):
 
 def op_connect_request(sock):
     msg = sock.recv(bufsize)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\ttype=',up.unpack_int())
     print('\tdb_handle=', up.unpack_int())
