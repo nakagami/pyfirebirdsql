@@ -1625,7 +1625,7 @@ def op_prepare_statement(sock):
     bytes = up.unpack_bytes() # AbstractJavaGDSImpl.java/sql_prepare_info
     print('\t[', binascii.b2a_hex(bytes), ']=[', end='')
     for b in bytes:
-        print(isc_info_sql_names[_ord(b)], end='')
+        print(isc_info_sql_names[_ord(b)], end=',')
     print(']')
     print('\tbuffer_len=', up.unpack_int())
     up.done()
