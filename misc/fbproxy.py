@@ -1208,7 +1208,7 @@ def _parse_trunc_sql_info(start, bytes, statement):
         elif item == 'isc_info_sql_type':
             l = _bytes_to_int(bytes, i + 1, 2)
             xsqlda[index-1].sqltype = _bytes_to_int(bytes, i + 3, l)
-            print('\t', item, xsqlda[index-1].sqltype, end='')
+            print('\t', item, xsqlda[index-1].sqltype, end=' ')
             print('dtype=', xsqlda[index-1].sqltype & ~1)
             i = i + 3 + l
         elif item == 'isc_info_sql_sub_type':
