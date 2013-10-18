@@ -217,3 +217,10 @@ class TestBasic(base.TestBase):
         self.assertEqual(0, len(cur.fetchall()))
         cur.close()
 
+    def test_error(self):
+        cur = self.connection.cursor()
+        try:
+            # table foo is already exists.
+            cur.execute("CREATE TABLE foo (a INTEGER)")
+        except firebirdsql.OperationalError:
+            pass
