@@ -1343,13 +1343,13 @@ def parse_sql_info(bytes, statement):
             if index:
                 print('\tmore info index=', index)
             break
-        print('\t' + isc_info_sql_names[_ord(bytes[i])], end='')
+        print('\t' + isc_info_sql_names[_ord(bytes[i])], end=' ')
         if isc_info_sql_names[_ord(bytes[i])] == 'isc_info_sql_records':
             i += 3
             while isc_req_info_names[_ord(bytes[i])] != 'isc_info_end':
-                print(isc_req_info_names[_ord(bytes[i])], end='')
+                print(isc_req_info_names[_ord(bytes[i])], end=' ')
                 l = _bytes_to_int(bytes, i + 1, 2)
-                print(_bytes_to_int(bytes, i + 3, l), end='')
+                print(_bytes_to_int(bytes, i + 3, l), end=' ')
                 i += 3 + l
             print()
             break
@@ -1385,7 +1385,7 @@ def op_response(sock):
         i = 0
         while i < len(bs):
             s = isc_info_names[_ord(bs[i])]
-            print('\t' + s, end='')
+            print('\t' + s, end=' ')
             if s == 'isc_info_end':
                 print()
                 break
@@ -1398,9 +1398,9 @@ def op_response(sock):
                 'isc_info_sweep_interval', 'isc_info_user_names',
                 ]:
                 l = _bytes_to_int(bs, i+1, 2)
-                print('[', binascii.b2a_hex(bs[i+3:i+3+l]), ']', end='')
+                print('[', binascii.b2a_hex(bs[i+3:i+3+l]), ']', end=' ')
                 if s == 'isc_info_firebird_version':
-                    print(bs[i+5:i+3+l], end='')
+                    print(bs[i+5:i+3+l], end=' ')
                 i = i + 3 + l
             else:
                 i = i + 1
@@ -1428,22 +1428,22 @@ def op_response(sock):
     i = 0
     print('\tStatus vector[', binascii.b2a_hex(sv), ']')
     asc_dump(sv)
-    print('\t', end='')
+    print('\t', end=' ')
     while i < len(sv):
         s = isc_status_names[_bytes_to_bint32(sv, i)]
         i += 4
-        print(' ' + s + ' ', end='')
+        print(s, end=' ')
         if s == 'isc_arg_gds':
             err_code = _bytes_to_bint32(sv,i)
-            print( isc_gds_error_code.get(err_code, err_code), end='')
+            print( isc_gds_error_code.get(err_code, err_code), end=' ')
             i += 4 
         elif s == 'isc_arg_number':
-            print(_bytes_to_bint32(sv, i), end='')
+            print(_bytes_to_bint32(sv, i), end=' ')
             i += 4 
         elif s in ['isc_arg_string', 'isc_arg_interpreted', 'isc_arg_sql_state']:
             nbytes = _bytes_to_bint32(sv, i)
             i += 4
-            print('<', sv[i:i + nbytes], '>', end='')
+            print('<', sv[i:i + nbytes], '>', end=' ')
             i += nbytes
             if nbytes % 4:
                 i += 4 - nbytes % 4  # 4 bs word alignment
