@@ -957,9 +957,9 @@ isc_status_names = [
 type_names = {
   452:'SQL_TEXT', 448:'SQL_VARYING', 500:'SQL_SHORT', 496:'SQL_LONG',
   482:'SQL_FLOAT', 480:'SQL_DOUBLE', 530:'SQL_D_FLOAT', 510:'SQL_TIMESTAMP',
-  520:'SQL_BLOB', 540:'SQL_ARRAY', 550:'SQL_QUAD', 560:'SQL_TYPE_TIME',
-  570:'SQL_TYPE_DATE', 580:'SQL_INT64',
-  32764:'SQL_TYPE_BOOLEAN', 32766: 'SQL_TYPE_NULL',
+  520:'SQL_BLOB', 540:'SQL_ARRAY', 550:'SQL_QUAD', 560:'SQL_TIME',
+  570:'SQL_DATE', 580:'SQL_INT64',
+  32764:'SQL_BOOLEAN', 32766: 'SQL_NULL',
 }
 
 class XSQLVar(object):
@@ -987,8 +987,8 @@ class XSQLVar(object):
         elif dtype == 'SQL_VARYING':
             return -1   # First 4 bytes 
         elif (dtype == 'SQL_SHORT' or dtype == 'SQL_LONG'
-                or dtype == 'SQL_FLOAT' or dtype == 'SQL_TYPE_TIME'
-                or dtype == 'SQL_TYPE_DATE'):
+                or dtype == 'SQL_FLOAT' or dtype == 'SQL_TIME'
+                or dtype == 'SQL_DATE'):
             return 4
         elif (dtype == 'SQL_DOUBLE' or dtype == 'SQL_TIMESTAMP' 
                 or dtype == 'SQL_BLOB' or dtype == 'SQL_ARRAY' 
@@ -1092,9 +1092,9 @@ def _calc_blr(xsqlda):  # calc from sqlda to BLR format data.
             blr += [10]
         elif x.get_type_name() == 'SQL_D_FLOAT':
             blr += [11]
-        elif x.get_type_name() == 'SQL_TYPE_DATE':
+        elif x.get_type_name() == 'SQL_DATE':
             blr += [12]
-        elif x.get_type_name() == 'SQL_TYPE_TIME':
+        elif x.get_type_name() == 'SQL_TIME':
             blr += [13]
         elif x.get_type_name() == 'SQL_TIMESTAMP':
             blr += [35]
@@ -1110,6 +1110,8 @@ def _calc_blr(xsqlda):  # calc from sqlda to BLR format data.
             blr += [16, x.sqlscale]
         elif x.get_type_name() == 'SQL_QUAD':
             blr += [9, x.sqlscale]
+        elif x.get_type_name() == 'SQL_BOOLEAN':
+            blr += [23]
         blr += [7, 0]   # [blr_short, 0]
     blr += [255, 76]    # [blr_end, blr_eoc]
 
@@ -1143,11 +1145,11 @@ def _parse_param(blr, bs = None):   # Parse (bytes data with) BLR format
             io_length = 4
             i += 1
         elif t == 12:
-            dtype = 'SQL_TYPE_DATE'
+            dtype = 'SQL_DATE'
             io_length = 4
             i += 1
         elif t == 13:
-            dtype = 'SQL_TYPE_TIME'
+            dtype = 'SQL_TIME'
             io_length = 4
             i += 1
         elif t == 35:
@@ -1174,6 +1176,10 @@ def _parse_param(blr, bs = None):   # Parse (bytes data with) BLR format
             io_length = 8
             scale = _ord(blr[i+1])
             i += 2
+        elif t == 23:
+            dtype = 'SQL_BOOLEAN'
+            io_length = 1
+            i += 1
         else:
             print('Unknown data type', t, i)
             assert False
@@ -1477,6 +1483,8 @@ def op_fetch(sock):
     set_prepare_statement(statement)
     print('\tStatement<%x>' % (statement))
     blr = up.unpack_bytes()
+    hex_dump(blr)
+    hex_dump(_calc_blr(get_xsqlda_statement()[statement]))
     assert blr == _calc_blr(get_xsqlda_statement()[statement])
     print('\tBLR[', binascii.b2a_hex(blr), ']')
     print('\tMessage No.<%d> size<%d>' % (up.unpack_int(), up.unpack_int()))
