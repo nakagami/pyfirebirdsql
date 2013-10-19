@@ -224,3 +224,27 @@ class TestBasic(base.TestBase):
             cur.execute("CREATE TABLE foo (a INTEGER)")
         except firebirdsql.OperationalError:
             pass
+
+    def test_boolean(self):
+        cur = self.connection.cursor()
+        cur.execute("CREATE TABLE boolean_test (b BOOLEAN)")
+        cur.close()
+        self.connection.commit()
+
+        cur = self.connection.cursor()
+        cur.execute("insert into boolean_test(b) values (true)")
+        cur.execute("insert into boolean_test(b) values (false)")
+        cur.close()
+
+        cur = self.connection.cursor()
+        cur.execute("select * from boolean_test where b is true")
+        self.assertEqual(cur.fetchone()[0], True)
+        cur.close()
+
+        cur = self.connection.cursor()
+        cur.execute("select * from boolean_test where b is false")
+        self.assertEqual(cur.fetchone()[0], False)
+        cur.close()
+
+        self.connection.close()
+
