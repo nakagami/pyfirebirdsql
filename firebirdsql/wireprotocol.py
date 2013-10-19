@@ -190,6 +190,8 @@ class WireProtocol:
     op_connect = 1
     op_exit = 2
     op_accept = 3
+    op_reject = 4
+    op_protocol = 5
     op_disconnect = 6
     op_response = 9
     op_attach = 19
@@ -385,6 +387,8 @@ class WireProtocol:
         b = recv_channel(self.sock, 4)
         while bytes_to_bint(b) == self.op_dummy:
             b = recv_channel(self.sock, 4)
+        if bytes_to_bint(b) == self.op_reject:
+            raise OperationalError('Connection is rejected', None, None)
         assert bytes_to_bint(b) == self.op_accept
         b = recv_channel(self.sock, 12)
         up = xdrlib.Unpacker(b)

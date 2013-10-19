@@ -775,7 +775,13 @@ class Connection(WireProtocol):
         self.page_size = page_size
         self.is_services = is_services
         self._op_connect()
-        self._op_accept()
+        try:
+            self._op_accept()
+        except OperationalError:
+            self.sock.close()
+            self.sock = None
+            e = sys.exc_info()[1]
+            raise e
         if self.page_size:                      # create database
             self._op_create(self.page_size)
         elif self.is_services:                  # service api
