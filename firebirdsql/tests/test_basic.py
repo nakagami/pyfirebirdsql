@@ -247,5 +247,13 @@ class TestBasic(base.TestBase):
         self.assertEqual(cur.fetchone()[0], False)
         cur.close()
 
+        cur = self.connection.cursor()
+        prep = cur.prep("select * from boolean_test where b = ?")
+        cur.execute(prep, (True, ))
+        self.assertEqual(cur.fetchone()[0], True)
+        cur.execute(prep, (False, ))
+        self.assertEqual(cur.fetchone()[0], False)
+        cur.close()
+
         self.connection.close()
 
