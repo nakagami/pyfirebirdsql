@@ -1483,8 +1483,6 @@ def op_fetch(sock):
     set_prepare_statement(statement)
     print('\tStatement<%x>' % (statement))
     blr = up.unpack_bytes()
-    hex_dump(blr)
-    hex_dump(_calc_blr(get_xsqlda_statement()[statement]))
     assert blr == _calc_blr(get_xsqlda_statement()[statement])
     print('\tBLR[', binascii.b2a_hex(blr), ']')
     print('\tMessage No.<%d> size<%d>' % (up.unpack_int(), up.unpack_int()))
