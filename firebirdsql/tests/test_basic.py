@@ -225,8 +225,12 @@ class TestBasic(base.TestBase):
         except firebirdsql.OperationalError:
             pass
 
-    @unittest.skip("Firebird 3")
     def test_boolean(self):
+        """
+        For FB3
+        """
+        return
+
         cur = self.connection.cursor()
         cur.execute("CREATE TABLE boolean_test (b BOOLEAN)")
         cur.close()
