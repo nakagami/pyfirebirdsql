@@ -225,6 +225,7 @@ class TestBasic(base.TestBase):
         except firebirdsql.OperationalError:
             pass
 
+    @unittest.skip("FB 3")
     def test_boolean(self):
         """
         For FB3
