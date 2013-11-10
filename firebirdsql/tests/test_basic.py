@@ -229,8 +229,6 @@ class TestBasic(base.TestBase):
         """
         For FB3
         """
-        return
-
         cur = self.connection.cursor()
         cur.execute("CREATE TABLE boolean_test (b BOOLEAN)")
         cur.close()

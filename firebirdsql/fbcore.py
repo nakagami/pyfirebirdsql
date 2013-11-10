@@ -514,13 +514,6 @@ class Cursor:
                         r[i] = v
                 yield r
 
-        # recreate stmt_handle
-        connection._op_free_statement(stmt_handle, 2) # DSQL_drop
-        (h, oid, buf) = connection._op_response()
-        connection._op_allocate_statement()
-        (h, oid, buf) = connection._op_response()
-        self.stmt_handle = h
-
         raise StopIteration()
 
     def fetchone(self):
