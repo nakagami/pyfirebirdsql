@@ -362,6 +362,7 @@ class PreparedStatement:
         connection._op_allocate_statement()
         (h, oid, buf) = connection._op_response()
         self.stmt_handle = h
+        self.is_opened = False
 
         if explain_plan:
             connection._op_prepare_statement(
@@ -425,6 +426,10 @@ class Cursor:
         cooked_params = self._convert_params(params)
 
         if isinstance(query, PreparedStatement):
+            if query.is_opened:
+                self.transaction.connection._op_free_statement(
+                                            query.stmt_handle, 1) # DSQL_close
+                (h, oid, buf) = self.transaction.connection._op_response()
             stmt_handle = query.stmt_handle
             stmt_type = query.statement_type
             self._xsqlda = query._xsqlda
@@ -451,6 +456,8 @@ class Cursor:
             if 335544665 in e.gds_codes:
                 raise IntegrityError(e._message, e.gds_codes, e.sql_code)
             raise OperationalError(e._message, e.gds_codes, e.sql_code)
+        if isinstance(query, PreparedStatement):
+            query.is_opened = True
         return stmt_type, stmt_handle
 
     def _callproc(self, stmt_handle, query, params):
