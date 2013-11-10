@@ -453,9 +453,8 @@ class Cursor:
             raise OperationalError(e._message, e.gds_codes, e.sql_code)
         return stmt_type, stmt_handle
 
-    def _callproc(self, query, params):
+    def _callproc(self, stmt_handle, query, params):
         cooked_params = self._convert_params(params)
-        stmt_handle = self.stmt_handle
         self.transaction.connection._op_prepare_statement(stmt_handle,
                                         self.transaction.trans_handle, query)
         (h, oid, buf) = self.transaction.connection._op_response()
@@ -480,9 +479,13 @@ class Cursor:
             self._fetch_records = None
 
     def callproc(self, procname, params = []):
+        self.transaction.connection._op_allocate_statement()
+        (stmt_handle, oid, buf) = self.transaction.connection._op_response()
         query = 'EXECUTE PROCEDURE ' + procname + ' ' + ','.join('?'*len(params))
-        self._callproc_result = self._callproc(query, params)
+        self._callproc_result = self._callproc(stmt_handle, query, params)
         self._fetch_records = None
+        self.transaction.connection._op_free_statement(stmt_handle, 2) # DSQL_drop
+        (h, oid, buf) = self.transaction.connection._op_response()
 
     def executemany(self, query, seq_of_params):
         for params in seq_of_params:
