@@ -13,6 +13,15 @@ def b(s):
         return bytes(s, 'utf8')
     return s
 
+# backwards compatibility:
+if not hasattr(unittest, "skip"):
+    def _empty(func):
+        pass
+    def _skip(message):
+        return _empty
+    unittest.skip = _skip
+
+
 class TestBasic(base.TestBase):
     def test_basic(self):
         conn = self.connection
