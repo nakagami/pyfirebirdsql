@@ -400,9 +400,7 @@ class PreparedStatement:
 class Cursor:
     def __init__(self, trans):
         self._transaction = trans
-        self.transaction.connection._op_allocate_statement()
-        (h, oid, buf) = self.transaction.connection._op_response()
-        self.stmt_handle = h
+        self.stmt_handle = None
         self.arraysize = 1
 
     def __enter__(self):
@@ -431,7 +429,13 @@ class Cursor:
             stmt_type = query.statement_type
             self._xsqlda = query._xsqlda
         else:
-            stmt_handle = self.stmt_handle
+            if self.stmt_handle:
+                self.transaction.connection._op_free_statement(
+                                            self.stmt_handle, 2) # DSQL_drop
+                (h, oid, buf) = self.transaction.connection._op_response()
+            self.transaction.connection._op_allocate_statement()
+            (stmt_handle, oid, buf) = self.transaction.connection._op_response()
+            self.stmt_handle = stmt_handle
             self.transaction.connection._op_prepare_statement(stmt_handle,
                                         self.transaction.trans_handle, query)
             (h, oid, buf) = self.transaction.connection._op_response()
@@ -591,11 +595,11 @@ class Cursor:
             r = self.fetchonemap()
 
     def close(self):
-        if not hasattr(self, "stmt_handle"):
+        if not self.stmt_handle:
             return
         self.transaction.connection._op_free_statement(self.stmt_handle, 2)   # DSQL_drop
         (h, oid, buf) = self.transaction.connection._op_response()
-        delattr(self, "stmt_handle")
+        self.stmt_handle = None
 
     def nextset(self):
         raise NotSupportedError()
