@@ -994,6 +994,8 @@ class XSQLVar(object):
                 or dtype == 'SQL_BLOB' or dtype == 'SQL_ARRAY' 
                 or dtype == 'SQL_QUAD' or dtype == 'SQL_INT64'):
             return 8
+        elif dtype == 'SQL_BOOLEAN':
+            return 1
 
     def __str__(self):
         s  = '[' + str(self.sqltype) + ',' + str(self.sqlscale) + ',' \
