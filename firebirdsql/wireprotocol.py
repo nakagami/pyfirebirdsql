@@ -214,18 +214,17 @@ class WireProtocol:
     }
 
     def recv_channel(self, nbytes, word_alignment=False):
-        if self.timeout is None:
-            select.select([self.sock], [], [])
-        else:
-            select.select([self.sock], [], [], self.timeout)
         n = nbytes
         if word_alignment and (n % 4):
             n += 4 - nbytes % 4  # 4 bytes word alignment
         r = bytes([])
         while n:
+            if self.timeout is None:
+                select.select([self.sock], [], [])
+            else:
+                if select.select([self.sock], [], [], self.timeout)[0] == []:
+                    break
             b = self.sock.recv(n)
-            if not b:
-                break
             r += b
             n -= len(b)
         if len(r) < nbytes:
