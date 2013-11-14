@@ -114,12 +114,9 @@ def byte_to_int(b):
     else:
         return ord(b)
 
-def recv_channel(sock, nbytes, timeout=None, word_alignment=False):
-    if timeout is None:
-        select.select([sock], [], [])
-    else:
-        select.select([sock], [], [], timeout)
-
+def recv_channel(sock, nbytes, timeout=0, word_alignment=False):
+    if timeout and select.select([sock], [], [], timeout)[0] == []:
+        return None
     n = nbytes
     if word_alignment and (n % 4):
         n += 4 - nbytes % 4  # 4 bytes word alignment
