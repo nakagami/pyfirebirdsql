@@ -305,7 +305,9 @@ class WireProtocol:
                     sql_code = num
                 num_arg += 1
                 message = message.replace('@' + str(num_arg), str(num))
-            elif n == isc_arg_string or n == isc_arg_interpreted:
+            elif (n == isc_arg_string or
+                    n == isc_arg_interpreted
+                    or n == isc_arg_sql_state):
                 nbytes = bytes_to_bint(recv_channel(self.sock, 4))
                 n = str(recv_channel(self.sock, nbytes, word_alignment=True))
                 num_arg += 1
