@@ -794,7 +794,7 @@ class WireProtocol:
 
     @wire_operation
     def _op_response(self):
-        b = recv_channel(self.sock, 4)
+        b = recv_channel(self.sock, 4, timeout=3600)
         if b is None:
             return
         while bytes_to_bint(b) == self.op_dummy:
