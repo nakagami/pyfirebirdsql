@@ -62,9 +62,6 @@ class TestEvent(base.TestBase):
                 password=self.password)
         conduit = conn.event_conduit(['event_a', 'event_b', 'event_d'])
     
-        result = conduit.wait(timeout=1)
-        assert result == {'event_b': 0, 'event_a': 0, 'event_d': 0}
-    
         result = conduit.wait()
         assert result == {'event_b': 1, 'event_a': 2, 'event_d': 0}
     
