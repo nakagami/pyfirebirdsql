@@ -114,9 +114,11 @@ def byte_to_int(b):
     else:
         return ord(b)
 
-def recv_channel(sock, nbytes, timeout=0, word_alignment=False):
-    if timeout and select.select([sock], [], [], timeout)[0] == []:
-        return None
+def recv_channel(sock, nbytes, timeout=None, word_alignment=False):
+    if timeout is None:
+        select.select([sock], [], [])
+    else:
+        select.select([sock], [], [], timeout)
     n = nbytes
     if word_alignment and (n % 4):
         n += 4 - nbytes % 4  # 4 bytes word alignment
@@ -793,6 +795,8 @@ class WireProtocol:
     @wire_operation
     def _op_response(self):
         b = recv_channel(self.sock, 4)
+        if b is None:
+            return
         while bytes_to_bint(b) == self.op_dummy:
             b = recv_channel(self.sock, 4)
         if bytes_to_bint(b) != self.op_response:
