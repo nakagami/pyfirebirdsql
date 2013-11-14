@@ -1013,7 +1013,7 @@ class Transaction:
             (h, oid, buf) = self.connection._op_response()
         else:
             self.connection._op_rollback(self.trans_handle)
-            (h, oid, buf) = self.connection._op_response()
+#            (h, oid, buf) = self.connection._op_response()
             delattr(self, "trans_handle")
             self.connection._transactions.remove(self)
 
