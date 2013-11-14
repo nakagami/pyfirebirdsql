@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2009-2012 Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2009-2013 Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 # Licensed under the New BSD License
 # (http://www.freebsd.org/copyright/freebsd-license.html)
@@ -39,7 +39,7 @@ else:
         fcntl.fcntl(fd, fcntl.F_SETFD, flags | fcntl.FD_CLOEXEC)
 
 
-__version__ = '0.7.3'
+__version__ = '0.7.4'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
@@ -103,7 +103,8 @@ class XSQLVAR:
         SQL_TYPE_BLOB: 8,
         SQL_TYPE_ARRAY: 8,
         SQL_TYPE_QUAD: 8,
-        SQL_TYPE_INT64: 8
+        SQL_TYPE_INT64: 8,
+        SQL_TYPE_BOOLEAN: 1,
         }
 
     type_display_length = {
@@ -118,7 +119,8 @@ class XSQLVAR:
         SQL_TYPE_BLOB: 0,
         SQL_TYPE_ARRAY: -1,
         SQL_TYPE_QUAD: 20,
-        SQL_TYPE_INT64: 20
+        SQL_TYPE_INT64: 20,
+        SQL_TYPE_BOOLEAN: 5,
         }
 
     def __init__(self, bytes_to_str):
@@ -221,6 +223,8 @@ class XSQLVAR:
             return struct.unpack('!f', raw_value)[0]
         elif self.sqltype == SQL_TYPE_DOUBLE:
             return struct.unpack('!d', raw_value)[0]
+        elif self.sqltype == SQL_TYPE_BOOLEAN:
+            return True if byte_to_int(raw_value[0]) != 0 else False
         else:
             return raw_value
 
@@ -234,6 +238,7 @@ sqltype2blr = {
     SQL_TYPE_TIMESTAMP: [35],
     SQL_TYPE_BLOB: [9, 0],
     SQL_TYPE_ARRAY: [9, 0],
+    SQL_TYPE_BOOLEAN: [23],
     }
 
 def calc_blr(xsqlda):
@@ -319,28 +324,33 @@ def parse_select_items(buf, xsqlda, connection):
     return -1   # no more info
 
 def parse_xsqlda(buf, connection, stmt_handle):
-    assert buf[:3] == bytes([0x15,0x04,0x00]) # isc_info_sql_stmt_type
-    stmt_type = bytes_to_int(buf[3:7])
-    if (stmt_type != isc_info_sql_stmt_select and
-        stmt_type != isc_info_sql_stmt_exec_procedure):
-        return []
-
-    assert buf[7:9] == bytes([0x04,0x07])
-    l = bytes_to_int(buf[9:11])
-    col_len = bytes_to_int(buf[11:11+l])
-    xsqlda = [None] * col_len
-    next_index = parse_select_items(buf[11+l:], xsqlda, connection)
-    while next_index > 0:   # more describe vars
-        connection._op_info_sql(stmt_handle,
-                    bytes([isc_info_sql_sqlda_start, 2])
-                        + int_to_bytes(next_index, 2)
-                        + INFO_SQL_SELECT_DESCRIBE_VARS)
-        (h, oid, buf) = connection._op_response()
-        assert buf[:2] == bytes([0x04,0x07])
-        l = bytes_to_int(buf[2:4])
-        assert bytes_to_int(buf[4:4+l]) == col_len
-        next_index = parse_select_items(buf[4+l:], xsqlda, connection)
-    return xsqlda
+    xsqlda = []
+    stmt_type = None
+    i = 0
+    while i < len(buf):
+        if buf[i:i+3] == bytes([isc_info_sql_stmt_type,0x04,0x00]):
+            stmt_type = bytes_to_int(buf[i+3:i+7])
+            i += 7
+        elif buf[i:i+2] == bytes([isc_info_sql_select, isc_info_sql_describe_vars]):
+            i += 2
+            l = bytes_to_int(buf[i:i+2])
+            i += 2
+            col_len = bytes_to_int(buf[i:i+l])
+            xsqlda = [None] * col_len
+            next_index = parse_select_items(buf[i+l:], xsqlda, connection)
+            while next_index > 0:   # more describe vars
+                connection._op_info_sql(stmt_handle,
+                            bytes([isc_info_sql_sqlda_start, 2])
+                                + int_to_bytes(next_index, 2)
+                                + INFO_SQL_SELECT_DESCRIBE_VARS)
+                (h, oid, buf) = connection._op_response()
+                assert buf[:2] == bytes([0x04,0x07])
+                l = bytes_to_int(buf[2:4])
+                assert bytes_to_int(buf[4:4+l]) == col_len
+                next_index = parse_select_items(buf[4+l:], xsqlda, connection)
+        else:
+            break
+    return stmt_type, xsqlda
 
 class PreparedStatement:
     def __init__(self, cur, sql, explain_plan=False):
@@ -352,6 +362,7 @@ class PreparedStatement:
         connection._op_allocate_statement()
         (h, oid, buf) = connection._op_response()
         self.stmt_handle = h
+        self.is_opened = False
 
         if explain_plan:
             connection._op_prepare_statement(
@@ -370,9 +381,8 @@ class PreparedStatement:
             self.plan = connection.bytes_to_str(buf[i+3:i+3+l])
             i += 3 + l
 
-        assert buf[i:i+3] == bytes([0x15,0x04,0x00]) # isc_info_sql_stmt_type (4 bytes)
-        self.statement_type = bytes_to_int(buf[i+3:i+7])
-        self._xsqlda = parse_xsqlda(buf[i:], connection, self.stmt_handle)
+        self.statement_type, self._xsqlda = parse_xsqlda(
+                                        buf[i:], connection, self.stmt_handle)
 
     def __getattr__(self, attrname):
         if attrname == 'description':
@@ -391,9 +401,7 @@ class PreparedStatement:
 class Cursor:
     def __init__(self, trans):
         self._transaction = trans
-        self.transaction.connection._op_allocate_statement()
-        (h, oid, buf) = self.transaction.connection._op_response()
-        self.stmt_handle = h
+        self.stmt_handle = None
         self.arraysize = 1
 
     def __enter__(self):
@@ -408,41 +416,36 @@ class Cursor:
 
     def _convert_params(self, params):
         cooked_params = []
-        for param in params:        # Convert str/bytes parameter to blob id
+        for param in params:
             if type(param) == str:
                 param = self.transaction.connection.str_to_bytes(param)
             cooked_params.append(param)
-            continue
-            self.transaction.connection._op_create_blob2(self.transaction.trans_handle)
-            (blob_handle, blob_id, buf2) = self.transaction.connection._op_response()
-            seg_size = self.transaction.connection.buffer_length
-            (seg, remains) = param[:seg_size], param[seg_size:]
-            while seg:
-                self.transaction.connection._op_batch_segments(blob_handle, seg)
-                (h3, oid3, buf3) = self.transaction.connection._op_response()
-                (seg, remains) = remains[:seg_size], remains[seg_size:]
-            self.transaction.connection._op_close_blob(blob_handle)
-            (h4, oid4, buf4) = self.transaction.connection._op_response()
-            assert blob_id == oid4
-            cooked_params.append(blob_id)
         return cooked_params
 
     def _execute(self, query, params):
         cooked_params = self._convert_params(params)
 
         if isinstance(query, PreparedStatement):
+            if query.is_opened:
+                self.transaction.connection._op_free_statement(
+                                            query.stmt_handle, 1) # DSQL_close
+                (h, oid, buf) = self.transaction.connection._op_response()
             stmt_handle = query.stmt_handle
             stmt_type = query.statement_type
             self._xsqlda = query._xsqlda
         else:
-            stmt_handle = self.stmt_handle
+            if self.stmt_handle:
+                self.transaction.connection._op_free_statement(
+                                            self.stmt_handle, 2) # DSQL_drop
+                (h, oid, buf) = self.transaction.connection._op_response()
+            self.transaction.connection._op_allocate_statement()
+            (stmt_handle, oid, buf) = self.transaction.connection._op_response()
+            self.stmt_handle = stmt_handle
             self.transaction.connection._op_prepare_statement(stmt_handle,
                                         self.transaction.trans_handle, query)
             (h, oid, buf) = self.transaction.connection._op_response()
-            assert buf[:3] == bytes([0x15,0x04,0x00]) # isc_info_sql_stmt_type
-            stmt_type = bytes_to_int(buf[3:7])
-            self._xsqlda = parse_xsqlda(buf, self.transaction.connection,
-                                                                stmt_handle)
+            stmt_type, self._xsqlda = parse_xsqlda(
+                                buf, self.transaction.connection, stmt_handle)
 
         self.transaction.connection._op_execute(stmt_handle,
                                 self.transaction.trans_handle, cooked_params)
@@ -452,18 +455,18 @@ class Cursor:
             e = sys.exc_info()[1]
             if 335544665 in e.gds_codes:
                 raise IntegrityError(e._message, e.gds_codes, e.sql_code)
+            raise OperationalError(e._message, e.gds_codes, e.sql_code)
+        if isinstance(query, PreparedStatement):
+            query.is_opened = True
         return stmt_type, stmt_handle
 
-    def _callproc(self, query, params):
+    def _callproc(self, stmt_handle, query, params):
         cooked_params = self._convert_params(params)
-        stmt_handle = self.stmt_handle
         self.transaction.connection._op_prepare_statement(stmt_handle,
                                         self.transaction.trans_handle, query)
         (h, oid, buf) = self.transaction.connection._op_response()
-        assert buf[:3] == bytes([0x15,0x04,0x00]) # isc_info_sql_stmt_type
-        stmt_type = bytes_to_int(buf[3:7])
-        self._xsqlda = parse_xsqlda(buf, self.transaction.connection,
-                                                                stmt_handle)
+        stmt_type, self._xsqlda = parse_xsqlda(
+                            buf, self.transaction.connection, stmt_handle)
 
         self.transaction.connection._op_execute2(stmt_handle,
             self.transaction.trans_handle, cooked_params,
@@ -483,9 +486,13 @@ class Cursor:
             self._fetch_records = None
 
     def callproc(self, procname, params = []):
+        self.transaction.connection._op_allocate_statement()
+        (stmt_handle, oid, buf) = self.transaction.connection._op_response()
         query = 'EXECUTE PROCEDURE ' + procname + ' ' + ','.join('?'*len(params))
-        self._callproc_result = self._callproc(query, params)
+        self._callproc_result = self._callproc(stmt_handle, query, params)
         self._fetch_records = None
+        self.transaction.connection._op_free_statement(stmt_handle, 2) # DSQL_drop
+        (h, oid, buf) = self.transaction.connection._op_response()
 
     def executemany(self, query, seq_of_params):
         for params in seq_of_params:
@@ -520,13 +527,6 @@ class Cursor:
                         (h, oid, buf) = connection._op_response()
                         r[i] = v
                 yield r
-
-        # recreate stmt_handle
-        connection._op_free_statement(stmt_handle, 2) # DSQL_drop
-        (h, oid, buf) = connection._op_response()
-        connection._op_allocate_statement()
-        (h, oid, buf) = connection._op_response()
-        self.stmt_handle = h
 
         raise StopIteration()
 
@@ -605,11 +605,11 @@ class Cursor:
             r = self.fetchonemap()
 
     def close(self):
-        if not hasattr(self, "stmt_handle"):
+        if not self.stmt_handle:
             return
         self.transaction.connection._op_free_statement(self.stmt_handle, 2)   # DSQL_drop
         (h, oid, buf) = self.transaction.connection._op_response()
-        delattr(self, "stmt_handle")
+        self.stmt_handle = None
 
     def nextset(self):
         raise NotSupportedError()
@@ -718,7 +718,7 @@ class Connection(WireProtocol):
         return c
 
     def begin(self):
-        if self.closed:
+        if not self.sock:
             raise InternalError
         trans = Transaction(self)
         trans.begin()
@@ -782,7 +782,13 @@ class Connection(WireProtocol):
         self.page_size = page_size
         self.is_services = is_services
         self._op_connect()
-        self._op_accept()
+        try:
+            self._op_accept()
+        except OperationalError:
+            self.sock.close()
+            self.sock = None
+            e = sys.exc_info()[1]
+            raise e
         if self.page_size:                      # create database
             self._op_create(self.page_size)
         elif self.is_services:                  # service api
@@ -791,7 +797,6 @@ class Connection(WireProtocol):
             self._op_attach()
         (h, oid, buf) = self._op_response()
         self.db_handle = h
-        self.closed = False
         self.last_event_id = 0
 
     def __enter__(self):
@@ -943,7 +948,7 @@ class Connection(WireProtocol):
         return {}
 
     def close(self):
-        if self.closed:
+        if self.sock is None:
             return
         for trans in self._transactions:
             trans.close()
@@ -952,19 +957,21 @@ class Connection(WireProtocol):
         else:
             self._op_detach()
         (h, oid, buf) = self._op_response()
-        self.closed = True
+        self.sock.close()
+        self.sock = None
 
     def drop_database(self):
         self._op_drop_database()
         (h, oid, buf) = self._op_response()
-        self.closed = True
+        self.sock.close()
+        self.sock = None
         delattr(self, "db_handle")
 
     def event_conduit(self, event_names):
         return EventConduit(self, event_names)
 
     def __del__(self):
-        if hasattr(self, "db_handle") and (not self.closed):
+        if self.sock:
             self.close()
 
 class Transaction:

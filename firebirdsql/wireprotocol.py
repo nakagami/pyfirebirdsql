@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2009-2012 Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2009-2013 Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 # Licensed under the New BSD License
 # (http://www.freebsd.org/copyright/freebsd-license.html)
@@ -171,6 +171,9 @@ def params_to_blr(params):
         elif t == datetime.datetime:
             v = convert_timestamp(p)
             blr += bytes([35])
+        elif t == bool:
+            v = bytes([1, 0, 0, 0]) if p else bytes([0, 0, 0, 0])
+            blr += bytes([23])
         elif p == None:
             v = bytes([0]) * 8
             blr += bytes([9, 0])
@@ -187,6 +190,8 @@ class WireProtocol:
     op_connect = 1
     op_exit = 2
     op_accept = 3
+    op_reject = 4
+    op_protocol = 5
     op_disconnect = 6
     op_response = 9
     op_attach = 19
@@ -309,9 +314,12 @@ class WireProtocol:
                     n == isc_arg_interpreted
                     or n == isc_arg_sql_state):
                 nbytes = bytes_to_bint(recv_channel(self.sock, 4))
-                n = str(recv_channel(self.sock, nbytes, word_alignment=True))
+                s = str(recv_channel(self.sock, nbytes, word_alignment=True))
                 num_arg += 1
-                message = message.replace('@' + str(num_arg), n)
+                message = message.replace('@' + str(num_arg), s)
+            elif n == isc_arg_sql_state:
+                nbytes = bytes_to_bint(recv_channel(self.sock, 4))
+                s = str(recv_channel(self.sock, nbytes, word_alignment=True))
             n = bytes_to_bint(recv_channel(self.sock, 4))
 
         return (gds_codes, sql_code, message)
@@ -381,6 +389,8 @@ class WireProtocol:
         b = recv_channel(self.sock, 4)
         while bytes_to_bint(b) == self.op_dummy:
             b = recv_channel(self.sock, 4)
+        if bytes_to_bint(b) == self.op_reject:
+            raise OperationalError('Connection is rejected', None, None)
         assert bytes_to_bint(b) == self.op_accept
         b = recv_channel(self.sock, 12)
         up = xdrlib.Unpacker(b)
@@ -517,16 +527,6 @@ class WireProtocol:
         p.pack_bytes(b)
         p.pack_int(self.buffer_length)
         send_channel(self.sock, p.get_buffer())
-    @wire_operation
-    def _op_info_database(self, b):
-        p = xdrlib.Packer()
-        p.pack_int(self.op_info_database)
-        p.pack_int(self.db_handle)
-        p.pack_int(0)
-        p.pack_bytes(b)
-        p.pack_int(self.buffer_length)
-        send_channel(self.sock, p.get_buffer())
-
 
     @wire_operation
     def _op_free_statement(self, stmt_handle, mode):

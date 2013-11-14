@@ -13,6 +13,15 @@ def b(s):
         return bytes(s, 'utf8')
     return s
 
+# backwards compatibility:
+if not hasattr(unittest, "skip"):
+    def _empty(func):
+        pass
+    def _skip(message):
+        return _empty
+    unittest.skip = _skip
+
+
 class TestBasic(base.TestBase):
     def test_basic(self):
         conn = self.connection
@@ -216,4 +225,47 @@ class TestBasic(base.TestBase):
         cur.execute(prep, ('C parameter', ))
         self.assertEqual(0, len(cur.fetchall()))
         cur.close()
+
+    def test_error(self):
+        cur = self.connection.cursor()
+        try:
+            # table foo is already exists.
+            cur.execute("CREATE TABLE foo (a INTEGER)")
+        except firebirdsql.OperationalError:
+            pass
+
+    @unittest.skip("FB 3")
+    def test_boolean(self):
+        """
+        For FB3
+        """
+        cur = self.connection.cursor()
+        cur.execute("CREATE TABLE boolean_test (b BOOLEAN)")
+        cur.close()
+        self.connection.commit()
+
+        cur = self.connection.cursor()
+        cur.execute("insert into boolean_test(b) values (true)")
+        cur.execute("insert into boolean_test(b) values (false)")
+        cur.close()
+
+        cur = self.connection.cursor()
+        cur.execute("select * from boolean_test where b is true")
+        self.assertEqual(cur.fetchone()[0], True)
+        cur.close()
+
+        cur = self.connection.cursor()
+        cur.execute("select * from boolean_test where b is false")
+        self.assertEqual(cur.fetchone()[0], False)
+        cur.close()
+
+        cur = self.connection.cursor()
+        prep = cur.prep("select * from boolean_test where b = ?")
+        cur.execute(prep, (True, ))
+        self.assertEqual(cur.fetchone()[0], True)
+        cur.execute(prep, (False, ))
+        self.assertEqual(cur.fetchone()[0], False)
+        cur.close()
+
+        self.connection.close()
 

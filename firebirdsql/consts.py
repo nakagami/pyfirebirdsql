@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2011 Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2011-2013 Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 # Licensed under the New BSD License
 # (http://www.freebsd.org/copyright/freebsd-license.html)
@@ -136,6 +136,9 @@ SQL_TYPE_QUAD = 550
 SQL_TYPE_TIME = 560
 SQL_TYPE_DATE = 570
 SQL_TYPE_INT64 = 580
+SQL_TYPE_BOOLEAN = 32764
+SQL_TYPE_NULL = 32766
+
 
 ISOLATION_LEVEL_READ_UNCOMMITTED = 0
 ISOLATION_LEVEL_READ_COMMITED = 1

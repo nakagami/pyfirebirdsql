@@ -43,3 +43,9 @@ Version 0.7.3
    - issue #41 fix int parameter bug
    - issue #42 Implemented Cursor.rowcount() (thanx jtasker)
    - setup.py test command
+
+Version 0.7.4
+=============
+
+   - refactoring
+   - call socket.close()
