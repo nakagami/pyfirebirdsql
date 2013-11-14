@@ -776,7 +776,7 @@ class Connection(WireProtocol):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if cloexec:
             setcloexec(self.sock)
-#        self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         self.sock.connect((self.hostname, self.port))
 
         self.page_size = page_size
