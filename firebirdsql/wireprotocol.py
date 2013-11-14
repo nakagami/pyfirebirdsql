@@ -115,8 +115,10 @@ def byte_to_int(b):
         return ord(b)
 
 def recv_channel(sock, nbytes, timeout=None, word_alignment=False):
-    if timeout and select.select([sock], [], [], timeout)[0] == []:
-        return None
+    if timeout is None:
+        select.select([sock], [], [])
+    else:
+        select.select([sock], [], [], timeout)
 
     n = nbytes
     if word_alignment and (n % 4):
@@ -124,6 +126,8 @@ def recv_channel(sock, nbytes, timeout=None, word_alignment=False):
     r = bytes([])
     while n:
         b = sock.recv(n)
+        if not b:
+            break
         r += b
         n -= len(b)
     return r[:nbytes]
@@ -344,6 +348,15 @@ class WireProtocol:
             elif p == None:
                 v = bytes([0]) * 8
                 blr += bytes([9, 0])
+            else:   # fallback, convert to string
+                p = str(p)
+                if PYTHON_MAJOR_VER==3:
+                    p = self.str_to_bytes(p)
+                v = p
+                nbytes = len(v)
+                pad_length = ((4-nbytes) & 3)
+                v += bytes([0]) * pad_length
+                blr += bytes([14, nbytes & 255, nbytes >> 8])
             values += v
             blr += bytes([7, 0])
             values += bytes([0]) * 4 if p != None else bytes([0xff,0xff,0x34,0x8c])
