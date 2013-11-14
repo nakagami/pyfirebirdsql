@@ -138,6 +138,10 @@ def params_to_blr(params):
     values = bytes([])
     for p in params:
         t = type(p)
+        if ((PYTHON_MAJOR_VER == 2 and type(p) == unicode) or
+            (PYTHON_MAJOR_VER == 3 and type(p) == str)):
+            p = self.str_to_bytes(p)
+            t = type(p)
         if ((PYTHON_MAJOR_VER == 2 and t == str) or
             (PYTHON_MAJOR_VER == 3 and t == bytes)):
             v = p
