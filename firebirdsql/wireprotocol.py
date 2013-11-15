@@ -228,7 +228,7 @@ class WireProtocol:
             r += b
             n -= len(b)
         if len(r) < nbytes:
-            raise OperationalError('Can not recv() enough packets', None, None)
+            raise OperationalError('Can not recv() packets', None, None)
         return r[:nbytes]
 
     def str_to_bytes(self, s):
