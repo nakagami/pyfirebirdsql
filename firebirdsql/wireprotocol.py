@@ -187,7 +187,10 @@ class WireProtocol:
         return r[:nbytes]
 
     def str_to_bytes(self, s):
-        return s.encode(charset_map.get(self.charset, self.charset))
+        "convert str to bytes"
+        if PYTHON_MAJOR_VER == 3:
+            return s.encode(charset_map.get(self.charset, self.charset))
+        return s
 
     def bytes_to_str(self, b):
         "convert bytes array to raw string"
