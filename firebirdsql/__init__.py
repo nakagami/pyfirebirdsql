@@ -14,6 +14,7 @@ class Error(Exception):
         self._message = message
         self.gds_codes = gds_codes
         self.sql_code = sql_code
+        self.args = [message, sql_code]
     def __str__(self):
         return self._message
 
