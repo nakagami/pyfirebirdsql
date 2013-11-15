@@ -114,23 +114,6 @@ def byte_to_int(b):
     else:
         return ord(b)
 
-def recv_channel(sock, nbytes, timeout=None, word_alignment=False):
-    if timeout is None:
-        select.select([sock], [], [])
-    else:
-        select.select([sock], [], [], timeout)
-    n = nbytes
-    if word_alignment and (n % 4):
-        n += 4 - nbytes % 4  # 4 bytes word alignment
-    r = bytes([])
-    while n:
-        b = sock.recv(n)
-        if not b:
-            break
-        r += b
-        n -= len(b)
-    return r[:nbytes]
-
 def send_channel(sock, b):
     sock.send(b)
 
@@ -230,6 +213,25 @@ class WireProtocol:
     'WIN1258'             :   'cp1258', # (Firebird 2.0+)
     }
 
+    def recv_channel(self, nbytes, word_alignment=False):
+        if self.timeout is None:
+            select.select([self.sock], [], [])
+        else:
+            select.select([self.sock], [], [], self.timeout)
+        n = nbytes
+        if word_alignment and (n % 4):
+            n += 4 - nbytes % 4  # 4 bytes word alignment
+        r = bytes([])
+        while n:
+            b = self.sock.recv(n)
+            if not b:
+                break
+            r += b
+            n -= len(b)
+        if len(r) < nbytes:
+            raise OperationalError('Can not recv() enough packets', None, None)
+        return r[:nbytes]
+
     def str_to_bytes(self, s):
         return s.encode(self.charset_map.get(self.charset, self.charset))
 
@@ -247,16 +249,16 @@ class WireProtocol:
         sql_code = 0
         gds_codes = set()
         message = ''
-        n = bytes_to_bint(recv_channel(self.sock, 4))
+        n = bytes_to_bint(self.recv_channel(4))
         while n != isc_arg_end:
             if n == isc_arg_gds:
-                gds_code = bytes_to_bint(recv_channel(self.sock, 4))
+                gds_code = bytes_to_bint(self.recv_channel(4))
                 if gds_code:
                     gds_codes.add(gds_code)
                     message += messages.get(gds_code, '@1')
                     num_arg = 0
             elif n == isc_arg_number:
-                num = bytes_to_bint(recv_channel(self.sock, 4))
+                num = bytes_to_bint(self.recv_channel(4))
                 if gds_code == 335544436:
                     sql_code = num
                 num_arg += 1
@@ -264,24 +266,24 @@ class WireProtocol:
             elif (n == isc_arg_string or
                     n == isc_arg_interpreted
                     or n == isc_arg_sql_state):
-                nbytes = bytes_to_bint(recv_channel(self.sock, 4))
-                s = str(recv_channel(self.sock, nbytes, word_alignment=True))
+                nbytes = bytes_to_bint(self.recv_channel(4))
+                s = str(self.recv_channel(nbytes, word_alignment=True))
                 num_arg += 1
                 message = message.replace('@' + str(num_arg), s)
             elif n == isc_arg_sql_state:
-                nbytes = bytes_to_bint(recv_channel(self.sock, 4))
-                s = str(recv_channel(self.sock, nbytes, word_alignment=True))
-            n = bytes_to_bint(recv_channel(self.sock, 4))
+                nbytes = bytes_to_bint(self.recv_channel(4))
+                s = str(self.recv_channel(nbytes, word_alignment=True))
+            n = bytes_to_bint(self.recv_channel(4))
 
         return (gds_codes, sql_code, message)
 
 
     def _parse_op_response(self):
-        b = recv_channel(self.sock, 16)
+        b = self.recv_channel(16)
         h = bytes_to_bint(b[0:4])         # Object handle
         oid = b[4:12]                       # Object ID
         buf_len = bytes_to_bint(b[12:])   # buffer length
-        buf = recv_channel(self.sock, buf_len, word_alignment=True)
+        buf = self.recv_channel(buf_len, word_alignment=True)
 
         (gds_codes, sql_code, message) = self._parse_status_vector()
         if sql_code or message:
@@ -290,7 +292,7 @@ class WireProtocol:
         return (h, oid, buf)
 
     def _parse_op_event(self):
-        b = recv_channel(self.sock, 4096) # too large TODO: read step by step
+        b = self.recv_channel(4096) # too large TODO: read step by step
         # TODO: parse event name
         db_handle = bytes_to_bint(b[0:4])
         event_id = bytes_to_bint(b[-4:])
@@ -403,13 +405,13 @@ class WireProtocol:
 
     @wire_operation
     def _op_accept(self):
-        b = recv_channel(self.sock, 4)
+        b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
-            b = recv_channel(self.sock, 4)
+            b = self.recv_channel(4)
         if bytes_to_bint(b) == self.op_reject:
             raise OperationalError('Connection is rejected', None, None)
         assert bytes_to_bint(b) == self.op_accept
-        b = recv_channel(self.sock, 12)
+        b = self.recv_channel(12)
         up = xdrlib.Unpacker(b)
         assert up.unpack_int() == 10
         assert  up.unpack_int() == 1
@@ -654,14 +656,14 @@ class WireProtocol:
 
     @wire_operation
     def _op_fetch_response(self, stmt_handle, xsqlda):
-        b = recv_channel(self.sock, 4)
+        b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
-            b = recv_channel(self.sock, 4)
+            b = self.recv_channel(4)
         if bytes_to_bint(b) == self.op_response:
             return self._parse_op_response()    # error occured
         if bytes_to_bint(b) != self.op_fetch_response:
             raise InternalError
-        b = recv_channel(self.sock, 8)
+        b = self.recv_channel(8)
         status = bytes_to_bint(b[:4])
         count = bytes_to_bint(b[4:8])
         rows = []
@@ -670,15 +672,15 @@ class WireProtocol:
             for i in range(len(xsqlda)):
                 x = xsqlda[i]
                 if x.io_length() < 0:
-                    b = recv_channel(self.sock, 4)
+                    b = self.recv_channel(4)
                     ln = bytes_to_bint(b)
                 else:
                     ln = x.io_length()
-                raw_value = recv_channel(self.sock, ln, word_alignment=True)
-                if recv_channel(self.sock, 4) == bytes([0]) * 4: # Not NULL
+                raw_value = self.recv_channel(ln, word_alignment=True)
+                if self.recv_channel(4) == bytes([0]) * 4: # Not NULL
                     r[i] = x.value(raw_value)
             rows.append(r)
-            b = recv_channel(self.sock, 12)
+            b = self.recv_channel(12)
             op = bytes_to_bint(b[:4])
             status = bytes_to_bint(b[4:8])
             count = bytes_to_bint(b[8:])
@@ -769,22 +771,22 @@ class WireProtocol:
         p.pack_int(0)
         send_channel(self.sock, p.get_buffer())
 
-        b = recv_channel(self.sock, 4)
+        b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
-            b = recv_channel(self.sock, 4)
+            b = self.recv_channel(4)
         if bytes_to_bint(b) != self.op_response:
             raise InternalError
 
-        h = bytes_to_bint(recv_channel(self.sock, 4))
-        recv_channel(self.sock, 8)  # garbase
-        ln = bytes_to_bint(recv_channel(self.sock, 4))
+        h = bytes_to_bint(self.recv_channel(4))
+        self.recv_channel(8)  # garbase
+        ln = bytes_to_bint(self.recv_channel(4))
         ln += ln % 4    # padding
-        family = bytes_to_bint(recv_channel(self.sock, 2))
-        port = bytes_to_bint(recv_channel(self.sock, 2), u=True)
-        b = recv_channel(self.sock, 4)
+        family = bytes_to_bint(self.recv_channel(2))
+        port = bytes_to_bint(self.recv_channel(2), u=True)
+        b = self.recv_channel(4)
         ip_address = '.'.join([str(byte_to_int(c)) for c in b])
         ln -= 8
-        recv_channel(self.sock, ln)
+        self.recv_channel(ln)
 
         (gds_codes, sql_code, message) = self._parse_status_vector()
         if sql_code or message:
@@ -794,20 +796,20 @@ class WireProtocol:
 
     @wire_operation
     def _op_response(self):
-        b = recv_channel(self.sock, 4, timeout=3600)
+        b = self.recv_channel(4)
         if b is None:
             return
         while bytes_to_bint(b) == self.op_dummy:
-            b = recv_channel(self.sock, 4)
+            b = self.recv_channel(4)
         if bytes_to_bint(b) != self.op_response:
             raise InternalError
         return self._parse_op_response()
 
     @wire_operation
     def _op_event(self):
-        b = recv_channel(self.sock, 4)
+        b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
-            b = recv_channel(self.sock, 4)
+            b = self.recv_channel(4)
         if bytes_to_bint(b) == self.op_response:
             return self._parse_op_response()
         if bytes_to_bint(b) == self.op_exit or bytes_to_bint(b) == self.op_exit:
@@ -818,38 +820,38 @@ class WireProtocol:
 
     @wire_operation
     def _op_sql_response(self, xsqlda):
-        b = recv_channel(self.sock, 4)
+        b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
-            b = recv_channel(self.sock, 4)
+            b = self.recv_channel(4)
         if bytes_to_bint(b) != self.op_sql_response:
             raise InternalError
 
-        b = recv_channel(self.sock, 4)
+        b = self.recv_channel(4)
         count = bytes_to_bint(b[:4])
 
         r = []
         for i in range(len(xsqlda)):
             x = xsqlda[i]
             if x.io_length() < 0:
-                b = recv_channel(self.sock, 4)
+                b = self.recv_channel(4)
                 ln = bytes_to_bint(b)
             else:
                 ln = x.io_length()
-            raw_value = recv_channel(self.sock, ln, word_alignment=True)
-            if recv_channel(self.sock, 4) == bytes([0]) * 4: # Not NULL
+            raw_value = self.recv_channel(ln, word_alignment=True)
+            if self.recv_channel(4) == bytes([0]) * 4: # Not NULL
                 r.append(x.value(raw_value))
             else:
                 r.append(None)
 
-        b = recv_channel(self.sock, 32)     # ??? why 32 bytes skip
+        b = self.recv_channel(32)     # ??? why 32 bytes skip
 
         return r
 
-    def _wait_for_event(self, timeout=None):
+    def _wait_for_event(self):
         event_names = {}
         event_id = 0
         while True:
-            b4 = recv_channel(self.sock, 4, timeout=timeout)
+            b4 = self.recv_channel(4)
             if b4 is None:
                 return None
             op = bytes_to_bint(b4)
@@ -858,9 +860,9 @@ class WireProtocol:
             elif op == self.op_exit or op == self.op_disconnect:
                 break
             elif op == self.op_event:
-                db_handle = bytes_to_int(recv_channel(self.sock, 4))
-                ln = bytes_to_bint(recv_channel(self.sock, 4))
-                b = recv_channel(self.sock, ln, word_alignment=True)
+                db_handle = bytes_to_int(self.recv_channel(4))
+                ln = bytes_to_bint(self.recv_channel(4))
+                b = self.recv_channel(ln, word_alignment=True)
                 assert byte_to_int(b[0]) == 1
                 i = 1
                 while i < len(b):
@@ -869,9 +871,9 @@ class WireProtocol:
                     n = bytes_to_int(b[i+1+ln:i+1+ln+4])
                     event_names[s] = n
                     i += ln + 5
-                recv_channel(self.sock, 8)  # ignore AST info
+                self.recv_channel(8)  # ignore AST info
 
-                event_id = bytes_to_bint(recv_channel(self.sock, 4))
+                event_id = bytes_to_bint(self.recv_channel(4))
                 break
             else:
                 raise InternalError

@@ -658,12 +658,12 @@ class Cursor:
         return count
 
 class EventConduit(WireProtocol):
-    def __init__(self, conn, names):
+    def __init__(self, conn, names, timeout):
         self.connection = conn
         self.event_names = {}
         for name in names:
             self.event_names[name] = 0
-
+        self.timeout = timeout
         (h, port, family, ip_address) = self.connection._op_connect_request()
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((ip_address, port))
@@ -677,11 +677,11 @@ class EventConduit(WireProtocol):
         assert event_id == self.event_id   # treat only one event_id
         self.event_names.update(event_names)
 
-    def wait(self, timeout=None):
+    def wait(self):
         self.connection._op_que_events(self.event_names, 0, 0, self.event_id)
         (h, oid, buf) = self.connection._op_response()
 
-        r = self._wait_for_event(timeout=timeout)
+        r = self._wait_for_event()
         if r:
             (event_id, event_names) = r
             assert event_id == self.event_id   # treat only one event_id
@@ -746,7 +746,8 @@ class Connection(WireProtocol):
 
     def __init__(self, dsn=None, user=None, password=None, host=None,
                     database=None, charset=DEFAULT_CHARSET, port=3050,
-                    page_size=None, is_services = False, cloexec=False):
+                    page_size=None, is_services=False, cloexec=False,
+                    timeout=None):
         if dsn:
             i = dsn.find(':')
             if i < 0:
@@ -770,6 +771,7 @@ class Connection(WireProtocol):
         self.user = user
         self.password = password
         self.charset = charset
+        self.timeout=timeout
         self._transactions = []
         self.isolation_level = ISOLATION_LEVEL_READ_COMMITED
 
@@ -967,8 +969,8 @@ class Connection(WireProtocol):
         self.sock = None
         delattr(self, "db_handle")
 
-    def event_conduit(self, event_names):
-        return EventConduit(self, event_names)
+    def event_conduit(self, event_names, timeout=None):
+        return EventConduit(self, event_names, timeout)
 
     def __del__(self):
         if self.sock:
