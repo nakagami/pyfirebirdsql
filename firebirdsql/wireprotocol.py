@@ -225,6 +225,8 @@ class WireProtocol:
                 if select.select([self.sock], [], [], self.timeout)[0] == []:
                     break
             b = self.sock.recv(n)
+            if not b:
+                break
             r += b
             n -= len(b)
         if len(r) < nbytes:
