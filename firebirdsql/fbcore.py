@@ -771,7 +771,7 @@ class Connection(WireProtocol):
         self.user = user
         self.password = password
         self.charset = charset
-        self.timeout=timeout
+        self.timeout = float(timeout) if timeout is not None else None
         self._transactions = []
         self.isolation_level = ISOLATION_LEVEL_READ_COMMITED
 

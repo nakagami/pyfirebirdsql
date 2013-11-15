@@ -59,12 +59,13 @@ from firebirdsql.fbcore import ( __version__, apilevel, threadsafety,
 import firebirdsql.services
 
 def connect(dsn=None, user=None, password=None, host=None, 
-            database=None, charset=DEFAULT_CHARSET, port=3050):
+            database=None, charset=DEFAULT_CHARSET, port=3050, timeout=None):
     return Connection(dsn=dsn, user=user, password=password, host=host, 
-                database=database, charset=charset, port=port)
+                database=database, charset=charset, port=port, timeout=timeout)
 
 def create_database(dsn=None, user=None, password=None, host=None,
-            database=None, charset=DEFAULT_CHARSET, port=3050, page_size=4096):
+            database=None, charset=DEFAULT_CHARSET, port=3050, page_size=4096,
+            timeout=None):
     return Connection(dsn=dsn, user=user, password=password, host=host, 
                 database=database, charset=charset, port=port, 
-                page_size=page_size)
+                page_size=page_size, timeout=timeout)
