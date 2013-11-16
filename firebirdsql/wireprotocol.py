@@ -188,7 +188,8 @@ class WireProtocol:
 
     def str_to_bytes(self, s):
         "convert str to bytes"
-        if PYTHON_MAJOR_VER == 3:
+        if (PYTHON_MAJOR_VER == 3 or
+                (PYTHON_MAJOR_VER == 2 and type(s)==unicode)):
             return s.encode(charset_map.get(self.charset, self.charset))
         return s
 

@@ -417,7 +417,8 @@ class Cursor:
     def _convert_params(self, params):
         cooked_params = []
         for param in params:
-            if type(param) == str:
+            if (type(param)==str or
+                (PYTHON_MAJOR_VER == 2 and type(param)==unicode)):
                 param = self.transaction.connection.str_to_bytes(param)
             cooked_params.append(param)
         return cooked_params
