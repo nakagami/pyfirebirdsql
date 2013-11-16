@@ -423,9 +423,7 @@ class Cursor:
             cooked_params.append(param)
         return cooked_params
 
-    def _execute(self, query, params):
-        cooked_params = self._convert_params(params)
-
+    def _get_stmt_handle(self, query):
         if isinstance(query, PreparedStatement):
             if query.is_opened:
                 self.transaction.connection._op_free_statement(
@@ -434,6 +432,7 @@ class Cursor:
             stmt_handle = query.stmt_handle
             stmt_type = query.statement_type
             self._xsqlda = query._xsqlda
+            query.is_opened = True
         else:
             if self.stmt_handle:
                 self.transaction.connection._op_free_statement(
@@ -447,7 +446,10 @@ class Cursor:
             (h, oid, buf) = self.transaction.connection._op_response()
             stmt_type, self._xsqlda = parse_xsqlda(
                                 buf, self.transaction.connection, stmt_handle)
+        return stmt_type, stmt_handle
 
+    def _execute(self, stmt_handle, params):
+        cooked_params = self._convert_params(params)
         self.transaction.connection._op_execute(stmt_handle,
                                 self.transaction.trans_handle, cooked_params)
         try:
@@ -457,9 +459,6 @@ class Cursor:
             if 335544665 in e.gds_codes:
                 raise IntegrityError(e._message, e.gds_codes, e.sql_code)
             raise OperationalError(e._message, e.gds_codes, e.sql_code)
-        if isinstance(query, PreparedStatement):
-            query.is_opened = True
-        return stmt_type, stmt_handle
 
     def _callproc(self, stmt_handle, query, params):
         cooked_params = self._convert_params(params)
@@ -480,7 +479,8 @@ class Cursor:
         return prepared_statement
 
     def execute(self, query, params = []):
-        stmt_type, stmt_handle = self._execute(query, params)
+        stmt_type, stmt_handle = self._get_stmt_handle(query)
+        self._execute(stmt_handle, params)
         if stmt_type == isc_info_sql_stmt_select:
             self._fetch_records = self._fetch_generator(stmt_handle)
         else:
