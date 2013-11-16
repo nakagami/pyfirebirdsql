@@ -308,8 +308,9 @@ class WireProtocol:
                 v = bytes([0]) * 8
                 blr += bytes([9, 0])
             else:   # fallback, convert to string
-                p = str(p)
-                if PYTHON_MAJOR_VER==3:
+                p = p.__repr__()
+                if (PYTHON_MAJOR_VER==3 or
+                    (PYTHON_MAJOR_VER == 2 and type(p)==unicode)):
                     p = self.str_to_bytes(p)
                 v = p
                 nbytes = len(v)
