@@ -8,7 +8,13 @@ import firebirdsql
 from firebirdsql.tests import base
 from firebirdsql.consts import *
 
-class TestInsertReturnning(base.TestBase):
+class TestProc(base.TestBase):
+    def test_call_proc(self):
+        cur = self.connection.cursor()
+        cur.callproc("foo_proc")
+        self.assertEqual(cur.fetchone()[0], 1, 'ABC')
+        cur.close()
+
     def test_insert_returning(self):
         cur = self.connection.cursor()
         cur.execute("insert into foo(a, b) values (1, 'b') returning e")
