@@ -19,4 +19,12 @@ class TestProc(base.TestBase):
         cur = self.connection.cursor()
         cur.execute("insert into foo(a, b) values (1, 'b') returning e")
         self.assertEqual(cur.fetchone()[0], datetime.date(1967, 8, 11))
+        cur.close()
+
+    def test_prep_insert_returning(self):
+        cur = self.connection.cursor()
+        prep = cur.prep("insert into foo(a, b) values (?, 'b') returning e")
+        cur.execute(prep, (2, ))
+        self.assertEqual(cur.fetchone()[0], datetime.date(1967, 8, 11))
+        cur.close()
 

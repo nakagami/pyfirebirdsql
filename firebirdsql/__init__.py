@@ -60,7 +60,7 @@ from firebirdsql.fbcore import ( __version__, apilevel, threadsafety,
 import firebirdsql.services
 
 def connect(dsn=None, user=None, password=None, host=None, 
-            database=None, charset=DEFAULT_CHARSET, port=3050, timeout=None):
+            database=None, charset=DEFAULT_CHARSET, port=3060, timeout=None):
     return Connection(dsn=dsn, user=user, password=password, host=host, 
                 database=database, charset=charset, port=port, timeout=timeout)
 
