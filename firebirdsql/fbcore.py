@@ -480,11 +480,20 @@ class Cursor:
 
     def execute(self, query, params = []):
         stmt_type, stmt_handle = self._get_stmt_handle(query)
-        self._execute(stmt_handle, params)
-        if stmt_type == isc_info_sql_stmt_select:
-            self._fetch_records = self._fetch_generator(stmt_handle)
-        else:
+        if stmt_type == stmt_type == isc_info_sql_stmt_exec_procedure:
+            cooked_params = self._convert_params(params)
+            self.transaction.connection._op_execute2(stmt_handle,
+                self.transaction.trans_handle, cooked_params,
+                calc_blr(self._xsqlda))
+            self._callproc_result = \
+                self.transaction.connection._op_sql_response(self._xsqlda)
             self._fetch_records = None
+        else:
+            self._execute(stmt_handle, params)
+            if stmt_type == isc_info_sql_stmt_select:
+                self._fetch_records = self._fetch_generator(stmt_handle)
+            else:
+                self._fetch_records = None
 
     def callproc(self, procname, params = []):
         self.transaction.connection._op_allocate_statement()

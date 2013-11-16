@@ -18,5 +18,5 @@ class TestProc(base.TestBase):
     def test_insert_returning(self):
         cur = self.connection.cursor()
         cur.execute("insert into foo(a, b) values (1, 'b') returning e")
-        self.assertEqual(cur.fetchone()[0], datetime.datetime.date(1967, 8, 11))
+        self.assertEqual(cur.fetchone()[0], datetime.date(1967, 8, 11))
 
