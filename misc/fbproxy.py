@@ -1716,10 +1716,13 @@ def op_execute2(sock):
     if number_of_messages:
         print('\tparam value[', binascii.b2a_hex(msg[up.get_position():]), ']')
         _parse_param(blr, msg[up.get_position():])
-    out_blr = up.unpack_bytes()
-    print('\toutput BLR[', binascii.b2a_hex(out_blr), ']')
-    message_number = up.unpack_int()
-    print('\toutput_message_number<%d>' % (message_number))
+    try:
+        out_blr = up.unpack_bytes()
+        print('\toutput BLR[', binascii.b2a_hex(out_blr), ']')
+        message_number = up.unpack_int()
+        print('\toutput_message_number<%d>' % (message_number))
+    except EOFError:
+        print('\tSKIP output')
     return msg
 
 def op_execute_immediate(sock):
