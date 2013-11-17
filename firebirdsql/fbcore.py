@@ -989,14 +989,18 @@ class Connection(WireProtocol):
 class Transaction:
     def __init__(self, connection, tpb=None):
         self._connection = connection
+        self._begin()
 
-    def begin(self):
-        self.close()
+    def _begin(self):
         self.connection._op_transaction(
                 transaction_parameter_block[self.connection.isolation_level])
         (h, oid, buf) = self.connection._op_response()
         self.trans_handle = h
         self.connection._transactions.append(self)
+
+    def begin(self):
+        self.close()
+        self._begin()
 
     def commit(self, retaining=False):
         if retaining:
