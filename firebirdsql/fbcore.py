@@ -1011,6 +1011,8 @@ class Transaction:
             (h, oid, buf) = self.connection._op_response()
             delattr(self, "trans_handle")
             self.connection._transactions.remove(self)
+            if len(self.connection._transactions) == 0:
+                self._begin()
 
     def savepoint(self, name):
         self.connection._op_execute_immediate(self.trans_handle,
@@ -1032,6 +1034,8 @@ class Transaction:
             (h, oid, buf) = self.connection._op_response()
             delattr(self, "trans_handle")
             self.connection._transactions.remove(self)
+            if len(self.connection._transactions) == 0:
+                self._begin()
 
     def _trans_info(self, info_requests):
         if info_requests[-1] == isc_info_end:
