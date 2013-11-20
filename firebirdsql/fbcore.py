@@ -985,48 +985,55 @@ class Transaction:
         self._trans_handle = None
 
     def _begin(self):
-        if self._trans_handle:
-            self._close()
+        self._close()
         self.connection._op_transaction(
                 transaction_parameter_block[self.connection.isolation_level])
         (h, oid, buf) = self.connection._op_response()
         self._trans_handle = h
 
     def _close(self):
-        self.connection._op_rollback(self.trans_handle)
-        (h, oid, buf) = self.connection._op_response()
+        if self._trans_handle:
+            self.connection._op_rollback(self.trans_handle)
+            (h, oid, buf) = self.connection._op_response()
         self._trans_handle = None
 
     def begin(self):
         self._begin()
 
     def commit(self, retaining=False):
+        if self._trans_handle is None:
+            return
         if retaining:
-            self.connection._op_commit_retaining(self.trans_handle)
+            self.connection._op_commit_retaining(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
         else:
-            self.connection._op_commit(self.trans_handle)
+            self.connection._op_commit(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
             self._trans_handle = None
 
     def savepoint(self, name):
-        self.connection._op_execute_immediate(self.trans_handle,
+        if self._trans_handle is None:
+            return
+        self.connection._op_execute_immediate(self._trans_handle,
                         self.connection.db_handle, in_msg='SAVEPOINT '+name)
         (h, oid, buf) = self.connection._op_response()
 
     def rollback(self, retaining=False, savepoint=None):
+        if self._trans_handle is None:
+            return
         if savepoint:
-            self.connection._op_execute_immediate(self.trans_handle,
+            self.connection._op_execute_immediate(self._trans_handle,
                         -1, in_msg='ROLLBACK TO '+savepoint)
             (h, oid, buf) = self.connection._op_response()
             return
 
         if retaining:
-            self.connection._op_rollback_retaining(self.trans_handle)
+            self.connection._op_rollback_retaining(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
         else:
-            self.connection._op_rollback(self.trans_handle)
+            self.connection._op_rollback(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
+            self._trans_handle = None
 
     def _trans_info(self, info_requests):
         if info_requests[-1] == isc_info_end:
@@ -1069,9 +1076,7 @@ class Transaction:
             return results
 
     def close(self):
-        self.connection._op_rollback(self.trans_handle)
-        (h, oid, buf) = self.connection._op_response()
-        self._trans_handle = None
+        self._close()
 
     @property
     def connection(self):
