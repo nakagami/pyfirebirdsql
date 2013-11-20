@@ -757,7 +757,7 @@ class Connection(WireProtocol):
     def __init__(self, dsn=None, user=None, password=None, host=None,
                     database=None, charset=DEFAULT_CHARSET, port=3050,
                     page_size=None, is_services=False, cloexec=False,
-                    timeout=None):
+                    timeout=None, isolation_level=None):
         if dsn:
             i = dsn.find(':')
             if i < 0:
@@ -783,7 +783,10 @@ class Connection(WireProtocol):
         self.charset = charset
         self.timeout = float(timeout) if timeout is not None else None
         self._transactions = []
-        self.isolation_level = ISOLATION_LEVEL_READ_COMMITED
+        if isolation_level is None:
+            self.isolation_level = ISOLATION_LEVEL_READ_COMMITED
+        else:
+            self.isolation_level = int(isolation_level)
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if cloexec:
@@ -821,7 +824,7 @@ class Connection(WireProtocol):
             self.commit()
 
     def set_isolation_level(self, isolation_level):
-        self.isolation_level = isolation_level
+        self.isolation_level = int(isolation_level)
 
     def _db_info(self, info_requests):
         if info_requests[-1] == isc_info_end:
