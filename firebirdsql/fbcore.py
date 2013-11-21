@@ -992,17 +992,23 @@ class Connection(WireProtocol):
 class Transaction:
     def __init__(self, connection, tpb=None):
         self._connection = connection
-        self._begin()
+        self._trans_handle = None
 
     def _begin(self):
+        if self._trans_handle:
+            self._close()
         self.connection._op_transaction(
                 transaction_parameter_block[self.connection.isolation_level])
         (h, oid, buf) = self.connection._op_response()
-        self.trans_handle = h
+        self._trans_handle = h
         self.connection._transactions.append(self)
 
+    def _close(self):
+        self.connection._op_rollback(self.trans_handle)
+        (h, oid, buf) = self.connection._op_response()
+        self._trans_handle = None
+
     def begin(self):
-        self.close()
         self._begin()
 
     def commit(self, retaining=False):
@@ -1012,10 +1018,7 @@ class Transaction:
         else:
             self.connection._op_commit(self.trans_handle)
             (h, oid, buf) = self.connection._op_response()
-            delattr(self, "trans_handle")
-            self.connection._transactions.remove(self)
-            if len(self.connection._transactions) == 0:
-                self._begin()
+            self._trans_handle = None
 
     def savepoint(self, name):
         self.connection._op_execute_immediate(self.trans_handle,
@@ -1035,10 +1038,6 @@ class Transaction:
         else:
             self.connection._op_rollback(self.trans_handle)
             (h, oid, buf) = self.connection._op_response()
-            delattr(self, "trans_handle")
-            self.connection._transactions.remove(self)
-            if len(self.connection._transactions) == 0:
-                self._begin()
 
     def _trans_info(self, info_requests):
         if info_requests[-1] == isc_info_end:
@@ -1081,11 +1080,9 @@ class Transaction:
             return results
 
     def close(self):
-        if self.closed:
-            return
         self.connection._op_rollback(self.trans_handle)
         (h, oid, buf) = self.connection._op_response()
-        delattr(self, "trans_handle")
+        self._trans_handle = None
         self.connection._transactions.remove(self)
 
     @property
@@ -1093,8 +1090,10 @@ class Transaction:
         return self._connection
 
     @property
-    def closed(self):
-        return not hasattr(self, "trans_handle")
+    def trans_handle(self):
+        if self._trans_handle is None:
+            self._begin()
+        return self._trans_handle
 
 
 class RowMapping(Mapping):
