@@ -772,11 +772,15 @@ class Connection(WireProtocol):
         self.password = password
         self.charset = charset
         self.timeout = float(timeout) if timeout is not None else None
-        self._transaction = None
+        self.page_size = page_size
+        self.is_services = is_services
         if isolation_level is None:
             self.isolation_level = ISOLATION_LEVEL_READ_COMMITED
         else:
             self.isolation_level = int(isolation_level)
+        self.last_event_id = 0
+
+        self._transaction = None
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if cloexec:
@@ -784,8 +788,6 @@ class Connection(WireProtocol):
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         self.sock.connect((self.hostname, self.port))
 
-        self.page_size = page_size
-        self.is_services = is_services
         self._op_connect()
         try:
             self._op_accept()
@@ -802,7 +804,6 @@ class Connection(WireProtocol):
             self._op_attach()
         (h, oid, buf) = self._op_response()
         self.db_handle = h
-        self.last_event_id = 0
 
     def __enter__(self):
         return self
