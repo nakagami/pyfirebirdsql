@@ -173,12 +173,10 @@ class WireProtocol:
             n += 4 - nbytes % 4  # 4 bytes word alignment
         r = bytes([])
         while n:
-            if os.name != 'java':
-                if self.timeout is None:
-                    select.select([self.sock], [], [])
-                else:
-                    if select.select([self.sock], [], [], self.timeout)[0] == []:
-                        break
+            if (os.name != 'java'
+                and self.timeout is not None
+                and select.select([self.sock], [], [], self.timeout)[0] == []):
+                break
             b = self.sock.recv(n)
             if not b:
                 break
