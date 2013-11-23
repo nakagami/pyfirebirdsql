@@ -150,7 +150,7 @@ class WireProtocol:
     op_create_blob2 = 57
     op_allocate_statement = 62
     op_execute = 63
-    op_execute_immediate = 64
+    op_exec_immediate = 64
     op_fetch = 65
     op_fetch_response = 66
     op_free_statement = 67
@@ -581,10 +581,10 @@ class WireProtocol:
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
-    def _op_execute_immediate(self, trans_handle, query):
+    def _op_exec_immediate(self, trans_handle, query):
         desc_items = bytes([])
         p = xdrlib.Packer()
-        p.pack_int(self.op_execute_immediate)
+        p.pack_int(self.op_exec_immediate)
         p.pack_int(trans_handle)
         p.pack_int(self.db_handle)
         p.pack_int(3)   # dialect = 3
