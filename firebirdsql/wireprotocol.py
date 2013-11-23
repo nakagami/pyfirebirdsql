@@ -581,14 +581,15 @@ class WireProtocol:
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
-    def _op_execute_immediate(self, trans_handle, db_handle, sql='', params=[],
+    def _op_execute_immediate(self, trans_handle, db_handle,
+                                    query='', params=[],
                                     in_msg='', out_msg='', possible_requests=0):
-        sql = self.str_to_bytes(sql)
+        query = self.str_to_bytes(query)
         in_msg = self.str_to_bytes(in_msg)
         out_msg = self.str_to_bytes(out_msg)
         r = bint_to_bytes(self.op_execute_immediate, 4)
         r += bint_to_bytes(trans_handle, 4) + bint_to_bytes(db_handle, 4)
-        r += bint_to_bytes(len(sql), 2) + sql
+        r += bint_to_bytes(len(query), 2) + query
         r += bint_to_bytes(3, 2)    # dialect
         if len(params) == 0:
             r += bint_to_bytes(0, 2)    # in_blr len
@@ -598,6 +599,7 @@ class WireProtocol:
             r += bint_to_bytes(len(blr), 2) + blr
         r += bint_to_bytes(len(in_msg), 2) + in_msg
         r += bint_to_bytes(0, 2)    # unknown short int 0
+
         r += bint_to_bytes(len(out_msg), 2) + out_msg
         r += bint_to_bytes(possible_requests, 4)
         r += bytes([0]) * ((4-len(r+values)) & 3)    # padding

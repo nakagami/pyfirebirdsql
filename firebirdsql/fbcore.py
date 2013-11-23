@@ -478,7 +478,7 @@ class Cursor:
                                                 explain_plan=explain_plan)
         return prepared_statement
 
-    def execute(self, query, params = []):
+    def execute(self, query, params=[]):
         stmt_type, stmt_handle = self._get_stmt_handle(query)
         if stmt_type == stmt_type == isc_info_sql_stmt_exec_procedure:
             cooked_params = self._convert_params(params)
@@ -495,7 +495,7 @@ class Cursor:
             else:
                 self._fetch_records = None
 
-    def callproc(self, procname, params = []):
+    def callproc(self, procname, params=[]):
         self.transaction.connection._op_allocate_statement()
         (stmt_handle, oid, buf) = self.transaction.connection._op_response()
         query = 'EXECUTE PROCEDURE ' + procname + ' ' + ','.join('?'*len(params))
@@ -743,6 +743,14 @@ class Connection(WireProtocol):
     def rollback(self, retaining=False, savepoint=None):
         if self._transaction:
             self._transaction.rollback(retaining=retaining, savepoint=savepoint)
+
+    def execute_immediate(self, query, params=[]):
+        self._op_execute_immediate(
+            self._transaction.trans_handle,
+            self.db_handle,
+            query=query,
+            params=params)
+        (h, oid, buf) = self._op_response()
 
     def __init__(self, dsn=None, user=None, password=None, host=None,
                     database=None, charset=DEFAULT_CHARSET, port=3050,
