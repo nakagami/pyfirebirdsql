@@ -727,6 +727,7 @@ class Connection(WireProtocol):
     def begin(self):
         if not self.sock:
             raise InternalError
+        self._transactions = [Transaction(self)] + self._transactions
         self.main_transaction.begin()
 
     @property
