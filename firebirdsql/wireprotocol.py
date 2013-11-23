@@ -808,7 +808,7 @@ class WireProtocol:
 
         return r
 
-    def _wait_for_event(self):
+    def _wait_for_event(self, timeout):
         event_names = {}
         event_id = 0
         while True:

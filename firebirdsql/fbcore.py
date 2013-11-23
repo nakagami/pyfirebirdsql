@@ -683,15 +683,15 @@ class EventConduit(WireProtocol):
         self.connection._op_que_events(self.event_names, 0, 0, self.event_id)
         (h, oid, buf) = self.connection._op_response()
 
-        (event_id, event_names) = self._wait_for_event()
+        (event_id, event_names) = self._wait_for_event(timeout=timeout)
         assert event_id == self.event_id   # treat only one event_id
         self.event_names.update(event_names)
 
-    def wait(self):
+    def wait(self, timeout=None):
         self.connection._op_que_events(self.event_names, 0, 0, self.event_id)
         (h, oid, buf) = self.connection._op_response()
 
-        r = self._wait_for_event()
+        r = self._wait_for_event(timeout=timeout)
         if r:
             (event_id, event_names) = r
             assert event_id == self.event_id   # treat only one event_id
