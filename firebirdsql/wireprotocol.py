@@ -581,29 +581,17 @@ class WireProtocol:
         send_channel(self.sock, p.get_buffer())
 
     @wire_operation
-    def _op_execute_immediate(self, trans_handle, db_handle,
-                                    query='', params=[],
-                                    in_msg='', out_msg='', possible_requests=0):
-        query = self.str_to_bytes(query)
-        in_msg = self.str_to_bytes(in_msg)
-        out_msg = self.str_to_bytes(out_msg)
-        r = bint_to_bytes(self.op_execute_immediate, 4)
-        r += bint_to_bytes(trans_handle, 4) + bint_to_bytes(db_handle, 4)
-        r += bint_to_bytes(len(query), 2) + query
-        r += bint_to_bytes(3, 2)    # dialect
-        if len(params) == 0:
-            r += bint_to_bytes(0, 2)    # in_blr len
-            values = bytes([])
-        else:
-            (blr, values) = self.params_to_blr(params)
-            r += bint_to_bytes(len(blr), 2) + blr
-        r += bint_to_bytes(len(in_msg), 2) + in_msg
-        r += bint_to_bytes(0, 2)    # unknown short int 0
-
-        r += bint_to_bytes(len(out_msg), 2) + out_msg
-        r += bint_to_bytes(possible_requests, 4)
-        r += bytes([0]) * ((4-len(r+values)) & 3)    # padding
-        send_channel(self.sock, r + values)
+    def _op_execute_immediate(self, trans_handle, query):
+        desc_items = bytes([])
+        p = xdrlib.Packer()
+        p.pack_int(self.op_execute_immediate)
+        p.pack_int(trans_handle)
+        p.pack_int(self.db_handle)
+        p.pack_int(3)   # dialect = 3
+        p.pack_string(self.str_to_bytes(query))
+        p.pack_bytes(desc_items)
+        p.pack_int(self.buffer_length)
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_fetch(self, stmt_handle, blr):

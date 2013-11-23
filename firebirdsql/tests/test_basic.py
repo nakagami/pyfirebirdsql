@@ -234,9 +234,9 @@ class TestBasic(base.TestBase):
         except firebirdsql.OperationalError:
             pass
 
-    @unittest.skip("still not implement")
     def test_execute_immediate(self):
-        self.connection.execute_immediate("insert into foo(a) values (1)")
+        self.connection.execute_immediate(
+            "insert into foo(a, b) values (1, 'B')")
 
     @unittest.skip("FB 3")
     def test_boolean(self):

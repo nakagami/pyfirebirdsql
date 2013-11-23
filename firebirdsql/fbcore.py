@@ -744,12 +744,9 @@ class Connection(WireProtocol):
         if self._transaction:
             self._transaction.rollback(retaining=retaining, savepoint=savepoint)
 
-    def execute_immediate(self, query, params=[]):
+    def execute_immediate(self, query):
         self._op_execute_immediate(
-            self._transaction.trans_handle,
-            self.db_handle,
-            query=query,
-            params=params)
+            self._transaction.trans_handle, query=query)
         (h, oid, buf) = self._op_response()
 
     def __init__(self, dsn=None, user=None, password=None, host=None,
@@ -1024,7 +1021,7 @@ class Transaction:
         if self._trans_handle is None:
             return
         self.connection._op_execute_immediate(self._trans_handle,
-                        self.connection.db_handle, in_msg='SAVEPOINT '+name)
+                        query='SAVEPOINT '+name)
         (h, oid, buf) = self.connection._op_response()
 
     def rollback(self, retaining=False, savepoint=None):
@@ -1032,7 +1029,7 @@ class Transaction:
             return
         if savepoint:
             self.connection._op_execute_immediate(self._trans_handle,
-                        -1, in_msg='ROLLBACK TO '+savepoint)
+                        query='ROLLBACK TO '+savepoint)
             (h, oid, buf) = self.connection._op_response()
             return
 
