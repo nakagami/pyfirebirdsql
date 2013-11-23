@@ -6,6 +6,7 @@
 #
 # Python DB-API 2.0 module for Firebird. 
 ##############################################################################
+import os
 import xdrlib, time, datetime, decimal, struct, select
 from firebirdsql.fberrmsgs import messages
 from firebirdsql import (DisconnectByPeer,
@@ -172,11 +173,12 @@ class WireProtocol:
             n += 4 - nbytes % 4  # 4 bytes word alignment
         r = bytes([])
         while n:
-            if self.timeout is None:
-                select.select([self.sock], [], [])
-            else:
-                if select.select([self.sock], [], [], self.timeout)[0] == []:
-                    break
+            if os.name != 'java':
+                if self.timeout is None:
+                    select.select([self.sock], [], [])
+                else:
+                    if select.select([self.sock], [], [], self.timeout)[0] == []:
+                        break
             b = self.sock.recv(n)
             if not b:
                 break
