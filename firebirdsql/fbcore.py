@@ -722,31 +722,31 @@ class Connection(WireProtocol):
                 + [4] + [len(hostname)] + [ord(c) for c in hostname] + [6, 0])
 
     def cursor(self):
-        if self._transaction is None:
-            self.begin()
-        return Cursor(self._transaction)
+        return Cursor(self.main_transaction)
 
     def begin(self):
         if not self.sock:
             raise InternalError
-        if self._transaction is None:
-            self._transaction = Transaction(self)
-        self._transaction.begin()
+        self.main_transaction.begin()
+
+    @property
+    def main_transaction(self):
+        if len(self._transactions) == 0:
+            self._transactions.append(Transaction(self))
+        return self._transactions[0]
 
     def commit(self, retaining=False):
-        if self._transaction:
-            self._transaction.commit(retaining=retaining)
+        self.main_transaction.commit(retaining=retaining)
 
     def savepoint(self, name):
-        return self._transaction.savepoint(name)
+        return self.main_transaction.savepoint(name)
 
     def rollback(self, retaining=False, savepoint=None):
-        if self._transaction:
-            self._transaction.rollback(retaining=retaining, savepoint=savepoint)
+        self.main_transaction.rollback(retaining=retaining, savepoint=savepoint)
 
     def execute_immediate(self, query):
         self._op_exec_immediate(
-            self._transaction.trans_handle, query=query)
+            self.main_transaction.trans_handle, query=query)
         (h, oid, buf) = self._op_response()
 
     def __init__(self, dsn=None, user=None, password=None, host=None,
@@ -784,8 +784,9 @@ class Connection(WireProtocol):
         else:
             self.isolation_level = int(isolation_level)
         self.last_event_id = 0
+        self.db_handle = None
 
-        self._transaction = None
+        self._transactions = []
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if cloexec:
@@ -954,15 +955,13 @@ class Connection(WireProtocol):
             return results
 
     def trans_info(self, info_requests):
-        if self._transaction:
-            return self._transaction.trans_info(info_requests)
-        return {}
+        return self.main_transaction.trans_info(info_requests)
 
     def close(self):
         if self.sock is None:
             return
-        if self._transaction:
-            self._transaction.close()
+        for t in self._transactions:
+            t.close()
         if self.is_services:
             self._op_service_detach()
         else:
@@ -976,7 +975,7 @@ class Connection(WireProtocol):
         (h, oid, buf) = self._op_response()
         self.sock.close()
         self.sock = None
-        delattr(self, "db_handle")
+        self.db_handle = None
 
     def event_conduit(self, event_names, timeout=None):
         return EventConduit(self, event_names, timeout)
@@ -996,12 +995,14 @@ class Transaction:
                 transaction_parameter_block[self.connection.isolation_level])
         (h, oid, buf) = self.connection._op_response()
         self._trans_handle = h
+        self.connection._transactions.append(self)
 
     def _close(self):
         if self._trans_handle:
             self.connection._op_rollback(self.trans_handle)
             (h, oid, buf) = self.connection._op_response()
         self._trans_handle = None
+        self.connection._transactions.remove(self)
 
     def begin(self):
         self._begin()
