@@ -304,15 +304,15 @@ class WireProtocol:
             elif t == bool:
                 v = bytes([1, 0, 0, 0]) if p else bytes([0, 0, 0, 0])
                 blr += bytes([23])
-            elif p == None:
-                v = bytes([0]) * 8
-                blr += bytes([9, 0])
             else:   # fallback, convert to string
-                p = p.__repr__()
-                if (PYTHON_MAJOR_VER==3 or
-                    (PYTHON_MAJOR_VER == 2 and type(p)==unicode)):
-                    p = self.str_to_bytes(p)
-                v = p
+                if p is None:
+                    v = bytes([])
+                else:
+                    p = p.__repr__()
+                    if (PYTHON_MAJOR_VER==3 or
+                        (PYTHON_MAJOR_VER == 2 and type(p)==unicode)):
+                        p = self.str_to_bytes(p)
+                    v = p
                 nbytes = len(v)
                 pad_length = ((4-nbytes) & 3)
                 v += bytes([0]) * pad_length
