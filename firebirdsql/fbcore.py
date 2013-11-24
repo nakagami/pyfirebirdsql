@@ -194,12 +194,12 @@ class XSQLVAR:
 
     def value(self, raw_value):
         if self.sqltype == SQL_TYPE_TEXT:
-            if self.sqlsubtype == 1:      # OCTETS
+            if self.sqlsubtype == 0:      # OCTETS
                 return raw_value
             else:
                 return self.bytes_to_str(raw_value)
         elif self.sqltype == SQL_TYPE_VARYING:
-            if self.sqlsubtype == 1:      # OCTETS
+            if self.sqlsubtype == 0:      # OCTETS
                 return raw_value
             else:
                 return self.bytes_to_str(raw_value)
