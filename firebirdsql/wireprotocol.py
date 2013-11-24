@@ -319,7 +319,7 @@ class WireProtocol:
                 blr += bytes([14, nbytes & 255, nbytes >> 8])
             values += v
             blr += bytes([7, 0])
-            values += bytes([0]) * 4 if p != None else bytes([0xff,0xff,0x34,0x8c])
+            values += bytes([0]) * 4 if p != None else bytes([0xff,0xff,0xff,0xff])
         blr += bytes([255, 76])    # [blr_end, blr_eoc]
         return blr, values
 
