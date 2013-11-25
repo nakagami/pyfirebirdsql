@@ -1473,7 +1473,6 @@ def op_sql_response(sock):
     msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tcount=%d' % (up.unpack_int()))
-    print('\tData row', binascii.b2a_hex(up.unpack_bytes()))
     print('\t', binascii.b2a_hex(msg[up.get_position():]))
     return msg
 
