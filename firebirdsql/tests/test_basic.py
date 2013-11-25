@@ -167,7 +167,7 @@ class TestBasic(base.TestBase):
         cur = conn.cursor()
         cur.execute("select rdb$field_name from rdb$relation_fields where rdb$field_name='ABCDEFGHIJKLMNOPQRSTUVWXYZ'")
         v = cur.fetchone()[0]
-        self.assertEqual(v.strip(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+        self.assertEqual(v.strip(), b'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
         conn.close()
 
