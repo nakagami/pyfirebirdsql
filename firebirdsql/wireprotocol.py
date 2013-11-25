@@ -345,16 +345,16 @@ class WireProtocol:
     def _op_create(self, page_size=4096):
         dpb = bytes([1])
         s = self.str_to_bytes(self.charset)
-        dpb += bytes([68, len(s)]) + s
-        dpb += bytes([48, len(s)]) + s
+        dpb += bytes([isc_dpb_set_db_charset, len(s)]) + s
+        dpb += bytes([isc_dpb_lc_ctype, len(s)]) + s
         s = self.str_to_bytes(self.user)
-        dpb += bytes([28, len(s)]) + s
+        dpb += bytes([isc_dpb_user_name, len(s)]) + s
         s = self.str_to_bytes(self.password)
-        dpb += bytes([29, len(s)]) + s
-        dpb += bytes([63, 4]) + int_to_bytes(3, 4) # isc_dpb_sql_dialect = 3
-        dpb += bytes([24, 4]) + bint_to_bytes(1, 4) # isc_dpb_force_write = 1
-        dpb += bytes([54, 4]) + bint_to_bytes(1, 4) # isc_dpb_overwirte = 1
-        dpb += bytes([4, 4]) + int_to_bytes(page_size, 4)
+        dpb += bytes([isc_dpb_password, len(s)]) + s
+        dpb += bytes([isc_dpb_sql_dialect, 4]) + int_to_bytes(3, 4)
+        dpb += bytes([isc_dpb_force_write, 4]) + bint_to_bytes(1, 4)
+        dpb += bytes([isc_dpb_overwrite, 4]) + bint_to_bytes(1, 4)
+        dpb += bytes([isc_dpb_page_size, 4]) + int_to_bytes(page_size, 4)
         p = xdrlib.Packer()
         p.pack_int(self.op_create)
         p.pack_int(0)                       # Database Object ID
@@ -381,11 +381,11 @@ class WireProtocol:
     def _op_attach(self):
         dpb = bytes([1])
         s = self.str_to_bytes(self.charset)
-        dpb += bytes([48, len(s)]) + s
+        dpb += bytes([isc_dpb_lc_ctype, len(s)]) + s
         s = self.str_to_bytes(self.user)
-        dpb += bytes([28, len(s)]) + s
+        dpb += bytes([isc_dpb_user_name, len(s)]) + s
         s = self.str_to_bytes(self.password)
-        dpb += bytes([29, len(s)]) + s
+        dpb += bytes([isc_dpb_password, len(s)]) + s
         p = xdrlib.Packer()
         p.pack_int(self.op_attach)
         p.pack_int(0)                       # Database Object ID
