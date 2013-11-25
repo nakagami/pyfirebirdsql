@@ -275,6 +275,9 @@ def parse_select_items(buf, xsqlda, connection):
         if item == isc_info_sql_sqlda_seq:
             l = bytes_to_int(buf[i+1:i+3])
             index = bytes_to_int(buf[i+3:i+3+l])
+            xsqlda[index-1] = XSQLVAR(connection.bytes_to_ustr
+                                        if connection.use_unicode
+                                        else connection.bytes_to_str)
             xsqlda[index-1] = XSQLVAR(connection.bytes_to_str)
             i = i + 3 + l
         elif item == isc_info_sql_type:
@@ -752,7 +755,7 @@ class Connection(WireProtocol):
     def __init__(self, dsn=None, user=None, password=None, role=None, host=None,
                     database=None, charset=DEFAULT_CHARSET, port=3050,
                     page_size=None, is_services=False, cloexec=False,
-                    timeout=None, isolation_level=None):
+                    timeout=None, isolation_level=None, use_unicode=None):
         if dsn:
             i = dsn.find(':')
             if i < 0:
@@ -784,6 +787,7 @@ class Connection(WireProtocol):
             self.isolation_level = ISOLATION_LEVEL_READ_COMMITED
         else:
             self.isolation_level = int(isolation_level)
+        self.use_unicode = use_unicode
         self.last_event_id = 0
 
         self._transaction = None
