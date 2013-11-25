@@ -351,6 +351,9 @@ class WireProtocol:
         dpb += bytes([isc_dpb_user_name, len(s)]) + s
         s = self.str_to_bytes(self.password)
         dpb += bytes([isc_dpb_password, len(s)]) + s
+        if self.role:
+            s = self.str_to_bytes(self.role)
+            dpb += bytes([isc_dpb_sql_role_name, len(s)]) + s
         dpb += bytes([isc_dpb_sql_dialect, 4]) + int_to_bytes(3, 4)
         dpb += bytes([isc_dpb_force_write, 4]) + bint_to_bytes(1, 4)
         dpb += bytes([isc_dpb_overwrite, 4]) + bint_to_bytes(1, 4)
@@ -386,6 +389,9 @@ class WireProtocol:
         dpb += bytes([isc_dpb_user_name, len(s)]) + s
         s = self.str_to_bytes(self.password)
         dpb += bytes([isc_dpb_password, len(s)]) + s
+        if self.role:
+            s = self.str_to_bytes(self.role)
+            dpb += bytes([isc_dpb_sql_role_name, len(s)]) + s
         p = xdrlib.Packer()
         p.pack_int(self.op_attach)
         p.pack_int(0)                       # Database Object ID
