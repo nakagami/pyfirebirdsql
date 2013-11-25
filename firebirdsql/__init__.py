@@ -59,10 +59,6 @@ from firebirdsql.fbcore import ( __version__, apilevel, threadsafety,
 
 import firebirdsql.services
 
-def Binary(x):
-    """Return x as a binary type."""
-    return bytes(x)
-
 def connect(dsn=None, user=None, password=None, host=None, 
             database=None, charset=DEFAULT_CHARSET, port=3050,
             timeout=None, isolation_level=None):
