@@ -13,7 +13,7 @@ class TestProc(base.TestBase):
         base.TestBase.setUp(self)
         cur = self.connection.cursor()
         cur.execute('''
-            CREATE TABLE foo (
+            CREATE TABLE foo_table (
                 a INTEGER NOT NULL,
                 b VARCHAR(30) NOT NULL UNIQUE,
                 c VARCHAR(1024),
@@ -51,7 +51,7 @@ class TestProc(base.TestBase):
               RETURNS (out1 INTEGER, out2 VARCHAR(30))
               AS
               BEGIN
-                SELECT a, b FROM foo
+                SELECT a, b FROM foo_table
                   WHERE a= :param_a
                   INTO :out1, :out2;
                 SUSPEND;
@@ -61,13 +61,13 @@ class TestProc(base.TestBase):
 
         # 3 records insert
         cur.execute("""
-            insert into foo(a, b, c,h)
+            insert into foo_table(a, b, c,h)
                 values (1, 'a', 'b','This is a memo')""")
         cur.execute("""
-            insert into foo(a, b, c, e, g, i, j) 
+            insert into foo_table(a, b, c, e, g, i, j) 
                 values (2, 'A', 'B', '1999-01-25', '00:00:01', 0.1, 0.1)""")
         cur.execute("""
-            insert into foo(a, b, c, e, g, i, j) 
+            insert into foo_table(a, b, c, e, g, i, j) 
                 values (3, 'X', 'Y', '2001-07-05', '00:01:02', 0.2, 0.2)""")
         self.connection.commit()
 
@@ -108,13 +108,13 @@ class TestProc(base.TestBase):
 
     def test_insert_returning(self):
         cur = self.connection.cursor()
-        cur.execute("insert into foo(a, b) values (1, 'b') returning e")
+        cur.execute("insert into foo_table(a, b) values (1, 'b') returning e")
         self.assertEqual(cur.fetchone()[0], datetime.date(1967, 8, 11))
         cur.close()
 
     def test_prep_insert_returning(self):
         cur = self.connection.cursor()
-        prep = cur.prep("insert into foo(a, b) values (?, 'b') returning e")
+        prep = cur.prep("insert into foo_table(a, b) values (?, 'b') returning e")
         cur.execute(prep, (2, ))
         self.assertEqual(cur.fetchone()[0], datetime.date(1967, 8, 11))
         cur.close()
