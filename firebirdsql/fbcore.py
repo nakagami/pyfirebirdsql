@@ -193,7 +193,7 @@ class XSQLVAR:
         return (h, m, s, (n % 10000) * 100)
 
     def value(self, raw_value):
-        if self.sqltype == SQL_TYPE_TEXT:
+        if self.sqltype in (SQL_TYPE_TEXT, SQL_TYPE_BLOB):
             if self.sqlsubtype == 1:    # TEXT
                 return self.bytes_to_str(raw_value)
             else:                       # BINARY
