@@ -457,19 +457,6 @@ class Cursor:
                 raise IntegrityError(e._message, e.gds_codes, e.sql_code)
             raise OperationalError(e._message, e.gds_codes, e.sql_code)
 
-    def _callproc(self, stmt_handle, query, params):
-        cooked_params = self._convert_params(params)
-        self.transaction.connection._op_prepare_statement(stmt_handle,
-                                        self.transaction.trans_handle, query)
-        (h, oid, buf) = self.transaction.connection._op_response()
-        stmt_type, self._xsqlda = parse_xsqlda(
-                            buf, self.transaction.connection, stmt_handle)
-
-        self.transaction.connection._op_execute2(stmt_handle,
-            self.transaction.trans_handle, cooked_params,
-            calc_blr(self._xsqlda))
-        return self.transaction.connection._op_sql_response(self._xsqlda)
-
     def prep(self, query, explain_plan=False):
         prepared_statement = PreparedStatement(self, query,
                                                 explain_plan=explain_plan)
@@ -493,13 +480,8 @@ class Cursor:
                 self._fetch_records = None
 
     def callproc(self, procname, params=[]):
-        self.transaction.connection._op_allocate_statement()
-        (stmt_handle, oid, buf) = self.transaction.connection._op_response()
         query = 'EXECUTE PROCEDURE ' + procname + ' ' + ','.join('?'*len(params))
-        self._callproc_result = self._callproc(stmt_handle, query, params)
-        self._fetch_records = None
-        self.transaction.connection._op_free_statement(stmt_handle, 2) # DSQL_drop
-        (h, oid, buf) = self.transaction.connection._op_response()
+        return self.execute(query, params)
 
     def executemany(self, query, seq_of_params):
         for params in seq_of_params:
