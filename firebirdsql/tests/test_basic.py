@@ -75,7 +75,7 @@ class TestBasic(base.TestBase):
         cur.execute("select out1, out2 from baz_proc(?)", (1, ))
         rs = cur.fetchall()
         self.assertEqual(len(rs), 1)
-        self.assertEqual([1, 'a'], rs[0])
+        self.assertEqual((1, 'a'), rs[0])
         cur.close()
 
         # 1 record insert and rollback to savepoint
@@ -160,9 +160,9 @@ class TestBasic(base.TestBase):
         cur = conn.cursor()
         cur.execute("select * from foo")
         rs = [r for r in cur]
-        self.assertEqual(rs[0][:3], [1, 'a', 'Hajime'])
-        self.assertEqual(rs[1][:3], [2, 'A', 'Nakagami'])
-        self.assertEqual(rs[2][:3], [3, 'X', 'Y'])
+        self.assertEqual(rs[0][:3], (1, 'a', 'Hajime'))
+        self.assertEqual(rs[1][:3], (2, 'A', 'Nakagami'))
+        self.assertEqual(rs[2][:3], (3, 'X', 'Y'))
 
         cur = conn.cursor()
         cur.execute("select rdb$field_name from rdb$relation_fields where rdb$field_name='ABCDEFGHIJKLMNOPQRSTUVWXYZ'")

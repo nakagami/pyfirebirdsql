@@ -634,7 +634,7 @@ class WireProtocol:
                 raw_value = self.recv_channel(ln, word_alignment=True)
                 if self.recv_channel(4) == bytes([0]) * 4: # Not NULL
                     r[i] = x.value(raw_value)
-            rows.append(tuple(r))
+            rows.append(r)
             b = self.recv_channel(12)
             op = bytes_to_bint(b[:4])
             status = bytes_to_bint(b[4:8])

@@ -550,9 +550,9 @@ class Cursor:
         # select statement
         try:
             if PYTHON_MAJOR_VER == 3:
-                return next(self._fetch_records)
+                return tuple(next(self._fetch_records))
             else:
-                return self._fetch_records.next()
+                return tuple(self._fetch_records.next())
         except StopIteration:
             return None
 
@@ -572,12 +572,12 @@ class Cursor:
         # callproc or not select statement
         if not self._fetch_records:
             if self._callproc_result:
-                r = [self._callproc_result]
+                r = [tuple(self._callproc_result)]
                 self._callproc_result = None
                 return r
             return None
         # select statement
-        return list(self._fetch_records)
+        return [tuple(r) for r in self._fetch_records]
 
     def fetchmany(self, size=None):
         if not size:
