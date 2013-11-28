@@ -23,6 +23,33 @@ if not hasattr(unittest, "skip"):
 
 
 class TestBasic(base.TestBase):
+    def setUp(self):
+        base.TestBase.setUp(self)
+        cur = self.connection.cursor()
+        cur.execute('''
+            CREATE TABLE foo (
+                a INTEGER NOT NULL,
+                b VARCHAR(30) NOT NULL UNIQUE,
+                c VARCHAR(1024),
+                d DECIMAL(16,3) DEFAULT -0.123,
+                e DATE DEFAULT '1967-08-11',
+                f TIMESTAMP DEFAULT '1967-08-11 23:45:01',
+                g TIME DEFAULT '23:45:01',
+                h BLOB SUB_TYPE 1, 
+                i DOUBLE PRECISION DEFAULT 0.0,
+                j FLOAT DEFAULT 0.0,
+                PRIMARY KEY (a),
+                CONSTRAINT CHECK_A CHECK (a <> 0)
+            )
+        ''')
+        cur.execute('''
+            CREATE TABLE bar_empty (
+                k INTEGER NOT NULL,
+                abcdefghijklmnopqrstuvwxyz INTEGER
+            )
+        ''')
+        self.connection.commit()
+
     def test_basic(self):
         conn = self.connection
 
@@ -31,34 +58,6 @@ class TestBasic(base.TestBase):
         self.assertEqual(cur.fetchone(), None)
         cur.close()
 
-        cur = conn.cursor()
-
-        self.assertEqual(None, cur.callproc("foo_proc"))
-        cur.close()
-
-        cur = conn.cursor()
-        try:
-            rs = cur.execute("select out1, out2 from foo_proc")
-            if rs is None:
-                # foo_proc not selectable with Firebird 1.5
-                pass
-            else:
-                pass
-        except firebirdsql.OperationalError:
-            # foo_proc not selectable with Firebird 2.x
-            pass
-        finally:
-            cur.close()
-
-        cur = conn.cursor()
-        cur.callproc("bar_proc", (1, "ABC"))
-        rs = cur.fetchallmap()
-        self.assertEqual(len(rs), 1)
-        self.assertEqual(rs[0]['OUT1'], 1)
-        self.assertEqual(rs[0]['OUT2'], 'ABC')
-   
-        cur.close()
-  
         cur = conn.cursor()
         cur.execute("select a as alias_name from foo")
         assert cur.description[0][0] == 'ALIAS_NAME'
@@ -71,12 +70,6 @@ class TestBasic(base.TestBase):
         conn.cursor().execute("""insert into foo(a, b, c, e, g, i, j) 
             values (3, 'X', 'Y', '2001-07-05', '00:01:02', 0.2, 0.2)""")
 
-        cur = conn.cursor()
-        cur.execute("select out1, out2 from baz_proc(?)", (1, ))
-        rs = cur.fetchall()
-        self.assertEqual(len(rs), 1)
-        self.assertEqual((1, 'a'), rs[0])
-        cur.close()
 
         # 1 record insert and rollback to savepoint
         cur = conn.cursor()
