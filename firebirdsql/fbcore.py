@@ -968,13 +968,14 @@ class Connection(WireProtocol):
         (h, oid, buf) = self._op_response()
         self.sock.close()
         self.sock = None
+        self.db_handle = None
 
     def drop_database(self):
         self._op_drop_database()
         (h, oid, buf) = self._op_response()
         self.sock.close()
         self.sock = None
-        delattr(self, "db_handle")
+        self.db_handle = None
 
     def event_conduit(self, event_names, timeout=None):
         return EventConduit(self, event_names, timeout)
