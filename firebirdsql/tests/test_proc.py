@@ -8,6 +8,14 @@ import firebirdsql
 from firebirdsql.tests import base
 from firebirdsql.consts import *
 
+# backwards compatibility:
+if not hasattr(unittest, "skip"):
+    def _empty(func):
+        pass
+    def _skip(message):
+        return _empty
+    unittest.skip = _skip
+
 class TestProc(base.TestBase):
     def setUp(self):
         base.TestBase.setUp(self)
@@ -106,12 +114,14 @@ class TestProc(base.TestBase):
         self.assertEqual((1, 'a'), rs[0])
         cur.close()
 
+    @unittest.skip("insert returning")
     def test_insert_returning(self):
         cur = self.connection.cursor()
         cur.execute("insert into foo_table(a, b) values (1, 'b') returning e")
         self.assertEqual(cur.fetchone()[0], datetime.date(1967, 8, 11))
         cur.close()
 
+    @unittest.skip("insert returning")
     def test_prep_insert_returning(self):
         cur = self.connection.cursor()
         prep = cur.prep("insert into foo_table(a, b) values (?, 'b') returning e")
