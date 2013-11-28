@@ -194,10 +194,7 @@ class XSQLVAR:
 
     def value(self, raw_value):
         if self.sqltype == SQL_TYPE_TEXT:
-            if self.sqlsubtype == 1:    # TEXT
-                return self.bytes_to_str(raw_value)
-            else:                       # BINARY
-                return raw_value
+            return self.bytes_to_str(raw_value).rstrip()
         elif self.sqltype == SQL_TYPE_VARYING:
             return self.bytes_to_str(raw_value)
         elif self.sqltype in (SQL_TYPE_SHORT, SQL_TYPE_LONG, SQL_TYPE_INT64):
