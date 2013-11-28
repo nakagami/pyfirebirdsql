@@ -193,7 +193,7 @@ class XSQLVAR:
         return (h, m, s, (n % 10000) * 100)
 
     def value(self, raw_value):
-        if self.sqltype in (SQL_TYPE_TEXT, SQL_TYPE_BLOB):
+        if self.sqltype == SQL_TYPE_TEXT:
             if self.sqlsubtype == 1:    # TEXT
                 return self.bytes_to_str(raw_value)
             else:                       # BINARY
@@ -536,6 +536,8 @@ class Cursor:
                         connection._op_close_blob(h)
                         (h, oid, buf) = connection._op_response()
                         r[i] = v
+                        if x.sqlsubtype == 1:    # TEXT
+                            r[i] = connection.bytes_to_str(r[i])
                 yield r
 
         raise StopIteration()
