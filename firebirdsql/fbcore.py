@@ -471,7 +471,7 @@ class Cursor:
                 calc_blr(self._xsqlda))
             self._callproc_result = \
                 self.transaction.connection._op_sql_response(self._xsqlda)
-            self._op_response()
+            self.transaction.connection._op_response()
             self._fetch_records = None
         else:
             self._execute(stmt_handle, params)
