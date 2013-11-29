@@ -49,3 +49,15 @@ Version 0.7.4
 
    - refactoring
    - call socket.close()
+
+Version 0.8.0
+=============
+
+   - refactoring
+   - buf fix
+   - add 'role' parameter to connection 
+   - fetch right striped string if CHAR type 
+   - fetch string if BLOB subtype 1
+   - boolean type support (Firebird 3)
+   - connection keep only one transaction
+   - 'INSERT ... RETURNING ...' statement support
