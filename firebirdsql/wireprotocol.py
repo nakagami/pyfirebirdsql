@@ -783,8 +783,9 @@ class WireProtocol:
 
         b = self.recv_channel(4)
         count = bytes_to_bint(b[:4])
-
         r = []
+        if count == 0:
+            return []
         for i in range(len(xsqlda)):
             x = xsqlda[i]
             if x.io_length() < 0:
@@ -797,9 +798,6 @@ class WireProtocol:
                 r.append(x.value(raw_value))
             else:
                 r.append(None)
-
-        b = self.recv_channel(32)     # ??? why 32 bytes skip
-
         return r
 
     def _wait_for_event(self, timeout):
