@@ -231,6 +231,21 @@ class TestBasic(base.TestBase):
         self.connection.execute_immediate(
             "insert into foo(a, b) values (1, 'B')")
 
+    def test_blob(self):
+        cur = self.connection.cursor()
+        cur.execute("CREATE TABLE blob_test (b BLOB SUB_TYPE 0)")
+        cur.close()
+        self.connection.commit()
+        cur = self.connection.cursor()
+        cur.execute("insert into blob_test(b) values ('abc')")
+        cur.close()
+
+        cur = self.connection.cursor()
+        cur.execute("select * from blob_test")
+        self.assertEqual(cur.fetchone()[0], b'abc')
+
+        self.connection.close()
+
     @unittest.skip("FB 3")
     def test_boolean(self):
         """
