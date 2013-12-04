@@ -2004,10 +2004,10 @@ def process_wire(client_socket, server_name, server_port):
             'op_service_detach', 'op_detach'):
             break
 
-def proxy_wire_forever(server_name, server_port, listen_port):
+def proxy_wire_forever(server_name, server_port, listen_host, listen_port):
     # Socket from client.
     cs = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    cs.bind(('', listen_port))
+    cs.bind((listen_host, listen_port))
     cs.listen(5)
     while True:
         sock, addr = cs.accept()
@@ -2015,8 +2015,8 @@ def proxy_wire_forever(server_name, server_port, listen_port):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print('Usage : ' + sys.argv[0] + ' fb_server[:fb_port] [listen_port]')
+    if len(sys.argv) < 3:
+        print('Usage : ' + sys.argv[0] + ' fb_server[:fb_port] [listen_host:]listen_port')
         sys.exit()
     
     server = sys.argv[1].split(':')
@@ -2026,10 +2026,13 @@ if __name__ == '__main__':
     else:
         server_port = int(server[1])
 
-    if len(sys.argv) > 2:
-        port = int(sys.argv[2])
+    listen = sys.argv[2].split(':')
+    if len(listen) == 1:
+        listen_host = 'localhost'
+        listen_port = int(listen[0])
     else:
-        port = 3050
+        listen_host = listen[0]
+        listen_port = int(listen[1])
 
-    proxy_wire_forever(server_name, server_port, port)
+    proxy_wire_forever(server_name, server_port, listen_host, listen_port)
 
