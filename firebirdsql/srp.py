@@ -193,7 +193,11 @@ def verify_server_proof(clientKey, A, M, serverProof):
     sha_hmac.update(M)
     assert sha_hmac.digest() == serverProof
 
-def get_values(user, password, bits=1024):
+if __name__ == '__main__':
+    bits = 1024
+    user = b'sysdba'
+    password = b'masterkey'
+
     g, scale, N = pflist[bits]
     salt = b''.join([chr(random.randrange(0, 256)) for x in range(saltlen)])
     v = pow(g, makeX(salt, user, password), N)
@@ -206,4 +210,3 @@ def get_values(user, password, bits=1024):
     verify_server_proof(clientKey, A, M, serverProof)
 
     assert clientKey == serverKey
-    return A, B, M, serverProof
