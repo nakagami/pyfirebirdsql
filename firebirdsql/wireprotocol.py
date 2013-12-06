@@ -258,7 +258,15 @@ class WireProtocol:
 
         return (db_handle, event_id, {})
 
-    def params_to_blr(self, params):
+    def _convert_to_blob_param(self, trans_handle, b):
+        self._op_create_blob2(trans_handle)
+        (h, oid, buf) = self._op_response()
+        # TODO: put segments
+
+        self._op_close_blob(self, blob_handle)
+        return h
+
+    def params_to_blr(self, trans_handle, params):
         "Convert parameter array to BLR and values format."
         ln = len(params) * 2
         blr = bytes([5, 2, 4, 0, ln & 255, ln >> 8])
@@ -272,7 +280,7 @@ class WireProtocol:
             if ((PYTHON_MAJOR_VER == 2 and t == str) or
                 (PYTHON_MAJOR_VER == 3 and t == bytes)):
                 if len(p) > MAX_BLOB_SEGMENT_SIZE:
-                    pass
+                    blob_handle = self._convert_to_blob_param(trans_handle, p)
                 else:
                     v = p
                     nbytes = len(v)
@@ -560,7 +568,7 @@ class WireProtocol:
             p.pack_int(0)
             send_channel(self.sock, p.get_buffer())
         else:
-            (blr, values) = self.params_to_blr(params)
+            (blr, values) = self.params_to_blr(trans_handle, params)
             p.pack_bytes(blr)
             p.pack_int(0)
             p.pack_int(1)
@@ -579,7 +587,7 @@ class WireProtocol:
             p.pack_int(0)
             send_channel(self.sock, p.get_buffer())
         else:
-            (blr, values) = self.params_to_blr(params)
+            (blr, values) = self.params_to_blr(trans_handle, params)
             p.pack_bytes(blr)
             p.pack_int(0)
             p.pack_int(1)
