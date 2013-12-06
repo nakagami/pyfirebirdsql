@@ -271,11 +271,14 @@ class WireProtocol:
                 t = type(p)
             if ((PYTHON_MAJOR_VER == 2 and t == str) or
                 (PYTHON_MAJOR_VER == 3 and t == bytes)):
-                v = p
-                nbytes = len(v)
-                pad_length = ((4-nbytes) & 3)
-                v += bytes([0]) * pad_length
-                blr += bytes([14, nbytes & 255, nbytes >> 8])
+                if len(p) > MAX_BLOB_SEGMENT_SIZE:
+                    pass
+                else:
+                    v = p
+                    nbytes = len(v)
+                    pad_length = ((4-nbytes) & 3)
+                    v += bytes([0]) * pad_length
+                    blr += bytes([14, nbytes & 255, nbytes >> 8])
             elif t == int:
                 v = bint_to_bytes(p, 4)
                 blr += bytes([8, 0])    # blr_long
