@@ -244,6 +244,10 @@ class TestBasic(base.TestBase):
         cur.execute("select * from blob_test")
         self.assertEqual(cur.fetchone()[0], b'abc')
 
+        cur.execute("update blob_test set b = ?",  (b'x' * 32767, ))
+        cur.execute("select * from blob_test")
+        self.assertEqual(cur.fetchone()[0], b'x' * 32767)
+
         self.connection.close()
 
     @unittest.skip("FB 3")
