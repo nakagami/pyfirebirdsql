@@ -119,14 +119,13 @@ def pad(n, scale):
     for x in range(scale):
         s.insert(0, chr(n & 255))
         n >>= 8
-    return ''.join(s)
+    return b''.join(s)
 
 def makeU(x, y, scale):
     return bytes2long(sha1(pad(x, scale), pad(y, scale)))
 
 def makeX(salt, user, password):
-    return bytes2long(sha1(salt, user, b':', password))
-
+    return bytes2long(sha1(salt, sha1(user, b':', password)))
 
 def client_seed(user, password, bits=1024):
     "A, a"
@@ -169,7 +168,7 @@ def client_proof(user, password, salt, A, B, a, bits=1024):
     sha_hmac.update(long2bytes(B))
     return sha_hmac.digest(), K
 
-def server_proof(salt, A, B, clientProof, b, v, bits=1024):
+def server_proof(user, salt, A, B, clientProof, b, v, bits=1024):
     g, scale, N = pflist[bits]
     u = makeU(A, B, scale)
     S = pow((A * pow(v, u, N)) % N, b, N)
@@ -177,6 +176,7 @@ def server_proof(salt, A, B, clientProof, b, v, bits=1024):
     sha_hmac = hmac.new(K)
     sha_hmac.update(sha1(N))
     sha_hmac.update(sha1(g))
+    sha_hmac.update(sha1(user))
     sha_hmac.update(salt)
     sha_hmac.update(long2bytes(A))
     sha_hmac.update(long2bytes(B))
@@ -193,20 +193,25 @@ def verify_server_proof(clientKey, A, M, serverProof):
     sha_hmac.update(M)
     assert sha_hmac.digest() == serverProof
 
+def get_verifier(user, password, bits=1024):
+    g, scale, N = pflist[bits]
+    salt = b''.join([chr(random.randrange(0, 256)) for x in range(saltlen)])
+    v = pow(g, makeX(salt, user, password), N)
+    return salt, v
+
 if __name__ == '__main__':
     bits = 1024
     user = b'sysdba'
     password = b'masterkey'
 
     g, scale, N = pflist[bits]
-    salt = b''.join([chr(random.randrange(0, 256)) for x in range(saltlen)])
-    v = pow(g, makeX(salt, user, password), N)
+    salt, v = get_verifier(user, password)
 
     A, a = client_seed(user, password)
     B, b = server_seed(v)
 
     M, clientKey = client_proof(user, password, salt, A, B, a, bits=bits)
-    serverProof, serverKey = server_proof(salt, A, B, M, b, v)
+    serverProof, serverKey = server_proof(user, salt, A, B, M, b, v)
     verify_server_proof(clientKey, A, M, serverProof)
 
     assert clientKey == serverKey
