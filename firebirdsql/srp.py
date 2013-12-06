@@ -73,11 +73,7 @@ import random
 
 PYTHON_MAJOR_VER = sys.version_info[0]
 
-__all__ = ('get_values')
-
-saltlen = 16    # bytes
-ablen = 256     # bits
-
+ablen = 256     # length of a, b (bits)
 
 # 1024, 1536, 2048, 3072, 4096, 6144 and 8192 bit 'N' and its generator.
 # This table was copied from "TLSLite v0.3.8".
@@ -194,6 +190,7 @@ def verify_server_proof(clientKey, A, M, serverProof):
     assert sha_hmac.digest() == serverProof
 
 def get_salt():
+    saltlen = 16    # bytes
     return b''.join([chr(random.randrange(0, 256)) for x in range(saltlen)])
 
 def get_verifier(user, password, salt, bits=1024):
