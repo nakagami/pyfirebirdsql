@@ -17,6 +17,7 @@ if PYTHON_MAJOR_VER == 2:
 DEFAULT_CHARSET='UTF8'
 
 ISC_TIME_SECONDS_PRECISION = 10000
+MAX_CHAR_LENGTH = 32767
 
 isc_info_end = 1
 isc_info_truncated = 2
