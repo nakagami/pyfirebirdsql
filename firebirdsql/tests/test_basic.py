@@ -233,20 +233,28 @@ class TestBasic(base.TestBase):
 
     def test_blob(self):
         cur = self.connection.cursor()
-        cur.execute("CREATE TABLE blob_test (b BLOB SUB_TYPE 0)")
+        cur.execute("CREATE TABLE blob0_test (b BLOB SUB_TYPE 0)") # BINARY
+        cur.execute("CREATE TABLE blob1_test (b BLOB SUB_TYPE 1)") # TEXT
         cur.close()
         self.connection.commit()
         cur = self.connection.cursor()
-        cur.execute("insert into blob_test(b) values ('abc')")
+        cur.execute("insert into blob0_test(b) values ('abc')")
+        cur.execute("insert into blob1_test(b) values ('abc')")
         cur.close()
 
         cur = self.connection.cursor()
-        cur.execute("select * from blob_test")
+        cur.execute("select * from blob0_test")
         self.assertEqual(cur.fetchone()[0], b'abc')
+        cur.execute("select * from blob1_test")
+        self.assertEqual(cur.fetchone()[0], 'abc')
 
-        cur.execute("update blob_test set b = ?",  (b'x' * 32767, ))
-        cur.execute("select * from blob_test")
-        self.assertEqual(cur.fetchone()[0], b'x' * 32767)
+        cur.execute("update blob0_test set b = ?",  (b'x' * 0xffff, ))
+        cur.execute("select * from blob0_test")
+        self.assertEqual(cur.fetchone()[0], b'x' * 0xffff)
+
+        cur.execute("update blob1_test set b = ?",  ('x' * 0xffff, ))
+        cur.execute("select * from blob1_test")
+        self.assertEqual(cur.fetchone()[0], 'x' * 0xffff)
 
         self.connection.close()
 
