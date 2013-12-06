@@ -193,25 +193,38 @@ def verify_server_proof(clientKey, A, M, serverProof):
     sha_hmac.update(M)
     assert sha_hmac.digest() == serverProof
 
-def get_verifier(user, password, bits=1024):
+def get_salt():
+    return b''.join([chr(random.randrange(0, 256)) for x in range(saltlen)])
+
+def get_verifier(user, password, salt, bits=1024):
     g, scale, N = pflist[bits]
-    salt = b''.join([chr(random.randrange(0, 256)) for x in range(saltlen)])
     v = pow(g, makeX(salt, user, password), N)
-    return salt, v
+    return v
 
 if __name__ == '__main__':
+    # Both
     bits = 1024
     user = b'sysdba'
     password = b'masterkey'
-
     g, scale, N = pflist[bits]
-    salt, v = get_verifier(user, password)
 
+    # Client send A to Server
     A, a = client_seed(user, password)
+
+    # Server send B, salt to Client
+    salt = get_salt()
+    v = get_verifier(user, password, salt)
     B, b = server_seed(v)
 
+    # Client send M to Server
     M, clientKey = client_proof(user, password, salt, A, B, a, bits=bits)
+
+    # Server send serverProof to Client
     serverProof, serverKey = server_proof(user, salt, A, B, M, b, v)
+
+    # Client can verify by serverProof
     verify_server_proof(clientKey, A, M, serverProof)
 
+    # Client and Server has same key
     assert clientKey == serverKey
+
