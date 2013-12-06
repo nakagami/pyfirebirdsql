@@ -73,6 +73,10 @@ import random
 
 PYTHON_MAJOR_VER = sys.version_info[0]
 
+if PYTHON_MAJOR_VER == 3:
+    def ord(c):
+        return c
+
 ablen = 256     # length of a, b (bits)
 
 # 1024, 1536, 2048, 3072, 4096, 6144 and 8192 bit 'N' and its generator.
@@ -98,9 +102,12 @@ def bytes2long(s):
 def long2bytes(n):
     s = []
     while n > 0:
-      s.insert(0, chr(n & 255))
+      s.insert(0, n & 255)
       n >>= 8
-    return b''.join(s)
+    if PYTHON_MAJOR_VER == 3:
+        return bytes(s)
+    else:
+        return b''.join([chr(c) for c in s])
 
 def sha1(*args):
     sha1 = hashlib.sha1()
@@ -113,9 +120,12 @@ def sha1(*args):
 def pad(n, scale):
     s = []
     for x in range(scale):
-        s.insert(0, chr(n & 255))
+        s.insert(0, n & 255)
         n >>= 8
-    return b''.join(s)
+    if PYTHON_MAJOR_VER == 3:
+        return bytes(s)
+    else:
+        return b''.join([chr(c) for c in s])
 
 def makeU(x, y, scale):
     return bytes2long(sha1(pad(x, scale), pad(y, scale)))
@@ -191,7 +201,10 @@ def verify_server_proof(clientKey, A, M, serverProof):
 
 def get_salt():
     saltlen = 16    # bytes
-    return b''.join([chr(random.randrange(0, 256)) for x in range(saltlen)])
+    if PYTHON_MAJOR_VER == 3:
+        return bytes([random.randrange(0, 256) for x in range(saltlen)])
+    else:
+        return b''.join([chr(random.randrange(0, 256)) for x in range(saltlen)])
 
 def get_verifier(user, password, salt, bits=1024):
     g, scale, N = pflist[bits]
