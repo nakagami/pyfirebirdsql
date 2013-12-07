@@ -116,8 +116,9 @@ def byte_to_int(b):
         return ord(b)
 
 def send_channel(sock, b):
-    sock.send(b)
-
+    n = 0
+    while (n < len(b)):
+        n += sock.send(b[n:])
 
 class WireProtocol:
     buffer_length = 1024
