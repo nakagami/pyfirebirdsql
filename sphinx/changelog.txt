@@ -61,3 +61,8 @@ Version 0.8.0
    - boolean type support (Firebird 3)
    - connection keep only one transaction
    - 'INSERT ... RETURNING ...' statement support
+
+Version 0.8.1
+=============
+
+   - bug fix (send all packets)
