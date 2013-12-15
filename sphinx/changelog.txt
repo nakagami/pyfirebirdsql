@@ -66,3 +66,8 @@ Version 0.8.1
 =============
 
    - bug fix (send all packets)
+
+Version 0.8.2
+=============
+
+   - support 32k bytes over execute() parameter.
