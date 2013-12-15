@@ -1782,7 +1782,8 @@ def op_open_blob2(sock):
     return msg
 
 def op_close_blob(sock):
-    msg = sock.recv(bufsize)
+    msg = sock.recv(4)
+    msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tBlobHandle<%x>' % (up.unpack_uint()))
     up.done()
