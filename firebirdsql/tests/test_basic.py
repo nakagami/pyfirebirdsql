@@ -248,13 +248,21 @@ class TestBasic(base.TestBase):
         cur.execute("select * from blob1_test")
         self.assertEqual(cur.fetchone()[0], 'abc')
 
-        cur.execute("update blob0_test set b = ?",  (b'x' * MAX_BLOB_SEGMENT_SIZE, ))
+        cur.execute("update blob0_test set b = ?",  (b'x' * MAX_CHAR_LENGTH, ))
         cur.execute("select * from blob0_test")
-        self.assertEqual(cur.fetchone()[0], b'x' * MAX_BLOB_SEGMENT_SIZE)
+        self.assertEqual(cur.fetchone()[0], b'x' * MAX_CHAR_LENGTH)
 
-        cur.execute("update blob1_test set b = ?",  ('x' * MAX_BLOB_SEGMENT_SIZE, ))
+        cur.execute("update blob1_test set b = ?",  ('x' * MAX_CHAR_LENGTH, ))
         cur.execute("select * from blob1_test")
-        self.assertEqual(cur.fetchone()[0], 'x' * MAX_BLOB_SEGMENT_SIZE) 
+        self.assertEqual(cur.fetchone()[0], 'x' * MAX_CHAR_LENGTH) 
+
+        cur.execute("update blob0_test set b = ?",  (b'x' * (MAX_CHAR_LENGTH+1), ))
+        cur.execute("select * from blob0_test")
+        self.assertEqual(cur.fetchone()[0], b'x' * (MAX_CHAR_LENGTH+1))
+
+        cur.execute("update blob1_test set b = ?",  ('x' * (MAX_CHAR_LENGTH+1), ))
+        cur.execute("select * from blob1_test")
+        self.assertEqual(cur.fetchone()[0], 'x' * (MAX_CHAR_LENGTH+1))
 
         self.connection.close()
 
