@@ -263,10 +263,11 @@ class WireProtocol:
         self._op_create_blob2(trans_handle)
         (blob_handle, oid, buf) = self._op_response()
 
-        # TODO: put segments
-        self._op_put_segment(blob_handle, b[:32000])
-
-        (h, oid, buf) = self._op_response()
+        i = 0
+        while i < len(b):
+            self._op_put_segment(blob_handle, b[i:i+BLOB_SEGMENT_SIZE])
+            (h, oid, buf) = self._op_response()
+            i += BLOB_SEGMENT_SIZE
 
         self._op_close_blob(blob_handle)
         (h, oid, buf) = self._op_response()
