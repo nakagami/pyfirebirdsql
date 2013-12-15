@@ -262,15 +262,18 @@ class WireProtocol:
     def _create_blob(self, trans_handle, b):
         self._op_create_blob2(trans_handle)
         (blob_handle, oid, buf) = self._op_response()
+
         # TODO: put segments
+        self._op_put_segment(blob_handle, b[:32000])
+
+        (h, oid, buf) = self._op_response()
 
         self._op_close_blob(blob_handle)
-        (blob_handle, oid, buf) = self._op_response()
-        return blob_handle
+        (h, oid, buf) = self._op_response()
+        return oid
 
     def params_to_blr(self, trans_handle, params):
         "Convert parameter array to BLR and values format."
-        blob_index = 0
         ln = len(params) * 2
         blr = bytes([5, 2, 4, 0, ln & 255, ln >> 8])
         values = bytes([])
@@ -283,9 +286,7 @@ class WireProtocol:
             if ((PYTHON_MAJOR_VER == 2 and t == str) or
                 (PYTHON_MAJOR_VER == 3 and t == bytes)):
                 if len(p) > MAX_CHAR_LENGTH:
-                    blob_handle = self._create_blob(trans_handle, p)
-                    blob_index += 1
-                    v = int_to_bytes(blob_index, 8)
+                    v = self._create_blob(trans_handle, p)
                     blr += bytes([9, 0])
                 else:
                     v = p
