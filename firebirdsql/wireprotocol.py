@@ -285,7 +285,7 @@ class WireProtocol:
                 if len(p) > MAX_CHAR_LENGTH:
                     blob_handle = self._create_blob(trans_handle, p)
                     blob_index += 1
-                    v = bytes([blob_index])
+                    v = int_to_bytes(blob_index, 8)
                     blr += bytes([9, 0])
                 else:
                     v = p
