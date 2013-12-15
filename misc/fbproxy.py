@@ -1781,6 +1781,21 @@ def op_open_blob2(sock):
     up.done()
     return msg
 
+def op_batch_segments(sock):
+    msg = sock.recv(bufsize)
+    print('\tlen=', len(msg))
+    msg_dump(msg)
+    up = xdrlib.Unpacker(msg)
+    print('\tsegment_blob=', up.unpack_int())
+    print('\tsegment_length=', up.unpack_int())
+    segment_length = up.unpack_int()
+    print('\tsegment_length=', segment_length)
+    print('\t', binascii.b2a_hex(msg[up.get_position():]))
+
+    return msg
+
+op_put_segment = op_batch_segments
+
 def op_close_blob(sock):
     msg = sock.recv(4)
     msg_dump(msg)
