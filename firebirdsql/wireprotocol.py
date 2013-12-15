@@ -261,7 +261,7 @@ class WireProtocol:
 
     def _create_blob(self, trans_handle, b):
         self._op_create_blob2(trans_handle)
-        (blob_handle, oid, buf) = self._op_response()
+        (blob_handle, blob_id, buf) = self._op_response()
 
         i = 0
         while i < len(b):
@@ -271,7 +271,7 @@ class WireProtocol:
 
         self._op_close_blob(blob_handle)
         (h, oid, buf) = self._op_response()
-        return oid
+        return blob_id
 
     def params_to_blr(self, trans_handle, params):
         "Convert parameter array to BLR and values format."
