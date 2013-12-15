@@ -1549,7 +1549,7 @@ def op_connect(sock):
     msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     assert op_names[up.unpack_int()] == 'op_attach'
-    assert up.unpack_int() == 2     # CONNECT_VERSION2
+    print('\tconnect_version', up.unpack_int())
     print('\tArchitecture type', up.unpack_int())  # Architecture type (Generic = 1)
     print('\tPath<%s>' % (up.unpack_string()))
     pcount = up.unpack_int()
