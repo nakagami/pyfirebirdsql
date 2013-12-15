@@ -1792,10 +1792,9 @@ def op_batch_segments(sock):
     buf = b''
     while segment_size:
         b = sock.recv(segment_size)
-        msg_dump(b)
         buf += b
         segment_size -= len(b)
-    msg_dump(buf)
+    print('\tlen=', len(buf))
     return msg + buf
 
 op_put_segment = op_batch_segments

@@ -138,6 +138,7 @@ class WireProtocol:
     op_rollback = 31
     op_open_blob = 35
     op_get_segment = 36
+    op_put_segment = 37
     op_close_blob = 39
     op_info_database = 40
     op_info_transaction = 42
@@ -279,7 +280,7 @@ class WireProtocol:
                 t = type(p)
             if ((PYTHON_MAJOR_VER == 2 and t == str) or
                 (PYTHON_MAJOR_VER == 3 and t == bytes)):
-                if len(p) > MAX_BLOB_SEGMENT_SIZE:
+                if len(p) > MAX_CHAR_LENGTH:
                     blob_handle = self._convert_to_blob_param(trans_handle, p)
                 else:
                     v = p
@@ -685,6 +686,15 @@ class WireProtocol:
         p.pack_int(self.buffer_length)
         p.pack_int(0)
         send_channel(self.sock, p.get_buffer())
+
+    @wire_operation
+    def _op_put_segment(self, blob_handle, b):
+        p = xdrlib.Packer()
+        p.pack_int(self.op_put_segment)
+        p.pack_int(blob_handle)
+        p.pack_int(len(b))
+        p.pack_int(len(b))
+        send_channel(self.sock, p.get_buffer() + b)
 
     @wire_operation
     def _op_batch_segments(self, blob_handle, seg_data):
