@@ -1782,17 +1782,21 @@ def op_open_blob2(sock):
     return msg
 
 def op_batch_segments(sock):
-    msg = sock.recv(bufsize)
-    print('\tlen=', len(msg))
+    msg = sock.recv(12)
     msg_dump(msg)
-    up = xdrlib.Unpacker(msg)
-    print('\tsegment_blob=', up.unpack_int())
-    print('\tsegment_length=', up.unpack_int())
-    segment_length = up.unpack_int()
-    print('\tsegment_length=', segment_length)
-    print('\t', binascii.b2a_hex(msg[up.get_position():]))
-
-    return msg
+    blob_id = _bytes_to_bint32(msg, 0)
+    segment_size = _bytes_to_bint32(msg, 4)
+    segment_size2 = _bytes_to_bint32(msg, 8)
+    assert segment_size == segment_size2
+    print('\tsegment_blob=', segment_size)
+    buf = b''
+    while segment_size:
+        b = sock.recv(segment_size)
+        msg_dump(b)
+        buf += b
+        segment_size -= len(b)
+    msg_dump(buf)
+    return msg + buf
 
 op_put_segment = op_batch_segments
 
