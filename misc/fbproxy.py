@@ -1030,33 +1030,33 @@ def _need_nbytes_align(sock, nbytes): # Get nbytes with 4 bytes word alignment
         n += 4 - nbytes % 4  # 4 bytes word alignment
     r = b''
     while n:
-        bytes = sock.recv(n)
-        r += bytes
-        n -= len(bytes)
+        bs = sock.recv(n)
+        r += bs
+        n -= len(bs)
     return r
 
-def _bytes_to_bint32(bytes, i):    # Read as big endian int32
-    v = ((_ord(bytes[i]) << 24) | (_ord(bytes[i+1]) << 16) 
-            | (_ord(bytes[i+2]) << 8) | (_ord(bytes[i+3]) << 0))
+def _bytes_to_bint32(bs, i):    # Read as big endian int32
+    v = ((_ord(bs[i]) << 24) | (_ord(bs[i+1]) << 16) 
+            | (_ord(bs[i+2]) << 8) | (_ord(bs[i+3]) << 0))
     return ctypes.c_int(v).value
 
-def _bytes_to_bint(bytes, i, len): # Read as big endian
+def _bytes_to_bint(bs, i, len): # Read as big endian
     val = 0
     n = 0
     while n < len:
-        val += _ord(bytes[i+n]) << (8 * (len - n -1))
+        val += _ord(bs[i+n]) << (8 * (len - n -1))
         n += 1
-    if _ord(bytes[i]) & 128: # First byte MSB eq 1 means negative.
+    if _ord(bs[i]) & 128: # First byte MSB eq 1 means negative.
         val = ctypes.c_int(val).value
     return val
 
-def _bytes_to_int(bytes, i, len): # Read as little endian
+def _bytes_to_int(bs, i, len): # Read as little endian
     val = 0
     n = 0
     while n < len:
-        val += _ord(bytes[i+n]) << (8 * n)
+        val += _ord(bs[i+n]) << (8 * n)
         n += 1
-    if _ord(bytes[i+n-1]) & 128: # Last byte MSB eq 1 means negative.
+    if _ord(bs[i+n-1]) & 128: # Last byte MSB eq 1 means negative.
         val = ctypes.c_int(val).value
     return val
 
@@ -1337,53 +1337,53 @@ def _database_parameter_block(bytes):
             i = i + 1
         print()
 
-def _service_parameter_block(bytes):
+def _service_parameter_block(bs):
     i = 0
-    while i < len(bytes):
-        print('\t', _ord(bytes[i]), end='')
-        s = isc_spb_names[_ord(bytes[i])]
+    while i < len(bs):
+        print('\t', _ord(bs[i]), end='')
+        s = isc_spb_names[_ord(bs[i])]
         print('\t', s, end='')
         if s in ['isc_spb_bkp_file', 'isc_spb_command_line', 
             'isc_spb_dbname']:
-            l = _bytes_to_int(bytes, i+1, 2)
-            print('[' + bytes[i+3:i+3+l] + ']')
+            l = _bytes_to_int(bs, i+1, 2)
+            print('[' + bs[i+3:i+3+l] + ']')
             i += 3 + l
         elif s in ['isc_spb_bkp_length',
                 'isc_spb_res_buffers', 'isc_spb_res_page_size']:
-            print (_bytes_to_int(bytes, i+1, 4))
+            print (_bytes_to_int(bs, i+1, 4))
             i = i + 5
         elif s in ['isc_spb_options']:
-            print('[' + binascii.b2a_hex(bytes[i+1:i+5]) + ']')
+            print('[' + binascii.b2a_hex(bs[i+1:i+5]) + ']')
             i = i + 5
         else:
             print()
             i += 1
 
-def parse_sql_info(bytes, statement):
-    if len(bytes) == 0:     # Error occured.
+def parse_sql_info(b, statement):
+    if len(b) == 0:     # Error occured.
         return
     i = 0
-    while isc_info_sql_names[_ord(bytes[i])] != 'isc_info_end':
-        if ((isc_info_sql_names[_ord(bytes[i])] == 'isc_info_sql_select' or
-             isc_info_sql_names[_ord(bytes[i])] == 'isc_info_sql_bind') and
-           isc_info_sql_names[_ord(bytes[i+1])] == 'isc_info_sql_describe_vars'):
-            index = _parse_trunc_sql_info(i + 2, bytes, statement)
+    while isc_info_sql_names[_ord(b[i])] != 'isc_info_end':
+        if ((isc_info_sql_names[_ord(b[i])] == 'isc_info_sql_select' or
+             isc_info_sql_names[_ord(b[i])] == 'isc_info_sql_bind') and
+           isc_info_sql_names[_ord(b[i+1])] == 'isc_info_sql_describe_vars'):
+            index = _parse_trunc_sql_info(i + 2, b, statement)
             if index:
                 print('\tmore info index=', index)
             break
-        print('\t' + isc_info_sql_names[_ord(bytes[i])], end=' ')
-        if isc_info_sql_names[_ord(bytes[i])] == 'isc_info_sql_records':
+        print('\t' + isc_info_sql_names[_ord(b[i])], end=' ')
+        if isc_info_sql_names[_ord(b[i])] == 'isc_info_sql_records':
             i += 3
-            while isc_req_info_names[_ord(bytes[i])] != 'isc_info_end':
-                print(isc_req_info_names[_ord(bytes[i])], end=' ')
-                l = _bytes_to_int(bytes, i + 1, 2)
-                print(_bytes_to_int(bytes, i + 3, l), end=' ')
+            while isc_req_info_names[_ord(b[i])] != 'isc_info_end':
+                print(isc_req_info_names[_ord(b[i])], end=' ')
+                l = _bytes_to_int(b, i + 1, 2)
+                print(_bytes_to_int(b, i + 3, l), end=' ')
                 i += 3 + l
             print()
             break
-        l = _bytes_to_int(bytes, i + 1, 2)
-        n = _bytes_to_int(bytes, i + 3, l)
-        if isc_info_sql_names[_ord(bytes[i])] == 'isc_info_sql_stmt_type':
+        l = _bytes_to_int(b, i + 1, 2)
+        n = _bytes_to_int(b, i + 3, l)
+        if isc_info_sql_names[_ord(b[i])] == 'isc_info_sql_stmt_type':
             print(isc_info_sql_stmt_names[n])
         else:
             print(n)
@@ -1605,6 +1605,20 @@ def op_accept(sock):
     up.done()
     return msg
 
+#def op_accept_data(sock):
+#    msg = sock.recv(bufsize)
+#    msg_dump(msg)
+#    up = xdrlib.Unpacker(msg)
+#    print('\tProtocol<%d>Archtecture<%d>MinimumType<%d>' % (
+#            up.unpack_int(), up.unpack_int(), up.unpack_int()))
+#    bs = up.unpack_bytes()
+#    print('\tdata=[', binascii.b2a_hex(bs), ']', end='')
+#    print('\tplugin=[', binascii.b2a_hex(bs), ']', end='')
+#    print('\tAuthenticated<%d>' % (up.unpack_int(), ))
+#    print('\tkeys=[', binascii.b2a_hex(bs), ']', end='')
+#    up.done()
+#    return msg
+
 def op_cancel(sock):
     msg = sock.recv(4)
     msg_dump(msg)
@@ -1637,9 +1651,9 @@ def op_transaction(sock):
     msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tDatabase<%x>' % (up.unpack_uint()), end='')
-    bytes = up.unpack_bytes()
-    print('\t[', binascii.b2a_hex(bytes), ']=[', end='')
-    for b in bytes:
+    bs = up.unpack_bytes()
+    print('\t[', binascii.b2a_hex(bs), ']=[', end='')
+    for b in bs:
         print('', isc_tpb_names[_ord(b)], end='')
     print(']')
     up.done()
@@ -1667,9 +1681,9 @@ def op_prepare_statement(sock):
     print('\tTrans<%x>Statement<%x>dialect<%d>' % (get_prepare_trans(),
             get_prepare_statement(), get_prepare_dialect()))
     print('\t', up.unpack_string())
-    bytes = up.unpack_bytes() # AbstractJavaGDSImpl.java/sql_prepare_info
-    print('\t[', binascii.b2a_hex(bytes), ']=[', end='')
-    for b in bytes:
+    bs = up.unpack_bytes() # AbstractJavaGDSImpl.java/sql_prepare_info
+    print('\t[', binascii.b2a_hex(bs), ']=[', end='')
+    for b in bs:
         print(isc_info_sql_names[_ord(b)], end=',')
     print(']')
     print('\tbuffer_len=', up.unpack_int())
@@ -1682,16 +1696,16 @@ def op_info_sql(sock):
     up = xdrlib.Unpacker(msg)
     print('\tStatement<%x>' % (up.unpack_uint()))
     assert up.unpack_int() == 0
-    bytes = up.unpack_bytes()
-    print('\t[' + binascii.b2a_hex(bytes) + ']=[', end='')
+    bs = up.unpack_bytes()
+    print('\t[' + binascii.b2a_hex(bs) + ']=[', end='')
     i = 0
-    while i < len(bytes):
-        s = isc_info_sql_names[_ord(bytes[i])]
+    while i < len(bs):
+        s = isc_info_sql_names[_ord(bs[i])]
         print(s, end='')
         if s == 'isc_info_end':
             break
         if s in ['isc_info_truncated']:
-            print(_bytes_to_int(bytes, i+1, 2), end='')
+            print(_bytes_to_int(bs, i+1, 2), end='')
             i = i + 3
         else:
             i = i + 1
