@@ -434,6 +434,17 @@ isc_arg_win32 = 17
 isc_arg_warning = 18
 isc_arg_sql_state = 19
 
+CNCT_user = 1
+CNCT_passwd = 2
+CNCT_host = 4
+CNCT_group = 5
+CNCT_user_verification = 6
+CNCT_specific_data = 7
+CNCT_plugin_name = 8
+CNCT_login = 9
+CNCT_plugin_list = 10
+CNCT_client_crypt = 11
+
 charset_map = {
     # DB CHAR SET NAME    :   PYTHON CODEC NAME (CANONICAL)
     # --------------------------------------------------------------------------

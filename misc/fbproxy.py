@@ -970,6 +970,12 @@ type_names = {
   32764:'SQL_BOOLEAN', 32766: 'SQL_NULL',
 }
 
+CNCT_names = [
+  None, CNCT_user, CNCT_passwd, None, CNCT_host, CNCT_group,
+  CNCT_user_verification, CNCT_specific_data, CNCT_plugin_name, CNCT_login,
+  CNCT_plugin_list, CNCT_client_crypt,
+]
+
 class XSQLVar(object):
     def __init__(self):
         self.sqltype = None
