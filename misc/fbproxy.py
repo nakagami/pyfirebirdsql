@@ -818,6 +818,11 @@ op_names = [
   'op_transact', 'op_transact_response', 'op_drop_database',
   'op_service_attach', 'op_service_detach', 'op_service_info',
   'op_service_start', 'op_rollback_retaining',
+  # FB3
+  'op_update_account_info', 'op_authenticate_user', 'op_partial',
+  'op_trusted_auth', 'op_cancel', 'op_cont_auth', 'op_ping', 'op_accept_data',
+  'op_abort_aux_connection', 'op_crypt', 'op_crypt_key_callback',
+  'op_cond_accept',
 ]
 
 isc_dpb_names = [
