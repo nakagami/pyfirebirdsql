@@ -1422,7 +1422,7 @@ def op_response(sock):
                 l = _bytes_to_int(bs, i+1, 2)
                 print('[', binascii.b2a_hex(bs[i+3:i+3+l]), ']', end=' ')
                 if s == 'isc_info_firebird_version':
-                    print(bs[i+5:i+3+l], end=' ')
+                    print('', bs[i+5:i+3+l], end=' ')
                 i = i + 3 + l
             else:
                 i = i + 1
@@ -1586,6 +1586,14 @@ def op_accept(sock):
     up = xdrlib.Unpacker(msg)
     print('\tProtocol<%d>Archtecture<%d>MinimumType<%d>' % (
             up.unpack_int(), up.unpack_int(), up.unpack_int()))
+    up.done()
+    return msg
+
+def op_cancel(sock):
+    msg = sock.recv(4)
+    msg_dump(msg)
+    up = xdrlib.Unpacker(msg)
+    print('kind=', up.unpack_uint())
     up.done()
     return msg
 
@@ -2016,6 +2024,8 @@ def process_wire(client_socket, server_name, server_port):
         server_socket.send(client_head)
         if client_msg:
             server_socket.send(client_msg)
+        if op_req_name == 'op_cancel':
+            continue
         set_last_op_name(op_req_name)
         op_res_name = ''
         while op_res_name == '' or op_res_name == 'op_dummy':
