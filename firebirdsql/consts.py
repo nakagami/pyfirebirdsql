@@ -238,6 +238,7 @@ isc_dpb_specific_auth_data = 84
 isc_dpb_auth_plugin_list = 85
 isc_dpb_auth_plugin_name = 86
 isc_dpb_config = 87
+isc_dpb_nolinger = 88
 
 # Transaction Parameter Block parameter
 isc_tpb_version1 = 1

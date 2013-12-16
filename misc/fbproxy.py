@@ -853,7 +853,10 @@ isc_dpb_names = [
   'isc_dpb_gsec_attach', 'isc_dpb_address_path', 'isc_dpb_process_id',
   'isc_dpb_no_db_triggers', 'isc_dpb_trusted_auth', 'isc_dpb_process_name',
   'isc_dpb_trusted_role', 'isc_dpb_org_filename', 'isc_dpb_utf8_filename',
-  'isc_dpb_ext_call_depth',
+  'isc_dpb_ext_call_depth', 'isc_dpb_auth_block', 'isc_dpb_client_version',
+  'isc_dpb_remote_protocol', 'isc_dpb_host_name', 'isc_dpb_os_user',
+  'isc_dpb_specific_auth_data', 'isc_dpb_auth_plugin_list',
+  'isc_dpb_auth_plugin_name', 'isc_dpb_config', 'isc_dpb_nolinger',
 ]
 
 isc_spb_names = {
