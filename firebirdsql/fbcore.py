@@ -6,7 +6,8 @@
 #
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
-import sys, os, socket
+import sys
+import socket
 import xdrlib, time, datetime, decimal, struct
 import itertools
 from firebirdsql.fberrmsgs import messages
@@ -693,16 +694,6 @@ class EventConduit(WireProtocol):
         self.sock.close()
 
 class Connection(WireProtocol):
-    def uid(self):
-        if sys.platform == 'win32':
-            user = os.environ['USERNAME']
-            hostname = os.environ['COMPUTERNAME']
-        else:
-            user = os.environ.get('USER', '')
-            hostname = socket.gethostname()
-        return bytes([1] + [len(user)] + [ord(c) for c in user]
-                + [4] + [len(hostname)] + [ord(c) for c in hostname] + [6, 0])
-
     def cursor(self):
         if self._transaction is None:
             self.begin()

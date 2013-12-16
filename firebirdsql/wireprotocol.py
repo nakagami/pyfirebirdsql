@@ -7,6 +7,7 @@
 # Python DB-API 2.0 module for Firebird. 
 ##############################################################################
 import os
+import socket
 import xdrlib, time, datetime, decimal, struct, select
 from firebirdsql.fberrmsgs import messages
 from firebirdsql import (DisconnectByPeer,
@@ -355,6 +356,15 @@ class WireProtocol:
         blr += bytes([255, 76])    # [blr_end, blr_eoc]
         return blr, values
 
+    def uid(self):
+        if sys.platform == 'win32':
+            user = os.environ['USERNAME']
+            hostname = os.environ['COMPUTERNAME']
+        else:
+            user = os.environ.get('USER', '')
+            hostname = socket.gethostname()
+        return bytes([1] + [len(user)] + [ord(c) for c in user]
+                + [4] + [len(hostname)] + [ord(c) for c in hostname] + [6, 0])
 
     @wire_operation
     def _op_connect(self):
