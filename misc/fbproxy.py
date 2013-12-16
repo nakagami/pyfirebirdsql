@@ -1418,6 +1418,7 @@ def op_response(sock):
                 'isc_info_ods_minor_version', 'isc_info_db_id',
                 'isc_info_expunge_count', 'isc_info_page_size',
                 'isc_info_sweep_interval', 'isc_info_user_names',
+                'frb_info_att_charset',
                 ]:
                 l = _bytes_to_int(bs, i+1, 2)
                 print('[', binascii.b2a_hex(bs[i+3:i+3+l]), ']', end=' ')
@@ -1551,7 +1552,7 @@ def op_info_database(sock):
     bs = up.unpack_bytes() # AbstractJavaGDSImpl.java/describe_database_info
     print('\t[', binascii.b2a_hex(bs), ']=[', end='')
     for b in bs:
-        print(isc_info_names[_ord(b)], end='')
+        print('', isc_info_names[_ord(b)], end='')
     print(']')
     print('\tbuffer len=%d' % up.unpack_int())
     up.done()
@@ -1593,7 +1594,7 @@ def op_cancel(sock):
     msg = sock.recv(4)
     msg_dump(msg)
     up = xdrlib.Unpacker(msg)
-    print('kind=', up.unpack_uint())
+    print('\tkind=', up.unpack_uint())
     up.done()
     return msg
 
@@ -1624,7 +1625,7 @@ def op_transaction(sock):
     bytes = up.unpack_bytes()
     print('\t[', binascii.b2a_hex(bytes), ']=[', end='')
     for b in bytes:
-        print(isc_tpb_names[_ord(b)], end='')
+        print('', isc_tpb_names[_ord(b)], end='')
     print(']')
     up.done()
     return msg
