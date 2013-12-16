@@ -1311,16 +1311,21 @@ def _database_parameter_block(bytes):
             'isc_dpb_old_start_file', 'isc_dpb_set_db_charset',
             'isc_dpb_working_directory', 'isc_dpb_gbak_attach',
             'isc_dpb_process_name', 'isc_spb_process_name',
-            'isc_dpb_utf8_filename']:
+            'isc_dpb_utf8_filename', 'isc_dpb_client_version',
+            'isc_dpb_remote_protocol', 'isc_dpb_host_name',
+            'isc_dpb_os_user', 'isc_dpb_auth_plugin_name',
+            'isc_dpb_auth_plugin_list', 'isc_dpb_specific_auth_data',
+            ]:
             l = _ord(bytes[i+1])
             print('[', bytes[i+2:i+2+l], ']', end='')
             i = i + 2 + l
         elif s in ['isc_dpb_dummy_packet_interval', 'isc_dpb_sql_dialect', 
             'isc_dpb_sweep', 'isc_dpb_connect_timeout', 'isc_dpb_page_size', 
             'isc_dpb_force_write', 'isc_dpb_overwrite', 'isc_dpb_process_id',
-            'isc_spb_process_id']:
+            'isc_spb_process_id', 'isc_dpb_ext_call_depth',
+            ]:
             l = _ord(bytes[i+1])
-            print(_bytes_to_int(bytes, i+2, l), end='')
+            print('', _bytes_to_int(bytes, i+2, l), end='')
             i = i + 2 + l
         else:
             i = i + 1
