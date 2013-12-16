@@ -1578,10 +1578,12 @@ def op_connect(sock):
     print('\tuid=[', binascii.b2a_hex(uid), ']')
     i = 0
     while i < len(uid):
+        name = CNCT_names[ord(uid[i])]
         n = ord(uid[i+1])
-        print('\t\t',
-            CNCT_names[ord(uid[i])], n,
-            binascii.b2a_hex(uid[i+2:i+2+n]))
+        v = uid[i+2:i+2+n]
+        if name in ('CNCT_specific_data', 'CNCT_client_crypt'):
+            v = binascii.b2a_hex(v)
+        print('\t\t', name, n, v)
         i += n + 2
 
     print('\tProtocol version', up.unpack_int())
