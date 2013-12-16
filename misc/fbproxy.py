@@ -1605,19 +1605,21 @@ def op_accept(sock):
     up.done()
     return msg
 
-#def op_accept_data(sock):
-#    msg = sock.recv(bufsize)
-#    msg_dump(msg)
-#    up = xdrlib.Unpacker(msg)
-#    print('\tProtocol<%d>Archtecture<%d>MinimumType<%d>' % (
-#            up.unpack_int(), up.unpack_int(), up.unpack_int()))
-#    bs = up.unpack_bytes()
-#    print('\tdata=[', binascii.b2a_hex(bs), ']', end='')
-#    print('\tplugin=[', binascii.b2a_hex(bs), ']', end='')
-#    print('\tAuthenticated<%d>' % (up.unpack_int(), ))
-#    print('\tkeys=[', binascii.b2a_hex(bs), ']', end='')
-#    up.done()
-#    return msg
+def op_accept_data(sock):
+    msg = sock.recv(bufsize)
+    msg_dump(msg)
+    up = xdrlib.Unpacker(msg)
+    print('\tProtocol<%d>Archtecture<%d>MinimumType<%d>' % (
+            up.unpack_int(), up.unpack_int(), up.unpack_int()))
+    bs = up.unpack_bytes()
+    print('\tdata=[', binascii.b2a_hex(bs), ']')
+    bs = up.unpack_bytes()
+    print('\tplugin=[', binascii.b2a_hex(bs), ']')
+    print('\tAuthenticated<%d>' % (up.unpack_int(), ))
+    bs = up.unpack_bytes()
+    print('\tkeys=[', binascii.b2a_hex(bs), ']')
+    up.done()
+    return msg
 
 def op_cancel(sock):
     msg = sock.recv(4)
