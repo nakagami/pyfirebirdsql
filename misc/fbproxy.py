@@ -971,9 +971,9 @@ type_names = {
 }
 
 CNCT_names = [
-  None, CNCT_user, CNCT_passwd, None, CNCT_host, CNCT_group,
-  CNCT_user_verification, CNCT_specific_data, CNCT_plugin_name, CNCT_login,
-  CNCT_plugin_list, CNCT_client_crypt,
+  None, 'CNCT_user', 'CNCT_passwd', None, 'CNCT_host', 'CNCT_group',
+  'CNCT_user_verification', 'CNCT_specific_data', 'CNCT_plugin_name',
+  'CNCT_login', 'CNCT_plugin_list', 'CNCT_client_crypt',
 ]
 
 class XSQLVar(object):
@@ -1574,7 +1574,16 @@ def op_connect(sock):
     print('\tPath<%s>' % (up.unpack_string()))
     pcount = up.unpack_int()
     print('\tProtocol version understood count=', pcount )
-    print('\tuid=[', binascii.b2a_hex(up.unpack_bytes()), ']')
+    uid = up.unpack_bytes()
+    print('\tuid=[', binascii.b2a_hex(uid), ']')
+    i = 0
+    while i < len(uid):
+        n = ord(uid[i+1])
+        print('\t\t',
+            CNCT_names[ord(uid[i])], n,
+            binascii.b2a_hex(uid[i+2:i+2+n]))
+        i += n + 2
+
     print('\tProtocol version', up.unpack_int())
     print('\tArchitecture type', up.unpack_int())
     print('\tMinimum type',  up.unpack_int())   # Minimum type (2)
