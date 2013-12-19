@@ -1631,6 +1631,15 @@ def op_cancel(sock):
     up.done()
     return msg
 
+def op_crypt(sock):
+    msg = sock.recv(bufsize)
+    msg_dump(msg)
+    up = xdrlib.Unpacker(msg)
+    print('\tplugin[%s]' % (up.unpack_string(), ))
+    print('\tkey[%s]' % (binascii.b2a_hex((up.unpack_bytes())),))
+    up.done()
+    return msg
+
 def op_attach(sock):
     msg = sock.recv(bufsize)
     msg_dump(msg)
