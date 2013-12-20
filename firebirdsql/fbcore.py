@@ -7,7 +7,6 @@
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
 import sys
-import socket
 import xdrlib, time, datetime, decimal, struct
 import itertools
 from firebirdsql.fberrmsgs import messages
@@ -17,6 +16,7 @@ from firebirdsql.consts import *
 from firebirdsql.wireprotocol import (WireProtocol,
     bytes_to_bint, bytes_to_int, bint_to_bytes, int_to_bytes, byte_to_int,
     INFO_SQL_SELECT_DESCRIBE_VARS,)
+from firebirdsql.socketstream import SocketStream
 
 try:
     from collections import Mapping
@@ -25,20 +25,6 @@ except ImportError:
     # Python 2.5
     from UserDict import DictMixin as Mapping
     HAS_MAPPING = False
-
-try:
-    import fcntl
-except ImportError:
-    def setcloexec(sock):
-        pass
-else:
-    def setcloexec(sock):
-        """Set FD_CLOEXEC property on a file descriptors
-        """
-        fd = sock.fileno()
-        flags = fcntl.fcntl(fd, fcntl.F_GETFD)
-        fcntl.fcntl(fd, fcntl.F_SETFD, flags | fcntl.FD_CLOEXEC)
-
 
 __version__ = '0.8.2'
 apilevel = '2.0'
@@ -656,10 +642,8 @@ class EventConduit(WireProtocol):
         self.event_names = {}
         for name in names:
             self.event_names[name] = 0
-        self.timeout = timeout
         (h, port, family, ip_address) = self.connection._op_connect_request()
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((ip_address, port))
+        self.sock = SocketStream(ip_address, port, timeout)
         self.connection.last_event_id += 1
         self.event_id = self.connection.last_event_id
 
@@ -761,12 +745,7 @@ class Connection(WireProtocol):
         self.last_event_id = 0
 
         self._transaction = None
-
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        if cloexec:
-            setcloexec(self.sock)
-        self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        self.sock.connect((self.hostname, self.port))
+        self.sock = SocketStream(self.hostname, self.port, self.timeout, cloexec)
 
         self._op_connect()
         try:
