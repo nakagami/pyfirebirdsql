@@ -212,6 +212,10 @@ def get_verifier(user, password, salt, bits=1024):
     return v
 
 if __name__ == '__main__':
+    """
+    A, a, B, b are long.
+    salt, M are bytes.
+    """
     # Both
     bits = 1024
     user = b'sysdba'
