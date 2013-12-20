@@ -642,6 +642,7 @@ class EventConduit(WireProtocol):
         self.event_names = {}
         for name in names:
             self.event_names[name] = 0
+        self.timeout = timeout
         (h, port, family, ip_address) = self.connection._op_connect_request()
         self.sock = SocketStream(ip_address, port, timeout)
         self.connection.last_event_id += 1

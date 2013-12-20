@@ -8,7 +8,7 @@
 ##############################################################################
 import os
 import socket
-import xdrlib, time, datetime, decimal, struct
+import xdrlib, time, datetime, decimal, struct, select
 from firebirdsql.fberrmsgs import messages
 from firebirdsql import (DisconnectByPeer,
     DatabaseError, InternalError, OperationalError,
@@ -116,6 +116,11 @@ def byte_to_int(b):
     else:
         return ord(b)
 
+def send_channel(sock, b):
+    n = 0
+    while (n < len(b)):
+        n += sock._sock.send(b[n:])
+
 class WireProtocol(object):
     buffer_length = 1024
 
@@ -177,6 +182,25 @@ class WireProtocol(object):
     op_crypt_key_callback = 97
     op_cond_accept = 98
 
+    def recv_channel(self, nbytes, word_alignment=False):
+        n = nbytes
+        if word_alignment and (n % 4):
+            n += 4 - nbytes % 4  # 4 bytes word alignment
+        r = bytes([])
+        while n:
+            if (os.name != 'java'
+                and self.timeout is not None
+                and select.select([self.sock._sock], [], [], self.timeout)[0] == []):
+                break
+            b = self.sock._sock.recv(n)
+            if not b:
+                break
+            r += b
+            n -= len(b)
+        if len(r) < nbytes:
+            raise OperationalError('Can not recv() packets', None, None)
+        return r[:nbytes]
+
     def str_to_bytes(self, s):
         "convert str to bytes"
         if (PYTHON_MAJOR_VER == 3 or
@@ -198,16 +222,16 @@ class WireProtocol(object):
         sql_code = 0
         gds_codes = set()
         message = ''
-        n = bytes_to_bint(self.sock.recv(4))
+        n = bytes_to_bint(self.recv_channel(4))
         while n != isc_arg_end:
             if n == isc_arg_gds:
-                gds_code = bytes_to_bint(self.sock.recv(4))
+                gds_code = bytes_to_bint(self.recv_channel(4))
                 if gds_code:
                     gds_codes.add(gds_code)
                     message += messages.get(gds_code, '@1')
                     num_arg = 0
             elif n == isc_arg_number:
-                num = bytes_to_bint(self.sock.recv(4))
+                num = bytes_to_bint(self.recv_channel(4))
                 if gds_code == 335544436:
                     sql_code = num
                 num_arg += 1
@@ -215,24 +239,24 @@ class WireProtocol(object):
             elif (n == isc_arg_string or
                     n == isc_arg_interpreted
                     or n == isc_arg_sql_state):
-                nbytes = bytes_to_bint(self.sock.recv(4))
-                s = str(self.sock.recv(nbytes, word_alignment=True))
+                nbytes = bytes_to_bint(self.recv_channel(4))
+                s = str(self.recv_channel(nbytes, word_alignment=True))
                 num_arg += 1
                 message = message.replace('@' + str(num_arg), s)
             elif n == isc_arg_sql_state:
-                nbytes = bytes_to_bint(self.sock.recv(4))
-                s = str(self.sock.recv(nbytes, word_alignment=True))
-            n = bytes_to_bint(self.sock.recv(4))
+                nbytes = bytes_to_bint(self.recv_channel(4))
+                s = str(self.recv_channel(nbytes, word_alignment=True))
+            n = bytes_to_bint(self.recv_channel(4))
 
         return (gds_codes, sql_code, message)
 
 
     def _parse_op_response(self):
-        b = self.sock.recv(16)
+        b = self.recv_channel(16)
         h = bytes_to_bint(b[0:4])         # Object handle
         oid = b[4:12]                       # Object ID
         buf_len = bytes_to_bint(b[12:])   # buffer length
-        buf = self.sock.recv(buf_len, word_alignment=True)
+        buf = self.recv_channel(buf_len, word_alignment=True)
 
         (gds_codes, sql_code, message) = self._parse_status_vector()
         if sql_code or message:
@@ -241,7 +265,7 @@ class WireProtocol(object):
         return (h, oid, buf)
 
     def _parse_op_event(self):
-        b = self.sock.recv(4096) # too large TODO: read step by step
+        b = self.recv_channel(4096) # too large TODO: read step by step
         # TODO: parse event name
         db_handle = bytes_to_bint(b[0:4])
         event_id = bytes_to_bint(b[-4:])
@@ -357,7 +381,7 @@ class WireProtocol(object):
         p.pack_int(2)   # Min type
         p.pack_int(3)   # Max type
         p.pack_int(2)   # Preference weight
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_create(self, page_size=4096):
@@ -381,17 +405,17 @@ class WireProtocol(object):
         p.pack_int(0)                       # Database Object ID
         p.pack_string(self.str_to_bytes(self.filename))
         p.pack_bytes(dpb)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_accept(self):
-        b = self.sock.recv(4)
+        b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
-            b = self.sock.recv(4)
+            b = self.recv_channel(4)
         if bytes_to_bint(b) == self.op_reject:
             raise OperationalError('Connection is rejected', None, None)
         assert bytes_to_bint(b) == self.op_accept
-        b = self.sock.recv(12)
+        b = self.recv_channel(12)
         up = xdrlib.Unpacker(b)
         assert up.unpack_int() == 10
         assert  up.unpack_int() == 1
@@ -415,14 +439,14 @@ class WireProtocol(object):
         p.pack_int(0)                       # Database Object ID
         p.pack_string(self.str_to_bytes(self.filename))
         p.pack_bytes(dpb)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_drop_database(self):
         p = xdrlib.Packer()
         p.pack_int(self.op_drop_database)
         p.pack_int(self.db_handle)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_service_attach(self):
@@ -437,18 +461,19 @@ class WireProtocol(object):
         p.pack_int(0)
         p.pack_string(self.str_to_bytes('service_mgr'))
         p.pack_bytes(dpb)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_service_info(self, param, item, buffer_length=512):
         p = xdrlib.Packer()
         p.pack_int(self.op_service_info)
+#        p.pack_int(self.svc_handle)
         p.pack_int(self.db_handle)
         p.pack_int(0)
         p.pack_bytes(param)
         p.pack_bytes(item)
         p.pack_int(buffer_length)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_service_start(self, param):
@@ -457,14 +482,14 @@ class WireProtocol(object):
         p.pack_int(self.db_handle)
         p.pack_int(0)
         p.pack_bytes(param)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_service_detach(self):
         p = xdrlib.Packer()
         p.pack_int(self.op_service_detach)
         p.pack_int(self.db_handle)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_info_database(self, b):
@@ -474,7 +499,7 @@ class WireProtocol(object):
         p.pack_int(0)
         p.pack_bytes(b)
         p.pack_int(self.buffer_length)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_transaction(self, tpb):
@@ -482,42 +507,42 @@ class WireProtocol(object):
         p.pack_int(self.op_transaction)
         p.pack_int(self.db_handle)
         p.pack_bytes(tpb)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_commit(self, trans_handle):
         p = xdrlib.Packer()
         p.pack_int(self.op_commit)
         p.pack_int(trans_handle)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_commit_retaining(self, trans_handle):
         p = xdrlib.Packer()
         p.pack_int(self.op_commit_retaining)
         p.pack_int(trans_handle)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_rollback(self, trans_handle):
         p = xdrlib.Packer()
         p.pack_int(self.op_rollback)
         p.pack_int(trans_handle)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_rollback_retaining(self, trans_handle):
         p = xdrlib.Packer()
         p.pack_int(self.op_rollback_retaining)
         p.pack_int(trans_handle)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_allocate_statement(self):
         p = xdrlib.Packer()
         p.pack_int(self.op_allocate_statement)
         p.pack_int(self.db_handle)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_info_transaction(self, trans_handle, b):
@@ -527,7 +552,7 @@ class WireProtocol(object):
         p.pack_int(0)
         p.pack_bytes(b)
         p.pack_int(self.buffer_length)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_free_statement(self, stmt_handle, mode):
@@ -535,7 +560,7 @@ class WireProtocol(object):
         p.pack_int(self.op_free_statement)
         p.pack_int(stmt_handle)
         p.pack_int(mode)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_prepare_statement(self, stmt_handle, trans_handle, query, option_items=bytes([])):
@@ -548,7 +573,7 @@ class WireProtocol(object):
         p.pack_string(self.str_to_bytes(query))
         p.pack_bytes(desc_items)
         p.pack_int(self.buffer_length)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_info_sql(self, stmt_handle, vars):
@@ -558,7 +583,7 @@ class WireProtocol(object):
         p.pack_int(0)
         p.pack_bytes(vars)
         p.pack_int(self.buffer_length)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_execute(self, stmt_handle, trans_handle, params):
@@ -571,13 +596,13 @@ class WireProtocol(object):
             p.pack_bytes(bytes([]))
             p.pack_int(0)
             p.pack_int(0)
-            self.sock.send(p.get_buffer())
+            send_channel(self.sock, p.get_buffer())
         else:
             (blr, values) = self.params_to_blr(trans_handle, params)
             p.pack_bytes(blr)
             p.pack_int(0)
             p.pack_int(1)
-            self.sock.send(p.get_buffer() + values)
+            send_channel(self.sock, p.get_buffer() + values)
 
     @wire_operation
     def _op_execute2(self, stmt_handle, trans_handle, params, output_blr):
@@ -590,13 +615,13 @@ class WireProtocol(object):
             p.pack_bytes(bytes([]))
             p.pack_int(0)
             p.pack_int(0)
-            self.sock.send(p.get_buffer())
+            send_channel(self.sock, p.get_buffer())
         else:
             (blr, values) = self.params_to_blr(trans_handle, params)
             p.pack_bytes(blr)
             p.pack_int(0)
             p.pack_int(1)
-            self.sock.send(p.get_buffer() + values)
+            send_channel(self.sock, p.get_buffer() + values)
 
         p = xdrlib.Packer()
         p.pack_bytes(output_blr)
@@ -614,7 +639,7 @@ class WireProtocol(object):
         p.pack_string(self.str_to_bytes(query))
         p.pack_bytes(desc_items)
         p.pack_int(self.buffer_length)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_fetch(self, stmt_handle, blr):
@@ -624,18 +649,18 @@ class WireProtocol(object):
         p.pack_bytes(blr)
         p.pack_int(0)
         p.pack_int(400)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_fetch_response(self, stmt_handle, xsqlda):
-        b = self.sock.recv(4)
+        b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
-            b = self.sock.recv(4)
+            b = self.recv_channel(4)
         if bytes_to_bint(b) == self.op_response:
             return self._parse_op_response()    # error occured
         if bytes_to_bint(b) != self.op_fetch_response:
             raise InternalError
-        b = self.sock.recv(8)
+        b = self.recv_channel(8)
         status = bytes_to_bint(b[:4])
         count = bytes_to_bint(b[4:8])
         rows = []
@@ -644,15 +669,15 @@ class WireProtocol(object):
             for i in range(len(xsqlda)):
                 x = xsqlda[i]
                 if x.io_length() < 0:
-                    b = self.sock.recv(4)
+                    b = self.recv_channel(4)
                     ln = bytes_to_bint(b)
                 else:
                     ln = x.io_length()
-                raw_value = self.sock.recv(ln, word_alignment=True)
-                if self.sock.recv(4) == bytes([0]) * 4: # Not NULL
+                raw_value = self.recv_channel(ln, word_alignment=True)
+                if self.recv_channel(4) == bytes([0]) * 4: # Not NULL
                     r[i] = x.value(raw_value)
             rows.append(r)
-            b = self.sock.recv(12)
+            b = self.recv_channel(12)
             op = bytes_to_bint(b[:4])
             status = bytes_to_bint(b[4:8])
             count = bytes_to_bint(b[8:])
@@ -663,14 +688,14 @@ class WireProtocol(object):
         p = xdrlib.Packer()
         p.pack_int(self.op_detach)
         p.pack_int(self.db_handle)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_open_blob(self, blob_id, trans_handle):
         p = xdrlib.Packer()
         p.pack_int(self.op_open_blob)
         p.pack_int(trans_handle)
-        self.sock.send(p.get_buffer() + blob_id)
+        send_channel(self.sock, p.get_buffer() + blob_id)
 
     @wire_operation
     def _op_create_blob2(self, trans_handle):
@@ -680,7 +705,7 @@ class WireProtocol(object):
         p.pack_int(trans_handle)
         p.pack_int(0)
         p.pack_int(0)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_get_segment(self, blob_handle):
@@ -689,7 +714,7 @@ class WireProtocol(object):
         p.pack_int(blob_handle)
         p.pack_int(self.buffer_length)
         p.pack_int(0)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_put_segment(self, blob_handle, b):
@@ -698,7 +723,7 @@ class WireProtocol(object):
         p.pack_int(blob_handle)
         p.pack_int(len(b))
         p.pack_int(len(b))
-        self.sock.send(p.get_buffer() + b)
+        send_channel(self.sock, p.get_buffer() + b)
 
     @wire_operation
     def _op_batch_segments(self, blob_handle, seg_data):
@@ -709,7 +734,7 @@ class WireProtocol(object):
         p.pack_int(ln + 2)
         p.pack_int(ln + 2)
         pad_length = ((4-(ln+2)) & 3)
-        self.sock.send(p.get_buffer()
+        send_channel(self.sock, p.get_buffer() 
                 + int_to_bytes(ln, 2) + seg_data + bytes([0])*pad_length)
 
     @wire_operation
@@ -717,7 +742,7 @@ class WireProtocol(object):
         p = xdrlib.Packer()
         p.pack_int(self.op_close_blob)
         p.pack_int(blob_handle)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_que_events(self, event_names, ast, args, event_id):
@@ -733,7 +758,7 @@ class WireProtocol(object):
         p.pack_int(ast)
         p.pack_int(args)
         p.pack_int(event_id)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_cancel_events(self, event_id):
@@ -741,7 +766,7 @@ class WireProtocol(object):
         p.pack_int(self.op_cancel_events)
         p.pack_int(self.db_handle)
         p.pack_int(event_id)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
     @wire_operation
     def _op_connect_request(self):
@@ -750,24 +775,24 @@ class WireProtocol(object):
         p.pack_int(1)    # async
         p.pack_int(self.db_handle)
         p.pack_int(0)
-        self.sock.send(p.get_buffer())
+        send_channel(self.sock, p.get_buffer())
 
-        b = self.sock.recv(4)
+        b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
-            b = self.sock.recv(4)
+            b = self.recv_channel(4)
         if bytes_to_bint(b) != self.op_response:
             raise InternalError
 
-        h = bytes_to_bint(self.sock.recv(4))
-        self.sock.recv(8)  # garbase
-        ln = bytes_to_bint(self.sock.recv(4))
+        h = bytes_to_bint(self.recv_channel(4))
+        self.recv_channel(8)  # garbase
+        ln = bytes_to_bint(self.recv_channel(4))
         ln += ln % 4    # padding
-        family = bytes_to_bint(self.sock.recv(2))
-        port = bytes_to_bint(self.sock.recv(2), u=True)
-        b = self.sock.recv(4)
+        family = bytes_to_bint(self.recv_channel(2))
+        port = bytes_to_bint(self.recv_channel(2), u=True)
+        b = self.recv_channel(4)
         ip_address = '.'.join([str(byte_to_int(c)) for c in b])
         ln -= 8
-        self.sock.recv(ln)
+        self.recv_channel(ln)
 
         (gds_codes, sql_code, message) = self._parse_status_vector()
         if sql_code or message:
@@ -777,20 +802,20 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_response(self):
-        b = self.sock.recv(4)
+        b = self.recv_channel(4)
         if b is None:
             return
         while bytes_to_bint(b) == self.op_dummy:
-            b = self.sock.recv(4)
+            b = self.recv_channel(4)
         if bytes_to_bint(b) != self.op_response:
             raise InternalError
         return self._parse_op_response()
 
     @wire_operation
     def _op_event(self):
-        b = self.sock.recv(4)
+        b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
-            b = self.sock.recv(4)
+            b = self.recv_channel(4)
         if bytes_to_bint(b) == self.op_response:
             return self._parse_op_response()
         if bytes_to_bint(b) == self.op_exit or bytes_to_bint(b) == self.op_exit:
@@ -801,13 +826,13 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_sql_response(self, xsqlda):
-        b = self.sock.recv(4)
+        b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
-            b = self.sock.recv(4)
+            b = self.recv_channel(4)
         if bytes_to_bint(b) != self.op_sql_response:
             raise InternalError
 
-        b = self.sock.recv(4)
+        b = self.recv_channel(4)
         count = bytes_to_bint(b[:4])
         r = []
         if count == 0:
@@ -815,12 +840,12 @@ class WireProtocol(object):
         for i in range(len(xsqlda)):
             x = xsqlda[i]
             if x.io_length() < 0:
-                b = self.sock.recv(4)
+                b = self.recv_channel(4)
                 ln = bytes_to_bint(b)
             else:
                 ln = x.io_length()
-            raw_value = self.sock.recv(ln, word_alignment=True)
-            if self.sock.recv(4) == bytes([0]) * 4: # Not NULL
+            raw_value = self.recv_channel(ln, word_alignment=True)
+            if self.recv_channel(4) == bytes([0]) * 4: # Not NULL
                 r.append(x.value(raw_value))
             else:
                 r.append(None)
@@ -830,7 +855,7 @@ class WireProtocol(object):
         event_names = {}
         event_id = 0
         while True:
-            b4 = self.sock.recv(4)
+            b4 = self.recv_channel(4)
             if b4 is None:
                 return None
             op = bytes_to_bint(b4)
@@ -839,9 +864,9 @@ class WireProtocol(object):
             elif op == self.op_exit or op == self.op_disconnect:
                 break
             elif op == self.op_event:
-                db_handle = bytes_to_int(self.sock.recv(4))
-                ln = bytes_to_bint(self.sock.recv(4))
-                b = self.sock.recv(ln, word_alignment=True)
+                db_handle = bytes_to_int(self.recv_channel(4))
+                ln = bytes_to_bint(self.recv_channel(4))
+                b = self.recv_channel(ln, word_alignment=True)
                 assert byte_to_int(b[0]) == 1
                 i = 1
                 while i < len(b):
@@ -850,9 +875,9 @@ class WireProtocol(object):
                     n = bytes_to_int(b[i+1+ln:i+1+ln+4])
                     event_names[s] = n
                     i += ln + 5
-                self.sock.recv(8)  # ignore AST info
+                self.recv_channel(8)  # ignore AST info
 
-                event_id = bytes_to_bint(self.sock.recv(4))
+                event_id = bytes_to_bint(self.recv_channel(4))
                 break
             else:
                 raise InternalError
