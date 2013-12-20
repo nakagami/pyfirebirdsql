@@ -1623,6 +1623,24 @@ def op_accept_data(sock):
     up.done()
     return msg
 
+op_cond_accept = op_accept_data
+
+def op_cont_auth(sock):
+    msg = sock.recv(bufsize)
+    msg_dump(msg)
+    up = xdrlib.Unpacker(msg)
+    bs = up.unpack_bytes()
+    print('\tdata=[', binascii.b2a_hex(bs), ']')
+    bs = up.unpack_bytes()
+    print('\tname=[', bs, ']')
+    bs = up.unpack_bytes()
+    print('\tlist=[', bs, ']')
+    bs = up.unpack_bytes()
+    print('\tkeys=[', binascii.b2a_hex(bs), ']')
+
+    up.done()
+    return msg
+
 def op_cancel(sock):
     msg = sock.recv(4)
     msg_dump(msg)
