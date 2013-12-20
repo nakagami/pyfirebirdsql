@@ -1577,14 +1577,18 @@ def op_connect(sock):
     uid = up.unpack_bytes()
     print('\tuid=[', binascii.b2a_hex(uid), ']')
     i = 0
+    specific_data = b''
     while i < len(uid):
         name = CNCT_names[ord(uid[i])]
         n = ord(uid[i+1])
         v = uid[i+2:i+2+n]
+        if name == 'CNCT_specific_data':
+            specific_data += v
         if name in ('CNCT_specific_data', 'CNCT_client_crypt'):
             v = binascii.b2a_hex(v)
         print('\t\t', name, n, v)
         i += n + 2
+    print('\t\t specific_data=', specific_data)
 
     print('\tProtocol version', up.unpack_int())
     print('\tArchitecture type', up.unpack_int())
@@ -1615,6 +1619,7 @@ def op_accept_data(sock):
             up.unpack_int(), up.unpack_int(), up.unpack_int()))
     bs = up.unpack_bytes()
     print('\tdata=[', binascii.b2a_hex(bs), ']')
+    print('\tdata=[', bs, ']')
     bs = up.unpack_bytes()
     print('\tplugin=[', bs, ']')
     print('\tAuthenticated<%d>' % (up.unpack_int(), ))
