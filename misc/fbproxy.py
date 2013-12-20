@@ -1618,8 +1618,10 @@ def op_accept_data(sock):
     print('\tProtocol<%d>Archtecture<%d>MinimumType<%d>' % (
             up.unpack_int(), up.unpack_int(), up.unpack_int()))
     bs = up.unpack_bytes()
+    ln = ord(bs[0])
     print('\tdata=[', binascii.b2a_hex(bs), ']')
-    print('\tdata=[', bs, ']')
+    print('\tdata=[%s:%s]' % (bs[1:ln+2], bs[2+ln:]))
+
     bs = up.unpack_bytes()
     print('\tplugin=[', bs, ']')
     print('\tAuthenticated<%d>' % (up.unpack_int(), ))
@@ -1635,13 +1637,13 @@ def op_cont_auth(sock):
     msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     bs = up.unpack_bytes()
-    print('\tdata=[', binascii.b2a_hex(bs), ']')
+    print('\tdata=[', bs, ']')
     bs = up.unpack_bytes()
     print('\tname=[', bs, ']')
     bs = up.unpack_bytes()
     print('\tlist=[', bs, ']')
     bs = up.unpack_bytes()
-    print('\tkeys=[', binascii.b2a_hex(bs), ']')
+    print('\tkeys=[', bs, ']')
 
     up.done()
     return msg
@@ -1659,7 +1661,7 @@ def op_crypt(sock):
     msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tplugin[%s]' % (up.unpack_string(), ))
-    print('\tkey[%s]' % (binascii.b2a_hex((up.unpack_bytes())),))
+    print('\tkey[%s]' % (up.unpack_string(),))
     up.done()
     return msg
 
