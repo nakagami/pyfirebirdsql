@@ -32,24 +32,8 @@ class SocketStream(object):
         self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         self._sock.connect((host, port))
 
-    def recv(self, nbytes, word_alignment=False):
-        n = nbytes
-        if word_alignment and (n % 4):
-            n += 4 - nbytes % 4  # 4 bytes word alignment
-        r = bytes([])
-        while n:
-            if (os.name != 'java'
-                and self.timeout is not None
-                and select.select([self._sock], [], [], self.timeout)[0] == []):
-                break
-            b = self._sock.recv(n)
-            if not b:
-                break
-            r += b
-            n -= len(b)
-        if len(r) < nbytes:
-            raise OperationalError('Can not recv() packets', None, None)
-        return r[:nbytes]
+    def recv(self, nbytes):
+        return self._sock.recv(nbytes)
 
     def send(self, b):
         n = 0
