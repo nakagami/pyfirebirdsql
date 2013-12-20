@@ -116,10 +116,6 @@ def byte_to_int(b):
     else:
         return ord(b)
 
-def send_channel(sock, b):
-    n = 0
-    while (n < len(b)):
-        n += sock._sock.send(b[n:])
 
 class WireProtocol(object):
     buffer_length = 1024
@@ -381,7 +377,7 @@ class WireProtocol(object):
         p.pack_int(2)   # Min type
         p.pack_int(3)   # Max type
         p.pack_int(2)   # Preference weight
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_create(self, page_size=4096):
@@ -405,7 +401,7 @@ class WireProtocol(object):
         p.pack_int(0)                       # Database Object ID
         p.pack_string(self.str_to_bytes(self.filename))
         p.pack_bytes(dpb)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_accept(self):
@@ -439,14 +435,14 @@ class WireProtocol(object):
         p.pack_int(0)                       # Database Object ID
         p.pack_string(self.str_to_bytes(self.filename))
         p.pack_bytes(dpb)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_drop_database(self):
         p = xdrlib.Packer()
         p.pack_int(self.op_drop_database)
         p.pack_int(self.db_handle)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_service_attach(self):
@@ -461,7 +457,7 @@ class WireProtocol(object):
         p.pack_int(0)
         p.pack_string(self.str_to_bytes('service_mgr'))
         p.pack_bytes(dpb)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_service_info(self, param, item, buffer_length=512):
@@ -473,7 +469,7 @@ class WireProtocol(object):
         p.pack_bytes(param)
         p.pack_bytes(item)
         p.pack_int(buffer_length)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_service_start(self, param):
@@ -482,14 +478,14 @@ class WireProtocol(object):
         p.pack_int(self.db_handle)
         p.pack_int(0)
         p.pack_bytes(param)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_service_detach(self):
         p = xdrlib.Packer()
         p.pack_int(self.op_service_detach)
         p.pack_int(self.db_handle)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_info_database(self, b):
@@ -499,7 +495,7 @@ class WireProtocol(object):
         p.pack_int(0)
         p.pack_bytes(b)
         p.pack_int(self.buffer_length)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_transaction(self, tpb):
@@ -507,42 +503,42 @@ class WireProtocol(object):
         p.pack_int(self.op_transaction)
         p.pack_int(self.db_handle)
         p.pack_bytes(tpb)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_commit(self, trans_handle):
         p = xdrlib.Packer()
         p.pack_int(self.op_commit)
         p.pack_int(trans_handle)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_commit_retaining(self, trans_handle):
         p = xdrlib.Packer()
         p.pack_int(self.op_commit_retaining)
         p.pack_int(trans_handle)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_rollback(self, trans_handle):
         p = xdrlib.Packer()
         p.pack_int(self.op_rollback)
         p.pack_int(trans_handle)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_rollback_retaining(self, trans_handle):
         p = xdrlib.Packer()
         p.pack_int(self.op_rollback_retaining)
         p.pack_int(trans_handle)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_allocate_statement(self):
         p = xdrlib.Packer()
         p.pack_int(self.op_allocate_statement)
         p.pack_int(self.db_handle)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_info_transaction(self, trans_handle, b):
@@ -552,7 +548,7 @@ class WireProtocol(object):
         p.pack_int(0)
         p.pack_bytes(b)
         p.pack_int(self.buffer_length)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_free_statement(self, stmt_handle, mode):
@@ -560,7 +556,7 @@ class WireProtocol(object):
         p.pack_int(self.op_free_statement)
         p.pack_int(stmt_handle)
         p.pack_int(mode)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_prepare_statement(self, stmt_handle, trans_handle, query, option_items=bytes([])):
@@ -573,7 +569,7 @@ class WireProtocol(object):
         p.pack_string(self.str_to_bytes(query))
         p.pack_bytes(desc_items)
         p.pack_int(self.buffer_length)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_info_sql(self, stmt_handle, vars):
@@ -583,7 +579,7 @@ class WireProtocol(object):
         p.pack_int(0)
         p.pack_bytes(vars)
         p.pack_int(self.buffer_length)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_execute(self, stmt_handle, trans_handle, params):
@@ -596,13 +592,13 @@ class WireProtocol(object):
             p.pack_bytes(bytes([]))
             p.pack_int(0)
             p.pack_int(0)
-            send_channel(self.sock, p.get_buffer())
+            self.sock.send(p.get_buffer())
         else:
             (blr, values) = self.params_to_blr(trans_handle, params)
             p.pack_bytes(blr)
             p.pack_int(0)
             p.pack_int(1)
-            send_channel(self.sock, p.get_buffer() + values)
+            self.sock.send(p.get_buffer() + values)
 
     @wire_operation
     def _op_execute2(self, stmt_handle, trans_handle, params, output_blr):
@@ -615,18 +611,18 @@ class WireProtocol(object):
             p.pack_bytes(bytes([]))
             p.pack_int(0)
             p.pack_int(0)
-            send_channel(self.sock, p.get_buffer())
+            self.sock.send(p.get_buffer())
         else:
             (blr, values) = self.params_to_blr(trans_handle, params)
             p.pack_bytes(blr)
             p.pack_int(0)
             p.pack_int(1)
-            send_channel(self.sock, p.get_buffer() + values)
+            self.sock.send(p.get_buffer() + values)
 
         p = xdrlib.Packer()
         p.pack_bytes(output_blr)
         p.pack_int(0)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_exec_immediate(self, trans_handle, query):
@@ -639,7 +635,7 @@ class WireProtocol(object):
         p.pack_string(self.str_to_bytes(query))
         p.pack_bytes(desc_items)
         p.pack_int(self.buffer_length)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_fetch(self, stmt_handle, blr):
@@ -649,7 +645,7 @@ class WireProtocol(object):
         p.pack_bytes(blr)
         p.pack_int(0)
         p.pack_int(400)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_fetch_response(self, stmt_handle, xsqlda):
@@ -688,14 +684,14 @@ class WireProtocol(object):
         p = xdrlib.Packer()
         p.pack_int(self.op_detach)
         p.pack_int(self.db_handle)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_open_blob(self, blob_id, trans_handle):
         p = xdrlib.Packer()
         p.pack_int(self.op_open_blob)
         p.pack_int(trans_handle)
-        send_channel(self.sock, p.get_buffer() + blob_id)
+        self.sock.send(p.get_buffer() + blob_id)
 
     @wire_operation
     def _op_create_blob2(self, trans_handle):
@@ -705,7 +701,7 @@ class WireProtocol(object):
         p.pack_int(trans_handle)
         p.pack_int(0)
         p.pack_int(0)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_get_segment(self, blob_handle):
@@ -714,7 +710,7 @@ class WireProtocol(object):
         p.pack_int(blob_handle)
         p.pack_int(self.buffer_length)
         p.pack_int(0)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_put_segment(self, blob_handle, b):
@@ -723,7 +719,7 @@ class WireProtocol(object):
         p.pack_int(blob_handle)
         p.pack_int(len(b))
         p.pack_int(len(b))
-        send_channel(self.sock, p.get_buffer() + b)
+        self.sock.send(p.get_buffer() + b)
 
     @wire_operation
     def _op_batch_segments(self, blob_handle, seg_data):
@@ -734,7 +730,7 @@ class WireProtocol(object):
         p.pack_int(ln + 2)
         p.pack_int(ln + 2)
         pad_length = ((4-(ln+2)) & 3)
-        send_channel(self.sock, p.get_buffer() 
+        self.sock.send(p.get_buffer() 
                 + int_to_bytes(ln, 2) + seg_data + bytes([0])*pad_length)
 
     @wire_operation
@@ -742,7 +738,7 @@ class WireProtocol(object):
         p = xdrlib.Packer()
         p.pack_int(self.op_close_blob)
         p.pack_int(blob_handle)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_que_events(self, event_names, ast, args, event_id):
@@ -758,7 +754,7 @@ class WireProtocol(object):
         p.pack_int(ast)
         p.pack_int(args)
         p.pack_int(event_id)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_cancel_events(self, event_id):
@@ -766,7 +762,7 @@ class WireProtocol(object):
         p.pack_int(self.op_cancel_events)
         p.pack_int(self.db_handle)
         p.pack_int(event_id)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_connect_request(self):
@@ -775,7 +771,7 @@ class WireProtocol(object):
         p.pack_int(1)    # async
         p.pack_int(self.db_handle)
         p.pack_int(0)
-        send_channel(self.sock, p.get_buffer())
+        self.sock.send(p.get_buffer())
 
         b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
