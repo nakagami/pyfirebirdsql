@@ -211,6 +211,19 @@ def get_verifier(user, password, salt, bits=1024):
     v = pow(g, makeX(salt, user, password), N)
     return v
 
+def hex_to_bytes(s):
+    """
+    convert hex string to bytes
+    """
+    ia = [int(s[i:i+2], 16) for i in range(0, len(s), 2)]   # int array
+    ia = [i for i in ia if i != 0]                            # skip 0
+    if PYTHON_MAJOR_VER == 3:
+        b = bytes(ia)
+    else:
+        b = b''.join([chr(c) for c in ia])
+
+    return b
+
 if __name__ == '__main__':
     """
     A, a, B, b are long.
@@ -220,7 +233,6 @@ if __name__ == '__main__':
     bits = 1024
     user = b'sysdba'
     password = b'masterkey'
-    g, scale, N = pflist[bits]
 
     # Client send A to Server
     A, a = client_seed(user, password)
