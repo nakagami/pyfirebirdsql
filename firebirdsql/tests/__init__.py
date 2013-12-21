@@ -5,6 +5,7 @@ from firebirdsql.tests.test_backup import *
 from firebirdsql.tests.test_services import *
 from firebirdsql.tests.test_event import *
 from firebirdsql.tests.test_arc4 import *
+from firebirdsql.tests.test_srp import *
 
 if __name__ == "__main__":
     import unittest
