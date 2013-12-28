@@ -1626,6 +1626,7 @@ def op_accept_data(sock):
     print('\tplugin=[', bs, ']')
     print('\tAuthenticated<%d>' % (up.unpack_int(), ))
     bs = up.unpack_bytes()
+    print('\tkeys=[', binascii.b2a_hex(bs), ']')
     print('\tkeys=[', bs, ']')
     up.done()
     return msg
