@@ -1583,7 +1583,7 @@ def op_connect(sock):
         n = ord(uid[i+1])
         v = uid[i+2:i+2+n]
         if name == 'CNCT_specific_data':
-            specific_data += v
+            specific_data += v[1:]
         if name in ('CNCT_specific_data', 'CNCT_client_crypt'):
             v = binascii.b2a_hex(v)
         print('\t\t', name, n, v)
