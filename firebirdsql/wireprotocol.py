@@ -352,17 +352,40 @@ class WireProtocol(object):
         blr += bytes([255, 76])    # [blr_end, blr_eoc]
         return blr, values
 
-    def uid(self):
+    def uid(self, srp=False, wire_crypt=False):
+        def pack_cnct_param(k, v):
+            return bytes([k] + [len(v)]) + v
         if sys.platform == 'win32':
             user = os.environ['USERNAME']
             hostname = os.environ['COMPUTERNAME']
         else:
             user = os.environ.get('USER', '')
             hostname = socket.gethostname()
+        if srp:
+            plugin_name = b'Srp'
+            plugin_list = b'Srp Legacy_Auth'
+            specific_data = b''
+
+        else:
+            plugin_name = b'Legacy_Auth'
+            plugin_list = b'Legacy_Auth'
+            specific_data = b''
+
+        if srp and wire_crypt:
+            client_crypt = int_to_bytes(1, 4)
+        else:
+            client_crypt = int_to_bytes(0, 4)
+
         r = b''
-        r += bytes([CNCT_user] + [len(user)] + [ord(c) for c in user])
-        r += bytes([CNCT_host] + [len(hostname)] + [ord(c) for c in hostname])
-        r += bytes([CNCT_user_verification, 0])
+        r += pack_cnct_param(CNCT_login, self.str_to_bytes(self.user))
+        r += pack_cnct_param(CNCT_plugin_name, plugin_name)
+        r += pack_cnct_param(CNCT_plugin_list, plugin_list)
+        r += pack_cnct_param(CNCT_specific_data, specific_data)
+        r += pack_cnct_param(CNCT_client_crypt, client_crypt)
+
+        r += pack_cnct_param(CNCT_user, self.str_to_bytes(user))
+        r += pack_cnct_param(CNCT_host, self.str_to_bytes(hostname))
+        r += pack_cnct_param(CNCT_user_verification, b'')
         return r
 
     @wire_operation
