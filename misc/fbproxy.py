@@ -1618,9 +1618,9 @@ def op_accept_data(sock):
     print('\tProtocol<%d>Archtecture<%d>MinimumType<%d>' % (
             up.unpack_int(), up.unpack_int(), up.unpack_int()))
     bs = up.unpack_bytes()
-    ln = ord(bs[0])
-    print('\tdata=[', binascii.b2a_hex(bs), ']')
-    print('\tdata=[%s:%s]' % (bs[1:ln+2], bs[2+ln:]))
+    if bs:
+        ln = ord(bs[0])
+        print('\tdata=[%s:%s]' % (bs[1:ln+2], bs[2+ln:]))
 
     bs = up.unpack_bytes()
     print('\tplugin=[', bs, ']')
