@@ -22,8 +22,8 @@ class TestSrp(base.TestBase):
         serverProof, serverKey = srp.server_proof(user, salt, A, B, M, b, v)
     
         # Client can verify by serverProof
-        verify_server_proof(clientKey, A, M, serverProof)
+        srp.verify_server_proof(clientKey, A, M, serverProof)
     
         # Client and Server has same key
-        self.assertEqual(clientKey == serverKey)
+        self.assertEqual(clientKey, serverKey)
     
