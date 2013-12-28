@@ -188,7 +188,7 @@ class WireProtocol(object):
                 and self.timeout is not None
                 and select.select([self.sock._sock], [], [], self.timeout)[0] == []):
                 break
-            b = self.sock._sock.recv(n)
+            b = self.sock.recv(n)
             if not b:
                 break
             r += b
