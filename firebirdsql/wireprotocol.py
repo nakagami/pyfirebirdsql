@@ -359,8 +359,11 @@ class WireProtocol(object):
         else:
             user = os.environ.get('USER', '')
             hostname = socket.gethostname()
-        return bytes([1] + [len(user)] + [ord(c) for c in user]
-                + [4] + [len(hostname)] + [ord(c) for c in hostname] + [6, 0])
+        r = b''
+        r += bytes([CNCT_user] + [len(user)] + [ord(c) for c in user])
+        r += bytes([CNCT_host] + [len(hostname)] + [ord(c) for c in hostname])
+        r += bytes([CNCT_user_verification, 0])
+        return r
 
     @wire_operation
     def _op_connect(self):
