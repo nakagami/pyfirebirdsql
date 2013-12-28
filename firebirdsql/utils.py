@@ -6,6 +6,10 @@
 #
 # Python DB-API 2.0 module for Firebird. 
 ##############################################################################
+import sys
+import binascii
+
+PYTHON_MAJOR_VER = sys.version_info[0]
 
 def hex_to_bytes(s):
     """
