@@ -348,6 +348,7 @@ class WireProtocol(object):
         more_protocol = hex_to_bytes('ffff800b00000001000000000000000500000004ffff800c00000001000000000000000500000006ffff800d00000001000000000000000500000008')
         if not srp and crypt is None:
             self.connect_version = 2
+        if self.connect_version ==2:
             arch_type = 1
             protocol_version_understood_count = 1
             min_arch_type = 2
