@@ -452,7 +452,7 @@ class Connection(WireProtocol):
                     database=None, charset=DEFAULT_CHARSET, port=3050,
                     page_size=None, is_services=False, cloexec=False,
                     timeout=None, isolation_level=None, use_unicode=None,
-                    connect_version=2):
+                    connect_version=3):
         if dsn:
             i = dsn.find(':')
             if i < 0:

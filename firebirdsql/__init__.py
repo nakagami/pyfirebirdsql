@@ -62,7 +62,7 @@ import firebirdsql.services
 def connect(dsn=None, user=None, password=None, role=None, host=None, 
             database=None, charset=DEFAULT_CHARSET, port=3050,
             timeout=None, isolation_level=None, use_unicode=None,
-            connect_version=2):
+            connect_version=3):
     return Connection(dsn=dsn, user=user, password=password,
                 role=role, host=host, 
                 database=database, charset=charset, port=port,
@@ -72,7 +72,7 @@ def connect(dsn=None, user=None, password=None, role=None, host=None,
 def create_database(dsn=None, user=None, password=None, host=None, role=None,
             database=None, charset=DEFAULT_CHARSET, port=3050, page_size=4096,
             timeout=None, isolation_level=None, use_unicode=None,
-            connect_version=2):
+            connect_version=3):
     return Connection(dsn=dsn, user=user, password=password,
                 role=role, host=host, 
                 database=database, charset=charset, port=port, 
