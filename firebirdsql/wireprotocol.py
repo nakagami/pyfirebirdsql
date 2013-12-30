@@ -322,7 +322,7 @@ class WireProtocol(object):
             else:
                 plugin_name = b'Legacy_Auth'
                 plugin_list = b'Legacy_Auth'
-                specific_data = crypt.crypt(self.password, '9z')[2:]
+                specific_data = self.str_to_bytes(crypt.crypt(self.password, '9z')[2:])
     
             if wire_crypt:
                 client_crypt = int_to_bytes(1, 4)
