@@ -9,6 +9,10 @@
 import os
 import socket
 import xdrlib, time, datetime, decimal, struct, select
+try:
+    import crypt
+except ImportError: # Not posix
+    crypt = None
 from firebirdsql.fberrmsgs import messages
 from firebirdsql import (DisconnectByPeer,
     DatabaseError, InternalError, OperationalError,
@@ -309,17 +313,16 @@ class WireProtocol(object):
         else:
             user = os.environ.get('USER', '')
             hostname = socket.gethostname()
+        specific_data = b''
         if srp:
             plugin_name = b'Srp'
             plugin_list = b'Srp Legacy_Auth'
-            specific_data = b''
-
         else:
             try:
                 import crypt
                 specific_data = crypt.crypt(self.password, '9z')[2:]
             except ImportError:
-                specific_data = b''
+                pass
             plugin_name = b'Legacy_Auth'
             plugin_list = b'Legacy_Auth'
 
@@ -329,11 +332,10 @@ class WireProtocol(object):
             client_crypt = int_to_bytes(0, 4)
 
         r = b''
-        if specific_data:
-            r += pack_cnct_param(CNCT_login, self.str_to_bytes(self.user))
-            r += pack_cnct_param(CNCT_plugin_name, plugin_name)
-            r += pack_cnct_param(CNCT_plugin_list, plugin_list)
-            r += pack_cnct_param(CNCT_specific_data, specific_data)
+        r += pack_cnct_param(CNCT_login, self.str_to_bytes(self.user))
+        r += pack_cnct_param(CNCT_plugin_name, plugin_name)
+        r += pack_cnct_param(CNCT_plugin_list, plugin_list)
+        r += pack_cnct_param(CNCT_specific_data, specific_data)
         r += pack_cnct_param(CNCT_client_crypt, client_crypt)
         r += pack_cnct_param(CNCT_user, self.str_to_bytes(user))
         r += pack_cnct_param(CNCT_host, self.str_to_bytes(hostname))
@@ -341,21 +343,27 @@ class WireProtocol(object):
         return r
 
     @wire_operation
-    def _op_connect(self):
+    def _op_connect(self, srp=False, wire_crypt=False):
+        crypt=None
+        if not srp and crypt is None:
+            protocol_version_understood_count = 1
+            more_protocol = b''
+        else:
+            protocol_version_understood_count = 4
+            more_protocol = hex_to_bytes('ffff800b00000001000000000000000500000004ffff800c00000001000000000000000500000006ffff800d00000001000000000000000500000008')
         p = xdrlib.Packer()
         p.pack_int(self.op_connect)
         p.pack_int(self.op_attach)
         p.pack_int(3)   # CONNECT_VERSION2
         p.pack_int(36)   # Arch type (Generic = 1)
         p.pack_string(self.str_to_bytes(self.filename if self.filename else ''))
-        p.pack_int(4)   # Protocol version understood count.
+        p.pack_int(protocol_version_understood_count)
         p.pack_bytes(self.uid())
         p.pack_int(10)  # PROTOCOL_VERSION10
         p.pack_int(1)   # Arch type (Generic = 1)
         p.pack_int(0)   # Min type
         p.pack_int(5)   # Max type
         p.pack_int(2)   # Preference weight
-        more_protocol = hex_to_bytes('ffff800b00000001000000000000000500000004ffff800c00000001000000000000000500000006ffff800d00000001000000000000000500000008')
         self.sock.send(p.get_buffer()+more_protocol)
 
     @wire_operation
