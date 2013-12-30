@@ -16,7 +16,7 @@ from firebirdsql.consts import *
 from firebirdsql.utils import *
 from firebirdsql.wireprotocol import WireProtocol, INFO_SQL_SELECT_DESCRIBE_VARS
 from firebirdsql.socketstream import SocketStream
-from firebirdsql.xsqlvar import XSQLVAR, calc_blr
+from firebirdsql.xsqlvar import XSQLVAR, calc_blr, parse_select_items, parse_xsqlda
 
 try:
     from collections import Mapping
@@ -76,94 +76,6 @@ NUMBER = DBAPITypeObject(int, decimal.Decimal)
 DATETIME = DBAPITypeObject(datetime.datetime, datetime.date, datetime.time)
 ROWID = DBAPITypeObject()
 
-
-def parse_select_items(buf, xsqlda, connection):
-    index = 0
-    i = 0
-    item = byte_to_int(buf[i])
-    while item != isc_info_end:
-        if item == isc_info_sql_sqlda_seq:
-            l = bytes_to_int(buf[i+1:i+3])
-            index = bytes_to_int(buf[i+3:i+3+l])
-            xsqlda[index-1] = XSQLVAR(connection.bytes_to_ustr
-                                        if connection.use_unicode
-                                        else connection.bytes_to_str)
-            xsqlda[index-1] = XSQLVAR(connection.bytes_to_str)
-            i = i + 3 + l
-        elif item == isc_info_sql_type:
-            l = bytes_to_int(buf[i+1:i+3])
-            xsqlda[index-1].sqltype = bytes_to_int(buf[i+3:i+3+l]) & ~ 1
-            i = i + 3 + l
-        elif item == isc_info_sql_sub_type:
-            l = bytes_to_int(buf[i+1:i+3])
-            xsqlda[index-1].sqlsubtype = bytes_to_int(buf[i+3:i+3+l])
-            i = i + 3 + l
-        elif item == isc_info_sql_scale:
-            l = bytes_to_int(buf[i+1:i+3])
-            xsqlda[index-1].sqlscale = bytes_to_int(buf[i+3:i+3+l])
-            i = i + 3 + l
-        elif item == isc_info_sql_length:
-            l = bytes_to_int(buf[i+1:i+3])
-            xsqlda[index-1].sqllen = bytes_to_int(buf[i+3:i+3+l])
-            i = i + 3 + l
-        elif item == isc_info_sql_null_ind:
-            l = bytes_to_int(buf[i+1:i+3])
-            xsqlda[index-1].null_ok = bytes_to_int(buf[i+3:i+3+l])
-            i = i + 3 + l
-        elif item == isc_info_sql_field:
-            l = bytes_to_int(buf[i+1:i+3])
-            xsqlda[index-1].fieldname = connection.bytes_to_str(buf[i+3:i+3+l])
-            i = i + 3 + l
-        elif item == isc_info_sql_relation:
-            l = bytes_to_int(buf[i+1:i+3])
-            xsqlda[index-1].relname = connection.bytes_to_str(buf[i+3:i+3+l])
-            i = i + 3 + l
-        elif item == isc_info_sql_owner:
-            l = bytes_to_int(buf[i+1:i+3])
-            xsqlda[index-1].ownname = connection.bytes_to_str(buf[i+3:i+3+l])
-            i = i + 3 + l
-        elif item == isc_info_sql_alias:
-            l = bytes_to_int(buf[i+1:i+3])
-            xsqlda[index-1].aliasname = connection.bytes_to_str(buf[i+3:i+3+l])
-            i = i + 3 + l
-        elif item == isc_info_truncated:
-            return index    # return next index
-        elif item == isc_info_sql_describe_end:
-            i = i + 1
-        else:
-            print('\t', item, 'Invalid item [%02x] ! i=%d' % (buf[i], i))
-            i = i + 1
-        item = byte_to_int(buf[i])
-    return -1   # no more info
-
-def parse_xsqlda(buf, connection, stmt_handle):
-    xsqlda = []
-    stmt_type = None
-    i = 0
-    while i < len(buf):
-        if buf[i:i+3] == bytes([isc_info_sql_stmt_type,0x04,0x00]):
-            stmt_type = bytes_to_int(buf[i+3:i+7])
-            i += 7
-        elif buf[i:i+2] == bytes([isc_info_sql_select, isc_info_sql_describe_vars]):
-            i += 2
-            l = bytes_to_int(buf[i:i+2])
-            i += 2
-            col_len = bytes_to_int(buf[i:i+l])
-            xsqlda = [None] * col_len
-            next_index = parse_select_items(buf[i+l:], xsqlda, connection)
-            while next_index > 0:   # more describe vars
-                connection._op_info_sql(stmt_handle,
-                            bytes([isc_info_sql_sqlda_start, 2])
-                                + int_to_bytes(next_index, 2)
-                                + INFO_SQL_SELECT_DESCRIBE_VARS)
-                (h, oid, buf) = connection._op_response()
-                assert buf[:2] == bytes([0x04,0x07])
-                l = bytes_to_int(buf[2:4])
-                assert bytes_to_int(buf[4:4+l]) == col_len
-                next_index = parse_select_items(buf[4+l:], xsqlda, connection)
-        else:
-            break
-    return stmt_type, xsqlda
 
 class PreparedStatement:
     def __init__(self, cur, sql, explain_plan=False):
