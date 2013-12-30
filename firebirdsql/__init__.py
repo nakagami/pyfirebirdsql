@@ -61,18 +61,21 @@ import firebirdsql.services
 
 def connect(dsn=None, user=None, password=None, role=None, host=None, 
             database=None, charset=DEFAULT_CHARSET, port=3050,
-            timeout=None, isolation_level=None, use_unicode=None):
+            timeout=None, isolation_level=None, use_unicode=None,
+            connect_version=3):
     return Connection(dsn=dsn, user=user, password=password,
                 role=role, host=host, 
                 database=database, charset=charset, port=port,
                 timeout=timeout, isolation_level=isolation_level,
-                use_unicode=use_unicode)
+                use_unicode=use_unicode, connect_version=connect_version)
 
 def create_database(dsn=None, user=None, password=None, host=None, role=None,
             database=None, charset=DEFAULT_CHARSET, port=3050, page_size=4096,
-            timeout=None, isolation_level=None, use_unicode=None):
+            timeout=None, isolation_level=None, use_unicode=None,
+            connect_version=3):
     return Connection(dsn=dsn, user=user, password=password,
                 role=role, host=host, 
                 database=database, charset=charset, port=port, 
                 page_size=page_size, timeout=timeout,
-                isolation_level=isolation_level, use_unicode=use_unicode)
+                isolation_level=isolation_level, use_unicode=use_unicode,
+                connect_version=connect_version)

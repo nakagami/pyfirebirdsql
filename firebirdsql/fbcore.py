@@ -451,7 +451,8 @@ class Connection(WireProtocol):
     def __init__(self, dsn=None, user=None, password=None, role=None, host=None,
                     database=None, charset=DEFAULT_CHARSET, port=3050,
                     page_size=None, is_services=False, cloexec=False,
-                    timeout=None, isolation_level=None, use_unicode=None):
+                    timeout=None, isolation_level=None, use_unicode=None,
+                    connect_version=3):
         if dsn:
             i = dsn.find(':')
             if i < 0:
@@ -484,6 +485,7 @@ class Connection(WireProtocol):
         else:
             self.isolation_level = int(isolation_level)
         self.use_unicode = use_unicode
+        self.connect_version = connect_version
         self.last_event_id = 0
 
         self._transaction = None

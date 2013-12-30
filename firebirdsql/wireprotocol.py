@@ -300,7 +300,7 @@ class WireProtocol(object):
         blr += bytes([255, 76])    # [blr_end, blr_eoc]
         return blr, values
 
-    def uid(self, srp, wire_crypt, connect_version):
+    def uid(self, srp, wire_crypt):
         def pack_cnct_param(k, v):
             if k != CNCT_specific_data:
                 return bytes([k] + [len(v)]) + v
@@ -314,7 +314,7 @@ class WireProtocol(object):
             user = os.environ.get('USER', '')
             hostname = socket.gethostname()
         r = b''
-        if connect_version == 3:
+        if self.connect_version == 3:
             if srp:
                 plugin_name = b'Srp'
                 plugin_list = b'Srp Legacy_Auth'
@@ -341,14 +341,13 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_connect(self, srp=False, wire_crypt=False):
-        connect_version = 3
         arch_type = 36
         protocol_version_understood_count = 4
         min_arch_type = 0
         max_arch_type = 5
         more_protocol = hex_to_bytes('ffff800b00000001000000000000000500000004ffff800c00000001000000000000000500000006ffff800d00000001000000000000000500000008')
         if not srp and crypt is None:
-            connect_version = 2
+            self.connect_version = 2
             arch_type = 1
             protocol_version_understood_count = 1
             min_arch_type = 2
@@ -357,11 +356,11 @@ class WireProtocol(object):
         p = xdrlib.Packer()
         p.pack_int(self.op_connect)
         p.pack_int(self.op_attach)
-        p.pack_int(connect_version)
+        p.pack_int(self.connect_version)
         p.pack_int(arch_type)
         p.pack_string(self.str_to_bytes(self.filename if self.filename else ''))
         p.pack_int(protocol_version_understood_count)
-        p.pack_bytes(self.uid(srp, wire_crypt, connect_version))
+        p.pack_bytes(self.uid(srp, wire_crypt))
         p.pack_int(10)  # PROTOCOL_VERSION10
         p.pack_int(1)   # Protocol Arch type (Generic = 1)
         p.pack_int(min_arch_type)
