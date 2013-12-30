@@ -377,8 +377,9 @@ class WireProtocol(object):
         dpb += bytes([isc_dpb_lc_ctype, len(s)]) + s
         s = self.str_to_bytes(self.user)
         dpb += bytes([isc_dpb_user_name, len(s)]) + s
-        s = self.str_to_bytes(self.password)
-        dpb += bytes([isc_dpb_password, len(s)]) + s
+        if self.connect_version == 2:
+            s = self.str_to_bytes(self.password)
+            dpb += bytes([isc_dpb_password, len(s)]) + s
         if self.role:
             s = self.str_to_bytes(self.role)
             dpb += bytes([isc_dpb_sql_role_name, len(s)]) + s
@@ -400,13 +401,28 @@ class WireProtocol(object):
             b = self.recv_channel(4)
         if bytes_to_bint(b) == self.op_reject:
             raise OperationalError('Connection is rejected', None, None)
-        assert bytes_to_bint(b) == self.op_accept
+
+        op_code = bytes_to_bint(b)
         b = self.recv_channel(12)
         up = xdrlib.Unpacker(b)
         protocol_version = up.unpack_int()
         protocol_arch = up.unpack_int()
         minimum_type =  up.unpack_int()
         up.done()
+        if op_code == self.op_accept_data:
+            ln = bytes_to_bint(self.recv_channel(4))
+            data = self.recv_channel(ln)
+            ln = bytes_to_bint(self.recv_channel(4))
+            plugin = self.recv_channel(ln)
+            is_authenticated = bytes_to_bint(self.recv_channel(4))
+            ln = bytes_to_bint(self.recv_channel(4))
+            keys = self.recv_channel(ln)
+            print('data', data)
+            print('plugin', plugin)
+            print('is_authenticated', is_authenticated)
+            print('keys=', keys)
+        else:
+            assert op_code == self.op_accept
 
     @wire_operation
     def _op_attach(self):
@@ -415,8 +431,9 @@ class WireProtocol(object):
         dpb += bytes([isc_dpb_lc_ctype, len(s)]) + s
         s = self.str_to_bytes(self.user)
         dpb += bytes([isc_dpb_user_name, len(s)]) + s
-        s = self.str_to_bytes(self.password)
-        dpb += bytes([isc_dpb_password, len(s)]) + s
+        if self.connect_version == 2:
+            s = self.str_to_bytes(self.password)
+            dpb += bytes([isc_dpb_password, len(s)]) + s
         if self.role:
             s = self.str_to_bytes(self.role)
             dpb += bytes([isc_dpb_sql_role_name, len(s)]) + s
