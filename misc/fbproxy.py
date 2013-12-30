@@ -1591,7 +1591,7 @@ def op_connect(sock):
     print('\t\t specific_data=', specific_data)
 
     print('\tProtocol version', up.unpack_int())
-    print('\tArchitecture type', up.unpack_int())
+    print('\tProtocol Architecture type', up.unpack_int())
     print('\tMinimum type',  up.unpack_int())   # Minimum type (2)
     print('\tMaxiumum type',  up.unpack_int())  # Maximum type (3 to 5)
     print('\tPreference weight', up.unpack_int())

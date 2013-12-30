@@ -300,7 +300,7 @@ class WireProtocol(object):
         blr += bytes([255, 76])    # [blr_end, blr_eoc]
         return blr, values
 
-    def uid(self, srp=False, wire_crypt=False):
+    def uid(self, srp, wire_crypt, connect_version):
         def pack_cnct_param(k, v):
             if k != CNCT_specific_data:
                 return bytes([k] + [len(v)]) + v
@@ -313,30 +313,27 @@ class WireProtocol(object):
         else:
             user = os.environ.get('USER', '')
             hostname = socket.gethostname()
-        specific_data = b''
-        if srp:
-            plugin_name = b'Srp'
-            plugin_list = b'Srp Legacy_Auth'
-        else:
-            try:
-                import crypt
-                specific_data = crypt.crypt(self.password, '9z')[2:]
-            except ImportError:
-                pass
-            plugin_name = b'Legacy_Auth'
-            plugin_list = b'Legacy_Auth'
-
-        if wire_crypt:
-            client_crypt = int_to_bytes(1, 4)
-        else:
-            client_crypt = int_to_bytes(0, 4)
-
         r = b''
-        r += pack_cnct_param(CNCT_login, self.str_to_bytes(self.user))
-        r += pack_cnct_param(CNCT_plugin_name, plugin_name)
-        r += pack_cnct_param(CNCT_plugin_list, plugin_list)
-        r += pack_cnct_param(CNCT_specific_data, specific_data)
-        r += pack_cnct_param(CNCT_client_crypt, client_crypt)
+        if connect_version == 3:
+            if srp:
+                plugin_name = b'Srp'
+                plugin_list = b'Srp Legacy_Auth'
+                specific_data = b'' # TODO
+            else:
+                plugin_name = b'Legacy_Auth'
+                plugin_list = b'Legacy_Auth'
+                specific_data = crypt.crypt(self.password, '9z')[2:]
+    
+            if wire_crypt:
+                client_crypt = int_to_bytes(1, 4)
+            else:
+                client_crypt = int_to_bytes(0, 4)
+    
+            r += pack_cnct_param(CNCT_login, self.str_to_bytes(self.user))
+            r += pack_cnct_param(CNCT_plugin_name, plugin_name)
+            r += pack_cnct_param(CNCT_plugin_list, plugin_list)
+            r += pack_cnct_param(CNCT_specific_data, specific_data)
+            r += pack_cnct_param(CNCT_client_crypt, client_crypt)
         r += pack_cnct_param(CNCT_user, self.str_to_bytes(user))
         r += pack_cnct_param(CNCT_host, self.str_to_bytes(hostname))
         r += pack_cnct_param(CNCT_user_verification, b'')
@@ -344,23 +341,25 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_connect(self, srp=False, wire_crypt=False):
-        crypt=None
+        connect_version = 3
+        arch_type = 36
+        protocol_version_understood_count = 4
+        more_protocol = hex_to_bytes('ffff800b00000001000000000000000500000004ffff800c00000001000000000000000500000006ffff800d00000001000000000000000500000008')
         if not srp and crypt is None:
+            connect_version = 2
+            arch_type = 1
             protocol_version_understood_count = 1
             more_protocol = b''
-        else:
-            protocol_version_understood_count = 4
-            more_protocol = hex_to_bytes('ffff800b00000001000000000000000500000004ffff800c00000001000000000000000500000006ffff800d00000001000000000000000500000008')
         p = xdrlib.Packer()
         p.pack_int(self.op_connect)
         p.pack_int(self.op_attach)
-        p.pack_int(3)   # CONNECT_VERSION2
-        p.pack_int(36)   # Arch type (Generic = 1)
+        p.pack_int(connect_version)
+        p.pack_int(arch_type)   # Arch type (Generic = 1)
         p.pack_string(self.str_to_bytes(self.filename if self.filename else ''))
         p.pack_int(protocol_version_understood_count)
-        p.pack_bytes(self.uid())
+        p.pack_bytes(self.uid(srp, wire_crypt, connect_version))
         p.pack_int(10)  # PROTOCOL_VERSION10
-        p.pack_int(1)   # Arch type (Generic = 1)
+        p.pack_int(1)   # Protocol Arch type (Generic = 1)
         p.pack_int(0)   # Min type
         p.pack_int(5)   # Max type
         p.pack_int(2)   # Preference weight
