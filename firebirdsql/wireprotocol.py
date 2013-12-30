@@ -402,9 +402,9 @@ class WireProtocol(object):
         assert bytes_to_bint(b) == self.op_accept
         b = self.recv_channel(12)
         up = xdrlib.Unpacker(b)
-        assert up.unpack_int() == 10
-        assert  up.unpack_int() == 1
-        assert up.unpack_int() == 3
+        protocol_version = up.unpack_int()
+        protocol_arch = up.unpack_int()
+        minimum_type =  up.unpack_int()
         up.done()
 
     @wire_operation
