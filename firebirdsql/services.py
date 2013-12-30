@@ -9,7 +9,8 @@
 import sys, os, socket
 import xdrlib, time, datetime, decimal, struct
 from firebirdsql.consts import *
-from firebirdsql.fbcore import *
+from firebirdsql.utils import *
+from firebirdsql.fbcore import Connection
 
 class Services(Connection):
 

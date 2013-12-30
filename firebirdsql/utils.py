@@ -8,8 +8,14 @@
 ##############################################################################
 import sys
 import binascii
+import struct
 
 PYTHON_MAJOR_VER = sys.version_info[0]
+
+if PYTHON_MAJOR_VER == 2:
+    def bytes(byte_array):
+        return ''.join([chr(c) for c in byte_array])
+
 
 def hex_to_bytes(s):
     """
@@ -27,3 +33,61 @@ def bytes_to_hex(b):
     s = binascii.b2a_hex(b)
 
     return s
+
+def bytes_to_bint(b, u=False):           # Read as big endian
+    if u:
+        fmtmap = {1: 'B', 2: '>H', 4: '>L', 8: '>Q'}
+    else:
+        fmtmap = {1: 'b', 2: '>h', 4: '>l', 8: '>q'}
+    fmt = fmtmap.get(len(b))
+    if fmt is None:
+        raise InternalError
+    return struct.unpack(fmt, b)[0]
+
+def bytes_to_int(b, u=False):            # Read as little endian.
+    if u:
+        fmtmap = {1: 'B', 2: '<H', 4: '<L', 8: '<Q'}
+    else:
+        fmtmap = {1: 'b', 2: '<h', 4: '<l', 8: '<q'}
+    fmt = fmtmap.get(len(b))
+    if fmt is None:
+        raise InternalError
+    return struct.unpack(fmt, b)[0]
+
+def bint_to_bytes(val, nbytes): # Convert int value to big endian bytes.
+    v = abs(val)
+    b = []
+    for n in range(nbytes):
+        b.append((v >> (8*(nbytes - n - 1)) & 0xff))
+    if val < 0:
+        for i in range(nbytes):
+            b[i] = ~b[i] + 256
+        b[-1] += 1
+        for i in range(nbytes):
+            if b[nbytes -i -1] == 256:
+                b[nbytes -i -1] = 0
+                b[nbytes -i -2] += 1
+    return bytes(b)
+
+def int_to_bytes(val, nbytes):  # Convert int value to little endian bytes.
+    v = abs(val)
+    b = []
+    for n in range(nbytes):
+        b.append((v >> (8 * n)) & 0xff)
+    if val < 0:
+        for i in range(nbytes):
+            b[i] = ~b[i] + 256
+        b[0] += 1
+        for i in range(nbytes):
+            if b[i] == 256:
+                b[i] = 0
+                b[i+1] += 1
+    return bytes(b)
+
+def byte_to_int(b):
+    "byte to int"
+    if PYTHON_MAJOR_VER == 3:
+        return b
+    else:
+        return ord(b)
+

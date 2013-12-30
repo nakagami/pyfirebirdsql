@@ -13,9 +13,8 @@ from firebirdsql.fberrmsgs import messages
 from firebirdsql import (DatabaseError, InternalError, OperationalError,
     ProgrammingError, IntegrityError, DataError, NotSupportedError,)
 from firebirdsql.consts import *
-from firebirdsql.wireprotocol import (WireProtocol,
-    bytes_to_bint, bytes_to_int, bint_to_bytes, int_to_bytes, byte_to_int,
-    INFO_SQL_SELECT_DESCRIBE_VARS,)
+from firebirdsql.utils import *
+from firebirdsql.wireprotocol import WireProtocol, INFO_SQL_SELECT_DESCRIBE_VARS
 from firebirdsql.socketstream import SocketStream
 
 try:
