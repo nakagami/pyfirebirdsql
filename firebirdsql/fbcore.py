@@ -473,7 +473,7 @@ class Connection(WireProtocol):
         if self.hostname is None:
             self.hostname = 'localhost'
         self.port = port
-        self.user = user.upper()
+        self.user = user
         self.password = password
         self.role = role
         self.charset = charset

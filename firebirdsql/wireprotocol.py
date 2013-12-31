@@ -329,7 +329,7 @@ class WireProtocol(object):
             else:
                 client_crypt = int_to_bytes(0, 4)
     
-            r += pack_cnct_param(CNCT_login, self.str_to_bytes(self.user))
+            r += pack_cnct_param(CNCT_login, self.str_to_bytes(self.user.upper()))
             r += pack_cnct_param(CNCT_plugin_name, plugin_name)
             r += pack_cnct_param(CNCT_plugin_list, plugin_list)
             r += pack_cnct_param(CNCT_specific_data, specific_data)
@@ -410,17 +410,20 @@ class WireProtocol(object):
         minimum_type =  up.unpack_int()
         up.done()
         if op_code == self.op_accept_data:
+            read_length = 0
             ln = bytes_to_bint(self.recv_channel(4))
             data = self.recv_channel(ln)
+            read_length += 4 + ln
             ln = bytes_to_bint(self.recv_channel(4))
             plugin = self.recv_channel(ln)
+            read_length += 4 + ln
             is_authenticated = bytes_to_bint(self.recv_channel(4))
+            read_length += 4
             ln = bytes_to_bint(self.recv_channel(4))
             keys = self.recv_channel(ln)
-            print('data', data)
-            print('plugin', plugin)
-            print('is_authenticated', is_authenticated)
-            print('keys=', keys)
+            read_length += 4 + ln
+            if read_length % 4:
+                self.recv_channel(4 - read_length % 4) # padding
         else:
             assert op_code == self.op_accept
 
