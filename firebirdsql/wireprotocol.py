@@ -426,6 +426,7 @@ class WireProtocol(object):
                 self.recv_channel(4 - read_length % 4) # padding
         else:
             assert op_code == self.op_accept
+            self.connect_version = 2
 
     @wire_operation
     def _op_attach(self):
