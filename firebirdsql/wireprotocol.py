@@ -384,8 +384,8 @@ class WireProtocol(object):
             s = self.str_to_bytes(self.role)
             dpb += bytes([isc_dpb_sql_role_name, len(s)]) + s
         dpb += bytes([isc_dpb_sql_dialect, 4]) + int_to_bytes(3, 4)
-        dpb += bytes([isc_dpb_force_write, 4]) + bint_to_bytes(1, 4)
-        dpb += bytes([isc_dpb_overwrite, 4]) + bint_to_bytes(1, 4)
+        dpb += bytes([isc_dpb_force_write, 4]) + int_to_bytes(1, 4)
+        dpb += bytes([isc_dpb_overwrite, 4]) + int_to_bytes(1, 4)
         dpb += bytes([isc_dpb_page_size, 4]) + int_to_bytes(page_size, 4)
         p = xdrlib.Packer()
         p.pack_int(self.op_create)
