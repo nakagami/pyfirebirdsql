@@ -324,12 +324,12 @@ class WireProtocol(object):
         r = b''
         if self.connect_version == 3:
             if use_srp:
-                self.public_key, self.private_key = srp.client_seed(
+                self.client_public_key, self.private_key = srp.client_seed(
                                     self.str_to_bytes(self.user.upper()),
                                     self.str_to_bytes(self.password))
                 plugin_name = b'Srp'
                 plugin_list = b'Srp Legacy_Auth'
-                specific_data = bytes_to_hex(srp.long2bytes(self.public_key))
+                specific_data = bytes_to_hex(srp.long2bytes(self.client_public_key))
             else:
                 plugin_name = b'Legacy_Auth'
                 plugin_list = b'Legacy_Auth'
@@ -421,12 +421,21 @@ class WireProtocol(object):
         up.done()
         if op_code == self.op_accept_data:
             read_length = 0
+
             ln = bytes_to_bint(self.recv_channel(4))
             data = self.recv_channel(ln)
             read_length += 4 + ln
+            if read_length % 4:
+                self.recv_channel(4 - read_length % 4) # padding
+                read_length += 4 - read_length % 4
+
             ln = bytes_to_bint(self.recv_channel(4))
             self.plugin_name = self.recv_channel(ln)
             read_length += 4 + ln
+            if read_length % 4:
+                self.recv_channel(4 - read_length % 4) # padding
+                read_length += 4 - read_length % 4
+
             is_authenticated = bytes_to_bint(self.recv_channel(4))
             read_length += 4
             ln = bytes_to_bint(self.recv_channel(4))
@@ -434,8 +443,20 @@ class WireProtocol(object):
             read_length += 4 + ln
             if read_length % 4:
                 self.recv_channel(4 - read_length % 4) # padding
+                read_length += 4 - read_length % 4
+
             if self.plugin_name == b'Legacy_Auth' and is_authenticated == 0:
                 raise OperationalError('Unauthorized', 0, 0)
+
+            if self.plugin_name == b'Srp':
+                ln = ord(data[0])
+                self.server_salt = data[1:ln+2]
+                self.server_public_key = srp.bytes2long(data[2+ln:])
+                self.client_proof, self.auth_key = srp.client_proof(
+                                            self.str_to_bytes(self.user),
+                                            self.str_to_bytes(self.password),
+                                            self.server_salt)
+                print('client_proof=', bytes_to_hex(self.client_proof))
         else:
             assert op_code == self.op_accept
             self.connect_version = 2
