@@ -449,11 +449,12 @@ class WireProtocol(object):
                 raise OperationalError('Unauthorized', 0, 0)
 
             if self.plugin_name == b'Srp':
-                ln = ord(data[0])
-                print('ln=', ln)
-                assert data[1] == b'\x00'
+                ln = data[0]
+                if PYTHON_MAJOR_VER == 2:
+                    ln = ord(ln)
+                assert data[1] == b'\x00' or data[1] == 0
                 self.server_salt = data[2:ln+3]
-                assert data[ln+3] == b'\x01'
+                assert data[ln+3] == b'\x01' or data[ln+3] == 1
                 if ln % 4:
                     ln += 4 - ln % 4                    # padding
                 self.server_public_key = data[4+ln:]
