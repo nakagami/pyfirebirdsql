@@ -425,7 +425,7 @@ class WireProtocol(object):
             data = self.recv_channel(ln)
             read_length += 4 + ln
             ln = bytes_to_bint(self.recv_channel(4))
-            plugin = self.recv_channel(ln)
+            self.plugin_name = self.recv_channel(ln)
             read_length += 4 + ln
             is_authenticated = bytes_to_bint(self.recv_channel(4))
             read_length += 4
@@ -434,6 +434,8 @@ class WireProtocol(object):
             read_length += 4 + ln
             if read_length % 4:
                 self.recv_channel(4 - read_length % 4) # padding
+            if self.plugin_name == b'Legacy_Auth' and is_authenticated == 0:
+                raise OperationalError('Unauthorized', 0, 0)
         else:
             assert op_code == self.op_accept
             self.connect_version = 2
