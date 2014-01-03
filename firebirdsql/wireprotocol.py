@@ -20,6 +20,7 @@ from firebirdsql import (DisconnectByPeer,
 )
 from firebirdsql.consts import *
 from firebirdsql.utils import *
+from firebirdsql import srp
 
 DEBUG = False
 
@@ -300,12 +301,19 @@ class WireProtocol(object):
         blr += bytes([255, 76])    # [blr_end, blr_eoc]
         return blr, values
 
-    def uid(self, srp, wire_crypt):
+    def uid(self, use_srp, wire_crypt):
         def pack_cnct_param(k, v):
             if k != CNCT_specific_data:
                 return bytes([k] + [len(v)]) + v
-
-            return bytes([k, len(v)+1, 0]) + v
+            # specific_data split per 254 bytes
+            b = b''
+            i = 0
+            while len(v) > 254:
+                b += bytes([k, 255, i]) + v[:254]
+                v = v[254:]
+                i += 1
+            b += bytes([k, len(v)+1, i]) + v
+            return b
 
         if sys.platform == 'win32':
             user = os.environ['USERNAME']
@@ -315,14 +323,18 @@ class WireProtocol(object):
             hostname = socket.gethostname()
         r = b''
         if self.connect_version == 3:
-            if srp:
+            if use_srp:
+                self.public_key, self.private_key = srp.client_seed(
+                                    self.str_to_bytes(self.user.upper()),
+                                    self.str_to_bytes(self.password))
                 plugin_name = b'Srp'
                 plugin_list = b'Srp Legacy_Auth'
-                specific_data = b'' # TODO
+                specific_data = bytes_to_hex(srp.long2bytes(self.public_key))
             else:
                 plugin_name = b'Legacy_Auth'
                 plugin_list = b'Legacy_Auth'
-                specific_data = self.str_to_bytes(crypt.crypt(self.password, '9z')[2:])
+                specific_data = self.str_to_bytes(
+                                        crypt.crypt(self.password, '9z')[2:])
     
             if wire_crypt:
                 client_crypt = int_to_bytes(1, 4)
@@ -340,13 +352,13 @@ class WireProtocol(object):
         return r
 
     @wire_operation
-    def _op_connect(self, srp=False, wire_crypt=False):
+    def _op_connect(self, use_srp=False, wire_crypt=False):
         arch_type = 36
         min_arch_type = 0
         max_arch_type = 5
         protocol_version_understood_count = 4
         more_protocol = hex_to_bytes('ffff800b00000001000000000000000500000004ffff800c00000001000000000000000500000006ffff800d00000001000000000000000500000008')
-        if not srp and crypt is None:
+        if not use_srp and crypt is None:
             self.connect_version = 2
         if self.connect_version ==2:
             max_arch_type = 3
@@ -359,7 +371,7 @@ class WireProtocol(object):
         p.pack_int(arch_type)
         p.pack_string(self.str_to_bytes(self.filename if self.filename else ''))
         p.pack_int(protocol_version_understood_count)
-        p.pack_bytes(self.uid(srp, wire_crypt))
+        p.pack_bytes(self.uid(use_srp, wire_crypt))
         p.pack_int(10)  # PROTOCOL_VERSION10
         p.pack_int(1)   # Protocol Arch type (Generic = 1)
         p.pack_int(min_arch_type)
