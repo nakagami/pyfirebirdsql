@@ -324,8 +324,8 @@ class WireProtocol(object):
         r = b''
         if self.connect_version == 3:
             if use_srp:
-                self.client_public_key, self.private_key = srp.client_seed(
-                                    self.str_to_bytes(self.user.upper()),
+                self.client_public_key, self.client_private_key = \
+                    srp.client_seed(self.str_to_bytes(self.user.upper()),
                                     self.str_to_bytes(self.password))
                 plugin_name = b'Srp'
                 plugin_list = b'Srp Legacy_Auth'
@@ -450,12 +450,25 @@ class WireProtocol(object):
 
             if self.plugin_name == b'Srp':
                 ln = ord(data[0])
-                self.server_salt = data[1:ln+2]
-                self.server_public_key = srp.bytes2long(data[2+ln:])
+                print('ln=', ln)
+                assert data[1] == b'\x00'
+                self.server_salt = data[2:ln+3]
+                assert data[ln+3] == b'\x01'
+                if ln % 4:
+                    ln += 4 - ln % 4                    # padding
+                self.server_public_key = data[4+ln:]
+                print('server_salt=', self.server_salt)
+                print('server_public_key=', self.server_public_key)
+                self.server_public_key = srp.bytes2long(self.server_public_key)
+
                 self.client_proof, self.auth_key = srp.client_proof(
                                             self.str_to_bytes(self.user),
                                             self.str_to_bytes(self.password),
-                                            self.server_salt)
+                                            self.server_salt,
+                                            self.server_public_key,
+                                            self.client_public_key,
+                                            self.client_private_key,
+                                            )
                 print('client_proof=', bytes_to_hex(self.client_proof))
         else:
             assert op_code == self.op_accept
