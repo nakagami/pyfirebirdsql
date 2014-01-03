@@ -444,6 +444,9 @@ class Connection(WireProtocol):
             self._transaction.rollback(retaining=retaining, savepoint=savepoint)
 
     def execute_immediate(self, query):
+        if self._transaction is None:
+            self._transaction = Transaction(self)
+            self._transaction.begin()
         self._op_exec_immediate(
             self._transaction.trans_handle, query=query)
         (h, oid, buf) = self._op_response()
