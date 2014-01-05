@@ -308,5 +308,11 @@ class Services(Connection):
         return self._getLogLines(spb)
 
 
-def connect(user=None, password=None, host=None, charset=DEFAULT_CHARSET,  port=3050):
-    return Services(user=user, password=password, host=host, charset=charset, is_services=True, port=3050)
+def connect(user=None, password=None, host=None, charset=DEFAULT_CHARSET,
+            port=3050, timeout=None, isolation_level=None, use_unicode=None,
+            connect_version=2, use_srp=False, wire_crypt=False):
+    return Services(user=user, password=password, host=host, charset=charset,
+            is_services=True, port=3050,
+            timeout=timeout, isolation_level=isolation_level,
+            use_unicode=use_unicode, connect_version=connect_version,
+            use_srp=use_srp, wire_crypt=wire_crypt)
