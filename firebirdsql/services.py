@@ -310,4 +310,4 @@ class Services(Connection):
 
 def connect(**kwargs):
     kwargs['is_services'] = True
-    return Connection(**kwargs)
+    return Services(**kwargs)
