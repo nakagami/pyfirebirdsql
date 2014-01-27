@@ -6,6 +6,7 @@
 #
 # Python DB-API 2.0 module for Firebird. 
 ##############################################################################
+import sys
 import os
 import socket
 import xdrlib, time, datetime, decimal, struct, select
