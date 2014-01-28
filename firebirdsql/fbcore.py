@@ -686,7 +686,7 @@ class Connection(WireProtocol):
             self.close()
 
     def is_disconnect(self):
-        return connection.sock is None
+        return self.sock is None
 
 class Transaction:
     def __init__(self, connection, tpb=None):
