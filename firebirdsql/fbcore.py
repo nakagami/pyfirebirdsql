@@ -418,6 +418,7 @@ class EventConduit(WireProtocol):
         self.connection._op_cancel_events(self.event_id)
         (h, oid, buf) = self.connection._op_response()
         self.sock.close()
+        self.sock = None
 
 class Connection(WireProtocol):
     def cursor(self):
@@ -683,6 +684,9 @@ class Connection(WireProtocol):
     def __del__(self):
         if self.sock:
             self.close()
+
+    def is_disconnect(self):
+        return connection.sock is None
 
 class Transaction:
     def __init__(self, connection, tpb=None):
