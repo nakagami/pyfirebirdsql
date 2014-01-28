@@ -12,6 +12,7 @@ import decimal
 
 from firebirdsql.consts import *
 from firebirdsql.utils import *
+from firebirdsql.wireprotocol import INFO_SQL_SELECT_DESCRIBE_VARS
 
 class XSQLVAR:
     type_length = {
