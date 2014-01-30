@@ -203,7 +203,7 @@ def verify_server_proof(clientKey, A, M, serverProof):
     assert sha_hmac.digest() == serverProof
 
 def get_salt():
-    saltlen = 16    # bytes
+    saltlen = 32    # bytes
     if PYTHON_MAJOR_VER == 3:
         return bytes([random.randrange(0, 256) for x in range(saltlen)])
     else:
