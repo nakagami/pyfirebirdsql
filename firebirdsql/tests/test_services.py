@@ -7,16 +7,19 @@ from firebirdsql.tests import base
 class TestServices(base.TestBase):
     def setUp(self):
         self.database=tempfile.mktemp()
-        self.connection = firebirdsql.create_database(
+        conn = firebirdsql.create_database(
                 host=self.host,
                 port=self.port,
                 database=self.database,
                 user=self.user,
                 password=self.password,
                 page_size=self.page_size)
+        conn.close()
+
+    def tearDown(self):
+        pass
 
     def test_services(self):
-        conn = self.connection
 
         svc = firebirdsql.services.connect(
             host=self.host,
@@ -36,4 +39,11 @@ class TestServices(base.TestBase):
         self.assertNotEqual(None, svc.getStatistics(self.database))
     
         svc.close()
-    
+
+    def test_reapir(self):
+        svc = firebirdsql.services.connect(
+            host=self.host,
+            user=self.user,
+            password=self.password)
+        svc.repair(self.database)
+        svc.close()

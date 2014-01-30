@@ -19,7 +19,5 @@ class TestBase(unittest.TestCase):
                 password=self.password,
                 page_size=self.page_size)
 
-
-
     def tearDown(self):
         self.connection.close()
