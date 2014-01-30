@@ -138,15 +138,6 @@ def makeX(salt, user, password):
 
 def client_seed(user, password, bits=1024):
     "A, a"
-    if DEBUG:
-        A = '712C5F8A2DB82464C4D640AE971025AA50AB64906D4F044F822E8AF8A58ADABBDBE1EFABA00BCCD4CDAA8A955BC43C3600BEAB9EBB9BD41ACC56E37F1A48F17293F24E876B53EEA6A60712D3F943769056B63202416827B400E162A8C0938D482274307585E0BC1D9DD52EFA7330B28E41B7CFCEFD9E8523FD11440EE5DE93A8'
-        ia = [int(A[i:i+2], 16) for i in range(0, len(A), 2)]   # int array
-        A = bytes(ia) if PYTHON_MAJOR_VER == 3 else b''.join([chr(c) for c in ia])
-        a = '60975527035CF2AD1989806F0407210BC81EDC04E2762A56AFD529DDDA2D4393'
-        ia = [int(a[i:i+2], 16) for i in range(0, len(a), 2)]   # int array
-        a = bytes(ia) if PYTHON_MAJOR_VER == 3 else b''.join([chr(c) for c in ia])
-        return bytes2long(A), bytes2long(a)
-
     g, scale, N = pflist[bits]
     while 1:
       a = random.randrange(0, 1 << ablen)

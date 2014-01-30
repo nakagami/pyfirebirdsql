@@ -3,7 +3,6 @@ from firebirdsql import srp
 from firebirdsql.tests.base import *
 
 class TestSrp(unittest.TestCase):
-    @unittest.skip("working")
     def test_srp(self):
         user = b'sysdba'
         password = b'masterkey'
