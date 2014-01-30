@@ -5,13 +5,13 @@ import tempfile
 import datetime
 from decimal import Decimal
 import firebirdsql
-from firebirdsql.tests import base
+from firebirdsql.tests.base import *
 from firebirdsql.consts import *
 
 
-class TestProc(base.TestBase):
+class TestProc(TestBase):
     def setUp(self):
-        base.TestBase.setUp(self)
+        TestBase.setUp(self)
         cur = self.connection.cursor()
         cur.execute('''
             CREATE TABLE foo_table (

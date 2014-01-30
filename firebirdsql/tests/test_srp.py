@@ -1,15 +1,6 @@
 import unittest
 from firebirdsql import srp
-
-
-# backwards compatibility:
-if not hasattr(unittest, "skip"):
-    def _empty(func):
-        pass
-    def _skip(message):
-        return _empty
-    unittest.skip = _skip
-
+from firebirdsql.tests.base import *
 
 class TestSrp(unittest.TestCase):
     @unittest.skip("working")

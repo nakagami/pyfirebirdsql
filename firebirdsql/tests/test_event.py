@@ -4,14 +4,14 @@ import time
 import unittest
 import tempfile
 import firebirdsql
-from firebirdsql.tests import base
+from firebirdsql.tests.base import *
 from firebirdsql.consts import PYTHON_MAJOR_VER
 if PYTHON_MAJOR_VER == 3:
     import _thread as thread
 else:
     import thread
 
-class TestEvent(base.TestBase):
+class TestEvent(TestBase):
     def setUp(self):
         self.database=tempfile.mktemp()
         conn = firebirdsql.create_database(

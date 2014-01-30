@@ -2,7 +2,7 @@ import os
 import unittest
 import tempfile
 import firebirdsql
-from firebirdsql.tests import base
+from firebirdsql.tests.base import *
 
 def test_callback(s):
     """
@@ -11,7 +11,7 @@ def test_callback(s):
     # print(s)
     return
 
-class TestBackup(base.TestBase):
+class TestBackup(TestBase):
     def test_backup(self):
         """
         backup & restore

@@ -5,26 +5,13 @@ import tempfile
 import datetime
 from decimal import Decimal
 import firebirdsql
-from firebirdsql.tests import base
+from firebirdsql.tests.base import *
 from firebirdsql.consts import *
 
-def b(s):
-    if sys.version_info[0] == 3:
-        return bytes(s, 'utf8')
-    return s
 
-# backwards compatibility:
-if not hasattr(unittest, "skip"):
-    def _empty(func):
-        pass
-    def _skip(message):
-        return _empty
-    unittest.skip = _skip
-
-
-class TestBasic(base.TestBase):
+class TestBasic(TestBase):
     def setUp(self):
-        base.TestBase.setUp(self)
+        TestBase.setUp(self)
         cur = self.connection.cursor()
         cur.execute('''
             CREATE TABLE foo (

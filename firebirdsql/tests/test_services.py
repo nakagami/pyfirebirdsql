@@ -2,9 +2,9 @@ import sys
 import unittest
 import tempfile
 import firebirdsql
-from firebirdsql.tests import base
+from firebirdsql.tests.base import *
 
-class TestServices(base.TestBase):
+class TestServices(TestBase):
     def setUp(self):
         self.database=tempfile.mktemp()
         conn = firebirdsql.create_database(

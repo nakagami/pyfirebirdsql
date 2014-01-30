@@ -1,5 +1,6 @@
 import unittest
 from firebirdsql import utils
+from firebirdsql.tests.base import *
 
 class TestUtils(unittest.TestCase):
     def test_utils(self):

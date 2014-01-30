@@ -1,9 +1,9 @@
 import unittest
 import tempfile
 import firebirdsql
-from firebirdsql.tests import base
+from firebirdsql.tests.base import *
 
-class TestIssues(base.TestBase):
+class TestIssues(TestBase):
     def test_issue_39(self):
         """
         .description attribute should be None when .execute has not run yet

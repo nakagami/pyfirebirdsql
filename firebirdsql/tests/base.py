@@ -2,6 +2,14 @@ import firebirdsql
 import unittest
 import tempfile
 
+# backwards compatibility:
+if not hasattr(unittest, "skip"):
+    def _empty(func):
+        pass
+    def _skip(message):
+        return _empty
+    unittest.skip = _skip
+
 class TestBase(unittest.TestCase):
     host='localhost'
     port=3050
