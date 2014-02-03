@@ -22,6 +22,7 @@ from firebirdsql import (DisconnectByPeer,
 from firebirdsql.consts import *
 from firebirdsql.utils import *
 from firebirdsql import srp
+from firebirdsql.arc4 import Arc4
 
 DEBUG = False
 
@@ -454,8 +455,8 @@ class WireProtocol(object):
                 ln = bytes_to_int(data[:2])
                 self.server_salt = data[2:ln+2]
                 self.server_public_key = data[4+ln:]
-                print('server_salt=', self.server_salt)
-                print('server_public_key=', self.server_public_key)
+#                print('server_salt=', self.server_salt)
+#                print('server_public_key=', self.server_public_key)
                 self.server_public_key = srp.bytes2long(self.server_public_key)
 
                 self.client_proof, self.auth_key = srp.client_proof(
@@ -465,7 +466,7 @@ class WireProtocol(object):
                                             self.server_public_key,
                                             self.client_public_key,
                                             self.client_private_key)
-                print('client_proof=', bytes_to_hex(self.client_proof))
+#                print('client_proof=', bytes_to_hex(self.client_proof))
                 # send op_cont_auth
                 p = xdrlib.Packer()
                 p.pack_int(self.op_cont_auth)
@@ -482,6 +483,7 @@ class WireProtocol(object):
                 p.pack_string('Arc4')
                 p.pack_string('Symmetric')
                 self.sock.send(p.get_buffer() + b'\00\00\00')   # 3bytes padding
+                p.sock.set_translator(Arc4(self.auth_key) Arc4(self.auth_key))
                 (h, oid, buf) = self._op_response()
         else:
             assert op_code == self.op_accept

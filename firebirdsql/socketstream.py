@@ -31,14 +31,25 @@ class SocketStream(object):
             setcloexec(self._sock)
         self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         self._sock.connect((host, port))
+        self.read_translator = None
+        self.write_translator = None
 
     def recv(self, nbytes):
-        return self._sock.recv(nbytes)
+        b = self._sock.recv(nbytes)
+        if self.read_translator:
+            b = self.read_translator.translate(b)
+        return b
 
     def send(self, b):
+        if self.write_translator:
+            b = self.write_translator.translate(b)
         n = 0
         while (n < len(b)):
             n += self._sock.send(b[n:])
 
     def close(self):
         self._sock.close()
+
+    def set_translator(read_translator, write_translator):
+        self.read_translator = read_translator
+        self.write_translator = write_translator
