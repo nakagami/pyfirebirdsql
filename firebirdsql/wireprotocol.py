@@ -454,7 +454,6 @@ class WireProtocol(object):
                 ln = bytes_to_int(data[:2])
                 self.server_salt = data[2:ln+2]
                 self.server_public_key = data[4+ln:]
-                print len(self.server_public_key)
                 print('server_salt=', self.server_salt)
                 print('server_public_key=', self.server_public_key)
                 self.server_public_key = srp.bytes2long(self.server_public_key)
@@ -467,6 +466,8 @@ class WireProtocol(object):
                                             self.client_public_key,
                                             self.client_private_key)
                 print('client_proof=', bytes_to_hex(self.client_proof))
+                # send op_cont_auth
+                # recv op_crypt
         else:
             assert op_code == self.op_accept
             self.connect_version = 2
