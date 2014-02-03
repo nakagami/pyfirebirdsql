@@ -1619,15 +1619,23 @@ def op_accept_data(sock):
             up.unpack_int(), up.unpack_int(), up.unpack_int()))
     bs = up.unpack_bytes()
     if bs:
-        ln = ord(bs[0])
-        print('\tdata=[%s:%s]' % (bs[1:ln+2], bs[2+ln:]))
+        print('\traw_data=[', binascii.b2a_hex(bs), ']')
+        ln = _bytes_to_int(bs, 0, 2)
+        ln2 = _bytes_to_int(bs, ln+2, 2)
+        print('\tsalt len=%d srvPub len=%d' % (ln, ln2))
+        print('\tdata=[%s:%s]' % (bs[2:ln+2], bs[2+ln+2:]))
 
     bs = up.unpack_bytes()
     print('\tplugin=[', bs, ']')
     print('\tAuthenticated<%d>' % (up.unpack_int(), ))
     bs = up.unpack_bytes()
     print('\tkeys=[', binascii.b2a_hex(bs), ']')
-    print('\tkeys=[', bs, ']')
+    assert ord(bs[0]) == 0
+    ln = ord(bs[1])
+    print('\tkeys=[', bs[2:2+ln], ']')
+    assert ord(bs[2+ln]) == 1
+    ln2 = ord(bs[2+ln+1])
+    print('\tkeys=[', bs[3+ln:3+ln+ln2], ']')
     up.done()
     return msg
 
