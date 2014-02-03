@@ -329,7 +329,7 @@ class WireProtocol(object):
                     srp.client_seed(self.str_to_bytes(self.user.upper()),
                                     self.str_to_bytes(self.password))
                 plugin_name = b'Srp'
-                plugin_list = b'Srp Legacy_Auth'
+                plugin_list = b'Srp, Legacy_Auth'
                 specific_data = bytes_to_hex(srp.long2bytes(self.client_public_key))
             else:
                 plugin_name = b'Legacy_Auth'
