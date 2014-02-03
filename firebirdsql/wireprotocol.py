@@ -467,7 +467,22 @@ class WireProtocol(object):
                                             self.client_private_key)
                 print('client_proof=', bytes_to_hex(self.client_proof))
                 # send op_cont_auth
-                # recv op_crypt
+                p = xdrlib.Packer()
+                p.pack_int(self.op_cont_auth)
+                p.pack_string(bytes_to_hex(self.client_proof))
+                p.pack_bytes(self.plugin_name)
+                p.pack_bytes(self.plugin_list)
+                p.pack_bytes(b'')
+                self.sock.send(p.get_buffer())
+                (h, oid, buf) = self._op_response()
+
+                # op_crypt: plugin[Arc4] key[Symmetric]
+                p = xdrlib.Packer()
+                p.pack_int(self.op_crypt)
+                p.pack_string('Arc4')
+                p.pack_string('Symmetric')
+                self.sock.send(p.get_buffer() + b'\00\00\00')   # 3bytes padding
+                (h, oid, buf) = self._op_response()
         else:
             assert op_code == self.op_accept
             self.connect_version = 2
