@@ -328,12 +328,12 @@ class WireProtocol(object):
                 self.client_public_key, self.client_private_key = \
                     srp.client_seed(self.str_to_bytes(self.user.upper()),
                                     self.str_to_bytes(self.password))
-                plugin_name = b'Srp'
-                plugin_list = b'Srp, Legacy_Auth'
+                self.plugin_name = b'Srp'
+                self.plugin_list = b'Srp, Legacy_Auth'
                 specific_data = bytes_to_hex(srp.long2bytes(self.client_public_key))
             else:
-                plugin_name = b'Legacy_Auth'
-                plugin_list = b'Legacy_Auth'
+                self.plugin_name = b'Legacy_Auth'
+                self.plugin_list = b'Legacy_Auth'
                 specific_data = self.str_to_bytes(
                                         crypt.crypt(self.password, '9z')[2:])
     
@@ -343,8 +343,8 @@ class WireProtocol(object):
                 client_crypt = int_to_bytes(0, 4)
     
             r += pack_cnct_param(CNCT_login, self.str_to_bytes(self.user.upper()))
-            r += pack_cnct_param(CNCT_plugin_name, plugin_name)
-            r += pack_cnct_param(CNCT_plugin_list, plugin_list)
+            r += pack_cnct_param(CNCT_plugin_name, self.plugin_name)
+            r += pack_cnct_param(CNCT_plugin_list, self.plugin_list)
             r += pack_cnct_param(CNCT_specific_data, specific_data)
             r += pack_cnct_param(CNCT_client_crypt, client_crypt)
         r += pack_cnct_param(CNCT_user, self.str_to_bytes(user))
@@ -420,7 +420,8 @@ class WireProtocol(object):
         protocol_arch = up.unpack_int()
         minimum_type =  up.unpack_int()
         up.done()
-        if op_code == self.op_accept_data:
+
+        if op_code == self.op_cond_accept or op_code == self.op_accept_data:
             read_length = 0
 
             ln = bytes_to_bint(self.recv_channel(4))
