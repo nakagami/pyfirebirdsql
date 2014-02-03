@@ -451,15 +451,10 @@ class WireProtocol(object):
                 raise OperationalError('Unauthorized', 0, 0)
 
             if self.plugin_name == b'Srp':
-                ln = data[0]
-                if PYTHON_MAJOR_VER == 2:
-                    ln = ord(ln)
-                assert data[1] == b'\x00' or data[1] == 0
-                self.server_salt = data[2:ln+3]
-                assert data[ln+3] == b'\x01' or data[ln+3] == 1
-                if ln % 4:
-                    ln += 4 - ln % 4                    # padding
+                ln = bytes_to_int(data[:2])
+                self.server_salt = data[2:ln+2]
                 self.server_public_key = data[4+ln:]
+                print len(self.server_public_key)
                 print('server_salt=', self.server_salt)
                 print('server_public_key=', self.server_public_key)
                 self.server_public_key = srp.bytes2long(self.server_public_key)
@@ -470,8 +465,7 @@ class WireProtocol(object):
                                             self.server_salt,
                                             self.server_public_key,
                                             self.client_public_key,
-                                            self.client_private_key,
-                                            )
+                                            self.client_private_key)
                 print('client_proof=', bytes_to_hex(self.client_proof))
         else:
             assert op_code == self.op_accept
