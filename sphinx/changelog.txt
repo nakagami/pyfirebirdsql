@@ -71,3 +71,10 @@ Version 0.8.2
 =============
 
    - support 32k bytes over execute() parameter.
+
+Version 0.8.3
+=============
+
+   - refactoring
+   - add repair() method in Services
+   - add is_disconnect() method in Connection
