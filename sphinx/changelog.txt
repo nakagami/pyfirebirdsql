@@ -78,3 +78,8 @@ Version 0.8.3
    - refactoring
    - add repair() method in Services
    - add is_disconnect() method in Connection
+
+Version 0.8.4
+=============
+
+   - fix release bug (add insufficient files)
