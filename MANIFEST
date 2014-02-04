@@ -1,7 +1,12 @@
 setup.py
 firebirdsql/__init__.py
+firebirdsql/arc4.py
 firebirdsql/consts.py
 firebirdsql/fbcore.py
-firebirdsql/wireprotocol.py
 firebirdsql/fberrmsgs.py
 firebirdsql/services.py
+firebirdsql/socketstream.py
+firebirdsql/srp.py
+firebirdsql/utils.py
+firebirdsql/wireprotocol.py
+firebirdsql/xsqlvar.py
