@@ -84,7 +84,6 @@ class Services(Connection):
                 ln = bytes_to_int(buf[1:3])
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
-    
     def repair(self, database_name,
                      readOnlyValidation=True,
                      ignoreChecksums=False,
