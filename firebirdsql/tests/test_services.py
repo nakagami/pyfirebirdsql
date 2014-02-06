@@ -41,10 +41,28 @@ class TestServices(TestBase):
         svc.close()
 
     @unittest.skip("Fail by OperationalError in Ubuntu12.04")
-    def test_reapir(self):
+    def test_repair(self):
         svc = firebirdsql.services.connect(
             host=self.host,
             user=self.user,
             password=self.password)
         svc.repair(self.database)
         svc.close()
+    
+    def shutdown(self):
+        svc = firebirdsql.services.connect(
+            host=self.host,
+            user=self.user,
+            password=self.password)
+        svc.shutdown(self.database, 0)
+        svc.close()
+
+    def bringOnline(self):
+        svc = firebirdsql.services.connect(
+            host=self.host,
+            user=self.user,
+            password=self.password)
+        svc.bringOnline(self.database)
+        svc.close()
+
+    
