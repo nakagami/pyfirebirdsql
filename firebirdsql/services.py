@@ -33,6 +33,56 @@ class Services(Connection):
             if callback:
                 ln = bytes_to_int(buf[1:3])
                 callback(self.bytes_to_str(buf[3:3+ln]))
+    
+    def bringOnline(self, database_name, callback=None):
+        spb = bytes([isc_action_svc_properties])
+        s = self.str_to_bytes(database_name)
+        spb += bytes([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
+
+        optionMask = 0
+        optionMask |= 0x0200
+
+        spb += bytes([isc_spb_options]) + int_to_bytes(optionMask, 4)
+        self._op_service_start(spb)
+        (h, oid, buf) = self._op_response()
+        self.svc_handle = h
+        while True:
+            self._op_service_info(bytes([0x02]), bytes([0x3e]))
+            (h, oid, buf) = self._op_response()
+            if buf[:4] == bytes([0x3e,0x00,0x00,0x01]):
+                break
+            if callback:
+                ln = bytes_to_int(buf[1:3])
+                callback(self.bytes_to_str(buf[3:3+ln]))
+
+    def shutdown(self, database_name,
+                       timeout=0,
+                       shutForce=True,
+                       shutDenyNewAttachments=False,
+                       shutDenyNewTransactions=False,
+                       callback=None):
+        spb = bytes([isc_action_svc_properties])
+        s = self.str_to_bytes(database_name)
+        spb += bytes([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
+
+        if shutForce:
+            spb += bytes([isc_spb_prp_shutdown_db]) + int_to_bytes(timeout, 4)
+        if shutDenyNewAttachments:
+            spb += bytes([isc_spb_prp_deny_new_attachments]) + int_to_bytes(timeout, 4)
+        if shutDenyNewTransactions:
+            spb += bytes([isc_spb_prp_deny_new_transactions]) + int_to_bytes(timeout, 4)
+
+        self._op_service_start(spb)
+        (h, oid, buf) = self._op_response()
+        self.svc_handle = h
+        while True:
+            self._op_service_info(bytes([0x02]), bytes([0x3e]))
+            (h, oid, buf) = self._op_response()
+            if buf[:4] == bytes([0x3e,0x00,0x00,0x01]):
+                break
+            if callback:
+                ln = bytes_to_int(buf[1:3])
+                callback(self.bytes_to_str(buf[3:3+ln]))
 
     def repair(self, database_name,
                      readOnlyValidation=True,
