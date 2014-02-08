@@ -166,6 +166,11 @@ def server_seed(v):
 def client_session(user, password, salt, A, B, a):
     """
     Clicent session secret
+        Both:  u = H(A, B)
+
+        User:  x = H(s, p)                 (user enters password)
+        User:  S = (B - kg^x) ^ (a + ux)   (computes session key)
+        User:  K = H(S)
     """
     N, g, scale, k = get_prime()
     u = get_scramble(A, B, scale)
@@ -176,29 +181,24 @@ def client_session(user, password, salt, A, B, a):
     ux = (u * x) % N
     aux = (a + ux) % N
     session_secret = pow(diff, aux, N)      # (B - kg^x) ^ (a + ux)
-    K = sha1(long2bytes(session_secret))
+    K = sha1(session_secret)
 
     return K
 
 def client_proof(user, password, salt, A, B, a):
-    "M, K"
+    """
+    M = H(H(N) xor H(g), H(I), s, A, B, K)
+    """
     N, g, scale, k = get_prime()
-
-    # User -> Host:  M = H(H(N) xor H(g), H(I), s, A, B, K)
     u = get_scramble(A, B, scale)
     x = getUserHash(salt, user, password)
-    v = pow(g, x, N)
-
-    S = pow((B - k * v) % N, a + u * x, N)
-    K = sha1(S)
-    sha_hmac = hmac.new(K)
-    sha_hmac.update(sha1(N))
-    sha_hmac.update(sha1(g))
-    sha_hmac.update(sha1(user))
-    sha_hmac.update(salt)
-    sha_hmac.update(long2bytes(A))
-    sha_hmac.update(long2bytes(B))
-    return sha_hmac.digest(), K
+    K = client_session(user, password, salt, A, B, a)
+    n1 = bytes2long(sha1(N))
+    n2 = bytes2long(sha1(g))
+    n1 = pow(n1, n2, N)
+    n2 = hash(user)
+    M = sha1(n1, n2, salt, A, B, K)
+    return M, K
 
 def server_proof(user, salt, A, B, clientProof, b, v):
     N, g, scale, k = get_prime()
