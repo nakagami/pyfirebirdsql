@@ -135,7 +135,7 @@ def makeU(x, y, scale):
 def makeX(salt, user, password):
     return bytes2long(sha1(salt, sha1(user, b':', password)))
 
-def client_seed(user, password, bits=1024):
+def client_seed(user, password):
     "A, a"
     N, g, scale = get_prime()
 
@@ -146,7 +146,7 @@ def client_seed(user, password, bits=1024):
         break
     return A, a
 
-def server_seed(v, bits=1024):
+def server_seed(v):
     "B, b"
     N, g, scale = get_prime()
     k = makeU(N, g, scale)
@@ -157,7 +157,7 @@ def server_seed(v, bits=1024):
         break
     return B, b
 
-def client_proof(user, password, salt, A, B, a, bits=1024):
+def client_proof(user, password, salt, A, B, a):
     "M, K"
     N, g, scale = get_prime()
     k = makeU(N, g, scale)
@@ -177,7 +177,7 @@ def client_proof(user, password, salt, A, B, a, bits=1024):
     sha_hmac.update(long2bytes(B))
     return sha_hmac.digest(), K
 
-def server_proof(user, salt, A, B, clientProof, b, v, bits=1024):
+def server_proof(user, salt, A, B, clientProof, b, v):
     N, g, scale = get_prime()
     u = makeU(A, B, scale)
     S = pow((A * pow(v, u, N)) % N, b, N)
@@ -209,7 +209,7 @@ def get_salt():
     else:
         return b''.join([chr(random.randrange(0, 256)) for x in range(saltlen)])
 
-def get_verifier(user, password, salt, bits=1024):
+def get_verifier(user, password, salt):
     N, g, scale = get_prime()
     v = pow(g, makeX(salt, user, password), N)
     return v
@@ -220,7 +220,6 @@ if __name__ == '__main__':
     salt, M are bytes.
     """
     # Both
-    bits = 1024
     user = b'sysdba'
     password = b'masterkey'
 
@@ -233,7 +232,7 @@ if __name__ == '__main__':
     B, b = server_seed(v)
 
     # Client send M to Server
-    M, clientKey = client_proof(user, password, salt, A, B, a, bits=bits)
+    M, clientKey = client_proof(user, password, salt, A, B, a)
 
     # Server send serverProof to Client
     serverProof, serverKey = server_proof(user, salt, A, B, M, b, v)
