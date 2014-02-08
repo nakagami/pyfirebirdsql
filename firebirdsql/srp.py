@@ -84,13 +84,18 @@ SRP_SALT_SIZE = 32
 def get_prime():
     N = 0xE67D2E994B2F900C3F41F08F5BB2627ED0D49EE1FE767A52EFCD565CD6E768812C3E1E9CE8F0A8BEA6CB13CD29DDEBF7A96D4A93B55D488DF099A15C89DCB0640738EB2CBDD9A8F7BAB561AB1B0DC1C6CDABF303264A08D1BCA932D1F1EE428B619D970F342ABA9A65793B8B2F041AE5364350C16F735F56ECBCA87BD57B29E7
     g = 2
+
     #n = N
     #scale = 0
     #while n > 0:
     #  scale += 1
     #  n >>= 8
     scale = 128
-    return N, g, scale
+
+    #k = bytes2long(sha1(pad(N, scale), pad(g, scale)))
+    k = 1277432915985975349439481660349303019122249719989
+
+    return N, g, scale, k
 
 
 def bytes2long(s):
@@ -128,7 +133,7 @@ def pad(n, scale):
     else:
         return b''.join([chr(c) for c in s])
 
-def makeU(x, y, scale):
+def get_scramble(x, y, scale):
     return bytes2long(sha1(pad(x, scale), pad(y, scale)))
 
 def getUserHash(salt, user, password):
@@ -141,7 +146,7 @@ def client_seed(user, password):
         A: Client public key
         a: Client private key
     """
-    N, g, scale = get_prime()
+    N, g, scale, k  = get_prime()
     a = random.randrange(0, 1 << SRP_KEY_SIZE)
     A = pow(g, a, N)
     return A, a
@@ -151,21 +156,19 @@ def server_seed(v):
         B: Server public key
         b: Server private key
     """
-    N, g, scale = get_prime()
+    N, g, scale, k = get_prime()
     b = random.randrange(0, 1 << SRP_KEY_SIZE)
     gb = pow(g, b, N)
-    k = makeU(N, g, scale)
     kv = (k * v) % N
-    B = (kv + gv) % N
+    B = (kv + gb) % N
     return B, b
 
 def client_proof(user, password, salt, A, B, a):
     "M, K"
-    N, g, scale = get_prime()
-    k = makeU(N, g, scale)
+    N, g, scale, k = get_prime()
 
     # User -> Host:  M = H(H(N) xor H(g), H(I), s, A, B, K)
-    u = makeU(A, B, scale)
+    u = get_scramble(A, B, scale)
     x = getUserHash(salt, user, password)
     v = pow(g, x, N)
 
@@ -181,8 +184,8 @@ def client_proof(user, password, salt, A, B, a):
     return sha_hmac.digest(), K
 
 def server_proof(user, salt, A, B, clientProof, b, v):
-    N, g, scale = get_prime()
-    u = makeU(A, B, scale)
+    N, g, scale, k = get_prime()
+    u = get_scramble(A, B, scale)
     S = pow((A * pow(v, u, N)) % N, b, N)
     K = sha1(S)
     sha_hmac = hmac.new(K)
@@ -212,7 +215,7 @@ def get_salt():
         return b''.join([chr(random.randrange(0, 256)) for x in range(SRP_SALT_SIZE)])
 
 def get_verifier(user, password, salt):
-    N, g, scale = get_prime()
+    N, g, scale, k = get_prime()
     x = getUserHash(salt, user, password)
     return pow(g, x, N)
 
