@@ -72,15 +72,14 @@ import hmac
 import random
 import binascii
 
-DEBUG=True
-
 PYTHON_MAJOR_VER = sys.version_info[0]
 
 if PYTHON_MAJOR_VER == 3:
     def ord(c):
         return c
 
-ablen = 256     # length of a, b (bits)
+SRP_KEY_SIZE = 128
+SRP_SALT_SIZE = 32
 
 def get_prime():
     N = 0xE67D2E994B2F900C3F41F08F5BB2627ED0D49EE1FE767A52EFCD565CD6E768812C3E1E9CE8F0A8BEA6CB13CD29DDEBF7A96D4A93B55D488DF099A15C89DCB0640738EB2CBDD9A8F7BAB561AB1B0DC1C6CDABF303264A08D1BCA932D1F1EE428B619D970F342ABA9A65793B8B2F041AE5364350C16F735F56ECBCA87BD57B29E7
@@ -132,29 +131,32 @@ def pad(n, scale):
 def makeU(x, y, scale):
     return bytes2long(sha1(pad(x, scale), pad(y, scale)))
 
-def makeX(salt, user, password):
+def getUserHash(salt, user, password):
+    assert isinstance(user, bytes)
+    assert isinstance(password, bytes)
     return bytes2long(sha1(salt, sha1(user, b':', password)))
 
 def client_seed(user, password):
-    "A, a"
+    """
+        A: Client public key
+        a: Client private key
+    """
     N, g, scale = get_prime()
-
-    while 1:
-      a = random.randrange(0, 1 << ablen)
-      A = pow(g, a, N)
-      if A != 0:
-        break
+    a = random.randrange(0, 1 << SRP_KEY_SIZE)
+    A = pow(g, a, N)
     return A, a
 
 def server_seed(v):
-    "B, b"
+    """
+        B: Server public key
+        b: Server private key
+    """
     N, g, scale = get_prime()
+    b = random.randrange(0, 1 << SRP_KEY_SIZE)
+    gb = pow(g, b, N)
     k = makeU(N, g, scale)
-    while 1:
-      b = random.randrange(0, 1 << ablen)
-      B = (pow(g, b, N) + k * v) % N
-      if B != 0:
-        break
+    kv = (k * v) % N
+    B = (kv + gv) % N
     return B, b
 
 def client_proof(user, password, salt, A, B, a):
@@ -164,8 +166,9 @@ def client_proof(user, password, salt, A, B, a):
 
     # User -> Host:  M = H(H(N) xor H(g), H(I), s, A, B, K)
     u = makeU(A, B, scale)
-    x = makeX(salt, user, password)
+    x = getUserHash(salt, user, password)
     v = pow(g, x, N)
+
     S = pow((B - k * v) % N, a + u * x, N)
     K = sha1(S)
     sha_hmac = hmac.new(K)
@@ -203,16 +206,15 @@ def verify_server_proof(clientKey, A, M, serverProof):
     assert sha_hmac.digest() == serverProof
 
 def get_salt():
-    saltlen = 32    # bytes
     if PYTHON_MAJOR_VER == 3:
-        return bytes([random.randrange(0, 256) for x in range(saltlen)])
+        return bytes([random.randrange(0, 256) for x in range(SRP_SALT_SIZE)])
     else:
-        return b''.join([chr(random.randrange(0, 256)) for x in range(saltlen)])
+        return b''.join([chr(random.randrange(0, 256)) for x in range(SRP_SALT_SIZE)])
 
 def get_verifier(user, password, salt):
     N, g, scale = get_prime()
-    v = pow(g, makeX(salt, user, password), N)
-    return v
+    x = getUserHash(salt, user, password)
+    return pow(g, x, N)
 
 if __name__ == '__main__':
     """
