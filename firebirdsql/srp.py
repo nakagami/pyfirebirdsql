@@ -163,6 +163,23 @@ def server_seed(v):
     B = (kv + gb) % N
     return B, b
 
+def client_session(user, password, salt, A, B, a):
+    """
+    Clicent session secret
+    """
+    N, g, scale, k = get_prime()
+    u = get_scramble(A, B, scale)
+    x = getUserHash(salt, user, password)   # x
+    gx = pow(g, x, N)                       # g^x
+    kgx = (k * gx) % N                      # kg^x
+    diff = (B - kgx) % N                    # B - kg^x
+    ux = (u * x) % N
+    aux = (a + ux) % N
+    session_secret = pow(diff, aux, N)      # (B - kg^x) ^ (a + ux)
+    K = sha1(long2bytes(session_secret))
+
+    return K
+
 def client_proof(user, password, salt, A, B, a):
     "M, K"
     N, g, scale, k = get_prime()
