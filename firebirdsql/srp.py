@@ -65,7 +65,7 @@ The two parties also employ the following safeguards:
 
 See http://srp.stanford.edu/ for more information.
 '''
-
+from __future__ import print_function
 import sys
 import hashlib
 import hmac
@@ -73,7 +73,7 @@ import random
 import binascii
 
 DEBUG=True
-
+DEBUG_PRINT=True
 if DEBUG:
     DEBUG_PRIVATE_KEY = 0x60975527035CF2AD1989806F0407210BC81EDC04E2762A56AFD529DDDA2D4393
 
@@ -153,9 +153,13 @@ def client_seed(user, password):
     """
     N, g, scale, k  = get_prime()
     a = random.randrange(0, 1 << SRP_KEY_SIZE)
+    A = pow(g, a, N)
     if DEBUG:
         a = DEBUG_PRIVATE_KEY
-    A = pow(g, a, N)
+        A = pow(g, a, N)
+    if DEBUG_PRINT:
+        print('A=', binascii.b2a_hex(long2bytes(A)), end='\n')
+        print('a=', binascii.b2a_hex(long2bytes(a)), end='\n')
     return A, a
 
 def server_seed(v):
@@ -165,11 +169,17 @@ def server_seed(v):
     """
     N, g, scale, k = get_prime()
     b = random.randrange(0, 1 << SRP_KEY_SIZE)
-    if DEBUG:
-        b = DEBUG_PRIVATE_KEY
     gb = pow(g, b, N)
     kv = (k * v) % N
     B = (kv + gb) % N
+    if DEBUG:
+        b = DEBUG_PRIVATE_KEY
+        gb = pow(g, b, N)
+        kv = (k * v) % N
+        B = (kv + gb) % N
+    if DEBUG_PRINT:
+        print('B=', binascii.b2a_hex(long2bytes(B)), end='\n')
+        print('b=', binascii.b2a_hex(long2bytes(b)), end='\n')
     return B, b
 
 def client_session(user, password, salt, A, B, a):
