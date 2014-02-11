@@ -201,6 +201,10 @@ def client_session(user, password, salt, A, B, a):
     aux = (a + ux) % N
     session_secret = pow(diff, aux, N)      # (B - kg^x) ^ (a + ux)
     K = sha1(session_secret)
+    if DEBUG_PRINT:
+        print('client session_secret=',
+            binascii.b2a_hex(long2bytes(session_secret)), end='\n')
+        print('client session hash K=', binascii.b2a_hex(K))
 
     return K
 
