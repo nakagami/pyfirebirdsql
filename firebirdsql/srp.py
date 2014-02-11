@@ -201,13 +201,17 @@ def client_session(user, password, salt, A, B, a):
     session_secret = pow(diff, aux, N)      # (B - kg^x) ^ (a + ux)
     K = sha1(session_secret)
     if DEBUG_PRINT:
-        print('salt=',
+        print('client_settion() salt=',
             binascii.b2a_hex(salt), end='\n')
-        print('scramble=',
+        print('client_session() scramble=',
             binascii.b2a_hex(long2bytes(u)), end='\n')
-        print('client session_secret=',
+        print('client_session() kgx=',
+            binascii.b2a_hex(long2bytes(kgx)), end='\n')
+        print('client_session() aux=',
+            binascii.b2a_hex(long2bytes(aux)), end='\n')
+        print('client_session() session_secret=',
             binascii.b2a_hex(long2bytes(session_secret)), end='\n')
-        print('client session hash K=', binascii.b2a_hex(K))
+        print('client_session() K=', binascii.b2a_hex(K))
 
     return K
 
@@ -242,9 +246,8 @@ def client_proof(user, password, salt, A, B, a):
         print('client_proof:A=', binascii.b2a_hex(long2bytes(A)), end='\n')
         print('client_proof:B=', binascii.b2a_hex(long2bytes(B)), end='\n')
     N, g, scale, k = get_prime()
-    u = get_scramble(A, B, scale)
-    x = getUserHash(salt, user, password)
     K = client_session(user, password, salt, A, B, a)
+
     n1 = bytes2long(sha1(N))
     n2 = bytes2long(sha1(g))
     n1 = pow(n1, n2, N)
