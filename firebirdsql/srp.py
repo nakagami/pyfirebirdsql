@@ -149,7 +149,7 @@ def getUserHash(salt, user, password):
     if DEBUG_PRINT:
         print('user=', user)
         print('password=',  password)
-        print('salt=', binascii.b2a_hex(hash1), end='\n')
+        print('salt=', salt, end='\n')
         print('hash1=', binascii.b2a_hex(hash1), end='\n')
         print('hash2=', binascii.b2a_hex(hash2), end='\n')
         print('rc=', binascii.b2a_hex(long2bytes(rc)), end='\n')
@@ -212,8 +212,7 @@ def client_session(user, password, salt, A, B, a):
     session_secret = pow(diff, aux, N)      # (B - kg^x) ^ (a + ux)
     K = sha1(session_secret)
     if DEBUG_PRINT:
-        print('\tclient_settion() salt=',
-            binascii.b2a_hex(salt), end='\n')
+        print('\tclient_settion() salt=', salt, end='\n')
         print('\tclient_settion() B=',
             binascii.b2a_hex(long2bytes(B)), end='\n')
         print('\tclient_session() scramble=',

@@ -453,7 +453,7 @@ class WireProtocol(object):
 
             if self.plugin_name == b'Srp':
                 ln = bytes_to_int(data[:2])
-                self.server_salt = hex_to_bytes(data[2:ln+2])
+                self.server_salt = data[2:ln+2]
                 self.server_public_key = hex_to_bytes(data[4+ln:])
 #                print('server_salt=', self.server_salt)
 #                print('server_public_key=', self.server_public_key)
