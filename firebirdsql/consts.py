@@ -284,6 +284,24 @@ isc_spb_connect_timeout = 57        # isc_dpb_connect_timeout
 isc_spb_dummy_packet_interval = 58  # isc_dpb_dummy_packet_interval
 isc_spb_sql_role_name = 60          # isc_dpb_sql_role_name
 
+# isc_action_svc_properties params
+isc_spb_prp_page_buffers = 5
+isc_spb_prp_sweep_interval = 6
+isc_spb_prp_shutdown_db = 7
+isc_spb_prp_deny_new_attachments = 9
+isc_spb_prp_deny_new_transactions = 10
+isc_spb_prp_reserve_space = 11
+isc_spb_prp_write_mode = 12
+isc_spb_prp_access_mode = 13
+isc_spb_prp_set_sql_dialect = 14
+isc_spb_prp_activate = 0x0100
+isc_spb_prp_db_online = 0x0200
+isc_spb_prp_force_shutdown = 41
+isc_spb_prp_attachments_shutdown = 42
+isc_spb_prp_transactions_shutdown = 43
+isc_spb_prp_shutdown_mode = 44
+isc_spb_prp_online_mode = 45
+
 # backup
 isc_spb_bkp_file = 5
 isc_spb_bkp_factor = 6
