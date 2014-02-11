@@ -203,6 +203,8 @@ def client_session(user, password, salt, A, B, a):
     if DEBUG_PRINT:
         print('\tclient_settion() salt=',
             binascii.b2a_hex(salt), end='\n')
+        print('\tclient_settion() B=',
+            binascii.b2a_hex(long2bytes(B)), end='\n')
         print('\tclient_session() scramble=',
             binascii.b2a_hex(long2bytes(u)), end='\n')
         print('\tclient_session() x=',
