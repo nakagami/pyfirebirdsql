@@ -184,7 +184,7 @@ def server_seed(v):
 
 def client_session(user, password, salt, A, B, a):
     """
-    Clicent session secret
+    Client session secret
         Both:  u = H(A, B)
 
         User:  x = H(s, p)                 (user enters password)
