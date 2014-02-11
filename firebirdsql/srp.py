@@ -247,10 +247,6 @@ def client_proof(user, password, salt, A, B, a):
     """
     M = H(H(N) xor H(g), H(I), s, A, B, K)
     """
-    if DEBUG_PRINT:
-        print('client_proof:salt=', binascii.b2a_hex(salt), end='\n')
-        print('client_proof:A=', binascii.b2a_hex(long2bytes(A)), end='\n')
-        print('client_proof:B=', binascii.b2a_hex(long2bytes(B)), end='\n')
     N, g, scale, k = get_prime()
     K = client_session(user, password, salt, A, B, a)
 
