@@ -143,7 +143,18 @@ def get_scramble(x, y, scale):
 def getUserHash(salt, user, password):
     assert isinstance(user, bytes)
     assert isinstance(password, bytes)
-    return bytes2long(sha1(salt, sha1(user, b':', password)))
+    hash1 = sha1(user, b':', password)
+    hash2 = sha1(salt, hash1)
+    rc =  bytes2long(hash2)
+    if DEBUG_PRINT:
+        print('user=', user)
+        print('password=',  password)
+        print('salt=', binascii.b2a_hex(hash1), end='\n')
+        print('hash1=', binascii.b2a_hex(hash1), end='\n')
+        print('hash2=', binascii.b2a_hex(hash2), end='\n')
+        print('rc=', binascii.b2a_hex(long2bytes(rc)), end='\n')
+
+    return rc
 
 def client_seed(user, password):
     """
