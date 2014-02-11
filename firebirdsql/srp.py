@@ -201,17 +201,23 @@ def client_session(user, password, salt, A, B, a):
     session_secret = pow(diff, aux, N)      # (B - kg^x) ^ (a + ux)
     K = sha1(session_secret)
     if DEBUG_PRINT:
-        print('client_settion() salt=',
+        print('\tclient_settion() salt=',
             binascii.b2a_hex(salt), end='\n')
-        print('client_session() scramble=',
+        print('\tclient_session() scramble=',
             binascii.b2a_hex(long2bytes(u)), end='\n')
-        print('client_session() kgx=',
+        print('\tclient_session() x=',
+            binascii.b2a_hex(long2bytes(x)), end='\n')
+        print('\tclient_session() gx=',
+            binascii.b2a_hex(long2bytes(gx)), end='\n')
+        print('\tclient_session() kgx=',
             binascii.b2a_hex(long2bytes(kgx)), end='\n')
-        print('client_session() aux=',
+        print('\tclient_session() ux=',
+            binascii.b2a_hex(long2bytes(ux)), end='\n')
+        print('\tclient_session() aux=',
             binascii.b2a_hex(long2bytes(aux)), end='\n')
-        print('client_session() session_secret=',
+        print('\tclient_session() session_secret=',
             binascii.b2a_hex(long2bytes(session_secret)), end='\n')
-        print('client_session() K=', binascii.b2a_hex(K))
+        print('\tclient_session() K=', binascii.b2a_hex(K))
 
     return K
 
