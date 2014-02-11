@@ -71,8 +71,8 @@ import hmac
 import random
 import binascii
 
-DEBUG=False
-DEBUG_PRINT=False
+DEBUG=True
+DEBUG_PRINT=True
 if DEBUG:
     DEBUG_PRIVATE_KEY = 0x60975527035CF2AD1989806F0407210BC81EDC04E2762A56AFD529DDDA2D4393
 
@@ -201,6 +201,10 @@ def client_session(user, password, salt, A, B, a):
     session_secret = pow(diff, aux, N)      # (B - kg^x) ^ (a + ux)
     K = sha1(session_secret)
     if DEBUG_PRINT:
+        print('salt=',
+            binascii.b2a_hex(salt), end='\n')
+        print('scramble=',
+            binascii.b2a_hex(long2bytes(u)), end='\n')
         print('client session_secret=',
             binascii.b2a_hex(long2bytes(session_secret)), end='\n')
         print('client session hash K=', binascii.b2a_hex(K))
@@ -249,6 +253,8 @@ def client_proof(user, password, salt, A, B, a):
     return M, K
 
 def get_salt():
+    if DEBUG:
+        return long2bytes(0x2E268803000000079A478A700000002D1A6979000000026E1601C000000054F)
     if PYTHON_MAJOR_VER == 3:
         return bytes([random.randrange(0, 256) for x in range(SRP_SALT_SIZE)])
     else:
@@ -265,7 +271,7 @@ if __name__ == '__main__':
     salt, M are bytes.
     """
     # Both
-    user = b'sysdba'
+    user = b'SYSDBA'
     password = b'masterkey'
 
     # Client send A to Server
