@@ -7,7 +7,6 @@
 # Python DB-API 2.0 module for Firebird. 
 ##############################################################################
 # This SRP implementation is in reference to
-# http://omake.accense.com/browser/python/SRP/srp.py .
 '''
 Following document was copied from <http://srp.stanford.edu/design.html>.
 -----
@@ -205,6 +204,28 @@ def client_session(user, password, salt, A, B, a):
         print('client session_secret=',
             binascii.b2a_hex(long2bytes(session_secret)), end='\n')
         print('client session hash K=', binascii.b2a_hex(K))
+
+    return K
+
+def server_session(user, password, salt, A, B, b):
+    """
+    Server session secret
+        Both:  u = H(A, B)
+
+        Host:  S = (Av^u) ^ b              (computes session key)
+        Host:  K = H(S)
+    """
+    N, g, scale, k = get_prime()
+    u = get_scramble(A, B, scale)
+    v = get_verifier(user, password, salt)
+    vu = pow(v, u, N)                       # v^u
+    Avu = (A * vu) % N                      # Av^u
+    session_secret = pow(Avu, b, N)         # (Av^u) ^ b
+    K = sha1(session_secret)
+    if DEBUG_PRINT:
+        print('server session_secret=',
+            binascii.b2a_hex(long2bytes(session_secret)), end='\n')
+        print('server session hash K=', binascii.b2a_hex(K))
 
     return K
 
