@@ -71,7 +71,7 @@ import hmac
 import random
 import binascii
 
-DEBUG=True
+DEBUG=False
 DEBUG_PRINT=True
 if DEBUG:
     DEBUG_PRIVATE_KEY = 0x60975527035CF2AD1989806F0407210BC81EDC04E2762A56AFD529DDDA2D4393
@@ -242,32 +242,11 @@ def client_proof(user, password, salt, A, B, a):
     n1 = pow(n1, n2, N)
     n2 = hash(user)
     M = sha1(n1, n2, salt, A, B, K)
+    if DEBUG_PRINT:
+        print('client_proof:M=', binascii.b2a_hex(M), end='\n')
+        print('client_proof:K=', binascii.b2a_hex(K), end='\n')
+
     return M, K
-
-def server_proof(user, salt, A, B, clientProof, b, v):
-    N, g, scale, k = get_prime()
-    u = get_scramble(A, B, scale)
-    S = pow((A * pow(v, u, N)) % N, b, N)
-    K = sha1(S)
-    sha_hmac = hmac.new(K)
-    sha_hmac.update(sha1(N))
-    sha_hmac.update(sha1(g))
-    sha_hmac.update(sha1(user))
-    sha_hmac.update(salt)
-    sha_hmac.update(long2bytes(A))
-    sha_hmac.update(long2bytes(B))
-    M = sha_hmac.digest()
-    assert clientProof == M
-    sha_hmac = hmac.new(K)
-    sha_hmac.update(long2bytes(A))
-    sha_hmac.update(M)
-    return sha_hmac.digest(), K
-
-def verify_server_proof(clientKey, A, M, serverProof):
-    sha_hmac = hmac.new(clientKey)
-    sha_hmac.update(long2bytes(A))
-    sha_hmac.update(M)
-    assert sha_hmac.digest() == serverProof
 
 def get_salt():
     if PYTHON_MAJOR_VER == 3:
@@ -297,14 +276,10 @@ if __name__ == '__main__':
     v = get_verifier(user, password, salt)
     B, b = server_seed(v)
 
+    serverKey = server_session(user, password, salt, A, B, b)
+
     # Client send M to Server
     M, clientKey = client_proof(user, password, salt, A, B, a)
-
-    # Server send serverProof to Client
-    serverProof, serverKey = server_proof(user, salt, A, B, M, b, v)
-
-    # Client can verify by serverProof
-    verify_server_proof(clientKey, A, M, serverProof)
 
     # Client and Server has same key
     assert clientKey == serverKey
