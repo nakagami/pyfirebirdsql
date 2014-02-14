@@ -15,14 +15,10 @@ class TestSrp(unittest.TestCase):
         v = srp.get_verifier(user, password, salt)
         B, b = srp.server_seed(v)
     
+        serverKey = srp.server_session(user, password, salt, A, B, b)
+
         # Client send M to Server
         M, clientKey = srp.client_proof(user, password, salt, A, B, a)
-    
-        # Server send serverProof to Client
-        serverProof, serverKey = srp.server_proof(user, salt, A, B, M, b, v)
-    
-        # Client can verify by serverProof
-        srp.verify_server_proof(clientKey, A, M, serverProof)
     
         # Client and Server has same key
         self.assertEqual(clientKey, serverKey)
