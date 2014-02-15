@@ -15,6 +15,7 @@ class TestEvent(TestBase):
     def setUp(self):
         self.database=tempfile.mktemp()
         conn = firebirdsql.create_database(
+                connect_version=self.connect_version,
                 host=self.host,
                 port=self.port,
                 database=self.database,
@@ -43,6 +44,7 @@ class TestEvent(TestBase):
 
     def _produce(self):
         conn = firebirdsql.connect(
+                connect_version=self.connect_version,
                 host=self.host,
                 port=self.port,
                 database=self.database,
@@ -55,6 +57,7 @@ class TestEvent(TestBase):
 
     def _handle_event(self):
         conn = firebirdsql.connect(
+                connect_version=self.connect_version,
                 host=self.host,
                 port=self.port,
                 database=self.database,

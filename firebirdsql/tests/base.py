@@ -11,6 +11,7 @@ if not hasattr(unittest, "skip"):
     unittest.skip = _skip
 
 class TestBase(unittest.TestCase):
+    connect_version=2
     host='localhost'
     port=3050
     user='sysdba'
@@ -20,6 +21,7 @@ class TestBase(unittest.TestCase):
     def setUp(self):
         self.database=tempfile.mktemp()
         self.connection = firebirdsql.create_database(
+                connect_version=self.connect_version,
                 host=self.host,
                 port=self.port,
                 database=self.database,
