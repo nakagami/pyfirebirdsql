@@ -480,6 +480,7 @@ class WireProtocol(object):
                 p.pack_int(self.op_crypt)
                 p.pack_string('Arc4')
                 p.pack_string('Symmetric')
+                self.sock.send(p.get_buffer())
                 self.sock.set_translator(
                                     Arc4(self.auth_key), Arc4(self.auth_key))
                 (h, oid, buf) = self._op_response()
