@@ -50,6 +50,6 @@ class SocketStream(object):
     def close(self):
         self._sock.close()
 
-    def set_translator(read_translator, write_translator):
+    def set_translator(self, read_translator, write_translator):
         self.read_translator = read_translator
         self.write_translator = write_translator
