@@ -352,14 +352,12 @@ class WireProtocol(object):
         return r
 
     @wire_operation
-    def _op_connect(self, use_srp=False, wire_crypt=False):
+    def _op_connect(self, use_srp, wire_crypt):
         arch_type = 36
         min_arch_type = 0
         max_arch_type = 5
         protocol_version_understood_count = 4
         more_protocol = hex_to_bytes('ffff800b00000001000000000000000500000004ffff800c00000001000000000000000500000006ffff800d00000001000000000000000500000008')
-        if not use_srp and crypt is None:
-            self.connect_version = 2
         if self.connect_version ==2:
             max_arch_type = 3
             protocol_version_understood_count = 1
