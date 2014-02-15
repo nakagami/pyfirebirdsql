@@ -412,11 +412,9 @@ class WireProtocol(object):
 
         op_code = bytes_to_bint(b)
         b = self.recv_channel(12)
-        up = xdrlib.Unpacker(b)
-        protocol_version = up.unpack_int()
-        protocol_arch = up.unpack_int()
-        minimum_type =  up.unpack_int()
-        up.done()
+        protocol_version = b[:4]
+        protocol_arch = bytes_to_bint(b[4:8])
+        minimum_type =  bytes_to_bint(b[8:])
 
         if op_code == self.op_cond_accept or op_code == self.op_accept_data:
             read_length = 0

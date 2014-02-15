@@ -1605,10 +1605,11 @@ def op_connect(sock):
 def op_accept(sock):
     msg = sock.recv(12)
     msg_dump(msg)
-    up = xdrlib.Unpacker(msg)
-    print('\tProtocol<%d>Archtecture<%d>MinimumType<%d>' % (
-            up.unpack_int(), up.unpack_int(), up.unpack_int()))
-    up.done()
+    protocol = msg[:4]
+    archtecture = _bytes_to_bint32(msg, 4)
+    minimum_type = _bytes_to_bint32(msg, 8)
+    print('\tProtocol<%s>Archtecture<%d>MinimumType<%d>' % (
+            binascii.b2a_hex(protocol), archtecture, minimum_type))
     return msg
 
 def op_accept_data(sock):
