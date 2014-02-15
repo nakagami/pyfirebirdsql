@@ -12,6 +12,8 @@ if not hasattr(unittest, "skip"):
 
 class TestBase(unittest.TestCase):
     connect_version=2
+    use_srp=True
+    wire_crypt=True
     host='localhost'
     port=3050
     user='sysdba'
@@ -22,6 +24,8 @@ class TestBase(unittest.TestCase):
         self.database=tempfile.mktemp()
         self.connection = firebirdsql.create_database(
                 connect_version=self.connect_version,
+                use_srp=self.use_srp,
+                wire_crypt=self.wire_crypt,
                 host=self.host,
                 port=self.port,
                 database=self.database,

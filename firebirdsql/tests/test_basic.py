@@ -152,6 +152,8 @@ class TestBasic(TestBase):
         conn.close()
 
         with firebirdsql.connect(connect_version=self.connect_version,
+                                    use_srp=self.use_srp,
+                                    wire_crypt=self.wire_crypt,
                                     host=self.host,
                                     database=self.database,
                                     port=self.port,
@@ -161,6 +163,8 @@ class TestBasic(TestBase):
                 cur.execute("update foo set c='Toshihide' where a=1")
 
         conn = firebirdsql.connect(connect_version=self.connect_version,
+                                    use_srp=self.use_srp,
+                                    wire_crypt=self.wire_crypt,
                                     host=self.host,
                                     database=self.database,
                                     port=self.port,

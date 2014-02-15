@@ -22,6 +22,8 @@ class TestBackup(TestBase):
         # backup
         svc = firebirdsql.services.connect(
             connect_version=self.connect_version,
+            use_srp=self.use_srp,
+            wire_crypt=self.wire_crypt,
             host=self.host,
             user=self.user,
             password=self.password)
@@ -34,6 +36,8 @@ class TestBackup(TestBase):
         # restore
         svc = firebirdsql.services.connect(
             connect_version=self.connect_version,
+            use_srp=self.use_srp,
+            wire_crypt=self.wire_crypt,
             host=self.host,
             user=self.user,
             password=self.password)
@@ -48,6 +52,8 @@ class TestBackup(TestBase):
         # drop database
         conn = firebirdsql.connect(
             connect_version=self.connect_version,
+            use_srp=self.use_srp,
+            wire_crypt=self.wire_crypt,
             host=self.host,
             database=RESTORE_DATABASE,
             port=self.port,

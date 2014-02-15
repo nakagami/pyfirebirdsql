@@ -9,6 +9,8 @@ class TestServices(TestBase):
         self.database=tempfile.mktemp()
         conn = firebirdsql.create_database(
                 connect_version=self.connect_version,
+                use_srp=self.use_srp,
+                wire_crypt=self.wire_crypt,
                 host=self.host,
                 port=self.port,
                 database=self.database,
@@ -24,6 +26,8 @@ class TestServices(TestBase):
 
         svc = firebirdsql.services.connect(
             connect_version=self.connect_version,
+            use_srp=self.use_srp,
+            wire_crypt=self.wire_crypt,
             host=self.host,
             user=self.user,
             password=self.password)
@@ -46,6 +50,8 @@ class TestServices(TestBase):
     def test_repair(self):
         svc = firebirdsql.services.connect(
             connect_version=self.connect_version,
+            use_srp=self.use_srp,
+            wire_crypt=self.wire_crypt,
             host=self.host,
             user=self.user,
             password=self.password)
@@ -55,6 +61,8 @@ class TestServices(TestBase):
     def shutdown(self):
         svc = firebirdsql.services.connect(
             connect_version=self.connect_version,
+            use_srp=self.use_srp,
+            wire_crypt=self.wire_crypt,
             host=self.host,
             user=self.user,
             password=self.password)
@@ -64,6 +72,8 @@ class TestServices(TestBase):
     def bringOnline(self):
         svc = firebirdsql.services.connect(
             connect_version=self.connect_version,
+            use_srp=self.use_srp,
+            wire_crypt=self.wire_crypt,
             host=self.host,
             user=self.user,
             password=self.password)
