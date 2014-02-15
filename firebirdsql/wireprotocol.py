@@ -454,12 +454,12 @@ class WireProtocol(object):
                 self.server_public_key = srp.bytes2long(self.server_public_key)
 
                 self.client_proof, self.auth_key = srp.client_proof(
-                                            self.str_to_bytes(self.user),
-                                            self.str_to_bytes(self.password),
-                                            self.server_salt,
-                                            self.client_public_key,
-                                            self.server_public_key,
-                                            self.client_private_key)
+                                        self.str_to_bytes(self.user.upper()),
+                                        self.str_to_bytes(self.password),
+                                        self.server_salt,
+                                        self.client_public_key,
+                                        self.server_public_key,
+                                        self.client_private_key)
                 # send op_cont_auth
                 p = xdrlib.Packer()
                 p.pack_int(self.op_cont_auth)
