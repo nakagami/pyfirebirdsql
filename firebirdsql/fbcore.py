@@ -458,6 +458,7 @@ class Connection(WireProtocol):
                     timeout=None, isolation_level=None, use_unicode=None,
                     connect_version=2, use_srp=True, wire_crypt=True,
                     create_new=False):
+        self.db_handle = None
         if dsn:
             i = dsn.find(':')
             if i < 0:

@@ -508,6 +508,8 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_drop_database(self):
+        if self.db_handle is None:
+            return
         p = xdrlib.Packer()
         p.pack_int(self.op_drop_database)
         p.pack_int(self.db_handle)
@@ -530,9 +532,10 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_service_info(self, param, item, buffer_length=512):
+        if self.db_handle is None:
+            return
         p = xdrlib.Packer()
         p.pack_int(self.op_service_info)
-#        p.pack_int(self.svc_handle)
         p.pack_int(self.db_handle)
         p.pack_int(0)
         p.pack_bytes(param)
@@ -542,6 +545,8 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_service_start(self, param):
+        if self.db_handle is None:
+            return
         p = xdrlib.Packer()
         p.pack_int(self.op_service_start)
         p.pack_int(self.db_handle)
@@ -551,6 +556,8 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_service_detach(self):
+        if self.db_handle is None:
+            return
         p = xdrlib.Packer()
         p.pack_int(self.op_service_detach)
         p.pack_int(self.db_handle)
@@ -558,6 +565,8 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_info_database(self, b):
+        if self.db_handle is None:
+            return
         p = xdrlib.Packer()
         p.pack_int(self.op_info_database)
         p.pack_int(self.db_handle)
@@ -568,6 +577,8 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_transaction(self, tpb):
+        if self.db_handle is None:
+            return
         p = xdrlib.Packer()
         p.pack_int(self.op_transaction)
         p.pack_int(self.db_handle)
@@ -604,6 +615,8 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_allocate_statement(self):
+        if self.db_handle is None:
+            return
         p = xdrlib.Packer()
         p.pack_int(self.op_allocate_statement)
         p.pack_int(self.db_handle)
@@ -695,6 +708,8 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_exec_immediate(self, trans_handle, query):
+        if self.db_handle is None:
+            return
         desc_items = bytes([])
         p = xdrlib.Packer()
         p.pack_int(self.op_exec_immediate)
@@ -750,6 +765,8 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_detach(self):
+        if self.db_handle is None:
+            return
         p = xdrlib.Packer()
         p.pack_int(self.op_detach)
         p.pack_int(self.db_handle)
@@ -811,6 +828,8 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_que_events(self, event_names, ast, args, event_id):
+        if self.db_handle is None:
+            return
         params = bytes([1])
         for name, n in event_names.items():
             params += bytes([len(name)])
@@ -827,6 +846,8 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_cancel_events(self, event_id):
+        if self.db_handle is None:
+            return
         p = xdrlib.Packer()
         p.pack_int(self.op_cancel_events)
         p.pack_int(self.db_handle)
@@ -835,6 +856,8 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_connect_request(self):
+        if self.db_handle is None:
+            return
         p = xdrlib.Packer()
         p.pack_int(self.op_connect_request)
         p.pack_int(1)    # async
