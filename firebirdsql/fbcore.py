@@ -454,9 +454,10 @@ class Connection(WireProtocol):
 
     def __init__(self, dsn=None, user=None, password=None, role=None, host=None,
                     database=None, charset=DEFAULT_CHARSET, port=3050,
-                    page_size=None, is_services=False, cloexec=False,
+                    page_size=4096, is_services=False, cloexec=False,
                     timeout=None, isolation_level=None, use_unicode=None,
-                    connect_version=2, use_srp=True, wire_crypt=True):
+                    connect_version=2, use_srp=True, wire_crypt=True,
+                    create_new=False):
         if dsn:
             i = dsn.find(':')
             if i < 0:
@@ -503,7 +504,7 @@ class Connection(WireProtocol):
             self.sock = None
             e = sys.exc_info()[1]
             raise e
-        if self.page_size:                      # create database
+        if create_new:                      # create database
             self._op_create(self.page_size)
         elif self.is_services:                  # service api
             self._op_service_attach()

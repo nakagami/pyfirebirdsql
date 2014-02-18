@@ -63,6 +63,5 @@ def connect(**kwargs):
     return Connection(**kwargs)
 
 def create_database(**kwargs):
-    if not 'page_size' in kwargs:
-        kwargs['page_size'] = 4096
+    kwargs['create_new'] = True
     return Connection(**kwargs)
