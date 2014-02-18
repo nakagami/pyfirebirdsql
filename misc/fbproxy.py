@@ -1809,14 +1809,15 @@ def op_execute2(sock):
     blr = up.unpack_bytes()
     print('\tinput params BLR[', binascii.b2a_hex(blr), ']')
     message_number = up.unpack_int()
-    messages = up.unpack_bytes()
-    print('\t<%d,%s>' % (message_number, messages))
+    if message_number:
+        messages = up.unpack_bytes()
+        print('\t<%d,%s>' % (message_number, messages))
 
-    out_blr = up.unpack_bytes()
-    print('\toutput params BLR[', binascii.b2a_hex(out_blr), ']')
+        out_blr = up.unpack_bytes()
+        print('\toutput params BLR[', binascii.b2a_hex(out_blr), ']')
 
-    output_message_number = up.unpack_int()
-    print('\toutput_message_number<%d>' % (message_number))
+        output_message_number = up.unpack_int()
+        print('\toutput_message_number<%d>' % (message_number))
 
     return msg
 
