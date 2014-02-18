@@ -258,6 +258,9 @@ class WireProtocol(object):
             elif t == int:
                 v = bint_to_bytes(p, 4)
                 blr += bytes([8, 0])    # blr_long
+            elif t == float and p == float("inf"):
+                v = b'\x7f\x80\x00\x00'
+                blr += bytes([10])
             elif t == decimal.Decimal or t == float:
                 if t == float:
                     p = decimal.Decimal(str(p))
