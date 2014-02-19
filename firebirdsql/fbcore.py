@@ -26,7 +26,7 @@ except ImportError:
     from UserDict import DictMixin as Mapping
     HAS_MAPPING = False
 
-__version__ = '0.8.5'
+__version__ = '0.8.6'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
