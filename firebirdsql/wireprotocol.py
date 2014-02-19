@@ -417,9 +417,9 @@ class WireProtocol(object):
 
         op_code = bytes_to_bint(b)
         b = self.recv_channel(12)
-        protocol_version = b[:4]
-        protocol_arch = bytes_to_bint(b[4:8])
-        minimum_type =  bytes_to_bint(b[8:])
+        self.accept_version = b[:4]
+        self.accept_architecture = bytes_to_bint(b[4:8])
+        self.accept_type =  bytes_to_bint(b[8:])
 
         if op_code == self.op_cond_accept or op_code == self.op_accept_data:
             read_length = 0
