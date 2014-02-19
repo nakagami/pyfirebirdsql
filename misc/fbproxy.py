@@ -36,6 +36,12 @@ def get_last_op_name():
 def set_last_op_name(op_name):
     thread_last_op_name[thread.get_ident()] = op_name
 
+thread_accept_type = {}
+def get_accept_type():
+    return thread_accept_type.get(thread.get_ident())
+def set_accept_type(accept_type):
+    thread_accept_type[thread.get_ident()] = accept_type
+
 thread_prepare_trans = {}
 def get_prepare_trans():
     return thread_prepare_trans.get(thread.get_ident())
@@ -1607,9 +1613,11 @@ def op_accept(sock):
     msg_dump(msg)
     protocol = msg[:4]
     archtecture = _bytes_to_bint32(msg, 4)
-    minimum_type = _bytes_to_bint32(msg, 8)
+    accept_type = _bytes_to_bint32(msg, 8)
     print('\taccept_version<%s>accept_architecture<%d>accept_type<%d>' % (
-            binascii.b2a_hex(protocol), archtecture, minimum_type))
+            binascii.b2a_hex(protocol), archtecture, accept_type))
+    set_accept_type(accept_type)
+
     return msg
 
 def op_accept_data(sock):
@@ -1762,16 +1770,21 @@ def op_info_sql(sock):
     up.done()
     return msg
 
-def op_allocate_statement(sock):
-    msg = sock.recv(bufsize)
+def op_release(sock):
+    msg = sock.recv(4)
     msg_dump(msg)
-    print('\tDatabase<%x>' % (_bytes_to_bint32(msg, 0),), end='')
-    print('[', binascii.b2a_hex(msg[24:]), ']')
-    asc_dump(msg[24:])
+    print('\tobject<%x>' % (_bytes_to_bint32(msg, 0),), end='')
     return msg
 
+def op_allocate_statement(sock):
+    msg = sock.recv(4)
+    msg_dump(msg)
+    print('\tDatabase<%x>' % (_bytes_to_bint32(msg, 0),), end='')
+    return msg
+
+
 def op_free_statement(sock):
-    msg = sock.recv(bufsize)
+    msg = sock.recv(8)
     msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tStatement<%x>' % (up.unpack_uint()), end='')
@@ -1782,8 +1795,7 @@ def op_free_statement(sock):
         print('DSQL_drop')
     else:
         print('Unknown!')
-    # unknown data remains
-#    up.done()
+    up.done()
     return msg
 
 def op_execute(sock):
@@ -1899,6 +1911,14 @@ def op_batch_segments(sock):
 
 op_put_segment = op_batch_segments
 
+def op_cancel_blob(sock):
+    msg = sock.recv(bufsize)
+    msg_dump(msg)
+    up = xdrlib.Unpacker(msg)
+    print('\tobject=', up.unpack_int())
+    up.done()
+    return msg
+
 def op_close_blob(sock):
     msg = sock.recv(4)
     msg_dump(msg)
@@ -1963,7 +1983,7 @@ def op_release(sock):
     msg = sock.recv(bufsize)
     msg_dump(msg)
     up = xdrlib.Unpacker(msg)
-    print('\thandle=', up.unpack_int())
+    print('\tobject=', up.unpack_int())
     up.done()
     return msg
 
@@ -2104,6 +2124,11 @@ def process_wire(client_socket, server_name, server_port):
         if client_msg:
             server_socket.send(client_msg)
         if op_req_name == 'op_cancel':
+            continue
+        # ptype_lazy_send
+        if (get_accept_type() == 5 and
+            op_req_name in ('op_allocate_statement', 'op_free_statement',
+                            'op_close_blob', 'op_cancel_blob', 'op_release')):
             continue
         set_last_op_name(op_req_name)
         op_res_name = ''
