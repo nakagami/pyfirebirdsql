@@ -96,7 +96,7 @@ class TestBasic(TestBase):
         cur = conn.cursor()
         cur.execute("""insert into foo(a, b, c, e, g, i, j)
             values (6, 'd', 'd', '2014-02-19', '00:01:06', 0.6, 0.6)""")
-        self.assertEqual(len(cur.fetchmany()), 0)
+        self.assertEqual(cur.fetchmany(), None)
         cur.close()
 
         cur = conn.cursor()
@@ -125,10 +125,11 @@ class TestBasic(TestBase):
         cur.execute("select * from foo")
         self.assertEqual(['A','B','C','D','E','F','G','H','I','J'],
                         [d[0] for d in cur.description])
-        self.assertEqual(['a','A','X'], [r[1] for r in cur.fetchall()])
+        self.assertEqual(['a','A','X','c','d'], [r[1] for r in cur.fetchall()])
 
         cur.execute("select * from foo")
-        self.assertEqual(['a','A','X'], [r['B'] for r in cur.fetchallmap()])
+        self.assertEqual(['a','A','X','c','d'],
+                        [r['B'] for r in cur.fetchallmap()])
 
         cur = conn.cursor()
         cur.execute("select * from foo")
@@ -148,7 +149,8 @@ class TestBasic(TestBase):
 
         cur = conn.cursor()
         cur.execute("select * from foo")
-        self.assertEqual(['a','A','X'], [r['B'] for r in cur.itermap()])
+        self.assertEqual(['a','A','X','c','d'],
+                        [r['B'] for r in cur.itermap()])
 
         cur = conn.cursor()
         cur.execute("select * from bar_empty")
@@ -216,7 +218,8 @@ class TestBasic(TestBase):
         cur.execute("select * from foo")
         self.assertEqual(['A','B','C','D','E','F','G','H','I','J'],
                         [d[0] for d in cur.description])
-        self.assertEqual(['a','A','X'], [r[1] for r in cur.fetchall()])
+        self.assertEqual(['a','A','X','c','d'],
+                        [r[1] for r in cur.fetchall()])
 
     def test_prep(self):
         cur = self.connection.cursor()

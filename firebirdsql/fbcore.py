@@ -207,6 +207,7 @@ class Cursor:
                 self._fetch_records = self._fetch_generator(stmt_handle)
             else:
                 self._fetch_records = None
+            self._callproc_result = None
 
     def callproc(self, procname, params=[]):
         query = 'EXECUTE PROCEDURE ' + procname + ' ' + ','.join('?'*len(params))
