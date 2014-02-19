@@ -665,11 +665,12 @@ class Connection(WireProtocol):
             return
         if self._transaction:
             self._transaction.close()
-        if self.is_services:
-            self._op_service_detach()
-        else:
-            self._op_detach()
-        (h, oid, buf) = self._op_response()
+        if self.db_handle:
+            if self.is_services:
+                self._op_service_detach()
+            else:
+                self._op_detach()
+            (h, oid, buf) = self._op_response()
         self.sock.close()
         self.sock = None
         self.db_handle = None
