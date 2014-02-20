@@ -327,30 +327,30 @@ class WireProtocol(object):
             user = os.environ.get('USER', '')
             hostname = socket.gethostname()
         r = b''
-        if self.connect_version == 3:
-            if use_srp:
-                self.client_public_key, self.client_private_key = \
-                    srp.client_seed(self.str_to_bytes(self.user.upper()),
-                                    self.str_to_bytes(self.password))
-                self.plugin_name = b'Srp'
-                self.plugin_list = b'Srp, Legacy_Auth'
-                specific_data = bytes_to_hex(srp.long2bytes(self.client_public_key))
-            else:
-                self.plugin_name = b'Legacy_Auth'
-                self.plugin_list = b'Legacy_Auth'
-                specific_data = self.str_to_bytes(
-                                        crypt.crypt(self.password, '9z')[2:])
-    
-            if wire_crypt:
-                client_crypt = int_to_bytes(1, 4)
-            else:
-                client_crypt = int_to_bytes(0, 4)
-    
-            r += pack_cnct_param(CNCT_login, self.str_to_bytes(self.user.upper()))
-            r += pack_cnct_param(CNCT_plugin_name, self.plugin_name)
-            r += pack_cnct_param(CNCT_plugin_list, self.plugin_list)
-            r += pack_cnct_param(CNCT_specific_data, specific_data)
-            r += pack_cnct_param(CNCT_client_crypt, client_crypt)
+
+        if use_srp:
+            self.client_public_key, self.client_private_key = \
+                srp.client_seed(self.str_to_bytes(self.user.upper()),
+                                self.str_to_bytes(self.password))
+            self.plugin_name = b'Srp'
+            self.plugin_list = b'Srp, Legacy_Auth'
+            specific_data = bytes_to_hex(srp.long2bytes(self.client_public_key))
+        else:
+            self.plugin_name = b'Legacy_Auth'
+            self.plugin_list = b'Legacy_Auth'
+            specific_data = self.str_to_bytes(
+                                    crypt.crypt(self.password, '9z')[2:])
+
+        if wire_crypt:
+            client_crypt = int_to_bytes(1, 4)
+        else:
+            client_crypt = int_to_bytes(0, 4)
+
+        r += pack_cnct_param(CNCT_login, self.str_to_bytes(self.user.upper()))
+        r += pack_cnct_param(CNCT_plugin_name, self.plugin_name)
+        r += pack_cnct_param(CNCT_plugin_list, self.plugin_list)
+        r += pack_cnct_param(CNCT_specific_data, specific_data)
+        r += pack_cnct_param(CNCT_client_crypt, client_crypt)
         r += pack_cnct_param(CNCT_user, self.str_to_bytes(user))
         r += pack_cnct_param(CNCT_host, self.str_to_bytes(hostname))
         r += pack_cnct_param(CNCT_user_verification, b'')
@@ -417,7 +417,7 @@ class WireProtocol(object):
 
         op_code = bytes_to_bint(b)
         b = self.recv_channel(12)
-        self.accept_version = ord(b[3])
+        self.accept_version = byte_to_int(b[3])
         self.accept_architecture = bytes_to_bint(b[4:8])
         self.accept_type =  bytes_to_bint(b[8:])
 
