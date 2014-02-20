@@ -156,6 +156,7 @@ class Cursor:
         return cooked_params
 
     def _get_stmt_handle(self, query):
+        self.query = query
         if isinstance(query, PreparedStatement):
             if query.is_opened:
                 self.transaction.connection._op_free_statement(
@@ -193,11 +194,11 @@ class Cursor:
             self.stmt_handle_is_opened = False
         return stmt_type, stmt_handle
 
-    def _set_stmt_handle_opened(self, query):
-        if isinstance(query, PreparedStatement):
-            query.is_opened = True
+    def _set_stmt_handle_is_opened(self, is_opened):
+        if isinstance(self.query, PreparedStatement):
+            self.query.is_opened = is_opened
         else:
-            self.stmt_handle_is_opened = True
+            self.stmt_handle_is_opened = is_opened
 
     def _execute(self, stmt_handle, params):
         cooked_params = self._convert_params(params)
@@ -234,7 +235,6 @@ class Cursor:
             else:
                 self._fetch_records = None
             self._callproc_result = None
-        self._set_stmt_handle_opened(query)
 
     def callproc(self, procname, params=[]):
         query = 'EXECUTE PROCEDURE ' + procname + ' ' + ','.join('?'*len(params))
@@ -245,6 +245,7 @@ class Cursor:
             self.execute(query, params)
 
     def _fetch_generator(self, stmt_handle):
+        self._set_stmt_handle_is_opened(True)
         connection = self.transaction.connection
         more_data = True
         while more_data:
@@ -276,7 +277,7 @@ class Cursor:
                         if x.sqlsubtype == 1:    # TEXT
                             r[i] = connection.bytes_to_str(r[i])
                 yield r
-
+        self._set_stmt_handle_is_opened(False)
         raise StopIteration()
 
     def fetchone(self):
