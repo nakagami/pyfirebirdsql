@@ -364,8 +364,8 @@ class WireProtocol(object):
         protocol_version_understood_count = 4
         # accept_type = 5
 #        more_protocol = hex_to_bytes('ffff800b00000001000000000000000500000004ffff800c00000001000000000000000500000006ffff800d00000001000000000000000500000008')
-        # accept_type = 3
-        more_protocol = hex_to_bytes('ffff800b00000001000000000000000300000004ffff800c00000001000000000000000300000006ffff800d00000001000000000000000300000008')
+        # accept_type = 4
+        more_protocol = hex_to_bytes('ffff800b00000001000000000000000400000004ffff800c00000001000000000000000400000006ffff800d00000001000000000000000400000008')
         p = xdrlib.Packer()
         p.pack_int(self.op_connect)
         p.pack_int(self.op_attach)
