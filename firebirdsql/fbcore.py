@@ -89,6 +89,7 @@ class Statement(object):
             (h, oid, buf) = self.trans.connection._op_response()
             self.handle = h
         self._is_open = False
+        self.trans.stmts.add(self)
 
     def prepare(self, sql, explain_plan=False):
         if explain_plan:
@@ -116,13 +117,16 @@ class Statement(object):
     def open(self):
         self._is_open = True
 
+    def _close(self):
+        self._is_open = False
+
     def close(self):
         if not self._is_open:
             return
         self.trans.connection._op_free_statement(self.handle, DSQL_close)
         if self.trans.connection.accept_type != ptype_lazy_send:
             (h, oid, buf) = self.trans.connection._op_response()
-        self._is_open = False
+        self._close()
 
     def drop(self):
         self.trans.connection._op_free_statement(self.handle, DSQL_drop)
@@ -721,6 +725,7 @@ class Transaction(object):
     def __init__(self, connection, tpb=None):
         self._connection = connection
         self._trans_handle = None
+        self.stmts = set()
 
     def _begin(self):
         self._close()
@@ -738,6 +743,17 @@ class Transaction(object):
     def begin(self):
         self._begin()
 
+    def savepoint(self, name):
+        if self._trans_handle is None:
+            return
+        self.connection._op_exec_immediate(self._trans_handle,
+                        query='SAVEPOINT '+name)
+        (h, oid, buf) = self.connection._op_response()
+
+    def _clear_stmts(self):
+        for s in self.stmts:
+            s._close()
+
     def commit(self, retaining=False):
         if self._trans_handle is None:
             return
@@ -745,16 +761,10 @@ class Transaction(object):
             self.connection._op_commit_retaining(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
         else:
+            self._clear_stmts()
             self.connection._op_commit(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
             self._trans_handle = None
-
-    def savepoint(self, name):
-        if self._trans_handle is None:
-            return
-        self.connection._op_exec_immediate(self._trans_handle,
-                        query='SAVEPOINT '+name)
-        (h, oid, buf) = self.connection._op_response()
 
     def rollback(self, retaining=False, savepoint=None):
         if self._trans_handle is None:
@@ -769,6 +779,7 @@ class Transaction(object):
             self.connection._op_rollback_retaining(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
         else:
+            self._clear_stmts()
             self.connection._op_rollback(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
             self._trans_handle = None
