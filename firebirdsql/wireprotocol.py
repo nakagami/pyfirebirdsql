@@ -369,7 +369,7 @@ class WireProtocol(object):
         p = xdrlib.Packer()
         p.pack_int(self.op_connect)
         p.pack_int(self.op_attach)
-        p.pack_int(self.connect_version)
+        p.pack_int(3)   # CONNECT_VERSION
         p.pack_int(arch_type)
         p.pack_string(self.str_to_bytes(self.filename if self.filename else ''))
         p.pack_int(protocol_version_understood_count)
@@ -389,7 +389,7 @@ class WireProtocol(object):
         dpb += bytes([isc_dpb_lc_ctype, len(s)]) + s
         s = self.str_to_bytes(self.user)
         dpb += bytes([isc_dpb_user_name, len(s)]) + s
-        if self.connect_version == 2:
+        if self.accept_version < PROTOCOL_VERSION13:
             s = self.str_to_bytes(self.password)
             dpb += bytes([isc_dpb_password, len(s)]) + s
         if self.role:
@@ -483,7 +483,6 @@ class WireProtocol(object):
                 (h, oid, buf) = self._op_response()
         else:
             assert op_code == self.op_accept
-            self.connect_version = 2
 
     @wire_operation
     def _op_attach(self):
