@@ -88,3 +88,8 @@ Version 0.8.5
 =============
 
    - add bringOnline(), shutdown() methods in Services
+
+Version 0.8.6
+=============
+
+   - fix exception when fetch after insert. return None
