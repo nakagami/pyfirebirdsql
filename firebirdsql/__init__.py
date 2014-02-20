@@ -10,7 +10,7 @@
 from firebirdsql.consts import *
 
 class Error(Exception):
-    def __init__(self, message, gds_codes=0, sql_code=0):
+    def __init__(self, message, gds_codes=set(), sql_code=0):
         self._message = message
         self.gds_codes = gds_codes
         self.sql_code = sql_code
