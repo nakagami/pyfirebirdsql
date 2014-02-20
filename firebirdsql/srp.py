@@ -146,13 +146,6 @@ def getUserHash(salt, user, password):
     hash1 = sha1(user, b':', password)
     hash2 = sha1(salt, hash1)
     rc =  bytes2long(hash2)
-    if DEBUG_PRINT:
-        print('user=', user)
-        print('password=',  password)
-        print('salt=', salt, end='\n')
-        print('hash1=', binascii.b2a_hex(hash1), end='\n')
-        print('hash2=', binascii.b2a_hex(hash2), end='\n')
-        print('rc=', binascii.b2a_hex(long2bytes(rc)), end='\n')
 
     return rc
 
@@ -211,25 +204,6 @@ def client_session(user, password, salt, A, B, a):
     aux = (a + ux) % N
     session_secret = pow(diff, aux, N)      # (B - kg^x) ^ (a + ux)
     K = sha1(session_secret)
-    if DEBUG_PRINT:
-        print('\tclient_settion() salt=', salt, end='\n')
-        print('\tclient_settion() B=',
-            binascii.b2a_hex(long2bytes(B)), end='\n')
-        print('\tclient_session() scramble=',
-            binascii.b2a_hex(long2bytes(u)), end='\n')
-        print('\tclient_session() x=',
-            binascii.b2a_hex(long2bytes(x)), end='\n')
-        print('\tclient_session() gx=',
-            binascii.b2a_hex(long2bytes(gx)), end='\n')
-        print('\tclient_session() kgx=',
-            binascii.b2a_hex(long2bytes(kgx)), end='\n')
-        print('\tclient_session() ux=',
-            binascii.b2a_hex(long2bytes(ux)), end='\n')
-        print('\tclient_session() aux=',
-            binascii.b2a_hex(long2bytes(aux)), end='\n')
-        print('\tclient_session() session_secret=',
-            binascii.b2a_hex(long2bytes(session_secret)), end='\n')
-        print('\tclient_session() K=', binascii.b2a_hex(K))
 
     return K
 
@@ -274,8 +248,6 @@ def client_proof(user, password, salt, A, B, a):
     return M, K
 
 def get_salt():
-    if DEBUG:
-        return long2bytes(0x2E268803000000079A478A700000002D1A6979000000026E1601C000000054F)
     if PYTHON_MAJOR_VER == 3:
         return bytes([random.randrange(0, 256) for x in range(SRP_SALT_SIZE)])
     else:
