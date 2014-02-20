@@ -76,8 +76,26 @@ NUMBER = DBAPITypeObject(int, decimal.Decimal)
 DATETIME = DBAPITypeObject(datetime.datetime, datetime.date, datetime.time)
 ROWID = DBAPITypeObject()
 
+class Statement(object):
+    """
+    statement handle and status (open/close)
+    """
+    def __init__(self, trans, handle):
+        self.trans = trans
+        self.handle = handle
+        self._is_open = False
 
-class PreparedStatement:
+    def open(self):
+        self._is_open = True
+
+    def close(self):
+        self._is_open = False
+
+    @propery
+    def is_opened(self):
+        return self._is_open
+
+class PreparedStatement(object):
     def __init__(self, cur, sql, explain_plan=False):
         self.cur = cur
         self.sql = sql
@@ -130,7 +148,7 @@ class PreparedStatement:
             return len(self._xsqlda)
         raise AttributeError
 
-class Cursor:
+class Cursor(object):
     def __init__(self, trans):
         self._transaction = trans
         self.stmt_handle = None
@@ -725,7 +743,7 @@ class Connection(WireProtocol):
     def is_disconnect(self):
         return self.sock is None
 
-class Transaction:
+class Transaction(object):
     def __init__(self, connection, tpb=None):
         self._connection = connection
         self._trans_handle = None
