@@ -390,8 +390,12 @@ class WireProtocol(object):
         s = self.str_to_bytes(self.user)
         dpb += bytes([isc_dpb_user_name, len(s)]) + s
         if self.accept_version < PROTOCOL_VERSION13:
-            s = self.str_to_bytes(self.password)
-            dpb += bytes([isc_dpb_password, len(s)]) + s
+            if self.accept_version == PROTOCOL_VERSION10:
+                s = self.str_to_bytes(self.password)
+                dpb += bytes([isc_dpb_password, len(s)]) + s
+            else:
+                s = self.str_to_bytes(crypt.crypt(self.password, '9z')[2:])
+                dpb += bytes([isc_dpb_password_enc, len(s)]) + s
         if self.role:
             s = self.str_to_bytes(self.role)
             dpb += bytes([isc_dpb_sql_role_name, len(s)]) + s
@@ -492,8 +496,12 @@ class WireProtocol(object):
         s = self.str_to_bytes(self.user)
         dpb += bytes([isc_dpb_user_name, len(s)]) + s
         if self.accept_version < PROTOCOL_VERSION13:
-            s = self.str_to_bytes(self.password)
-            dpb += bytes([isc_dpb_password, len(s)]) + s
+            if self.accept_version == PROTOCOL_VERSION10:
+                s = self.str_to_bytes(self.password)
+                dpb += bytes([isc_dpb_password, len(s)]) + s
+            else:
+                s = self.str_to_bytes(crypt.crypt(self.password, '9z')[2:])
+                dpb += bytes([isc_dpb_password_enc, len(s)]) + s
         if self.role:
             s = self.str_to_bytes(self.role)
             dpb += bytes([isc_dpb_sql_role_name, len(s)]) + s
