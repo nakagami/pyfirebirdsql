@@ -102,10 +102,7 @@ class TestBasic(TestBase):
         cur = conn.cursor()
         cur.execute("select * from foo")
         conn.commit()
-        try:
-            list(cur.fetchall())
-        except firebirdsql.OperationalError:
-            pass
+        self.assertEqual(cur.fetchall(), [])
 
         cur = conn.cursor()
         try:

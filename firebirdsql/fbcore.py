@@ -82,16 +82,22 @@ class Statement(object):
     """
     def __init__(self, trans):
         self.trans = trans
+        self._allocate_stmt()
+        self._is_open = False
+        self.trans.stmts.add(self)
+
+    def _allocate_stmt(self):
         self.trans.connection._op_allocate_statement()
         if self.trans.connection.accept_type == ptype_lazy_send:
             self.handle = -1
         else:
             (h, oid, buf) = self.trans.connection._op_response()
             self.handle = h
-        self._is_open = False
-        self.trans.stmts.add(self)
 
     def prepare(self, sql, explain_plan=False):
+        if self.handle == 0:    # _clear_handle()
+            self._allocate_stmt()
+
         if explain_plan:
             self.trans.connection._op_prepare_statement(
                 self.handle, self.trans.trans_handle, sql,
@@ -134,9 +140,13 @@ class Statement(object):
             (h, oid, buf) = self.trans.connection._op_response()
         self.handle = -1
 
+    def clear_handle(self):
+        self._is_open = False
+        self.handle = 0
+
     @property
     def is_opened(self):
-        return self._is_open
+        return self._is_open and self.handle != 0
 
 class PreparedStatement(object):
     def __init__(self, cur, sql, explain_plan=False):
@@ -168,6 +178,8 @@ def _fetch_generator(stmt):
     connection = stmt.trans.connection
     more_data = True
     while more_data:
+        if not stmt.is_opened:
+            raise StopIteration()
         connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda))
         (rows, more_data) = connection._op_fetch_response(
                                         stmt.handle, stmt.xsqlda)
@@ -752,7 +764,7 @@ class Transaction(object):
 
     def _clear_stmts(self):
         for s in self.stmts:
-            s._close()
+            s.clear_handle()
 
     def commit(self, retaining=False):
         if self._trans_handle is None:
