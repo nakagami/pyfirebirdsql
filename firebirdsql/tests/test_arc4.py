@@ -1,8 +1,7 @@
 import unittest
-from firebirdsql.tests.base import *
 from firebirdsql.arc4 import Arc4
 
-class TestArc4(TestBase):
+class TestArc4(unittest.TestCase):
     def test_arc4(self):
         a1 = Arc4(b'a key')
         enc = a1.translate(b'plain text')
