@@ -1912,7 +1912,7 @@ def op_batch_segments(sock):
 op_put_segment = op_batch_segments
 
 def op_cancel_blob(sock):
-    msg = sock.recv(bufsize)
+    msg = sock.recv(4)
     msg_dump(msg)
     up = xdrlib.Unpacker(msg)
     print('\tobject=', up.unpack_int())
