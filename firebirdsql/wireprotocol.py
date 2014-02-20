@@ -362,11 +362,10 @@ class WireProtocol(object):
         min_arch_type = 0
         max_arch_type = 5
         protocol_version_understood_count = 4
-        more_protocol = hex_to_bytes('ffff800b00000001000000000000000500000004ffff800c00000001000000000000000500000006ffff800d00000001000000000000000500000008')
-        if self.connect_version ==2:
-            max_arch_type = 3
-            protocol_version_understood_count = 1
-            more_protocol = b''
+        # accept_type = 5
+#        more_protocol = hex_to_bytes('ffff800b00000001000000000000000500000004ffff800c00000001000000000000000500000006ffff800d00000001000000000000000500000008')
+        # accept_type = 3
+        more_protocol = hex_to_bytes('ffff800b00000001000000000000000300000004ffff800c00000001000000000000000300000006ffff800d00000001000000000000000300000008')
         p = xdrlib.Packer()
         p.pack_int(self.op_connect)
         p.pack_int(self.op_attach)
@@ -493,7 +492,7 @@ class WireProtocol(object):
         dpb += bytes([isc_dpb_lc_ctype, len(s)]) + s
         s = self.str_to_bytes(self.user)
         dpb += bytes([isc_dpb_user_name, len(s)]) + s
-        if self.accept_version == PROTOCOL_VERSION10:
+        if self.accept_version < PROTOCOL_VERSION13:
             s = self.str_to_bytes(self.password)
             dpb += bytes([isc_dpb_password, len(s)]) + s
         if self.role:
