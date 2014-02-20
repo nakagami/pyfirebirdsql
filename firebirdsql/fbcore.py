@@ -85,8 +85,11 @@ class PreparedStatement:
         connection = transaction.connection
 
         connection._op_allocate_statement()
-        (h, oid, buf) = connection._op_response()
-        self.stmt_handle = h
+        if connection.accept_type == ptype_lazy_send:
+            self.stmt_handle = -1
+        else:
+            (h, oid, buf) = connection._op_response()
+            self.stmt_handle = h
         self.is_opened = False
 
         if explain_plan:
@@ -153,7 +156,8 @@ class Cursor:
             if query.is_opened:
                 self.transaction.connection._op_free_statement(
                                             query.stmt_handle, 1) # DSQL_close
-                (h, oid, buf) = self.transaction.connection._op_response()
+                if self.transaction.connection.accept_type != ptype_lazy_send:
+                    (h, oid, buf) = self.transaction.connection._op_response()
             stmt_handle = query.stmt_handle
             stmt_type = query.statement_type
             self._xsqlda = query._xsqlda
@@ -162,9 +166,14 @@ class Cursor:
             if self.stmt_handle:
                 self.transaction.connection._op_free_statement(
                                             self.stmt_handle, 2) # DSQL_drop
-                (h, oid, buf) = self.transaction.connection._op_response()
+                if self.transaction.connection.accept_type != ptype_lazy_send:
+                    (h, oid, buf) = self.transaction.connection._op_response()
             self.transaction.connection._op_allocate_statement()
-            (stmt_handle, oid, buf) = self.transaction.connection._op_response()
+            if self.transaction.connection.accept_type == ptype_lazy_send:
+                stmt_handle = -1
+            else:
+                (stmt_handle, oid, buf) = \
+                                    self.transaction.connection._op_response()
             self.stmt_handle = stmt_handle
             self.transaction.connection._op_prepare_statement(stmt_handle,
                                         self.transaction.trans_handle, query)
@@ -243,7 +252,8 @@ class Cursor:
                                 v += buf[2:ln+2]
                                 buf = buf[ln+2:]
                         connection._op_close_blob(h)
-                        (h, oid, buf) = connection._op_response()
+                        if connection.accept_type != ptype_lazy_send:
+                            (h, oid, buf) = connection._op_response()
                         r[i] = v
                         if x.sqlsubtype == 1:    # TEXT
                             r[i] = connection.bytes_to_str(r[i])
@@ -329,7 +339,8 @@ class Cursor:
         if not self.stmt_handle:
             return
         self.transaction.connection._op_free_statement(self.stmt_handle, 2)   # DSQL_drop
-        (h, oid, buf) = self.transaction.connection._op_response()
+        if self.transaction.connection.accept_type != ptype_lazy_send:
+            (h, oid, buf) = self.transaction.connection._op_response()
         self.stmt_handle = None
 
     def nextset(self):
