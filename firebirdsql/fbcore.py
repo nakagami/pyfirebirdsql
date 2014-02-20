@@ -162,8 +162,8 @@ class Cursor:
                                             query.stmt_handle, 1) # DSQL_close
                 if self.transaction.connection.accept_type != ptype_lazy_send:
                     (h, oid, buf) = self.transaction.connection._op_response()
-            stmt_handle = query.stmt_handle
             stmt_type = query.statement_type
+            self.stmt_handle = query.stmt_handle
             self._xsqlda = query._xsqlda
             query.is_opened = True
         else:
@@ -208,7 +208,6 @@ class Cursor:
 
     def execute(self, query, params=[]):
         stmt_type, stmt_handle = self._get_stmt_handle(query)
-        print "stmt_handle=", stmt_handle
         if stmt_type == isc_info_sql_stmt_exec_procedure:
             cooked_params = self._convert_params(params)
             self.transaction.connection._op_execute2(stmt_handle,
