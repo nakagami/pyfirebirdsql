@@ -475,8 +475,7 @@ class Connection(WireProtocol):
                     database=None, charset=DEFAULT_CHARSET, port=3050,
                     page_size=4096, is_services=False, cloexec=False,
                     timeout=None, isolation_level=None, use_unicode=None,
-                    connect_version=2, use_srp=True, wire_crypt=True,
-                    create_new=False):
+                    use_srp=True, wire_crypt=True, create_new=False):
         self.db_handle = None
         if dsn:
             i = dsn.find(':')
@@ -510,7 +509,6 @@ class Connection(WireProtocol):
         else:
             self.isolation_level = int(isolation_level)
         self.use_unicode = use_unicode
-        self.connect_version = connect_version
         self.last_event_id = 0
 
         self._transaction = None

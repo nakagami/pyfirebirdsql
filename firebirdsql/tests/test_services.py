@@ -8,7 +8,6 @@ class TestServices(TestBase):
     def setUp(self):
         self.database=tempfile.mktemp()
         conn = firebirdsql.create_database(
-                connect_version=self.connect_version,
                 use_srp=self.use_srp,
                 wire_crypt=self.wire_crypt,
                 host=self.host,
@@ -25,7 +24,6 @@ class TestServices(TestBase):
     def test_services(self):
 
         svc = firebirdsql.services.connect(
-            connect_version=self.connect_version,
             use_srp=self.use_srp,
             wire_crypt=self.wire_crypt,
             host=self.host,
@@ -49,7 +47,6 @@ class TestServices(TestBase):
     @unittest.skip("Fail by OperationalError in Ubuntu12.04")
     def test_repair(self):
         svc = firebirdsql.services.connect(
-            connect_version=self.connect_version,
             use_srp=self.use_srp,
             wire_crypt=self.wire_crypt,
             host=self.host,
@@ -60,7 +57,6 @@ class TestServices(TestBase):
     
     def shutdown(self):
         svc = firebirdsql.services.connect(
-            connect_version=self.connect_version,
             use_srp=self.use_srp,
             wire_crypt=self.wire_crypt,
             host=self.host,
@@ -71,7 +67,6 @@ class TestServices(TestBase):
 
     def bringOnline(self):
         svc = firebirdsql.services.connect(
-            connect_version=self.connect_version,
             use_srp=self.use_srp,
             wire_crypt=self.wire_crypt,
             host=self.host,
