@@ -500,7 +500,8 @@ class Connection(WireProtocol):
                     database=None, charset=DEFAULT_CHARSET, port=3050,
                     page_size=4096, is_services=False, cloexec=False,
                     timeout=None, isolation_level=None, use_unicode=None,
-                    use_srp=True, wire_crypt=True, create_new=False):
+                    auth_plugin_list=('Srp', 'LegacyAuth'),
+                    wire_crypt=True, create_new=False):
         self.db_handle = None
         if dsn:
             i = dsn.find(':')
@@ -539,7 +540,7 @@ class Connection(WireProtocol):
         self._transaction = None
         self.sock = SocketStream(self.hostname, self.port, self.timeout, cloexec)
 
-        self._op_connect(use_srp, wire_crypt)
+        self._op_connect(auth_plugin_list, wire_crypt)
         try:
             self._op_accept()
         except OperationalError:

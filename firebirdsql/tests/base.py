@@ -11,7 +11,7 @@ if not hasattr(unittest, "skip"):
     unittest.skip = _skip
 
 class TestBase(unittest.TestCase):
-    use_srp=True
+    auth_plugin_list=('Srp', 'LegacyAuth')
     wire_crypt=True
     host='localhost'
     port=3050
@@ -22,7 +22,7 @@ class TestBase(unittest.TestCase):
     def setUp(self):
         self.database=tempfile.mktemp()
         self.connection = firebirdsql.create_database(
-                use_srp=self.use_srp,
+                auth_plugin_list=self.auth_plugin_list,
                 wire_crypt=self.wire_crypt,
                 host=self.host,
                 port=self.port,

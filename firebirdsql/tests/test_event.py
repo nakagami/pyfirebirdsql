@@ -15,7 +15,7 @@ class TestEvent(TestBase):
     def setUp(self):
         self.database=tempfile.mktemp()
         conn = firebirdsql.create_database(
-                use_srp=self.use_srp,
+                auth_plugin_list=self.auth_plugin_list,
                 wire_crypt=self.wire_crypt,
                 host=self.host,
                 port=self.port,
@@ -45,7 +45,7 @@ class TestEvent(TestBase):
 
     def _produce(self):
         conn = firebirdsql.connect(
-                use_srp=self.use_srp,
+                auth_plugin_list=self.auth_plugin_list,
                 wire_crypt=self.wire_crypt,
                 host=self.host,
                 port=self.port,
@@ -59,7 +59,7 @@ class TestEvent(TestBase):
 
     def _handle_event(self):
         conn = firebirdsql.connect(
-                use_srp=self.use_srp,
+                auth_plugin_list=self.auth_plugin_list,
                 wire_crypt=self.wire_crypt,
                 host=self.host,
                 port=self.port,

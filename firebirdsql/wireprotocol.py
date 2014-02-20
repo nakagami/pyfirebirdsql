@@ -305,7 +305,7 @@ class WireProtocol(object):
         blr += bytes([255, 76])    # [blr_end, blr_eoc]
         return blr, values
 
-    def uid(self, use_srp, wire_crypt):
+    def uid(self, auth_plugin_list, wire_crypt):
         def pack_cnct_param(k, v):
             if k != CNCT_specific_data:
                 return bytes([k] + [len(v)]) + v
@@ -327,18 +327,17 @@ class WireProtocol(object):
             hostname = socket.gethostname()
         r = b''
 
-        if use_srp:
+        if auth_plugin_list[0] == 'Srp':
             self.client_public_key, self.client_private_key = \
                 srp.client_seed(self.str_to_bytes(self.user.upper()),
                                 self.str_to_bytes(self.password))
-            self.plugin_name = b'Srp'
-            self.plugin_list = b'Srp, Legacy_Auth'
             specific_data = bytes_to_hex(srp.long2bytes(self.client_public_key))
-        else:
-            self.plugin_name = b'Legacy_Auth'
-            self.plugin_list = b'Legacy_Auth'
+        elif auth_plugin_list[0] == 'LegacyAtuh':
             specific_data = self.str_to_bytes(
-                                    crypt.crypt(self.password, '9z')[2:])
+                                        crypt.crypt(self.password, '9z')[2:])
+        auth_plugin_list = [s.encode('utf-8') for s in auth_plugin_list]
+        self.plugin_name = auth_plugin_list[0]
+        self.plugin_list = b','.join(auth_plugin_list)
 
         if wire_crypt:
             client_crypt = int_to_bytes(1, 4)
@@ -356,7 +355,7 @@ class WireProtocol(object):
         return r
 
     @wire_operation
-    def _op_connect(self, use_srp, wire_crypt):
+    def _op_connect(self, auth_plugin_list, wire_crypt):
         arch_type = 36
         min_arch_type = 0
         max_arch_type = 5
@@ -372,7 +371,7 @@ class WireProtocol(object):
         p.pack_int(arch_type)
         p.pack_string(self.str_to_bytes(self.filename if self.filename else ''))
         p.pack_int(protocol_version_understood_count)
-        p.pack_bytes(self.uid(use_srp, wire_crypt))
+        p.pack_bytes(self.uid(auth_plugin_list, wire_crypt))
         p.pack_int(PROTOCOL_VERSION10)
         p.pack_int(1)   # Protocol Arch type (Generic = 1)
         p.pack_int(min_arch_type)
@@ -478,8 +477,8 @@ class WireProtocol(object):
                 # op_crypt: plugin[Arc4] key[Symmetric]
                 p = xdrlib.Packer()
                 p.pack_int(self.op_crypt)
-                p.pack_string('Arc4')
-                p.pack_string('Symmetric')
+                p.pack_string(b'Arc4')
+                p.pack_string(b'Symmetric')
                 self.sock.send(p.get_buffer())
                 self.sock.set_translator(
                                     Arc4(self.auth_key), Arc4(self.auth_key))
