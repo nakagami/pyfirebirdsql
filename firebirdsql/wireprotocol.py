@@ -375,7 +375,7 @@ class WireProtocol(object):
         p.pack_string(self.str_to_bytes(self.filename if self.filename else ''))
         p.pack_int(protocol_version_understood_count)
         p.pack_bytes(self.uid(use_srp, wire_crypt))
-        p.pack_int(10)  # PROTOCOL_VERSION10
+        p.pack_int(PROTOCOL_VERSION10)
         p.pack_int(1)   # Protocol Arch type (Generic = 1)
         p.pack_int(min_arch_type)
         p.pack_int(max_arch_type)
@@ -417,7 +417,7 @@ class WireProtocol(object):
 
         op_code = bytes_to_bint(b)
         b = self.recv_channel(12)
-        self.accept_version = b[:4]
+        self.accept_version = ord(b[3])
         self.accept_architecture = bytes_to_bint(b[4:8])
         self.accept_type =  bytes_to_bint(b[8:])
 
@@ -493,7 +493,7 @@ class WireProtocol(object):
         dpb += bytes([isc_dpb_lc_ctype, len(s)]) + s
         s = self.str_to_bytes(self.user)
         dpb += bytes([isc_dpb_user_name, len(s)]) + s
-        if self.connect_version == 2:
+        if self.accept_version == PROTOCOL_VERSION10:
             s = self.str_to_bytes(self.password)
             dpb += bytes([isc_dpb_password, len(s)]) + s
         if self.role:

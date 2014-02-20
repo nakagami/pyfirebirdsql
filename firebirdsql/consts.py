@@ -453,6 +453,11 @@ ptype_batch_send = 3    # Batch sends, no asynchrony
 ptype_out_of_band = 4   # Batch sends w/ out of band notification
 ptype_lazy_send = 5     # Deferred packets delivery
 
+PROTOCOL_VERSION10 = 10
+PROTOCOL_VERSION11 = 11
+PROTOCOL_VERSION12 = 12
+PROTOCOL_VERSION13 = 13
+
 CNCT_user = 1
 CNCT_passwd = 2
 CNCT_host = 4
