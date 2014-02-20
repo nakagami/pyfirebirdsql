@@ -86,22 +86,26 @@ class PreparedStatement:
 
         connection._op_allocate_statement()
         if connection.accept_type == ptype_lazy_send:
-            self.stmt_handle = -1
+            stmt_handle = -1
         else:
             (h, oid, buf) = connection._op_response()
-            self.stmt_handle = h
+            stmt_handle = h
         self.is_opened = False
 
         if explain_plan:
             connection._op_prepare_statement(
-                self.stmt_handle, transaction.trans_handle, sql,
+                stmt_handle, transaction.trans_handle, sql,
                 option_items=bytes([isc_info_sql_get_plan]))
         else:
             connection._op_prepare_statement(
-                self.stmt_handle, transaction.trans_handle, sql)
+                stmt_handle, transaction.trans_handle, sql)
             self.plan = None
 
         (h, oid, buf) = connection._op_response()
+        if connection.accept_type == ptype_lazy_send:
+            self.stmt_handle = h
+        else:
+            self.stmt_handle = stmt_handle
 
         i = 0
         if byte_to_int(buf[i]) == isc_info_sql_get_plan:
@@ -174,13 +178,16 @@ class Cursor:
             else:
                 (stmt_handle, oid, buf) = \
                                     self.transaction.connection._op_response()
-            self.stmt_handle = stmt_handle
             self.transaction.connection._op_prepare_statement(stmt_handle,
                                         self.transaction.trans_handle, query)
             (h, oid, buf) = self.transaction.connection._op_response()
+            if self.transaction.connection.accept_type == ptype_lazy_send:
+                self.stmt_handle = h
+            else:
+                self.stmt_handle = stmt_handle
             stmt_type, self._xsqlda = parse_xsqlda(
-                                buf, self.transaction.connection, stmt_handle)
-        return stmt_type, stmt_handle
+                            buf, self.transaction.connection, self.stmt_handle)
+        return stmt_type, self.stmt_handle
 
     def _execute(self, stmt_handle, params):
         cooked_params = self._convert_params(params)
@@ -201,6 +208,7 @@ class Cursor:
 
     def execute(self, query, params=[]):
         stmt_type, stmt_handle = self._get_stmt_handle(query)
+        print "stmt_handle=", stmt_handle
         if stmt_type == isc_info_sql_stmt_exec_procedure:
             cooked_params = self._convert_params(params)
             self.transaction.connection._op_execute2(stmt_handle,
