@@ -500,7 +500,7 @@ class Connection(WireProtocol):
                     database=None, charset=DEFAULT_CHARSET, port=3050,
                     page_size=4096, is_services=False, cloexec=False,
                     timeout=None, isolation_level=None, use_unicode=None,
-                    auth_plugin_list=('Srp', 'LegacyAuth'),
+                    auth_plugin_list=('Srp', 'Legacy_Auth'),
                     wire_crypt=True, create_new=False):
         self.db_handle = None
         if dsn:

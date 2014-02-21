@@ -334,7 +334,7 @@ class WireProtocol(object):
                                     self.str_to_bytes(self.password))
                 specific_data = bytes_to_hex(
                                     srp.long2bytes(self.client_public_key))
-            elif auth_plugin_list[0] == 'LegacyAuth':
+            elif auth_plugin_list[0] == 'Legacy_Auth':
                 specific_data = self.str_to_bytes(
                                         crypt.crypt(self.password, '9z')[2:])
             else:
