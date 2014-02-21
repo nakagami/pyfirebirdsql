@@ -95,7 +95,7 @@ class Statement(object):
             self.handle = h
 
     def prepare(self, sql, explain_plan=False):
-        if self.handle == 0:    # _clear_handle()
+        if self.handle == 0:
             self._allocate_stmt()
 
         if explain_plan:
@@ -127,9 +127,7 @@ class Statement(object):
         self._is_open = False
 
     def close(self):
-        if not self._is_open:
-            return
-        if self.handle == 0 or self.handle == -1:
+        if not self._is_open or self.handle == 0 or self.handle == -1:
             return
         self.trans.connection._op_free_statement(self.handle, DSQL_close)
         if self.trans.connection.accept_type != ptype_lazy_send:
@@ -288,7 +286,6 @@ class Cursor(object):
             else:
                 self._fetch_records = None
             self._callproc_result = None
-        self.transaction.is_dirty = True
 
     def callproc(self, procname, params=[]):
         query = 'EXECUTE PROCEDURE ' + procname + ' ' + ','.join('?'*len(params))
@@ -707,8 +704,6 @@ class Connection(WireProtocol):
     def close(self):
         if self.sock is None:
             return
-        if self._transaction:
-            self._transaction.close()
         if self.db_handle:
             if self.is_services:
                 self._op_service_detach()
@@ -741,21 +736,12 @@ class Transaction(object):
         self._connection = connection
         self._trans_handle = None
         self.stmts = set()
-        self.is_dirty = False
 
     def _begin(self):
-        self._close()
         self.connection._op_transaction(
                 transaction_parameter_block[self.connection.isolation_level])
         (h, oid, buf) = self.connection._op_response()
         self._trans_handle = h
-        self.is_dirty = False
-
-    def _close(self):
-        if self._trans_handle and self.is_dirty:
-            self.connection._op_rollback(self.trans_handle)
-            (h, oid, buf) = self.connection._op_response()
-        self._trans_handle = None
 
     def begin(self):
         self._begin()
@@ -782,7 +768,6 @@ class Transaction(object):
             self.connection._op_commit(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
             self._trans_handle = None
-        self.is_dirty = False
 
     def rollback(self, retaining=False, savepoint=None):
         if self._trans_handle is None:
@@ -800,7 +785,6 @@ class Transaction(object):
             self.connection._op_rollback(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
             self._trans_handle = None
-        self.is_dirty = False
 
     def _trans_info(self, info_requests):
         if info_requests[-1] == isc_info_end:
@@ -841,9 +825,6 @@ class Transaction(object):
                     v = bytes_to_int(rs[i][1])
                 results[info_requests[i]] = v
             return results
-
-    def close(self):
-        self._close()
 
     @property
     def connection(self):
