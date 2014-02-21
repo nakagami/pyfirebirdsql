@@ -165,14 +165,16 @@ class Cursor:
             stmt_type = query.statement_type
             stmt_handle = query.stmt_handle
             self._xsqlda = query._xsqlda
-            query.is_opened = True
         else:
             if self.stmt_handle:
                 stmt_handle = self.stmt_handle
-                self.transaction.connection._op_free_statement(
-                                            stmt_handle, 1) # DSQL_close
-                if self.transaction.connection.accept_type != ptype_lazy_send:
-                    (h, oid, buf) = self.transaction.connection._op_response()
+                if self.stmt_handle_is_opened:
+                    self.transaction.connection._op_free_statement(
+                                                stmt_handle, 1) # DSQL_close
+                    if self.transaction.connection.accept_type != \
+                                                            ptype_lazy_send:
+                        (h, oid, buf) = \
+                                    self.transaction.connection._op_response()
             else:
                 self.transaction.connection._op_allocate_statement()
                 if self.transaction.connection.accept_type == ptype_lazy_send:
@@ -188,7 +190,14 @@ class Cursor:
             self.stmt_handle = stmt_handle
             stmt_type, self._xsqlda = parse_xsqlda(
                             buf, self.transaction.connection, self.stmt_handle)
+            self.stmt_handle_is_opened = False
         return stmt_type, stmt_handle
+
+    def _set_stmt_handle_opened(self, query):
+        if isinstance(query, PreparedStatement):
+            query.is_opened = True
+        else:
+            self.stmt_handle_is_opened = True
 
     def _execute(self, stmt_handle, params):
         cooked_params = self._convert_params(params)
@@ -225,6 +234,7 @@ class Cursor:
             else:
                 self._fetch_records = None
             self._callproc_result = None
+        self._set_stmt_handle_opened(query)
 
     def callproc(self, procname, params=[]):
         query = 'EXECUTE PROCEDURE ' + procname + ' ' + ','.join('?'*len(params))
