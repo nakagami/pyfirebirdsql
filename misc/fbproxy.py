@@ -2129,6 +2129,7 @@ def process_wire(client_socket, server_name, server_port):
         if (get_accept_type() == 5 and
             op_req_name in ('op_allocate_statement', 'op_free_statement',
                             'op_close_blob', 'op_cancel_blob', 'op_release')):
+            print()
             continue
         set_last_op_name(op_req_name)
         op_res_name = ''
