@@ -61,9 +61,8 @@ def wire_operation(fn):
     if not DEBUG:
         return fn
     def f(*args, **kwargs):
-        print('<----', fn, args)
+        print('<--', fn, '-->')
         r = fn(*args, **kwargs)
-        print(fn, '---->')
         return r
     return f
 
