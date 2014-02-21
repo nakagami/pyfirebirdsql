@@ -469,6 +469,9 @@ CNCT_login = 9
 CNCT_plugin_list = 10
 CNCT_client_crypt = 11
 
+DSQL_close = 1
+DSQL_drop = 2
+
 charset_map = {
     # DB CHAR SET NAME    :   PYTHON CODEC NAME (CANONICAL)
     # --------------------------------------------------------------------------

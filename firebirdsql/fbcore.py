@@ -160,7 +160,7 @@ class Cursor:
         if isinstance(query, PreparedStatement):
             if query.is_opened:
                 self.transaction.connection._op_free_statement(
-                                            query.stmt_handle, 1) # DSQL_close
+                                            query.stmt_handle, DSQL_close)
                 if self.transaction.connection.accept_type != ptype_lazy_send:
                     (h, oid, buf) = self.transaction.connection._op_response()
             stmt_type = query.statement_type
@@ -171,7 +171,7 @@ class Cursor:
                 stmt_handle = self.stmt_handle
                 if self.stmt_handle_is_opened:
                     self.transaction.connection._op_free_statement(
-                                                stmt_handle, 1) # DSQL_close
+                                                stmt_handle, DSQL_close)
                     if self.transaction.connection.accept_type != \
                                                             ptype_lazy_send:
                         (h, oid, buf) = \
@@ -277,6 +277,10 @@ class Cursor:
                         if x.sqlsubtype == 1:    # TEXT
                             r[i] = connection.bytes_to_str(r[i])
                 yield r
+
+        self.transaction.connection._op_free_statement(stmt_handle, DSQL_close)
+        if self.transaction.connection.accept_type != ptype_lazy_send:
+            (h, oid, buf) = self.transaction.connection._op_response()
         self._set_stmt_handle_is_opened(False)
         raise StopIteration()
 
@@ -357,7 +361,8 @@ class Cursor:
     def close(self):
         if not self.stmt_handle:
             return
-        self.transaction.connection._op_free_statement(self.stmt_handle, 2)   # DSQL_drop
+        self.transaction.connection._op_free_statement(
+                                            self.stmt_handle, DSQL_drop)
         if self.transaction.connection.accept_type != ptype_lazy_send:
             (h, oid, buf) = self.transaction.connection._op_response()
         self.stmt_handle = None
