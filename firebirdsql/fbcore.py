@@ -163,7 +163,7 @@ class Cursor:
                 if self.transaction.connection.accept_type != ptype_lazy_send:
                     (h, oid, buf) = self.transaction.connection._op_response()
             stmt_type = query.statement_type
-            self.stmt_handle = query.stmt_handle
+            stmt_handle = query.stmt_handle
             self._xsqlda = query._xsqlda
             query.is_opened = True
         else:
@@ -184,12 +184,11 @@ class Cursor:
                                         self.transaction.trans_handle, query)
             (h, oid, buf) = self.transaction.connection._op_response()
             if self.transaction.connection.accept_type == ptype_lazy_send:
-                self.stmt_handle = h
-            else:
-                self.stmt_handle = stmt_handle
+                stmt_handle = h
+            self.stmt_handle = stmt_handle
             stmt_type, self._xsqlda = parse_xsqlda(
                             buf, self.transaction.connection, self.stmt_handle)
-        return stmt_type, self.stmt_handle
+        return stmt_type, stmt_handle
 
     def _execute(self, stmt_handle, params):
         cooked_params = self._convert_params(params)
