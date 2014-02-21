@@ -91,7 +91,7 @@ class Statement(object):
     def close(self):
         self._is_open = False
 
-    @propery
+    @property
     def is_opened(self):
         return self._is_open
 
