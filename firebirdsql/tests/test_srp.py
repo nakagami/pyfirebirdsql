@@ -2,7 +2,7 @@ import unittest
 from firebirdsql import srp
 from firebirdsql.tests.base import *
 
-class TestSrp(unittest.TestCase):
+class TestSrp(TestBase):
     def test_srp(self):
         user = b'sysdba'
         password = b'masterkey'
@@ -22,4 +22,17 @@ class TestSrp(unittest.TestCase):
     
         # Client and Server has same key
         self.assertEqual(clientKey, serverKey)
+
+    def test_legacy_auth(self):
+        self.connection = firebirdsql.create_database(
+                auth_plugin_list=("LegacyAuth",), 
+                wire_crypt=self.wire_crypt,
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                user=self.user,
+                password=self.password,
+                page_size=self.page_size)
+
+        self.connection.close()
 
