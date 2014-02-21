@@ -168,15 +168,17 @@ class Cursor:
             query.is_opened = True
         else:
             if self.stmt_handle:
+                stmt_handle = self.stmt_handle
                 self.transaction.connection._op_free_statement(
-                                            self.stmt_handle, 2) # DSQL_drop
+                                            stmt_handle, 1) # DSQL_close
                 if self.transaction.connection.accept_type != ptype_lazy_send:
                     (h, oid, buf) = self.transaction.connection._op_response()
-            self.transaction.connection._op_allocate_statement()
-            if self.transaction.connection.accept_type == ptype_lazy_send:
-                stmt_handle = -1
             else:
-                (stmt_handle, oid, buf) = \
+                self.transaction.connection._op_allocate_statement()
+                if self.transaction.connection.accept_type == ptype_lazy_send:
+                    stmt_handle = -1
+                else:
+                    (stmt_handle, oid, buf) = \
                                     self.transaction.connection._op_response()
             self.transaction.connection._op_prepare_statement(stmt_handle,
                                         self.transaction.trans_handle, query)
