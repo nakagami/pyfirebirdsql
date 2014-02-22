@@ -417,6 +417,9 @@ class WireProtocol(object):
             raise OperationalError('Connection is rejected')
 
         op_code = bytes_to_bint(b)
+        if op_code == self.op_response:
+            return self._parse_op_response()    # error occured
+
         b = self.recv_channel(12)
         self.accept_version = byte_to_int(b[3])
         self.accept_architecture = bytes_to_bint(b[4:8])
