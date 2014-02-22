@@ -212,7 +212,6 @@ def _fetch_generator(stmt):
                     if x.sqlsubtype == 1:    # TEXT
                         r[i] = connection.bytes_to_str(r[i])
             yield r
-    stmt.close()
     raise StopIteration()
 
 class Cursor(object):
@@ -398,6 +397,9 @@ class Cursor(object):
 
     @property
     def rowcount(self):
+        if not self.stmt.is_opened:
+            return -1
+
         self.transaction.connection._op_info_sql(self.stmt.handle,
                                      bytes([isc_info_sql_records]))
         (h, oid, buf) = self.transaction.connection._op_response()
