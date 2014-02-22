@@ -398,7 +398,7 @@ class Cursor(object):
 
     @property
     def rowcount(self):
-        self.transaction.connection._op_info_sql(self.stmt_handle,
+        self.transaction.connection._op_info_sql(self.stmt.handle,
                                      bytes([isc_info_sql_stmt_type]))
         (h, oid, buf) = self.transaction.connection._op_response()
         assert buf[:3] == bytes([0x15,0x04,0x00]) # isc_info_sql_stmt_type
@@ -409,8 +409,9 @@ class Cursor(object):
         (h, oid, buf) = self.transaction.connection._op_response()
         assert buf[:3] == bytes([0x17,0x1d,0x00]) # isc_info_sql_records
         if stmt_type == isc_info_sql_stmt_select:
-            # rowcount for select stmt changes based on num rows fetched
-            count = -1
+            assert buf[17:20] == bytes([0x0d,0x04,0x00])
+                                              # isc_info_req_select_count
+            count = bytes_to_int(buf[20:24])
         elif stmt_type == isc_info_sql_stmt_insert:
             assert buf[24:27] == bytes([0x0e,0x04,0x00])
                                               # isc_info_req_insert_count

@@ -71,7 +71,8 @@ class TestBasic(TestBase):
 
         cur = conn.cursor()
         cur.execute("select * from foo where c=?", ('Nakagami', ))
-        len(cur.fetchall()) == 1
+        self.assertEqual(len(cur.fetchall()), 1)
+        self.assertEqual(cur.rowcount, 1)
         cur.close()
 
         cur = conn.cursor()
