@@ -272,7 +272,6 @@ class Cursor(object):
         return prepared_statement
 
     def execute(self, query, params=[]):
-        print >>sys.stderr, query
         stmt = self._get_stmt(query)
         if stmt.stmt_type == isc_info_sql_stmt_exec_procedure:
             cooked_params = self._convert_params(params)
