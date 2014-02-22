@@ -129,12 +129,16 @@ class Statement(object):
     def close(self):
         if not self._is_open:
             return
+        if self.handle == 0 or self.handle == -1:
+            return
         self.trans.connection._op_free_statement(self.handle, DSQL_close)
         if self.trans.connection.accept_type != ptype_lazy_send:
             (h, oid, buf) = self.trans.connection._op_response()
         self._close()
 
     def drop(self):
+        if self.handle == 0 or self.handle == -1:
+            return
         self.trans.connection._op_free_statement(self.handle, DSQL_drop)
         if self.trans.connection.accept_type != ptype_lazy_send:
             (h, oid, buf) = self.trans.connection._op_response()
