@@ -497,6 +497,7 @@ class Connection(WireProtocol):
         self._op_exec_immediate(
             self._transaction.trans_handle, query=query)
         (h, oid, buf) = self._op_response()
+        self.is_dirty = True
 
     def __init__(self, dsn=None, user=None, password=None, role=None, host=None,
                     database=None, charset=DEFAULT_CHARSET, port=3050,
