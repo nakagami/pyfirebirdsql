@@ -272,6 +272,7 @@ class Cursor(object):
         return prepared_statement
 
     def execute(self, query, params=[]):
+        print >>sys.stderr, query
         stmt = self._get_stmt(query)
         if stmt.stmt_type == isc_info_sql_stmt_exec_procedure:
             cooked_params = self._convert_params(params)
@@ -399,28 +400,22 @@ class Cursor(object):
     @property
     def rowcount(self):
         self.transaction.connection._op_info_sql(self.stmt.handle,
-                                     bytes([isc_info_sql_stmt_type]))
-        (h, oid, buf) = self.transaction.connection._op_response()
-        assert buf[:3] == bytes([0x15,0x04,0x00]) # isc_info_sql_stmt_type
-        stmt_type = bytes_to_int(buf[3:7])
-
-        self.transaction.connection._op_info_sql(self.stmt.handle,
                                      bytes([isc_info_sql_records]))
         (h, oid, buf) = self.transaction.connection._op_response()
         assert buf[:3] == bytes([0x17,0x1d,0x00]) # isc_info_sql_records
-        if stmt_type == isc_info_sql_stmt_select:
+        if self.stmt.stmt_type == isc_info_sql_stmt_select:
             assert buf[17:20] == bytes([0x0d,0x04,0x00])
                                               # isc_info_req_select_count
             count = bytes_to_int(buf[20:24])
-        elif stmt_type == isc_info_sql_stmt_insert:
+        elif self.stmt.stmt_type == isc_info_sql_stmt_insert:
             assert buf[24:27] == bytes([0x0e,0x04,0x00])
                                               # isc_info_req_insert_count
             count = bytes_to_int(buf[27:31])
-        elif stmt_type == isc_info_sql_stmt_update:
+        elif self.stmt.stmt_type == isc_info_sql_stmt_update:
             assert buf[3:6] == bytes([0x0f,0x04,0x00])
                                               # isc_info_req_update_count
             count = bytes_to_int(buf[6:10])
-        elif stmt_type == isc_info_sql_stmt_delete:
+        elif self.stmt.stmt_type == isc_info_sql_stmt_delete:
             assert buf[10:13] == bytes([0x10,0x04,0x00])
                                               # isc_info_req_delete_count
             count = bytes_to_int(buf[13:17])
