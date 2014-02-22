@@ -80,16 +80,55 @@ class Statement(object):
     """
     statement handle and status (open/close)
     """
-    def __init__(self, trans, handle):
+    def __init__(self, trans):
         self.trans = trans
-        self.handle = handle
+        self.trans.connection._op_allocate_statement()
+        if self.trans.connection.accept_type == ptype_lazy_send:
+            self.handle = -1
+        else:
+            (h, oid, buf) = self.trans.connection._op_response()
+            self.handle = h
         self._is_open = False
+
+    def prepare(self, sql, explain_plan=False):
+        if explain_plan:
+            self.trans.connection._op_prepare_statement(
+                self.handle, self.trans.trans_handle, sql,
+                option_items=bytes([isc_info_sql_get_plan]))
+        else:
+            self.trans.connection._op_prepare_statement(
+                self.handle, self.trans.trans_handle, sql)
+            self.plan = None
+
+        (h, oid, buf) = self.trans.connection._op_response()
+        if self.trans.connection.accept_type == ptype_lazy_send:
+            self.handle = h
+
+        i = 0
+        if byte_to_int(buf[i]) == isc_info_sql_get_plan:
+            l = bytes_to_int(buf[i+1:i+3])
+            self.plan = self.trans.connection.bytes_to_str(buf[i+3:i+3+l])
+            i += 3 + l
+
+        self.stmt_type, self.xsqlda = parse_xsqlda(buf[i:],
+                                    self.trans.connection, self.handle)
 
     def open(self):
         self._is_open = True
 
     def close(self):
+        if not self._is_open:
+            return
+        self.trans.connection._op_free_statement(self.handle, DSQL_close)
+        if self.trans.connection.accept_type != ptype_lazy_send:
+            (h, oid, buf) = self.trans.connection._op_response()
         self._is_open = False
+
+    def drop(self):
+        self.trans.connection._op_free_statement(self.handle, DSQL_drop)
+        if self.trans.connection.accept_type != ptype_lazy_send:
+            (h, oid, buf) = self.trans.connection._op_response()
+        self.handle = -1
 
     @property
     def is_opened(self):
@@ -102,37 +141,8 @@ class PreparedStatement(object):
         transaction = self.cur.transaction
         connection = transaction.connection
 
-        connection._op_allocate_statement()
-        if connection.accept_type == ptype_lazy_send:
-            stmt_handle = -1
-        else:
-            (h, oid, buf) = connection._op_response()
-            stmt_handle = h
-        self.is_opened = False
-
-        if explain_plan:
-            connection._op_prepare_statement(
-                stmt_handle, transaction.trans_handle, sql,
-                option_items=bytes([isc_info_sql_get_plan]))
-        else:
-            connection._op_prepare_statement(
-                stmt_handle, transaction.trans_handle, sql)
-            self.plan = None
-
-        (h, oid, buf) = connection._op_response()
-        if connection.accept_type == ptype_lazy_send:
-            self.stmt_handle = h
-        else:
-            self.stmt_handle = stmt_handle
-
-        i = 0
-        if byte_to_int(buf[i]) == isc_info_sql_get_plan:
-            l = bytes_to_int(buf[i+1:i+3])
-            self.plan = connection.bytes_to_str(buf[i+3:i+3+l])
-            i += 3 + l
-
-        self.statement_type, self._xsqlda = parse_xsqlda(
-                                        buf[i:], connection, self.stmt_handle)
+        self.stmt = Statement(transaction)
+        self.stmt.prepare(sql, explain_plan)
 
     def __getattr__(self, attrname):
         if attrname == 'description':
@@ -151,7 +161,7 @@ class PreparedStatement(object):
 class Cursor(object):
     def __init__(self, trans):
         self._transaction = trans
-        self.stmt_handle = None
+        self.stmt = None
         self.arraysize = 1
 
     def __enter__(self):
@@ -173,50 +183,19 @@ class Cursor(object):
             cooked_params.append(param)
         return cooked_params
 
-    def _get_stmt_handle(self, query):
+    def _get_stmt(self, query):
         self.query = query
         if isinstance(query, PreparedStatement):
-            if query.is_opened:
-                self.transaction.connection._op_free_statement(
-                                            query.stmt_handle, DSQL_close)
-                if self.transaction.connection.accept_type != ptype_lazy_send:
-                    (h, oid, buf) = self.transaction.connection._op_response()
-            stmt_type = query.statement_type
-            stmt_handle = query.stmt_handle
-            self._xsqlda = query._xsqlda
+            stmt = query.stmt
+            stmt.close()
         else:
-            if self.stmt_handle:
-                stmt_handle = self.stmt_handle
-                if self.stmt_handle_is_opened:
-                    self.transaction.connection._op_free_statement(
-                                                stmt_handle, DSQL_close)
-                    if self.transaction.connection.accept_type != \
-                                                            ptype_lazy_send:
-                        (h, oid, buf) = \
-                                    self.transaction.connection._op_response()
+            if self.stmt:
+                self.stmt.close()
             else:
-                self.transaction.connection._op_allocate_statement()
-                if self.transaction.connection.accept_type == ptype_lazy_send:
-                    stmt_handle = -1
-                else:
-                    (stmt_handle, oid, buf) = \
-                                    self.transaction.connection._op_response()
-            self.transaction.connection._op_prepare_statement(stmt_handle,
-                                        self.transaction.trans_handle, query)
-            (h, oid, buf) = self.transaction.connection._op_response()
-            if self.transaction.connection.accept_type == ptype_lazy_send:
-                stmt_handle = h
-            self.stmt_handle = stmt_handle
-            stmt_type, self._xsqlda = parse_xsqlda(
-                            buf, self.transaction.connection, self.stmt_handle)
-            self.stmt_handle_is_opened = False
-        return stmt_type, stmt_handle
-
-    def _set_stmt_handle_is_opened(self, is_opened):
-        if isinstance(self.query, PreparedStatement):
-            self.query.is_opened = is_opened
-        else:
-            self.stmt_handle_is_opened = is_opened
+                self.stmt = Statement(self.transaction)
+            stmt = self.stmt
+            stmt.prepare(query)
+        return stmt
 
     def _execute(self, stmt_handle, params):
         cooked_params = self._convert_params(params)
@@ -236,20 +215,20 @@ class Cursor(object):
         return prepared_statement
 
     def execute(self, query, params=[]):
-        stmt_type, stmt_handle = self._get_stmt_handle(query)
-        if stmt_type == isc_info_sql_stmt_exec_procedure:
+        stmt = self._get_stmt(query)
+        if stmt.stmt_type == isc_info_sql_stmt_exec_procedure:
             cooked_params = self._convert_params(params)
-            self.transaction.connection._op_execute2(stmt_handle,
+            self.transaction.connection._op_execute2(stmt.handle,
                 self.transaction.trans_handle, cooked_params,
-                calc_blr(self._xsqlda))
+                calc_blr(stmt.xsqlda))
             self._callproc_result = \
-                self.transaction.connection._op_sql_response(self._xsqlda)
+                self.transaction.connection._op_sql_response(stmt.xsqlda)
             self.transaction.connection._op_response()
             self._fetch_records = None
         else:
-            self._execute(stmt_handle, params)
-            if stmt_type == isc_info_sql_stmt_select:
-                self._fetch_records = self._fetch_generator(stmt_handle)
+            self._execute(stmt.handle, params)
+            if stmt.stmt_type == isc_info_sql_stmt_select:
+                self._fetch_records = self._fetch_generator(stmt)
             else:
                 self._fetch_records = None
             self._callproc_result = None
@@ -262,22 +241,22 @@ class Cursor(object):
         for params in seq_of_params:
             self.execute(query, params)
 
-    def _fetch_generator(self, stmt_handle):
-        self._set_stmt_handle_is_opened(True)
-        connection = self.transaction.connection
+    def _fetch_generator(self, stmt):
+        stmt.open()
+        connection = stmt.trans.connection
         more_data = True
         while more_data:
-            connection._op_fetch(stmt_handle, calc_blr(self._xsqlda))
+            connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda))
             (rows, more_data) = connection._op_fetch_response(
-                                            stmt_handle, self._xsqlda)
+                                            stmt.handle, stmt.xsqlda)
             for r in rows:
                 # Convert BLOB handle to data
-                for i in range(len(self._xsqlda)):
-                    x = self._xsqlda[i]
+                for i in range(len(stmt.xsqlda)):
+                    x = stmt.xsqlda[i]
                     if x.sqltype == SQL_TYPE_BLOB:
                         if not r[i]:
                             continue
-                        connection._op_open_blob(r[i], self.transaction.trans_handle)
+                        connection._op_open_blob(r[i], stmt.trans.trans_handle)
                         (h, oid, buf) = connection._op_response()
                         v = bytes([])
                         n = 1   # 1:mora data 2:no more data
@@ -295,11 +274,7 @@ class Cursor(object):
                         if x.sqlsubtype == 1:    # TEXT
                             r[i] = connection.bytes_to_str(r[i])
                 yield r
-
-        self.transaction.connection._op_free_statement(stmt_handle, DSQL_close)
-        if self.transaction.connection.accept_type != ptype_lazy_send:
-            (h, oid, buf) = self.transaction.connection._op_response()
-        self._set_stmt_handle_is_opened(False)
+        stmt.close()
         raise StopIteration()
 
     def fetchone(self):
@@ -377,13 +352,10 @@ class Cursor(object):
             r = self.fetchonemap()
 
     def close(self):
-        if not self.stmt_handle:
+        if not self.stmt:
             return
-        self.transaction.connection._op_free_statement(
-                                            self.stmt_handle, DSQL_drop)
-        if self.transaction.connection.accept_type != ptype_lazy_send:
-            (h, oid, buf) = self.transaction.connection._op_response()
-        self.stmt_handle = None
+        self.stmt.drop()
+        self.stmt = None
 
     def nextset(self):
         raise NotSupportedError()
@@ -396,11 +368,11 @@ class Cursor(object):
 
     @property
     def description(self):
-        if not hasattr(self, "_xsqlda"):
+        if not self.stmt:
             return None
         return [(x.aliasname, x.sqltype, x.display_length(), x.io_length(),
                     x.precision(), x.sqlscale, True if x.null_ok else False)
-                for x in self._xsqlda]
+                for x in self.stmt.xsqlda]
 
     @property
     def rowcount(self):
@@ -410,7 +382,7 @@ class Cursor(object):
         assert buf[:3] == bytes([0x15,0x04,0x00]) # isc_info_sql_stmt_type
         stmt_type = bytes_to_int(buf[3:7])
 
-        self.transaction.connection._op_info_sql(self.stmt_handle,
+        self.transaction.connection._op_info_sql(self.stmt.handle,
                                      bytes([isc_info_sql_records]))
         (h, oid, buf) = self.transaction.connection._op_response()
         assert buf[:3] == bytes([0x17,0x1d,0x00]) # isc_info_sql_records
