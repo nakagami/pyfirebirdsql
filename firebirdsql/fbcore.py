@@ -146,17 +146,54 @@ class PreparedStatement(object):
 
     def __getattr__(self, attrname):
         if attrname == 'description':
-            if len(self._xsqlda) == 0:
+            if len(self.stmt.xsqlda) == 0:
                 return None
             r = []
-            for x in self._xsqlda:
+            for x in self.stmt.xsqlda:
                 r.append((x.aliasname, x.sqltype, x.display_length(),
                         x.io_length(), x.precision(),
                         x.sqlscale, True if x.null_ok else False))
             return r
         elif attrname == 'n_output_params':
-            return len(self._xsqlda)
+            return len(self.stmt.xsqlda)
         raise AttributeError
+
+
+def _fetch_generator(stmt):
+    stmt.open()
+    connection = stmt.trans.connection
+    more_data = True
+    while more_data:
+        connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda))
+        (rows, more_data) = connection._op_fetch_response(
+                                        stmt.handle, stmt.xsqlda)
+        for r in rows:
+            # Convert BLOB handle to data
+            for i in range(len(stmt.xsqlda)):
+                x = stmt.xsqlda[i]
+                if x.sqltype == SQL_TYPE_BLOB:
+                    if not r[i]:
+                        continue
+                    connection._op_open_blob(r[i], stmt.trans.trans_handle)
+                    (h, oid, buf) = connection._op_response()
+                    v = bytes([])
+                    n = 1   # 1:mora data 2:no more data
+                    while n == 1:
+                        connection._op_get_segment(h)
+                        (n, oid, buf) = connection._op_response()
+                        while buf:
+                            ln = bytes_to_int(buf[:2])
+                            v += buf[2:ln+2]
+                            buf = buf[ln+2:]
+                    connection._op_close_blob(h)
+                    if connection.accept_type != ptype_lazy_send:
+                        (h, oid, buf) = connection._op_response()
+                    r[i] = v
+                    if x.sqlsubtype == 1:    # TEXT
+                        r[i] = connection.bytes_to_str(r[i])
+            yield r
+    stmt.close()
+    raise StopIteration()
 
 class Cursor(object):
     def __init__(self, trans):
@@ -228,7 +265,7 @@ class Cursor(object):
         else:
             self._execute(stmt.handle, params)
             if stmt.stmt_type == isc_info_sql_stmt_select:
-                self._fetch_records = self._fetch_generator(stmt)
+                self._fetch_records = _fetch_generator(stmt)
             else:
                 self._fetch_records = None
             self._callproc_result = None
@@ -241,41 +278,6 @@ class Cursor(object):
         for params in seq_of_params:
             self.execute(query, params)
 
-    def _fetch_generator(self, stmt):
-        stmt.open()
-        connection = stmt.trans.connection
-        more_data = True
-        while more_data:
-            connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda))
-            (rows, more_data) = connection._op_fetch_response(
-                                            stmt.handle, stmt.xsqlda)
-            for r in rows:
-                # Convert BLOB handle to data
-                for i in range(len(stmt.xsqlda)):
-                    x = stmt.xsqlda[i]
-                    if x.sqltype == SQL_TYPE_BLOB:
-                        if not r[i]:
-                            continue
-                        connection._op_open_blob(r[i], stmt.trans.trans_handle)
-                        (h, oid, buf) = connection._op_response()
-                        v = bytes([])
-                        n = 1   # 1:mora data 2:no more data
-                        while n == 1:
-                            connection._op_get_segment(h)
-                            (n, oid, buf) = connection._op_response()
-                            while buf:
-                                ln = bytes_to_int(buf[:2])
-                                v += buf[2:ln+2]
-                                buf = buf[ln+2:]
-                        connection._op_close_blob(h)
-                        if connection.accept_type != ptype_lazy_send:
-                            (h, oid, buf) = connection._op_response()
-                        r[i] = v
-                        if x.sqlsubtype == 1:    # TEXT
-                            r[i] = connection.bytes_to_str(r[i])
-                yield r
-        stmt.close()
-        raise StopIteration()
 
     def fetchone(self):
         # callproc or not select statement

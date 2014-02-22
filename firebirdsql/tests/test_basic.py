@@ -220,7 +220,7 @@ class TestBasic(TestBase):
         cur = self.connection.cursor()
         prep = cur.prep("select * from foo where c=?", explain_plan=True)
         self.assertEqual(prep.sql, 'select * from foo where c=?')
-        self.assertEqual(prep.statement_type, 1)
+        self.assertEqual(prep.stmt.stmt_type, 1)
         self.assertEqual(prep.n_output_params, 10)
 
         cur.execute(prep, ('C parameter', ))
