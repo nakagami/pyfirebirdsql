@@ -288,6 +288,7 @@ class Cursor(object):
             else:
                 self._fetch_records = None
             self._callproc_result = None
+        self.transaction.is_dirty = True
 
     def callproc(self, procname, params=[]):
         query = 'EXECUTE PROCEDURE ' + procname + ' ' + ','.join('?'*len(params))
@@ -740,6 +741,7 @@ class Transaction(object):
         self._connection = connection
         self._trans_handle = None
         self.stmts = set()
+        self.is_dirty = False
 
     def _begin(self):
         self._close()
@@ -747,9 +749,10 @@ class Transaction(object):
                 transaction_parameter_block[self.connection.isolation_level])
         (h, oid, buf) = self.connection._op_response()
         self._trans_handle = h
+        self.is_dirty = False
 
     def _close(self):
-        if self._trans_handle:
+        if self._trans_handle and self.is_dirty:
             self.connection._op_rollback(self.trans_handle)
             (h, oid, buf) = self.connection._op_response()
         self._trans_handle = None
@@ -779,6 +782,7 @@ class Transaction(object):
             self.connection._op_commit(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
             self._trans_handle = None
+        self.is_dirty = False
 
     def rollback(self, retaining=False, savepoint=None):
         if self._trans_handle is None:
@@ -788,7 +792,6 @@ class Transaction(object):
                         query='ROLLBACK TO '+savepoint)
             (h, oid, buf) = self.connection._op_response()
             return
-
         if retaining:
             self.connection._op_rollback_retaining(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
@@ -797,6 +800,7 @@ class Transaction(object):
             self.connection._op_rollback(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
             self._trans_handle = None
+        self.is_dirty = False
 
     def _trans_info(self, info_requests):
         if info_requests[-1] == isc_info_end:
