@@ -128,7 +128,7 @@ class Statement(object):
         self._is_open = False
 
     def close(self):
-        DEBUG_OUTPUT("Statement::close()")
+        DEBUG_OUTPUT("Statement::close()", self.handle)
         if not self._is_open or self.handle == 0 or self.handle == -1:
             return
         self.trans.connection._op_free_statement(self.handle, DSQL_close)
@@ -144,6 +144,7 @@ class Statement(object):
         if self.trans.connection.accept_type != ptype_lazy_send:
             (h, oid, buf) = self.trans.connection._op_response()
         self.handle = -1
+        self.trans.stmts.remove(self)
 
     def clear_handle(self):
         self._is_open = False
