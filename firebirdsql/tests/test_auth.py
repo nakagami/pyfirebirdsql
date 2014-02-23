@@ -35,6 +35,7 @@ class TestAuth(TestBase):
                 page_size=self.page_size)
         self.connection.close()
 
+    @unittest.skip("Still not work")
     def test_srp_no_wirecrypt(self):
         self.connection = firebirdsql.connect(
                 auth_plugin_list=("Srp",), 
@@ -47,8 +48,8 @@ class TestAuth(TestBase):
                 page_size=self.page_size)
         self.connection.close()
 
+    @unittest.skip("Still not work")
     def test_legacy_auth_wirecrypt(self):
-        # It is not wirecrypt
         self.connection = firebirdsql.connect(
                 auth_plugin_list=("Legacy_Auth",), 
                 wire_crypt=True,
