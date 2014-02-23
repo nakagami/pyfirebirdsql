@@ -24,7 +24,7 @@ class TestSrp(TestBase):
         self.assertEqual(clientKey, serverKey)
 
     def test_legacy_auth(self):
-        self.connection = firebirdsql.create_database(
+        self.connection = firebirdsql.connect(
                 auth_plugin_list=("LegacyAuth",), 
                 wire_crypt=self.wire_crypt,
                 host=self.host,
