@@ -26,7 +26,7 @@ class TestSrp(TestBase):
     def test_legacy_auth(self):
         self.connection = firebirdsql.connect(
                 auth_plugin_list=("Legacy_Auth",), 
-                wire_crypt=self.wire_crypt,
+                wire_crypt=False,
                 host=self.host,
                 port=self.port,
                 database=self.database,
