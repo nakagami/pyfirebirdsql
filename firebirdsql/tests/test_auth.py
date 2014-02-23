@@ -35,7 +35,7 @@ class TestAuth(TestBase):
                 page_size=self.page_size)
         self.connection.close()
 
-    @unittest.skip("Still not work")
+    @unittest.skip("still it does not work")
     def test_srp_no_wirecrypt(self):
         self.connection = firebirdsql.connect(
                 auth_plugin_list=("Srp",), 
