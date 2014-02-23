@@ -87,7 +87,6 @@ class Statement(object):
         self.trans = trans
         self._allocate_stmt()
         self._is_open = False
-        self.trans.stmts.add(self)
 
     def _allocate_stmt(self):
         self.trans.connection._op_allocate_statement()
@@ -144,7 +143,6 @@ class Statement(object):
         if self.trans.connection.accept_type != ptype_lazy_send:
             (h, oid, buf) = self.trans.connection._op_response()
         self.handle = -1
-        self.trans.stmts.remove(self)
 
     def clear_handle(self):
         self._is_open = False
@@ -760,7 +758,6 @@ class Transaction(object):
         DEBUG_OUTPUT("Transaction::__init__()")
         self._connection = connection
         self._trans_handle = None
-        self.stmts = set()
 
     def _begin(self):
         DEBUG_OUTPUT("Transaction::_begin()")
