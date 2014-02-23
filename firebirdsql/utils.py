@@ -6,6 +6,7 @@
 #
 # Python DB-API 2.0 module for Firebird. 
 ##############################################################################
+from __future__ import print_function
 import sys
 import binascii
 import struct
@@ -16,6 +17,10 @@ if PYTHON_MAJOR_VER == 2:
     def bytes(byte_array):
         return ''.join([chr(c) for c in byte_array])
 
+def debug_output(*argv):
+    for s in argv:
+        print(s, end='')
+    print()
 
 def hex_to_bytes(s):
     """
