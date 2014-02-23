@@ -48,7 +48,6 @@ class TestAuth(TestBase):
                 page_size=self.page_size)
         self.connection.close()
 
-    @unittest.skip("Still not work")
     def test_legacy_auth_wirecrypt(self):
         self.connection = firebirdsql.connect(
                 auth_plugin_list=("Legacy_Auth",), 
