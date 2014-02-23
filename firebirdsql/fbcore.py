@@ -6,6 +6,7 @@
 #
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
+from __future__ import print_function
 import sys
 import xdrlib, time, datetime, decimal, struct
 import itertools
@@ -30,6 +31,15 @@ __version__ = '0.9.0'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
+
+DEBUG = False
+
+def DEBUG_OUTPUT(*argv):
+    if not DEBUG:
+        return
+    for s in argv:
+        print(s, end='')
+    print()
 
 transaction_parameter_block = (
     # ISOLATION_LEVEL_READ_UNCOMMITTED

@@ -6,6 +6,7 @@
 #
 # Python DB-API 2.0 module for Firebird. 
 ##############################################################################
+from __future__ import print_function
 import sys
 import os
 import socket
@@ -25,6 +26,13 @@ from firebirdsql import srp
 from firebirdsql.arc4 import Arc4
 
 DEBUG = False
+
+def DEBUG_OUTPUT(*argv):
+    if not DEBUG:
+        return
+    for s in argv:
+        print(s, end='')
+    print()
 
 INFO_SQL_SELECT_DESCRIBE_VARS = bytes([
     isc_info_sql_select,
@@ -61,7 +69,7 @@ def wire_operation(fn):
     if not DEBUG:
         return fn
     def f(*args, **kwargs):
-        debug_output('<--', fn, '-->')
+        DEBUG_OUTPUT('<--', fn, '-->')
         r = fn(*args, **kwargs)
         return r
     return f
