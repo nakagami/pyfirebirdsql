@@ -91,6 +91,7 @@ class Statement(object):
     statement handle and status (open/close)
     """
     def __init__(self, trans):
+        DEBUG_OUTPUT("Statement::__init__()")
         self.trans = trans
         self._allocate_stmt()
         self._is_open = False
@@ -105,6 +106,7 @@ class Statement(object):
             self.handle = h
 
     def prepare(self, sql, explain_plan=False):
+        DEBUG_OUTPUT("Statement::prepare()")
         if self.handle == 0:
             self._allocate_stmt()
 
@@ -131,12 +133,14 @@ class Statement(object):
                                     self.trans.connection, self.handle)
 
     def open(self):
+        DEBUG_OUTPUT("Statement::open()")
         self._is_open = True
 
     def _close(self):
         self._is_open = False
 
     def close(self):
+        DEBUG_OUTPUT("Statement::close()")
         if not self._is_open or self.handle == 0 or self.handle == -1:
             return
         self.trans.connection._op_free_statement(self.handle, DSQL_close)
@@ -145,6 +149,7 @@ class Statement(object):
         self._close()
 
     def drop(self):
+        DEBUG_OUTPUT("Statement::drop()")
         if self.handle == 0 or self.handle == -1:
             return
         self.trans.connection._op_free_statement(self.handle, DSQL_drop)
@@ -162,6 +167,7 @@ class Statement(object):
 
 class PreparedStatement(object):
     def __init__(self, cur, sql, explain_plan=False):
+        DEBUG_OUTPUT("PreparedStatement::__init__()")
         self.cur = cur
         self.sql = sql
         transaction = self.cur.transaction
@@ -224,6 +230,7 @@ def _fetch_generator(stmt):
 
 class Cursor(object):
     def __init__(self, trans):
+        DEBUG_OUTPUT("Cursor::__init__()")
         self._transaction = trans
         self.stmt = None
         self.arraysize = 1
@@ -274,11 +281,13 @@ class Cursor(object):
             raise OperationalError(e._message, e.gds_codes, e.sql_code)
 
     def prep(self, query, explain_plan=False):
+        DEBUG_OUTPUT("Cursor::prep()")
         prepared_statement = PreparedStatement(self, query,
                                                 explain_plan=explain_plan)
         return prepared_statement
 
     def execute(self, query, params=[]):
+        DEBUG_OUTPUT("Cursor::execute()")
         stmt = self._get_stmt(query)
         if stmt.stmt_type == isc_info_sql_stmt_exec_procedure:
             cooked_params = self._convert_params(params)
@@ -298,6 +307,7 @@ class Cursor(object):
             self._callproc_result = None
 
     def callproc(self, procname, params=[]):
+        DEBUG_OUTPUT("Cursor::callproc()")
         query = 'EXECUTE PROCEDURE ' + procname + ' ' + ','.join('?'*len(params))
         return self.execute(query, params)
 
@@ -475,11 +485,13 @@ class EventConduit(WireProtocol):
 
 class Connection(WireProtocol):
     def cursor(self):
+        DEBUG_OUTPUT("Connection::cursor()")
         if self._transaction is None:
             self.begin()
         return Cursor(self._transaction)
 
     def begin(self):
+        DEBUG_OUTPUT("Connection::begin()")
         if not self.sock:
             raise InternalError
         if self._transaction is None:
@@ -487,6 +499,7 @@ class Connection(WireProtocol):
         self._transaction.begin()
 
     def commit(self, retaining=False):
+        DEBUG_OUTPUT("Connection::commit()")
         if self._transaction:
             self._transaction.commit(retaining=retaining)
 
@@ -494,6 +507,7 @@ class Connection(WireProtocol):
         return self._transaction.savepoint(name)
 
     def rollback(self, retaining=False, savepoint=None):
+        DEBUG_OUTPUT("Connection::rollback()")
         if self._transaction:
             self._transaction.rollback(retaining=retaining, savepoint=savepoint)
 
@@ -512,6 +526,7 @@ class Connection(WireProtocol):
                     timeout=None, isolation_level=None, use_unicode=None,
                     auth_plugin_list=('Srp', 'Legacy_Auth'),
                     wire_crypt=True, create_new=False):
+        DEBUG_OUTPUT("Connection::__init__()")
         self.db_handle = None
         if dsn:
             i = dsn.find(':')
@@ -695,6 +710,7 @@ class Connection(WireProtocol):
             return v
 
     def db_info(self, info_requests):
+        DEBUG_OUTPUT("Connection::db_info()")
         if type(info_requests) == int:  # singleton
             r = self._db_info([info_requests])
             return self._db_info_convert_type(info_requests, r[0][1])
@@ -715,6 +731,7 @@ class Connection(WireProtocol):
         return {}
 
     def close(self):
+        DEBUG_OUTPUT("Connection::close()")
         if self.sock is None:
             return
         if self.db_handle:
@@ -728,6 +745,7 @@ class Connection(WireProtocol):
         self.db_handle = None
 
     def drop_database(self):
+        DEBUG_OUTPUT("Connection::drop_database()")
         self._op_drop_database()
         (h, oid, buf) = self._op_response()
         self.sock.close()
@@ -746,17 +764,20 @@ class Connection(WireProtocol):
 
 class Transaction(object):
     def __init__(self, connection, tpb=None):
+        DEBUG_OUTPUT("Transaction::__init__()")
         self._connection = connection
         self._trans_handle = None
         self.stmts = set()
 
     def _begin(self):
+        DEBUG_OUTPUT("Transaction::_begin()")
         self.connection._op_transaction(
                 transaction_parameter_block[self.connection.isolation_level])
         (h, oid, buf) = self.connection._op_response()
         self._trans_handle = h
 
     def begin(self):
+        DEBUG_OUTPUT("Transaction::begin()")
         self._begin()
 
     def savepoint(self, name):
@@ -771,6 +792,7 @@ class Transaction(object):
             s.clear_handle()
 
     def commit(self, retaining=False):
+        DEBUG_OUTPUT("Transaction::commit()")
         if self._trans_handle is None:
             return
         if retaining:
@@ -783,6 +805,7 @@ class Transaction(object):
             self._trans_handle = None
 
     def rollback(self, retaining=False, savepoint=None):
+        DEBUG_OUTPUT("Transaction::rollback()")
         if self._trans_handle is None:
             return
         if savepoint:
