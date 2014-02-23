@@ -288,6 +288,7 @@ class Cursor(object):
 
     def execute(self, query, params=[]):
         DEBUG_OUTPUT("Cursor::execute()")
+        DEBUG_OUTPUT(query, params)
         stmt = self._get_stmt(query)
         if stmt.stmt_type == isc_info_sql_stmt_exec_procedure:
             cooked_params = self._convert_params(params)
