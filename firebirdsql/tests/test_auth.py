@@ -2,7 +2,7 @@ import unittest
 from firebirdsql import srp
 from firebirdsql.tests.base import *
 
-class TestSrp(TestBase):
+class TestAuth(TestBase):
     def test_srp(self):
         user = b'sysdba'
         password = b'masterkey'
