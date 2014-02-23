@@ -23,7 +23,31 @@ class TestAuth(TestBase):
         # Client and Server has same key
         self.assertEqual(clientKey, serverKey)
 
+    def test_no_wirecrypt(self):
+        self.connection = firebirdsql.connect(
+                auth_plugin_list=("Srp",), 
+                wire_crypt=False,
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                user=self.user,
+                password=self.password,
+                page_size=self.page_size)
+        self.connection.close()
+
     def test_legacy_auth(self):
+        self.connection = firebirdsql.connect(
+                auth_plugin_list=("Legacy_Auth",), 
+                wire_crypt=True,
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                user=self.user,
+                password=self.password,
+                page_size=self.page_size)
+        self.connection.close()
+
+    def test_legacy_auth_no_wirecrypt(self):
         self.connection = firebirdsql.connect(
                 auth_plugin_list=("Legacy_Auth",), 
                 wire_crypt=False,
@@ -33,6 +57,5 @@ class TestAuth(TestBase):
                 user=self.user,
                 password=self.password,
                 page_size=self.page_size)
-
         self.connection.close()
 
