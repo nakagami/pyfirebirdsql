@@ -26,7 +26,7 @@ except ImportError:
     from UserDict import DictMixin as Mapping
     HAS_MAPPING = False
 
-__version__ = '0.8.7'
+__version__ = '0.9.0'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
@@ -528,6 +528,8 @@ class Connection(WireProtocol):
         self.role = role
         self.charset = charset
         self.timeout = float(timeout) if timeout is not None else None
+        self.auth_plugin_list = auth_plugin_list
+        self.wire_crypt = wire_crypt
         self.page_size = page_size
         self.is_services = is_services
         if isolation_level is None:

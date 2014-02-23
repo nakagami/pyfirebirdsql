@@ -93,3 +93,8 @@ Version 0.8.6
 =============
 
    - fix exception when fetch after insert. return None
+
+Version 0.9.0
+=============
+
+   - support Firebird 3 (experimental)
