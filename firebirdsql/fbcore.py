@@ -305,6 +305,8 @@ class Cursor(object):
 
 
     def fetchone(self):
+        if not self.transaction.is_dirty:
+            return None
         # callproc or not select statement
         if not self._fetch_records:
             if self._callproc_result:
@@ -335,6 +337,8 @@ class Cursor(object):
 
     def fetchall(self):
         # callproc or not select statement
+        if not self.transaction.is_dirty:
+            return None
         if not self._fetch_records:
             if self._callproc_result:
                 r = [tuple(self._callproc_result)]
