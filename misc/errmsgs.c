@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009,2010 Hajime Nakagami<nakagami@gmail.com>
+ * Copyright (c) 2009,2010, 2014 Hajime Nakagami<nakagami@gmail.com>
  * All rights reserved.
  * Licensed under the New BSD License
  * (http://www.freebsd.org/copyright/freebsd-license.html)
@@ -9,7 +9,7 @@
 #define	SLONG long
 #define SCHAR char
 
-/*http://firebird.cvs.sf.net/viewvc/firebird/firebird2/src/include/gen/msgs.h*/
+/*https://github.com/asfernandes/firebird/blob/master/src/include/gen/msgs.h*/
 #include "msgs.h"   
 
 int main(int argc, char *argv[])
