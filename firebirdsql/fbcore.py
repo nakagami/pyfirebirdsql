@@ -181,7 +181,7 @@ class PreparedStatement(object):
 
 
 def _fetch_generator(stmt):
-    DEBUG_OUTPUT("_fetch_generator()")
+    DEBUG_OUTPUT("_fetch_generator()", stmt.trans._trans_handle)
     stmt.open()
     connection = stmt.trans.connection
     more_data = True
@@ -788,8 +788,6 @@ class Transaction(object):
             self.connection._op_commit_retaining(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
         else:
-            for s in self.stmts:
-                s.clear_handle()
             self.connection._op_commit(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
             self._trans_handle = None
@@ -811,8 +809,6 @@ class Transaction(object):
             self.connection._op_rollback_retaining(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
         else:
-            for s in self.stmts:
-                s.clear_handle()
             self.connection._op_rollback(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
             self._trans_handle = None

@@ -103,10 +103,10 @@ class TestBasic(TestBase):
         cur = conn.cursor()
         cur.execute("select * from foo")
         conn.commit()
-        try:
-            cur.fetchall()
-        except firebirdsql.OperationalError as e:
-            pass
+#        try:
+#            cur.fetchall()
+#        except firebirdsql.OperationalError as e:
+#            pass
 
         cur = conn.cursor()
         try:
