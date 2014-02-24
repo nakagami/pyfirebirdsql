@@ -772,7 +772,6 @@ class Transaction(object):
         self._connection = connection
         self._trans_handle = None
         self.stmts = set()
-        self.is_dirty = False
 
     def _begin(self):
         DEBUG_OUTPUT("Transaction::_begin()")
