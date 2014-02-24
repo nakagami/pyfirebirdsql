@@ -31,8 +31,8 @@ def DEBUG_OUTPUT(*argv):
     if not DEBUG:
         return
     for s in argv:
-        print(s, end='')
-    print()
+        print(s, end=' ', file=sys.stderr)
+    print(file=sys.stderr)
 
 INFO_SQL_SELECT_DESCRIBE_VARS = bytes([
     isc_info_sql_select,

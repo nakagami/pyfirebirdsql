@@ -38,8 +38,8 @@ def DEBUG_OUTPUT(*argv):
     if not DEBUG:
         return
     for s in argv:
-        print(s, end='')
-    print()
+        print(s, end=' ', file=sys.stderr)
+    print(file=sys.stderr)
 
 transaction_parameter_block = (
     # ISOLATION_LEVEL_READ_UNCOMMITTED
@@ -192,6 +192,7 @@ class PreparedStatement(object):
 
 
 def _fetch_generator(stmt):
+    DEBUG_OUTPUT("_fetch_generator()")
     stmt.open()
     connection = stmt.trans.connection
     more_data = True
@@ -226,6 +227,7 @@ def _fetch_generator(stmt):
                     if x.sqlsubtype == 1:    # TEXT
                         r[i] = connection.bytes_to_str(r[i])
             yield r
+    DEBUG_OUTPUT("_fetch_generator() StopIteration()")
     raise StopIteration()
 
 class Cursor(object):
@@ -287,8 +289,7 @@ class Cursor(object):
         return prepared_statement
 
     def execute(self, query, params=[]):
-        DEBUG_OUTPUT("Cursor::execute()")
-        DEBUG_OUTPUT(query, params)
+        DEBUG_OUTPUT("Cursor::execute()", query, params)
         stmt = self._get_stmt(query)
         if stmt.stmt_type == isc_info_sql_stmt_exec_procedure:
             cooked_params = self._convert_params(params)
@@ -306,6 +307,7 @@ class Cursor(object):
             else:
                 self._fetch_records = None
             self._callproc_result = None
+        self.transaction.is_dirty = True
 
     def callproc(self, procname, params=[]):
         DEBUG_OUTPUT("Cursor::callproc()")
@@ -392,6 +394,7 @@ class Cursor(object):
             r = self.fetchonemap()
 
     def close(self):
+        DEBUG_OUTPUT("Cursor::close()")
         if not self.stmt:
             return
         self.stmt.drop()
@@ -519,6 +522,7 @@ class Connection(WireProtocol):
         self._op_exec_immediate(
             self._transaction.trans_handle, query=query)
         (h, oid, buf) = self._op_response()
+        self._transaction.is_dirty=True
 
     def __init__(self, dsn=None, user=None, password=None, role=None, host=None,
                     database=None, charset=DEFAULT_CHARSET, port=3050,
@@ -768,6 +772,7 @@ class Transaction(object):
         self._connection = connection
         self._trans_handle = None
         self.stmts = set()
+        self.is_dirty = False
 
     def _begin(self):
         DEBUG_OUTPUT("Transaction::_begin()")
@@ -775,6 +780,7 @@ class Transaction(object):
                 transaction_parameter_block[self.connection.isolation_level])
         (h, oid, buf) = self.connection._op_response()
         self._trans_handle = h
+        self.is_dirty = False
 
     def begin(self):
         DEBUG_OUTPUT("Transaction::begin()")
@@ -792,8 +798,11 @@ class Transaction(object):
             s.clear_handle()
 
     def commit(self, retaining=False):
-        DEBUG_OUTPUT("Transaction::commit()")
+        DEBUG_OUTPUT("Transaction::commit()",
+                        self._trans_handle, retaining)
         if self._trans_handle is None:
+            return
+        if not self.is_dirty:
             return
         if retaining:
             self.connection._op_commit_retaining(self._trans_handle)
@@ -803,15 +812,19 @@ class Transaction(object):
             self.connection._op_commit(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
             self._trans_handle = None
+        self.is_dirty = False
 
     def rollback(self, retaining=False, savepoint=None):
-        DEBUG_OUTPUT("Transaction::rollback()")
+        DEBUG_OUTPUT("Transaction::rollback()",
+                        self._trans_handle, retaining, savepoint)
         if self._trans_handle is None:
             return
         if savepoint:
             self.connection._op_exec_immediate(self._trans_handle,
                         query='ROLLBACK TO '+savepoint)
             (h, oid, buf) = self.connection._op_response()
+            return
+        if not self.is_dirty:
             return
         if retaining:
             self.connection._op_rollback_retaining(self._trans_handle)
@@ -821,6 +834,7 @@ class Transaction(object):
             self.connection._op_rollback(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
             self._trans_handle = None
+        self.is_dirty = False
 
     def _trans_info(self, info_requests):
         if info_requests[-1] == isc_info_end:
