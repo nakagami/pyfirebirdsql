@@ -265,19 +265,6 @@ class Cursor(object):
             stmt.prepare(query)
         return stmt
 
-    def _execute(self, stmt_handle, params):
-        DEBUG_OUTPUT("Cursor::_execute()", stmt_handle)
-        cooked_params = self._convert_params(params)
-        self.transaction.connection._op_execute(stmt_handle,
-                                self.transaction.trans_handle, cooked_params)
-        try:
-            (h, oid, buf) = self.transaction.connection._op_response()
-        except OperationalError:
-            e = sys.exc_info()[1]
-            if 335544665 in e.gds_codes:
-                raise IntegrityError(e._message, e.gds_codes, e.sql_code)
-            raise OperationalError(e._message, e.gds_codes, e.sql_code)
-
     def prep(self, query, explain_plan=False):
         DEBUG_OUTPUT("Cursor::prep()")
         prepared_statement = PreparedStatement(self, query,
@@ -287,8 +274,8 @@ class Cursor(object):
     def execute(self, query, params=[]):
         DEBUG_OUTPUT("Cursor::execute()", query, params)
         stmt = self._get_stmt(query)
+        cooked_params = self._convert_params(params)
         if stmt.stmt_type == isc_info_sql_stmt_exec_procedure:
-            cooked_params = self._convert_params(params)
             self.transaction.connection._op_execute2(stmt.handle,
                 self.transaction.trans_handle, cooked_params,
                 calc_blr(stmt.xsqlda))
@@ -297,7 +284,15 @@ class Cursor(object):
             self.transaction.connection._op_response()
             self._fetch_records = None
         else:
-            self._execute(stmt.handle, params)
+            self.transaction.connection._op_execute(stmt.handle,
+                                self.transaction.trans_handle, cooked_params)
+            try:
+                (h, oid, buf) = self.transaction.connection._op_response()
+            except OperationalError as e:
+                if 335544665 in e.gds_codes:
+                    raise IntegrityError(e._message, e.gds_codes, e.sql_code)
+                raise OperationalError(e._message, e.gds_codes, e.sql_code)
+
             if stmt.stmt_type == isc_info_sql_stmt_select:
                 self._fetch_records = _fetch_generator(stmt)
             else:
