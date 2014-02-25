@@ -99,9 +99,6 @@ class Statement(object):
 
     def prepare(self, sql, explain_plan=False):
         DEBUG_OUTPUT("Statement::prepare()", self.handle)
-        if self.handle == 0:
-            self._allocate_stmt()
-
         if explain_plan:
             self.trans.connection._op_prepare_statement(
                 self.handle, self.trans.trans_handle, sql,
@@ -136,7 +133,7 @@ class Statement(object):
 
     def close(self):
         DEBUG_OUTPUT("Statement::close()")
-        if not self._is_open or self.handle == 0 or self.handle == -1:
+        if not self._is_open or self.handle == -1:
             return
         self.trans.connection._op_free_statement(self.handle, DSQL_close)
         if self.trans.connection.accept_type != ptype_lazy_send:
@@ -145,20 +142,16 @@ class Statement(object):
 
     def drop(self):
         DEBUG_OUTPUT("Statement::drop()")
-        if self.handle == 0 or self.handle == -1:
+        if self.handle == -1:
             return
         self.trans.connection._op_free_statement(self.handle, DSQL_drop)
         if self.trans.connection.accept_type != ptype_lazy_send:
             (h, oid, buf) = self.trans.connection._op_response()
         self.handle = -1
 
-    def clear_handle(self):
-        self._is_open = False
-        self.handle = 0
-
     @property
     def is_opened(self):
-        return self._is_open and self.handle != 0
+        return self._is_open
 
 class PreparedStatement(object):
     def __init__(self, cur, sql, explain_plan=False):
@@ -783,10 +776,6 @@ class Transaction(object):
                         query='SAVEPOINT '+name)
         (h, oid, buf) = self.connection._op_response()
 
-    def _clear_stmts(self):
-        for s in self.stmts:
-            s.clear_handle()
-
     def commit(self, retaining=False):
         DEBUG_OUTPUT("Transaction::commit()",
                         self._trans_handle, retaining)
@@ -798,7 +787,8 @@ class Transaction(object):
             self.connection._op_commit_retaining(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
         else:
-            self._clear_stmts()
+            for s in self.stmts:
+                s.close()
             self.connection._op_commit(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
             self._trans_handle = None
@@ -820,7 +810,8 @@ class Transaction(object):
             self.connection._op_rollback_retaining(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
         else:
-            self._clear_stmts()
+            for s in self.stmts:
+                s.close()
             self.connection._op_rollback(self._trans_handle)
             (h, oid, buf) = self.connection._op_response()
             self._trans_handle = None
