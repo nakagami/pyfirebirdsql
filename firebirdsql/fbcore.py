@@ -113,13 +113,18 @@ class Statement(object):
 
         (h, oid, buf) = self.trans.connection._op_response()
 
-        i = 0
-        if byte_to_int(buf[i]) == isc_info_sql_get_plan:
-            l = bytes_to_int(buf[i+1:i+3])
-            self.plan = self.trans.connection.bytes_to_str(buf[i+3:i+3+l])
-            i += 3 + l
-
-        self.stmt_type, self.xsqlda = parse_xsqlda(buf[i:],
+        if len(buf) == 0:
+            if self.handle == -1:
+                self.handle = h
+            self.stmt_type = None
+            self.xsqlda = []
+        else:
+            i = 0
+            if byte_to_int(buf[i]) == isc_info_sql_get_plan:
+                l = bytes_to_int(buf[i+1:i+3])
+                self.plan = self.trans.connection.bytes_to_str(buf[i+3:i+3+l])
+                i += 3 + l
+            self.stmt_type, self.xsqlda = parse_xsqlda(buf[i:],
                                     self.trans.connection, self.handle)
 
     def open(self):
