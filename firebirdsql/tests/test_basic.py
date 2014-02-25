@@ -106,7 +106,7 @@ class TestBasic(TestBase):
         try:
             cur.fetchall()
         except firebirdsql.OperationalError as e:
-            self.assertEqual(list(e.gds_codes)[0], 335544332)
+            pass
 
         cur = conn.cursor()
         try:
