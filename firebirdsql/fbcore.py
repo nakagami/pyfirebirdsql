@@ -10,6 +10,7 @@ from __future__ import print_function
 import sys
 import xdrlib, time, datetime, decimal, struct
 import itertools
+from collections import Mapping
 from firebirdsql.fberrmsgs import messages
 from firebirdsql import (DatabaseError, InternalError, OperationalError,
     ProgrammingError, IntegrityError, DataError, NotSupportedError,)
@@ -18,15 +19,6 @@ from firebirdsql.utils import *
 from firebirdsql.wireprotocol import WireProtocol, INFO_SQL_SELECT_DESCRIBE_VARS
 from firebirdsql.socketstream import SocketStream
 from firebirdsql.xsqlvar import XSQLVAR, calc_blr, parse_select_items, parse_xsqlda
-
-try:
-    from collections import Mapping
-    HAS_MAPPING = True
-except ImportError:
-    # Python 2.5
-    from UserDict import DictMixin as Mapping
-    HAS_MAPPING = False
-
 __version__ = '0.9.0'
 apilevel = '2.0'
 threadsafety = 1
@@ -935,12 +927,3 @@ class RowMapping(Mapping):
         return ("<RowMapping at 0x%08x with fields: %s>" %
                 (id(self), ", ".join(values)))
 
-    if not HAS_MAPPING:
-        def keys(self):
-            return list(self)
-
-        def __setitem__(self, key, value):
-            raise NotImplementedError
-
-        def __delitem__(self, key):
-            raise NotImplementedError
