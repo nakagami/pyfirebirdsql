@@ -98,7 +98,7 @@ class Statement(object):
             self.handle = h
 
     def prepare(self, sql, explain_plan=False):
-        DEBUG_OUTPUT("Statement::prepare()")
+        DEBUG_OUTPUT("Statement::prepare()", self.handle)
         if self.handle == 0:
             self._allocate_stmt()
 
@@ -112,8 +112,6 @@ class Statement(object):
             self.plan = None
 
         (h, oid, buf) = self.trans.connection._op_response()
-        if self.trans.connection.accept_type == ptype_lazy_send:
-            self.handle = h
 
         i = 0
         if byte_to_int(buf[i]) == isc_info_sql_get_plan:
@@ -263,6 +261,7 @@ class Cursor(object):
         return stmt
 
     def _execute(self, stmt_handle, params):
+        DEBUG_OUTPUT("Cursor::_execute()", stmt_handle)
         cooked_params = self._convert_params(params)
         self.transaction.connection._op_execute(stmt_handle,
                                 self.transaction.trans_handle, cooked_params)
