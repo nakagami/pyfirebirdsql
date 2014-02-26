@@ -561,10 +561,9 @@ class Connection(WireProtocol):
         self._op_connect(auth_plugin_list, wire_crypt)
         try:
             self._op_accept()
-        except OperationalError:
+        except OperationalError as e:
             self.sock.close()
             self.sock = None
-            e = sys.exc_info()[1]
             raise e
         if create_new:                      # create database
             self._op_create(self.page_size)
