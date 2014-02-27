@@ -584,7 +584,7 @@ class Connection(WireProtocol):
     def set_isolation_level(self, isolation_level):
         self.isolation_level = int(isolation_level)
 
-    def autocommit(self, is_autocommit):
+    def set_autocommit(self, is_autocommit):
         self._autocommit = is_autocommit
 
     def _db_info(self, info_requests):
