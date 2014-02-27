@@ -216,6 +216,43 @@ class TestBasic(TestBase):
                         [d[0] for d in cur.description])
         self.assertEqual(['a','A','X','c','d'],
                         [r[1] for r in cur.fetchall()])
+        cur.close()
+
+    def test_autocommit(self):
+        # autocommit
+        cur = self.connection.cursor()
+        cur.execute("select count(*) from foo")
+        self.assertEqual(cur.fetchone()[0], 0)
+        cur.close()
+
+        self.connection.set_autocommit(True)
+        cur = self.connection.cursor()
+        cur.execute("insert into foo(a, b, c) values (1, 'A', 'a')")
+        cur.close()
+        cur = self.connection.cursor()
+        cur.execute("select count(*) from foo")
+        self.assertEqual(cur.fetchone()[0], 1)
+        cur.close()
+
+        self.connection.set_autocommit(False)
+        cur = self.connection.cursor()
+        cur.execute("insert into foo(a, b, c) values (2, 'B', 'b')")
+        self.connection.rollback()
+        cur.close()
+        cur = self.connection.cursor()
+        cur.execute("select count(*) from foo")
+        self.assertEqual(cur.fetchone()[0], 1)
+        cur.close()
+
+        self.connection.set_autocommit(True)
+        cur = self.connection.cursor()
+        cur.execute("insert into foo(a, b, c) values (3, 'C', 'c')")
+        self.connection.rollback()
+        cur.close()
+        cur = self.connection.cursor()
+        cur.execute("select count(*) from foo")
+        self.assertEqual(cur.fetchone()[0], 2)
+        cur.close()
 
     def test_prep(self):
         cur = self.connection.cursor()

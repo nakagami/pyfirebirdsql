@@ -585,7 +585,11 @@ class Connection(WireProtocol):
         self.isolation_level = int(isolation_level)
 
     def set_autocommit(self, is_autocommit):
-        self._autocommit = is_autocommit
+        if self._autocommit != is_autocommit and self._transaction is not None:
+            self.rollback()
+            self._autocommit = is_autocommit
+            self._transaction = None
+            self.begin()
 
     def _db_info(self, info_requests):
         if info_requests[-1] == isc_info_end:
