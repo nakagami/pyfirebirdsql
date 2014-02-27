@@ -486,7 +486,7 @@ class Connection(WireProtocol):
         if not self.sock:
             raise InternalError
         if self._transaction is None:
-            self._transaction = Transaction(self)
+            self._transaction = Transaction(self, self._autocommit)
         self._transaction.begin()
 
     def commit(self, retaining=False):
@@ -504,7 +504,7 @@ class Connection(WireProtocol):
 
     def execute_immediate(self, query):
         if self._transaction is None:
-            self._transaction = Transaction(self)
+            self._transaction = Transaction(self, self._autocommit)
             self._transaction.begin()
         self._op_exec_immediate(
             self._transaction.trans_handle, query=query)
@@ -555,6 +555,7 @@ class Connection(WireProtocol):
         self.use_unicode = use_unicode
         self.last_event_id = 0
 
+        self._autocommit = False
         self._transaction = None
         self.sock = SocketStream(self.hostname, self.port, self.timeout, cloexec)
 
@@ -582,6 +583,9 @@ class Connection(WireProtocol):
 
     def set_isolation_level(self, isolation_level):
         self.isolation_level = int(isolation_level)
+
+    def autocommit(self, is_autocommit):
+        self._autocommit = is_autocommit
 
     def _db_info(self, info_requests):
         if info_requests[-1] == isc_info_end:
@@ -753,15 +757,18 @@ class Connection(WireProtocol):
         return self.sock is None
 
 class Transaction(object):
-    def __init__(self, connection, tpb=None):
+    def __init__(self, connection, is_autocommit=False):
         DEBUG_OUTPUT("Transaction::__init__()")
         self._connection = connection
         self._trans_handle = None
+        self._autocommit = is_autocommit
 
     def _begin(self):
         DEBUG_OUTPUT("Transaction::_begin()")
-        self.connection._op_transaction(
-                transaction_parameter_block[self.connection.isolation_level])
+        tpb = transaction_parameter_block[self.connection.isolation_level]
+        if self._autocommit:
+            tpb += bytes([isc_tpb_autocommit])
+        self.connection._op_transaction(tpb)
         (h, oid, buf) = self.connection._op_response()
         self._trans_handle = h
         self.is_dirty = False
