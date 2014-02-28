@@ -171,7 +171,6 @@ class PreparedStatement(object):
 
 def _fetch_generator(stmt):
     DEBUG_OUTPUT("_fetch_generator()", stmt.trans._trans_handle)
-    stmt.open()
     connection = stmt.trans.connection
     more_data = True
     while more_data:
@@ -281,6 +280,7 @@ class Cursor(object):
             else:
                 self._fetch_records = None
             self._callproc_result = None
+        stmt.open()
         self.transaction.is_dirty = True
 
     def callproc(self, procname, params=[]):
