@@ -55,6 +55,8 @@ from firebirdsql.fbcore import ( __version__, apilevel, threadsafety,
     ISOLATION_LEVEL_READ_COMMITED_LEGACY, ISOLATION_LEVEL_READ_COMMITED,
     ISOLATION_LEVEL_REPEATABLE_READ, ISOLATION_LEVEL_SNAPSHOT,
     ISOLATION_LEVEL_SERIALIZABLE, ISOLATION_LEVEL_READ_COMMITED_RO,
+    BINARY, Binary, DATE, Date,
+    Time, Timestamp, DateFromTicks, TimeFromTicks, TimestampFromTicks,
 )
 
 import firebirdsql.services

@@ -46,10 +46,10 @@ transaction_parameter_block = (
     bytes([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed,isc_tpb_rec_version]),
 )
 
-def Date(year, month, day):
-    return datetime.date(year, month, day)
-def Time(hour, minite, second):
-    return datetime.time(hour, minite, second)
+Date = datetime.date
+Time = datetime.time
+TimeDelta = datetime.timedelta
+Timestamp = datetime.datetime
 def DateFromTicks(ticks):
     return apply(Date,time.localtime(ticks)[:3])
 def TimeFromTicks(ticks):
@@ -57,7 +57,7 @@ def TimeFromTicks(ticks):
 def TimestampFromTicks(ticks):
     return apply(Timestamp,time.localtime(ticks)[:6])
 def Binary(b):
-    return b
+    return bytes(b)
 
 class DBAPITypeObject:
     def __init__(self,*values):
@@ -76,6 +76,8 @@ else:
     BINARY = DBAPITypeObject(str)
 NUMBER = DBAPITypeObject(int, decimal.Decimal)
 DATETIME = DBAPITypeObject(datetime.datetime, datetime.date, datetime.time)
+DATE = DBAPITypeObject(datetime.date)
+TIME = DBAPITypeObject(datetime.time)
 ROWID = DBAPITypeObject()
 
 class Statement(object):
