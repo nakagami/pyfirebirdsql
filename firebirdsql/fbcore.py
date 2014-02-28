@@ -397,6 +397,7 @@ class Cursor(object):
 
     @property
     def rowcount(self):
+        DEBUG_OUTPUT("Cursor::rowcount()")
         if not self.stmt.is_opened:
             return -1
 
@@ -420,6 +421,7 @@ class Cursor(object):
             assert buf[10:13] == bytes([0x10,0x04,0x00])
                                               # isc_info_req_delete_count
             count = bytes_to_int(buf[13:17])
+        DEBUG_OUTPUT("Cursor::rowcount()", self.stmt.stmt_type, count)
         return count
 
 class EventConduit(WireProtocol):
