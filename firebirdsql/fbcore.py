@@ -34,16 +34,16 @@ def DEBUG_OUTPUT(*argv):
     print(file=sys.stderr)
 
 transaction_parameter_block = (
-    # ISOLATION_LEVEL_READ_UNCOMMITTED
-    bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
-    # ISOLATION_LEVEL_READ_COMMITED
+    # ISOLATION_LEVEL_READ_COMMITED_LEGACY
     bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_no_rec_version]),
+    # ISOLATION_LEVEL_READ_COMMITED
+    bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
     # ISOLATION_LEVEL_REPEATABLE_READ
     bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_concurrency]),
     # ISOLATION_LEVEL_SERIALIZABLE
     bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_consistency]),
-    # ISOLATION_LEVEL_READ_COMMITED_READ_ONLY
-    bytes([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_no_rec_version]),
+    # ISOLATION_LEVEL_READ_COMMITED_RO
+    bytes([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed,isc_tpb_rec_version]),
 )
 
 def Date(year, month, day):
