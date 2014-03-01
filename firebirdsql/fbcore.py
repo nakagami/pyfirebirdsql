@@ -204,7 +204,10 @@ def _fetch_generator(stmt):
                         (h, oid, buf) = connection._op_response()
                     r[i] = v
                     if x.sqlsubtype == 1:    # TEXT
-                        r[i] = connection.bytes_to_str(r[i])
+                        if connection.use_unicode:
+                            r[i] = connection.bytes_to_ustr(r[i])
+                        else:
+                            r[i] = connection.bytes_to_str(r[i])
             yield r
     DEBUG_OUTPUT("_fetch_generator() StopIteration()")
     raise StopIteration()
