@@ -345,7 +345,7 @@ class Cursor(object):
                 r = [tuple(self._callproc_result)]
                 self._callproc_result = None
                 return r
-            return None
+            return []
         # select statement
         return [tuple(r) for r in self._fetch_records]
 
@@ -358,7 +358,7 @@ class Cursor(object):
                 r = [self._callproc_result]
                 self._callproc_result = None
                 return r
-            return None
+            return []
         # select statement
         return list(itertools.islice(self._fetch_records, size))
 
