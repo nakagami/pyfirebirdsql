@@ -278,6 +278,8 @@ class Cursor(object):
             except OperationalError as e:
                 if 335544665 in e.gds_codes:
                     raise IntegrityError(e._message, e.gds_codes, e.sql_code)
+                if e.sql_code == -303:
+                    raise Warning(e._message, e.gds_codes, e.sql_code)
                 raise OperationalError(e._message, e.gds_codes, e.sql_code)
 
             if stmt.stmt_type == isc_info_sql_stmt_select:
