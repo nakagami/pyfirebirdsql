@@ -97,7 +97,7 @@ class TestBasic(TestBase):
         cur = conn.cursor()
         cur.execute("""insert into foo(a, b, c, e, g, i, j)
             values (6, 'd', 'd', '2014-02-19', '00:01:06', 0.6, 0.6)""")
-        self.assertEqual(cur.fetchmany(), None)
+        self.assertEqual(cur.fetchmany(), [])
         cur.close()
 
         cur = conn.cursor()
