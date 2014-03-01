@@ -8,6 +8,7 @@
 ##############################################################################
 from __future__ import print_function
 import sys
+import warnings
 import xdrlib, time, datetime, decimal, struct
 import itertools
 from collections import Mapping
@@ -276,11 +277,15 @@ class Cursor(object):
             try:
                 (h, oid, buf) = self.transaction.connection._op_response()
             except OperationalError as e:
+                self._fetch_records = None
+                self._callproc_result = None
                 if 335544665 in e.gds_codes:
                     raise IntegrityError(e._message, e.gds_codes, e.sql_code)
                 if e.sql_code == -303:
-                    raise Warning(e._message, e.gds_codes, e.sql_code)
-                raise OperationalError(e._message, e.gds_codes, e.sql_code)
+                    warnings.warn(e._message)
+                    return
+                else:
+                    raise OperationalError(e._message, e.gds_codes, e.sql_code)
 
             if stmt.stmt_type == isc_info_sql_stmt_select:
                 self._fetch_records = _fetch_generator(stmt)

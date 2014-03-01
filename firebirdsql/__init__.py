@@ -18,9 +18,6 @@ class Error(Exception):
     def __str__(self):
         return self._message
 
-class Warning(Exception):
-    pass
-
 class InterfaceError(Error):
     pass
 
