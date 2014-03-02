@@ -144,7 +144,7 @@ class Statement(object):
 
     @property
     def is_opened(self):
-        return self._is_open and self.handle != 0
+        return self._is_open and self.handle != -1
 
 class PreparedStatement(object):
     def __init__(self, cur, sql, explain_plan=False):
@@ -176,6 +176,7 @@ def _fetch_generator(stmt):
     DEBUG_OUTPUT("_fetch_generator()", stmt.trans._trans_handle)
     connection = stmt.trans.connection
     more_data = True
+    stmt.open()
     while more_data:
         if not stmt.is_opened:
             raise StopIteration()
@@ -293,7 +294,6 @@ class Cursor(object):
             else:
                 self._fetch_records = None
             self._callproc_result = None
-        stmt.open()
         self.transaction.is_dirty = True
 
     def callproc(self, procname, params=[]):
