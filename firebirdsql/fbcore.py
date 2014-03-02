@@ -279,7 +279,8 @@ class Cursor(object):
             except OperationalError as e:
                 self._fetch_records = None
                 self._callproc_result = None
-                if 335544665 in e.gds_codes:
+                if e.gds_codes.intersection(
+                    [335544665, 335544466, 335544838, 335544347]):
                     raise IntegrityError(e._message, e.gds_codes, e.sql_code)
                 if e.sql_code == -303:
                     warnings.warn(e._message)
