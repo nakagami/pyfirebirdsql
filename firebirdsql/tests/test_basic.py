@@ -69,11 +69,18 @@ class TestBasic(TestBase):
         conn.cursor().execute("update foo set c=? where a=2", ('Nakagami', ))
         conn.commit()
 
+        # select rowcount
         cur = conn.cursor()
         cur.execute("select * from foo where c=?", ('Nakagami', ))
         self.assertEqual(len(cur.fetchall()), 1)
         self.assertEqual(cur.rowcount, 1)
         cur.close()
+
+        # update rowcount
+        cur = conn.cursor()
+        cur.execute("update foo set c=? where a=2", ('Nakagami', ))
+        self.assertEqual(cur.rowcount, 1)
+        conn.commit()
 
         cur = conn.cursor()
         cur.execute("select * from foo")

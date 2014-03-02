@@ -90,6 +90,7 @@ class Statement(object):
         self.trans = trans
         self._allocate_stmt()
         self._is_open = False
+        self.stmt_type = None
 
     def _allocate_stmt(self):
         self.trans.connection._op_allocate_statement()
@@ -126,20 +127,19 @@ class Statement(object):
 
     def close(self):
         DEBUG_OUTPUT("Statement::close()", self.handle)
-        if not self._is_open or self.handle == -1:
-            return
-        self.trans.connection._op_free_statement(self.handle, DSQL_close)
-        if self.trans.connection.accept_type != ptype_lazy_send:
-            (h, oid, buf) = self.trans.connection._op_response()
+        if (self.stmt_type == isc_info_sql_stmt_select and self._is_open):
+            self.trans.connection._op_free_statement(self.handle, DSQL_close)
+            if self.trans.connection.accept_type != ptype_lazy_send:
+                (h, oid, buf) = self.trans.connection._op_response()
         self._is_open = False
 
     def drop(self):
         DEBUG_OUTPUT("Statement::drop()")
-        if self.handle == -1:
-            return
-        self.trans.connection._op_free_statement(self.handle, DSQL_drop)
-        if self.trans.connection.accept_type != ptype_lazy_send:
-            (h, oid, buf) = self.trans.connection._op_response()
+        if self.handle != -1:
+            self.trans.connection._op_free_statement(self.handle, DSQL_drop)
+            if self.trans.connection.accept_type != ptype_lazy_send:
+                (h, oid, buf) = self.trans.connection._op_response()
+        self._is_open = False
         self.handle = -1
 
     @property
@@ -176,7 +176,6 @@ def _fetch_generator(stmt):
     DEBUG_OUTPUT("_fetch_generator()", stmt.trans._trans_handle)
     connection = stmt.trans.connection
     more_data = True
-    stmt.open()
     while more_data:
         if not stmt.is_opened:
             raise StopIteration()
@@ -295,6 +294,7 @@ class Cursor(object):
                 self._fetch_records = None
             self._callproc_result = None
         self.transaction.is_dirty = True
+        stmt.open()
 
     def callproc(self, procname, params=[]):
         DEBUG_OUTPUT("Cursor::callproc()")
@@ -411,7 +411,7 @@ class Cursor(object):
     @property
     def rowcount(self):
         DEBUG_OUTPUT("Cursor::rowcount()")
-        if not self.stmt.is_opened:
+        if self.stmt.handle == -1:
             return -1
 
         self.transaction.connection._op_info_sql(self.stmt.handle,
