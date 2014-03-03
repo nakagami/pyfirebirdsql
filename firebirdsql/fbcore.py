@@ -36,15 +36,15 @@ def DEBUG_OUTPUT(*argv):
 
 transaction_parameter_block = (
     # ISOLATION_LEVEL_READ_COMMITED_LEGACY
-    bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_no_rec_version]),
+    bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_no_rec_version]),
     # ISOLATION_LEVEL_READ_COMMITED
-    bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
+    bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
     # ISOLATION_LEVEL_REPEATABLE_READ
-    bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_concurrency]),
+    bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_concurrency]),
     # ISOLATION_LEVEL_SERIALIZABLE
-    bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_consistency]),
+    bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_consistency]),
     # ISOLATION_LEVEL_READ_COMMITED_RO
-    bytes([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed,isc_tpb_rec_version]),
+    bs([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed,isc_tpb_rec_version]),
 )
 
 Date = datetime.date
@@ -58,7 +58,7 @@ def TimeFromTicks(ticks):
 def TimestampFromTicks(ticks):
     return apply(Timestamp,time.localtime(ticks)[:6])
 def Binary(b):
-    return bytes(b)
+    return bs(b)
 
 class DBAPITypeObject:
     def __init__(self,*values):
@@ -105,7 +105,7 @@ class Statement(object):
         if explain_plan:
             self.trans.connection._op_prepare_statement(
                 self.handle, self.trans.trans_handle, sql,
-                option_items=bytes([isc_info_sql_get_plan]))
+                option_items=bs([isc_info_sql_get_plan]))
         else:
             self.trans.connection._op_prepare_statement(
                 self.handle, self.trans.trans_handle, sql)
@@ -191,7 +191,7 @@ def _fetch_generator(stmt):
                         continue
                     connection._op_open_blob(r[i], stmt.trans.trans_handle)
                     (h, oid, buf) = connection._op_response()
-                    v = bytes([])
+                    v = bs([])
                     n = 1   # 1:mora data 2:no more data
                     while n == 1:
                         connection._op_get_segment(h)
@@ -415,23 +415,23 @@ class Cursor(object):
             return -1
 
         self.transaction.connection._op_info_sql(self.stmt.handle,
-                                     bytes([isc_info_sql_records]))
+                                     bs([isc_info_sql_records]))
         (h, oid, buf) = self.transaction.connection._op_response()
-        assert buf[:3] == bytes([0x17,0x1d,0x00]) # isc_info_sql_records
+        assert buf[:3] == bs([0x17,0x1d,0x00]) # isc_info_sql_records
         if self.stmt.stmt_type == isc_info_sql_stmt_select:
-            assert buf[17:20] == bytes([0x0d,0x04,0x00])
+            assert buf[17:20] == bs([0x0d,0x04,0x00])
                                               # isc_info_req_select_count
             count = bytes_to_int(buf[20:24])
         elif self.stmt.stmt_type == isc_info_sql_stmt_insert:
-            assert buf[24:27] == bytes([0x0e,0x04,0x00])
+            assert buf[24:27] == bs([0x0e,0x04,0x00])
                                               # isc_info_req_insert_count
             count = bytes_to_int(buf[27:31])
         elif self.stmt.stmt_type == isc_info_sql_stmt_update:
-            assert buf[3:6] == bytes([0x0f,0x04,0x00])
+            assert buf[3:6] == bs([0x0f,0x04,0x00])
                                               # isc_info_req_update_count
             count = bytes_to_int(buf[6:10])
         elif self.stmt.stmt_type == isc_info_sql_stmt_delete:
-            assert buf[10:13] == bytes([0x10,0x04,0x00])
+            assert buf[10:13] == bs([0x10,0x04,0x00])
                                               # isc_info_req_delete_count
             count = bytes_to_int(buf[13:17])
         DEBUG_OUTPUT("Cursor::rowcount()", self.stmt.stmt_type, count)
@@ -598,10 +598,10 @@ class Connection(WireProtocol):
 
     def _db_info(self, info_requests):
         if info_requests[-1] == isc_info_end:
-            self._op_info_database(bytes(info_requests))
+            self._op_info_database(bs(info_requests))
         else:
             self._op_info_database(
-                        bytes(info_requests+type(info_requests)([isc_info_end])))
+                        bs(info_requests+type(info_requests)([isc_info_end])))
         (h, oid, buf) = self._op_response()
         i = 0
         i_request = 0
@@ -776,7 +776,7 @@ class Transaction(object):
         DEBUG_OUTPUT("Transaction::_begin()")
         tpb = transaction_parameter_block[self.connection.isolation_level]
         if self._autocommit:
-            tpb += bytes([isc_tpb_autocommit])
+            tpb += bs([isc_tpb_autocommit])
         self.connection._op_transaction(tpb)
         (h, oid, buf) = self.connection._op_response()
         self._trans_handle = h
@@ -833,10 +833,10 @@ class Transaction(object):
     def _trans_info(self, info_requests):
         if info_requests[-1] == isc_info_end:
             self.connection._op_info_transaction(self.trans_handle,
-                    bytes(info_requests))
+                    bs(info_requests))
         else:
             self.connection._op_info_transaction(self.trans_handle,
-                    bytes(info_requests+type(info_requests)([isc_info_end])))
+                    bs(info_requests+type(info_requests)([isc_info_end])))
         (h, oid, buf) = self.connection._op_response()
         i = 0
         i_request = 0

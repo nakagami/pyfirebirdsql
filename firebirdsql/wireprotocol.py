@@ -34,7 +34,7 @@ def DEBUG_OUTPUT(*argv):
         print(s, end=' ', file=sys.stderr)
     print(file=sys.stderr)
 
-INFO_SQL_SELECT_DESCRIBE_VARS = bytes([
+INFO_SQL_SELECT_DESCRIBE_VARS = bs([
     isc_info_sql_select,
     isc_info_sql_describe_vars,
     isc_info_sql_sqlda_seq,
@@ -140,7 +140,7 @@ class WireProtocol(object):
         n = nbytes
         if word_alignment and (n % 4):
             n += 4 - nbytes % 4  # 4 bytes word alignment
-        r = bytes([])
+        r = bs([])
         while n:
             if (os.name != 'java'
                 and self.timeout is not None
@@ -243,8 +243,8 @@ class WireProtocol(object):
     def params_to_blr(self, trans_handle, params):
         "Convert parameter array to BLR and values format."
         ln = len(params) * 2
-        blr = bytes([5, 2, 4, 0, ln & 255, ln >> 8])
-        values = bytes([])
+        blr = bs([5, 2, 4, 0, ln & 255, ln >> 8])
+        values = bs([])
         for p in params:
             t = type(p)
             if ((PYTHON_MAJOR_VER == 2 and type(p) == unicode) or
@@ -255,19 +255,19 @@ class WireProtocol(object):
                 (PYTHON_MAJOR_VER == 3 and t == bytes)):
                 if len(p) > MAX_CHAR_LENGTH:
                     v = self._create_blob(trans_handle, p)
-                    blr += bytes([9, 0])
+                    blr += bs([9, 0])
                 else:
                     v = p
                     nbytes = len(v)
                     pad_length = ((4-nbytes) & 3)
-                    v += bytes([0]) * pad_length
-                    blr += bytes([14, nbytes & 255, nbytes >> 8])
+                    v += bs([0]) * pad_length
+                    blr += bs([14, nbytes & 255, nbytes >> 8])
             elif t == int:
                 v = bint_to_bytes(p, 4)
-                blr += bytes([8, 0])    # blr_long
+                blr += bs([8, 0])    # blr_long
             elif t == float and p == float("inf"):
                 v = b'\x7f\x80\x00\x00'
-                blr += bytes([10])
+                blr += bs([10])
             elif t == decimal.Decimal or t == float:
                 if t == float:
                     p = decimal.Decimal(str(p))
@@ -281,22 +281,22 @@ class WireProtocol(object):
                 v = bint_to_bytes(v, 8)
                 if exponent < 0:
                     exponent += 256
-                blr += bytes([16, exponent])
+                blr += bs([16, exponent])
             elif t == datetime.date:
                 v = convert_date(p)
-                blr += bytes([12])
+                blr += bs([12])
             elif t == datetime.time:
                 v = convert_time(p)
-                blr += bytes([13])
+                blr += bs([13])
             elif t == datetime.datetime:
                 v = convert_timestamp(p)
-                blr += bytes([35])
+                blr += bs([35])
             elif t == bool:
-                v = bytes([1, 0, 0, 0]) if p else bytes([0, 0, 0, 0])
-                blr += bytes([23])
+                v = bs([1, 0, 0, 0]) if p else bs([0, 0, 0, 0])
+                blr += bs([23])
             else:   # fallback, convert to string
                 if p is None:
-                    v = bytes([])
+                    v = bs([])
                 else:
                     p = p.__repr__()
                     if (PYTHON_MAJOR_VER==3 or
@@ -305,26 +305,26 @@ class WireProtocol(object):
                     v = p
                 nbytes = len(v)
                 pad_length = ((4-nbytes) & 3)
-                v += bytes([0]) * pad_length
-                blr += bytes([14, nbytes & 255, nbytes >> 8])
+                v += bs([0]) * pad_length
+                blr += bs([14, nbytes & 255, nbytes >> 8])
             values += v
-            blr += bytes([7, 0])
-            values += bytes([0]) * 4 if p != None else bytes([0xff,0xff,0xff,0xff])
-        blr += bytes([255, 76])    # [blr_end, blr_eoc]
+            blr += bs([7, 0])
+            values += bs([0]) * 4 if p != None else bs([0xff,0xff,0xff,0xff])
+        blr += bs([255, 76])    # [blr_end, blr_eoc]
         return blr, values
 
     def uid(self, auth_plugin_list, wire_crypt):
         def pack_cnct_param(k, v):
             if k != CNCT_specific_data:
-                return bytes([k] + [len(v)]) + v
+                return bs([k] + [len(v)]) + v
             # specific_data split per 254 bytes
             b = b''
             i = 0
             while len(v) > 254:
-                b += bytes([k, 255, i]) + v[:254]
+                b += bs([k, 255, i]) + v[:254]
                 v = v[254:]
                 i += 1
-            b += bytes([k, len(v)+1, i]) + v
+            b += bs([k, len(v)+1, i]) + v
             return b
 
         if sys.platform == 'win32':
@@ -398,26 +398,26 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_create(self, page_size=4096):
-        dpb = bytes([1])
+        dpb = bs([1])
         s = self.str_to_bytes(self.charset)
-        dpb += bytes([isc_dpb_set_db_charset, len(s)]) + s
-        dpb += bytes([isc_dpb_lc_ctype, len(s)]) + s
+        dpb += bs([isc_dpb_set_db_charset, len(s)]) + s
+        dpb += bs([isc_dpb_lc_ctype, len(s)]) + s
         s = self.str_to_bytes(self.user)
-        dpb += bytes([isc_dpb_user_name, len(s)]) + s
+        dpb += bs([isc_dpb_user_name, len(s)]) + s
         if self.accept_version < PROTOCOL_VERSION13:
             if self.accept_version == PROTOCOL_VERSION10:
                 s = self.str_to_bytes(self.password)
-                dpb += bytes([isc_dpb_password, len(s)]) + s
+                dpb += bs([isc_dpb_password, len(s)]) + s
             else:
                 s = self.str_to_bytes(crypt.crypt(self.password, '9z')[2:])
-                dpb += bytes([isc_dpb_password_enc, len(s)]) + s
+                dpb += bs([isc_dpb_password_enc, len(s)]) + s
         if self.role:
             s = self.str_to_bytes(self.role)
-            dpb += bytes([isc_dpb_sql_role_name, len(s)]) + s
-        dpb += bytes([isc_dpb_sql_dialect, 4]) + int_to_bytes(3, 4)
-        dpb += bytes([isc_dpb_force_write, 4]) + int_to_bytes(1, 4)
-        dpb += bytes([isc_dpb_overwrite, 4]) + int_to_bytes(1, 4)
-        dpb += bytes([isc_dpb_page_size, 4]) + int_to_bytes(page_size, 4)
+            dpb += bs([isc_dpb_sql_role_name, len(s)]) + s
+        dpb += bs([isc_dpb_sql_dialect, 4]) + int_to_bytes(3, 4)
+        dpb += bs([isc_dpb_force_write, 4]) + int_to_bytes(1, 4)
+        dpb += bs([isc_dpb_overwrite, 4]) + int_to_bytes(1, 4)
+        dpb += bs([isc_dpb_page_size, 4]) + int_to_bytes(page_size, 4)
         p = xdrlib.Packer()
         p.pack_int(self.op_create)
         p.pack_int(0)                       # Database Object ID
@@ -510,21 +510,21 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_attach(self):
-        dpb = bytes([1])
+        dpb = bs([1])
         s = self.str_to_bytes(self.charset)
-        dpb += bytes([isc_dpb_lc_ctype, len(s)]) + s
+        dpb += bs([isc_dpb_lc_ctype, len(s)]) + s
         s = self.str_to_bytes(self.user)
-        dpb += bytes([isc_dpb_user_name, len(s)]) + s
+        dpb += bs([isc_dpb_user_name, len(s)]) + s
         if self.accept_version < PROTOCOL_VERSION13:
             if self.accept_version == PROTOCOL_VERSION10:
                 s = self.str_to_bytes(self.password)
-                dpb += bytes([isc_dpb_password, len(s)]) + s
+                dpb += bs([isc_dpb_password, len(s)]) + s
             else:
                 s = self.str_to_bytes(crypt.crypt(self.password, '9z')[2:])
-                dpb += bytes([isc_dpb_password_enc, len(s)]) + s
+                dpb += bs([isc_dpb_password_enc, len(s)]) + s
         if self.role:
             s = self.str_to_bytes(self.role)
-            dpb += bytes([isc_dpb_sql_role_name, len(s)]) + s
+            dpb += bs([isc_dpb_sql_role_name, len(s)]) + s
         p = xdrlib.Packer()
         p.pack_int(self.op_attach)
         p.pack_int(0)                       # Database Object ID
@@ -543,12 +543,12 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_service_attach(self):
-        dpb = bytes([2,2])
+        dpb = bs([2,2])
         s = self.str_to_bytes(self.user)
-        dpb += bytes([isc_spb_user_name, len(s)]) + s
+        dpb += bs([isc_spb_user_name, len(s)]) + s
         s = self.str_to_bytes(self.password)
-        dpb += bytes([isc_spb_password, len(s)]) + s
-        dpb += bytes([isc_spb_dummy_packet_interval,0x04,0x78,0x0a,0x00,0x00])
+        dpb += bs([isc_spb_password, len(s)]) + s
+        dpb += bs([isc_spb_dummy_packet_interval,0x04,0x78,0x0a,0x00,0x00])
         p = xdrlib.Packer()
         p.pack_int(self.op_service_attach)
         p.pack_int(0)
@@ -667,8 +667,8 @@ class WireProtocol(object):
         self.sock.send(p.get_buffer())
 
     @wire_operation
-    def _op_prepare_statement(self, stmt_handle, trans_handle, query, option_items=bytes([])):
-        desc_items = option_items + bytes([isc_info_sql_stmt_type])+INFO_SQL_SELECT_DESCRIBE_VARS
+    def _op_prepare_statement(self, stmt_handle, trans_handle, query, option_items=bs([])):
+        desc_items = option_items + bs([isc_info_sql_stmt_type])+INFO_SQL_SELECT_DESCRIBE_VARS
         p = xdrlib.Packer()
         p.pack_int(self.op_prepare_statement)
         p.pack_int(trans_handle)
@@ -697,7 +697,7 @@ class WireProtocol(object):
         p.pack_int(trans_handle)
 
         if len(params) == 0:
-            p.pack_bytes(bytes([]))
+            p.pack_bytes(bs([]))
             p.pack_int(0)
             p.pack_int(0)
             self.sock.send(p.get_buffer())
@@ -716,7 +716,7 @@ class WireProtocol(object):
         p.pack_int(trans_handle)
 
         if len(params) == 0:
-            p.pack_bytes(bytes([]))
+            p.pack_bytes(bs([]))
             p.pack_int(0)
             p.pack_int(0)
             self.sock.send(p.get_buffer())
@@ -736,7 +736,7 @@ class WireProtocol(object):
     def _op_exec_immediate(self, trans_handle, query):
         if self.db_handle is None:
             raise OperationalError('_op_exec_immediate() Invalid db handle')
-        desc_items = bytes([])
+        desc_items = bs([])
         p = xdrlib.Packer()
         p.pack_int(self.op_exec_immediate)
         p.pack_int(trans_handle)
@@ -780,7 +780,7 @@ class WireProtocol(object):
                 else:
                     ln = x.io_length()
                 raw_value = self.recv_channel(ln, word_alignment=True)
-                if self.recv_channel(4) == bytes([0]) * 4: # Not NULL
+                if self.recv_channel(4) == bs([0]) * 4: # Not NULL
                     r[i] = x.value(raw_value)
             rows.append(r)
             b = self.recv_channel(12)
@@ -843,7 +843,7 @@ class WireProtocol(object):
         p.pack_int(ln + 2)
         pad_length = ((4-(ln+2)) & 3)
         self.sock.send(p.get_buffer() 
-                + int_to_bytes(ln, 2) + seg_data + bytes([0])*pad_length)
+                + int_to_bytes(ln, 2) + seg_data + bs([0])*pad_length)
 
     @wire_operation
     def _op_close_blob(self, blob_handle):
@@ -856,9 +856,9 @@ class WireProtocol(object):
     def _op_que_events(self, event_names, ast, args, event_id):
         if self.db_handle is None:
             raise OperationalError('_op_que_events() Invalid db handle')
-        params = bytes([1])
+        params = bs([1])
         for name, n in event_names.items():
-            params += bytes([len(name)])
+            params += bs([len(name)])
             params += self.str_to_bytes(name)
             params += int_to_bytes(n, 4)
         p = xdrlib.Packer()
@@ -959,7 +959,7 @@ class WireProtocol(object):
             else:
                 ln = x.io_length()
             raw_value = self.recv_channel(ln, word_alignment=True)
-            if self.recv_channel(4) == bytes([0]) * 4: # Not NULL
+            if self.recv_channel(4) == bs([0]) * 4: # Not NULL
                 r.append(x.value(raw_value))
             else:
                 r.append(None)

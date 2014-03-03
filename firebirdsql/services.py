@@ -15,41 +15,41 @@ from firebirdsql.fbcore import Connection
 class Services(Connection):
 
     def sweep(self, database_name, callback=None):
-        spb = bytes([isc_spb_rpr_validate_db|isc_spb_rpr_sweep_db])
+        spb = bs([isc_spb_rpr_validate_db|isc_spb_rpr_sweep_db])
         s = self.str_to_bytes(database_name)
-        spb += bytes([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
+        spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
 
         optionMask = 0
         optionMask |= 0x02
-        spb += bytes([isc_spb_options]) + int_to_bytes(optionMask, 4)
+        spb += bs([isc_spb_options]) + int_to_bytes(optionMask, 4)
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
         while True:
-            self._op_service_info(bytes([0x02]), bytes([0x3e]))
+            self._op_service_info(bs([0x02]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == bytes([0x3e,0x00,0x00,0x01]):
+            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
                 break
             if callback:
                 ln = bytes_to_int(buf[1:3])
                 callback(self.bytes_to_str(buf[3:3+ln]))
     
     def bringOnline(self, database_name, callback=None):
-        spb = bytes([isc_action_svc_properties])
+        spb = bs([isc_action_svc_properties])
         s = self.str_to_bytes(database_name)
-        spb += bytes([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
+        spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
 
         optionMask = 0
         optionMask |= 0x0200
 
-        spb += bytes([isc_spb_options]) + int_to_bytes(optionMask, 4)
+        spb += bs([isc_spb_options]) + int_to_bytes(optionMask, 4)
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
         while True:
-            self._op_service_info(bytes([0x02]), bytes([0x3e]))
+            self._op_service_info(bs([0x02]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == bytes([0x3e,0x00,0x00,0x01]):
+            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
                 break
             if callback:
                 ln = bytes_to_int(buf[1:3])
@@ -61,24 +61,24 @@ class Services(Connection):
                        shutDenyNewAttachments=False,
                        shutDenyNewTransactions=False,
                        callback=None):
-        spb = bytes([isc_action_svc_properties])
+        spb = bs([isc_action_svc_properties])
         s = self.str_to_bytes(database_name)
-        spb += bytes([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
+        spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
 
         if shutForce:
-            spb += bytes([isc_spb_prp_shutdown_db]) + int_to_bytes(timeout, 4)
+            spb += bs([isc_spb_prp_shutdown_db]) + int_to_bytes(timeout, 4)
         if shutDenyNewAttachments:
-            spb += bytes([isc_spb_prp_deny_new_attachments]) + int_to_bytes(timeout, 4)
+            spb += bs([isc_spb_prp_deny_new_attachments]) + int_to_bytes(timeout, 4)
         if shutDenyNewTransactions:
-            spb += bytes([isc_spb_prp_deny_new_transactions]) + int_to_bytes(timeout, 4)
+            spb += bs([isc_spb_prp_deny_new_transactions]) + int_to_bytes(timeout, 4)
 
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
         while True:
-            self._op_service_info(bytes([0x02]), bytes([0x3e]))
+            self._op_service_info(bs([0x02]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == bytes([0x3e,0x00,0x00,0x01]):
+            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
                 break
             if callback:
                 ln = bytes_to_int(buf[1:3])
@@ -93,10 +93,10 @@ class Services(Connection):
                      validateRecordFragments=False,
                      callback=None):
 
-        spb = bytes([isc_action_svc_repair])
+        spb = bs([isc_action_svc_repair])
 
         s = self.str_to_bytes(database_name)
-        spb += bytes([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
+        spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
 
         optionMask = 0
 
@@ -113,14 +113,14 @@ class Services(Connection):
         if validateRecordFragments:
             optionMask |= isc_spb_rpr_full
 
-        spb += bytes([isc_spb_options]) + int_to_bytes(optionMask, 4)
+        spb += bs([isc_spb_options]) + int_to_bytes(optionMask, 4)
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
         while True:
-            self._op_service_info(bytes([0x02]), bytes([0x3e]))
+            self._op_service_info(bs([0x02]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == bytes([0x3e,0x00,0x00,0x01]):
+            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
                 break
             if callback:
                 ln = bytes_to_int(buf[1:3])
@@ -135,11 +135,11 @@ class Services(Connection):
                                     convertExternalTablesToInternalTables=True,
                                     expand=False,
                                     callback=None):
-        spb = bytes([isc_action_svc_backup])
+        spb = bs([isc_action_svc_backup])
         s = self.str_to_bytes(database_name)
-        spb += bytes([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
+        spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
         s = self.str_to_bytes(backup_filename)
-        spb += bytes([isc_spb_bkp_file]) + int_to_bytes(len(s), 2) + s
+        spb += bs([isc_spb_bkp_file]) + int_to_bytes(len(s), 2) + s
         optionMask = 0
         if ignoreChecksums:
             optionMask |= isc_spb_bkp_ignore_checksums
@@ -155,16 +155,16 @@ class Services(Connection):
             optionMask |= isc_spb_bkp_convert
         if expand:
             optionMask |= isc_spb_bkp_expand
-        spb += bytes([isc_spb_options]) + int_to_bytes(optionMask, 4)
+        spb += bs([isc_spb_options]) + int_to_bytes(optionMask, 4)
         if callback:
-            spb += bytes([isc_spb_verbose])
+            spb += bs([isc_spb_verbose])
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
         while True:
-            self._op_service_info(bytes([0x02]), bytes([0x3e]))
+            self._op_service_info(bs([0x02]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == bytes([0x3e,0x00,0x00,0x01]):
+            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
                 break
             if callback:
                 ln = bytes_to_int(buf[1:3])
@@ -179,11 +179,11 @@ class Services(Connection):
                             commitAfterEachTable=False,
                             useAllPageSpace=False,
                             pageSize=None, cacheBuffers=None, callback=None):
-        spb = bytes([isc_action_svc_restore])
+        spb = bs([isc_action_svc_restore])
         s = self.str_to_bytes(restore_filename)
-        spb += bytes([isc_spb_bkp_file]) + int_to_bytes(len(s), 2) + s
+        spb += bs([isc_spb_bkp_file]) + int_to_bytes(len(s), 2) + s
         s = self.str_to_bytes(database_name)
-        spb += bytes([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
+        spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
         optionMask = 0
         if replace:
             optionMask |= isc_spb_res_replace
@@ -199,40 +199,40 @@ class Services(Connection):
             optionMask |= isc_spb_res_one_at_a_time
         if useAllPageSpace:
             optionMask |= isc_spb_res_use_all_space
-        spb += bytes([isc_spb_options]) + int_to_bytes(optionMask, 4)
+        spb += bs([isc_spb_options]) + int_to_bytes(optionMask, 4)
         if pageSize:
-            spb += bytes([isc_spb_res_page_size]) + int_to_bytes(pageSize, 4)
+            spb += bs([isc_spb_res_page_size]) + int_to_bytes(pageSize, 4)
         if cacheBuffers:
-            spb += bytes([isc_spb_res_buffers]) + int_to_bytes(cacheBuffers, 4)
+            spb += bs([isc_spb_res_buffers]) + int_to_bytes(cacheBuffers, 4)
         if callback:
-            spb += bytes([isc_spb_verbose])
+            spb += bs([isc_spb_verbose])
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
         while True:
-            self._op_service_info(bytes([0x02]), bytes([0x3e]))
+            self._op_service_info(bs([0x02]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == bytes([0x3e,0x00,0x00,0x01]):
+            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
                 break
             if callback:
                 ln = bytes_to_int(buf[1:3])
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
     def trace_start(self, name=None, cfg=None, callback=None):
-        spb = bytes([isc_action_svc_trace_start])
+        spb = bs([isc_action_svc_trace_start])
         if name:
             s = self.str_to_bytes(name)
-            spb += bytes([isc_spb_trc_name]) + int_to_bytes(len(s), 2) + s
+            spb += bs([isc_spb_trc_name]) + int_to_bytes(len(s), 2) + s
         if cfg:
             s = self.str_to_bytes(cfg)
-            spb += bytes([isc_spb_trc_cfg]) + int_to_bytes(len(s), 2) + s
+            spb += bs([isc_spb_trc_cfg]) + int_to_bytes(len(s), 2) + s
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
         while True:
-            self._op_service_info(bytes([0x02]), bytes([0x3e]))
+            self._op_service_info(bs([0x02]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == bytes([0x3e,0x00,0x00,0x01]):
+            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
                 break
             ln = bytes_to_int(buf[1:2])
             if callback:
@@ -240,13 +240,13 @@ class Services(Connection):
 
     def trace_stop(self, id, callback=None):
         id = int(id)
-        spb = bytes([isc_action_svc_trace_stop])
-        spb += bytes([isc_spb_trc_id]) + int_to_bytes(id, 4)
+        spb = bs([isc_action_svc_trace_stop])
+        spb += bs([isc_spb_trc_id]) + int_to_bytes(id, 4)
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
 
-        self._op_service_info(bytes([0x02]), bytes([0x3e]))
+        self._op_service_info(bs([0x02]), bs([0x3e]))
         (h, oid, buf) = self._op_response()
         ln = bytes_to_int(buf[1:2])
         if callback:
@@ -254,13 +254,13 @@ class Services(Connection):
 
     def trace_suspend(self, id, callback=None):
         id = int(id)
-        spb = bytes([isc_action_svc_trace_suspend])
-        spb += bytes([isc_spb_trc_id]) + int_to_bytes(id, 4)
+        spb = bs([isc_action_svc_trace_suspend])
+        spb += bs([isc_spb_trc_id]) + int_to_bytes(id, 4)
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
 
-        self._op_service_info(bytes([0x02]), bytes([0x3e]))
+        self._op_service_info(bs([0x02]), bs([0x3e]))
         (h, oid, buf) = self._op_response()
         ln = bytes_to_int(buf[1:2])
         if callback:
@@ -268,47 +268,47 @@ class Services(Connection):
 
     def trace_resume(self, id, callback=None):
         id = int(id)
-        spb = bytes([isc_action_svc_trace_resume])
-        spb += bytes([isc_spb_trc_id]) + int_to_bytes(id, 4)
+        spb = bs([isc_action_svc_trace_resume])
+        spb += bs([isc_spb_trc_id]) + int_to_bytes(id, 4)
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
 
-        self._op_service_info(bytes([0x02]), bytes([0x3e]))
+        self._op_service_info(bs([0x02]), bs([0x3e]))
         (h, oid, buf) = self._op_response()
         ln = bytes_to_int(buf[1:2])
         if callback:
             callback(self.bytes_to_str(buf[3:3+ln]))
 
     def trace_list(self, callback=None):
-        spb = bytes([isc_action_svc_trace_list])
+        spb = bs([isc_action_svc_trace_list])
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
         while True:
-            self._op_service_info(bytes([0x02]), bytes([0x3e]))
+            self._op_service_info(bs([0x02]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == bytes([0x3e,0x00,0x00,0x01]):
+            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
                 break
             ln = bytes_to_int(buf[1:2])
             if callback:
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
     def _getIntegerVal(self, item_id):
-        self._op_service_info(bytes([]), bytes([item_id]))
+        self._op_service_info(bs([]), bs([item_id]))
         (h, oid, buf) = self._op_response()
         assert byte_to_int(buf[0]) == item_id
         return byte_to_int(buf[1])
 
     def _getStringVal(self, item_id):
-        self._op_service_info(bytes([]), bytes([item_id]))
+        self._op_service_info(bs([]), bs([item_id]))
         (h, oid, buf) = self._op_response()
         assert byte_to_int(buf[0]) == item_id
         ln = bytes_to_int(buf[1:3])
         return self.bytes_to_str(buf[3:3+ln])
 
     def _getSvrDbInfo(self):
-        self._op_service_info(bytes([]), bytes([isc_info_svc_svr_db_info]))
+        self._op_service_info(bs([]), bs([isc_info_svc_svr_db_info]))
         (h, oid, buf) = self._op_response()
         assert byte_to_int(buf[0]) == isc_info_svc_svr_db_info
         db_names=[]
@@ -334,9 +334,9 @@ class Services(Connection):
         self.svc_handle = h
         logs = ''
         while True:
-            self._op_service_info(bytes([]), bytes([0x3e]))
+            self._op_service_info(bs([]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == bytes([0x3e,0x00,0x00,0x01]):
+            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
                 break
             ln = bytes_to_int(buf[1:2])
             logs += self.bytes_to_str(buf[3:3+ln]) + '\n'
@@ -373,7 +373,7 @@ class Services(Connection):
         return self._getSvrDbInfo()[1]
 
     def getLog(self):
-        spb = bytes([isc_action_svc_get_fb_log])
+        spb = bs([isc_action_svc_get_fb_log])
         return self._getLogLines(spb)
 
     def getStatistics(self, dbname, showOnlyDatabaseLogPages=False,
@@ -393,10 +393,10 @@ class Services(Connection):
         if showSystemTablesAndIndexes:
             optionMask |= isc_spb_sts_sys_relations
 
-        spb = bytes([isc_spb_res_length])
+        spb = bs([isc_spb_res_length])
         s = self.str_to_bytes(dbname)
-        spb += bytes([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
-        spb += bytes([isc_spb_options]) + int_to_bytes(optionMask, 4)
+        spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
+        spb += bs([isc_spb_options]) + int_to_bytes(optionMask, 4)
         return self._getLogLines(spb)
 
 
