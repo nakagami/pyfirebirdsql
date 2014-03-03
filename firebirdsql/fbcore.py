@@ -58,7 +58,7 @@ def TimeFromTicks(ticks):
 def TimestampFromTicks(ticks):
     return apply(Timestamp,time.localtime(ticks)[:6])
 def Binary(b):
-    return bs(b)
+    return bytes(b)
 
 class DBAPITypeObject:
     def __init__(self,*values):
