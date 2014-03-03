@@ -290,11 +290,11 @@ class Cursor(object):
 
             if stmt.stmt_type == isc_info_sql_stmt_select:
                 self._fetch_records = _fetch_generator(stmt)
+                stmt.open()
             else:
                 self._fetch_records = None
             self._callproc_result = None
         self.transaction.is_dirty = True
-        stmt.open()
 
     def callproc(self, procname, params=[]):
         DEBUG_OUTPUT("Cursor::callproc()")
