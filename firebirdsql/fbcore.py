@@ -209,7 +209,7 @@ def _fetch_generator(stmt):
                             r[i] = connection.bytes_to_ustr(r[i])
                         else:
                             r[i] = connection.bytes_to_str(r[i])
-            yield r
+            yield tuple(r)
     DEBUG_OUTPUT("_fetch_generator() StopIteration()")
     raise StopIteration()
 
