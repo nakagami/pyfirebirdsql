@@ -107,3 +107,8 @@ Version 0.9.1
    - Modify isolation level. Similar to fdb.
    - Add Connection.set_autocommit() autocommit mode.
 
+Version 0.9.2
+=============
+
+   - fix Binary() function
+   - return recordset as tuple not list
