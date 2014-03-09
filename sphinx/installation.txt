@@ -101,6 +101,15 @@ try one of the following:
     rather than the Python interpreter anyway.
 
 
+FreeBSD
+=============================
+
+FreeBSD has it's port now::
+
+  # cd /usr/ports/databases/py-firebirdsql/
+  # make install clean
+
+
 Test your pyfirebirdsql installation
 ************************************
 
