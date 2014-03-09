@@ -32,20 +32,31 @@ dependencies (see the download links below).
    <http://www.python.org/download/>`__] 2.6 or later (including Python 3.x) It was tested with cpython , ironpython and pypy
 
 
-Linux and Other Unix Variants
+How to install
 =============================
 
-Currently, Linux users must typically install from `source distribution`_
+- `Install by pip`_
+- Install from `FreeBSD ports collection`_
+- Install from `source distribution`_
 
-The source distribution will *probably* also install (and function) on most 
-other POSIX-compliant Unix variants, as long as all of the dependencies_
-are also installed and functional.
+.. _`Install by pip`:
 
-Because the pyfirebirdsql source distribution supports the standard
-Python package installation facility (`distutils
-<http://www.python.org/sigs/distutils-sig/>`__), installing the source
-distribution on a typical Linux system is downright easy.
+Install by pip
+*************************************
 
+::
+
+  pip instal firebirdsql
+
+.. _`FreeBSD ports collection`:
+
+Installation from FreeBSD ports
+*************************************
+
+FreeBSD has it's port now::
+
+  # cd /usr/ports/databases/py-firebirdsql/
+  # make install clean
 
 .. _`source distribution`:
 
@@ -62,52 +73,6 @@ Shortcut for the Experienced and Impatient::
   (delete *temp_dir*)
 
 Then hit the `Usage Guide <usage.html>`__.
-
-
-Install pyfirebirdsql
-=====================
-
-During this step, the setup script moves the pyfirebirdsql package
-(including the newly compiled C extensions) to the standard package
-directory of your Python installation so that Python will be able to
-:command:`import firebirdsql` and :command:`import firebirdsql.services`
-
-In addition to the Python code and shared library files actually used
-by the Python interpreter, the setup script typically installs some
-supporting files, such as documentation. Depending on your system
-configuration, these supporting files may be placed in the same
-directory or a different directory from the files used by the Python
-interpreter.
-
-Run the following command:
-:command:`python setup.py install`
-
-The setup script will install pyfirebirdsql, listing each file it
-installs.
-
-Errors during this step are rare because compilation (the finicky part
-of this process) has already taken place; installation is really just
-a matter of copying files. However, there will be file system
-permission errors if the Python installation directory is not writable
-by the user running the setup script. If you encounter such an error,
-try one of the following:
-
-  - Log in as a user who has the required file system permissions and
-    repeat the installation step.
-
-  - Manually copy the directory :file:`build/lib.{platform}-{pyver}/firebirdsql` 
-    (which contains the Python modules to a directory in your PYTHONPATH. This approach will 
-    not install the supporting files, but they are for the benefit of the programmer 
-    rather than the Python interpreter anyway.
-
-
-FreeBSD
-=============================
-
-FreeBSD has it's port now::
-
-  # cd /usr/ports/databases/py-firebirdsql/
-  # make install clean
 
 
 Test your pyfirebirdsql installation
