@@ -22,13 +22,14 @@ dependencies (see the download links below).
 
     + Windows (32/64)
     + Linux Any Cpu (Known to work fine on both x86 and x86-64.)
+    + FreeBSD
     + Other Unix or Unix-like operating system (Macosx)
 
 #. `Firebird <http://www.firebirdsql.org>`__ 2.1 or later - client or server  
    installation [`download here <http://www.firebirdsql.org/en/server-packages/>`__] (fb client is not necessary to connect to a server)
 
 #. `Python <http://www.python.org>`__ [`download here
-   <http://www.python.org/download/>`__] 2.5 or later (including Python 3.x) It was tested with cpython , jython, ironpython and pypy
+   <http://www.python.org/download/>`__] 2.6 or later (including Python 3.x) It was tested with cpython , ironpython and pypy
 
 
 Linux and Other Unix Variants
