@@ -50,8 +50,8 @@ Install by pip
 
 .. _`FreeBSD ports collection`:
 
-Installation from FreeBSD ports
-*************************************
+Installation from FreeBSD ports collection
+*********************************************
 
 FreeBSD has it's port now::
 
