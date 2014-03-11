@@ -173,7 +173,7 @@ class PreparedStatement(object):
 
 
 def _fetch_generator(stmt):
-    DEBUG_OUTPUT("_fetch_generator()", stmt.trans._trans_handle)
+    DEBUG_OUTPUT("_fetch_generator()", stmt.handle, stmt.trans._trans_handle)
     connection = stmt.trans.connection
     more_data = True
     while more_data:
@@ -272,6 +272,8 @@ class Cursor(object):
             self.transaction.connection._op_response()
             self._fetch_records = None
         else:
+            DEBUG_OUTPUT("Cursor::execute() _op_execute()",
+                                stmt.handle, self.transaction.trans_handle)
             self.transaction.connection._op_execute(stmt.handle,
                                 self.transaction.trans_handle, cooked_params)
             try:
@@ -773,13 +775,15 @@ class Transaction(object):
         self._autocommit = is_autocommit
 
     def _begin(self):
-        DEBUG_OUTPUT("Transaction::_begin()")
         tpb = transaction_parameter_block[self.connection.isolation_level]
         if self._autocommit:
             tpb += bs([isc_tpb_autocommit])
         self.connection._op_transaction(tpb)
         (h, oid, buf) = self.connection._op_response()
         self._trans_handle = h
+        DEBUG_OUTPUT("Transaction::_begin()",
+            self._trans_handle,
+            self.connection)
         self.is_dirty = False
 
     def begin(self):
@@ -795,7 +799,10 @@ class Transaction(object):
 
     def commit(self, retaining=False):
         DEBUG_OUTPUT("Transaction::commit()",
-                        self._trans_handle, retaining)
+                        self._trans_handle,
+                        self,
+                        self.connection,
+                        retaining)
         if self._trans_handle is None:
             return
         if not self.is_dirty:
@@ -811,7 +818,11 @@ class Transaction(object):
 
     def rollback(self, retaining=False, savepoint=None):
         DEBUG_OUTPUT("Transaction::rollback()",
-                        self._trans_handle, retaining, savepoint)
+                        self._trans_handle,
+                        self,
+                        self.connection,
+                        retaining,
+                        savepoint)
         if self._trans_handle is None:
             return
         if savepoint:
