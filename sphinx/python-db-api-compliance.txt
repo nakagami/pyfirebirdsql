@@ -5,18 +5,6 @@ Compliance to Python Database API 2.0
 .. currentmodule:: firebirdsql
 
 
-Incompatibilities
-=================
-
-.. data:: DATETIME
-
-   pyfirebirdsql's deferred loading of dynamic type translators causes
-   this singleton to behave in violation of the standard until the 
-   :func:`firebirdsql.init()` function has been called (whether explicitly or
-   implicitly). For more information, see the documnation section about
-   `Deferred Loading of Dynamic Type Translators`.
-
-
 Unsupported Optional Features
 =============================
 
@@ -137,11 +125,6 @@ subsection elsewhere.
       Arguments:
 
       :sql:  String containing the SQL statement to execute.
-
-   .. attribute:: precision_mode
-
-      Although this attribute is present in pyfirebirdsql 3.1+ and works in a backward-compatible
-      fashion, it is deprecated in favor of the more general dynamic type translation feature.
 
    .. method:: commit(retaining=False)
    .. method:: rollback(retaining=False)
