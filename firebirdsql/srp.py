@@ -89,17 +89,10 @@ def get_prime():
     N = 0xE67D2E994B2F900C3F41F08F5BB2627ED0D49EE1FE767A52EFCD565CD6E768812C3E1E9CE8F0A8BEA6CB13CD29DDEBF7A96D4A93B55D488DF099A15C89DCB0640738EB2CBDD9A8F7BAB561AB1B0DC1C6CDABF303264A08D1BCA932D1F1EE428B619D970F342ABA9A65793B8B2F041AE5364350C16F735F56ECBCA87BD57B29E7
     g = 2
 
-    #n = N
-    #scale = 0
-    #while n > 0:
-    #  scale += 1
-    #  n >>= 8
-    scale = 128
-
-    #k = bytes2long(sha1(pad(N, scale), pad(g, scale)))
+    #k = bytes2long(sha1(pad(N, SRP_KEY_SIZE), pad(g, SRP_KEY_SIZE)))
     k = 1277432915985975349439481660349303019122249719989
 
-    return N, g, scale, k
+    return N, g, k
 
 
 def bytes2long(s):
@@ -127,9 +120,9 @@ def sha1(*args):
         sha1.update(v)
     return sha1.digest()
 
-def pad(n, scale):
+def pad(n):
     s = []
-    for x in range(scale):
+    for x in range(SRP_KEY_SIZE):
         s.insert(0, n & 255)
         n >>= 8
     if PYTHON_MAJOR_VER == 3:
@@ -137,8 +130,8 @@ def pad(n, scale):
     else:
         return b''.join([chr(c) for c in s])
 
-def get_scramble(x, y, scale):
-    return bytes2long(sha1(pad(x, scale), pad(y, scale)))
+def get_scramble(x, y):
+    return bytes2long(sha1(pad(x), pad(y)))
 
 def getUserHash(salt, user, password):
     assert isinstance(user, bytes)
@@ -154,7 +147,7 @@ def client_seed(user, password):
         A: Client public key
         a: Client private key
     """
-    N, g, scale, k  = get_prime()
+    N, g, k  = get_prime()
     a = random.randrange(0, 1 << SRP_KEY_SIZE)
     A = pow(g, a, N)
     if DEBUG:
@@ -170,7 +163,7 @@ def server_seed(v):
         B: Server public key
         b: Server private key
     """
-    N, g, scale, k = get_prime()
+    N, g, k = get_prime()
     b = random.randrange(0, 1 << SRP_KEY_SIZE)
     gb = pow(g, b, N)
     kv = (k * v) % N
@@ -194,8 +187,8 @@ def client_session(user, password, salt, A, B, a):
         User:  S = (B - kg^x) ^ (a + ux)   (computes session key)
         User:  K = H(S)
     """
-    N, g, scale, k = get_prime()
-    u = get_scramble(A, B, scale)
+    N, g, k = get_prime()
+    u = get_scramble(A, B)
     x = getUserHash(salt, user, password)   # x
     gx = pow(g, x, N)                       # g^x
     kgx = (k * gx) % N                      # kg^x
@@ -215,8 +208,8 @@ def server_session(user, password, salt, A, B, b):
         Host:  S = (Av^u) ^ b              (computes session key)
         Host:  K = H(S)
     """
-    N, g, scale, k = get_prime()
-    u = get_scramble(A, B, scale)
+    N, g, k = get_prime()
+    u = get_scramble(A, B)
     v = get_verifier(user, password, salt)
     vu = pow(v, u, N)                       # v^u
     Avu = (A * vu) % N                      # Av^u
@@ -233,7 +226,7 @@ def client_proof(user, password, salt, A, B, a):
     """
     M = H(H(N) xor H(g), H(I), s, A, B, K)
     """
-    N, g, scale, k = get_prime()
+    N, g, k = get_prime()
     K = client_session(user, password, salt, A, B, a)
 
     n1 = bytes2long(sha1(N))
@@ -249,12 +242,12 @@ def client_proof(user, password, salt, A, B, a):
 
 def get_salt():
     if PYTHON_MAJOR_VER == 3:
-        return bytes([random.randrange(0, 256) for x in range(SRP_SALT_SIZE)])
+        return bytes([random.randrange(0, 256) for x in range(SRP_KEY_SIZE)])
     else:
         return b''.join([chr(random.randrange(0, 256)) for x in range(SRP_SALT_SIZE)])
 
 def get_verifier(user, password, salt):
-    N, g, scale, k = get_prime()
+    N, g, k = get_prime()
     x = getUserHash(salt, user, password)
     return pow(g, x, N)
 
