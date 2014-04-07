@@ -242,9 +242,9 @@ def client_proof(user, password, salt, A, B, a):
 
 def get_salt():
     if DEBUG:
-        return b'\00' * SRP_KEY_SIZE
+        return b'\00' * SRP_SALT_SIZE
     if PYTHON_MAJOR_VER == 3:
-        return bytes([random.randrange(0, 256) for x in range(SRP_KEY_SIZE)])
+        return bytes([random.randrange(0, 256) for x in range(SRP_SALT_SIZE)])
     else:
         return b''.join([chr(random.randrange(0, 256)) for x in range(SRP_SALT_SIZE)])
 
