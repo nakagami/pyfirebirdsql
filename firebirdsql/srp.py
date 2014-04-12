@@ -142,7 +142,7 @@ def getUserHash(salt, user, password):
 
     return rc
 
-def client_seed(user, password):
+def client_seed():
     """
         A: Client public key
         a: Client private key
@@ -263,7 +263,7 @@ if __name__ == '__main__':
     password = b'masterkey'
 
     # Client send A to Server
-    A, a = client_seed(user, password)
+    A, a = client_seed()
 
     # Server send B, salt to Client
     salt = get_salt()

@@ -338,8 +338,7 @@ class WireProtocol(object):
         if auth_plugin_list:
             if auth_plugin_list[0] == 'Srp':
                 self.client_public_key, self.client_private_key = \
-                    srp.client_seed(self.str_to_bytes(self.user.upper()),
-                                    self.str_to_bytes(self.password))
+                                    srp.client_seed()
                 specific_data = bytes_to_hex(
                                     srp.long2bytes(self.client_public_key))
             elif auth_plugin_list[0] == 'Legacy_Auth':

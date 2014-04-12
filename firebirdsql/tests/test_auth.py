@@ -8,7 +8,7 @@ class TestAuth(TestBase):
         password = b'masterkey'
     
         # Client send A to Server
-        A, a = srp.client_seed(user, password)
+        A, a = srp.client_seed()
     
         # Server send B, salt to Client
         salt = srp.get_salt()
