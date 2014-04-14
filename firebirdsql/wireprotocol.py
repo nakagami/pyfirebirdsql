@@ -514,7 +514,7 @@ class WireProtocol(object):
         dpb += bs([isc_dpb_user_name, len(s)]) + s
         if self.accept_version < PROTOCOL_VERSION13:
             enc_pass = self.str_to_bytes(get_crypt(self.password))
-            if self.accept_version == PROTOCOL_VERSION10:
+            if self.accept_version == PROTOCOL_VERSION10 or not enc_pass:
                 s = self.str_to_bytes(self.password)
                 dpb += bs([isc_dpb_password, len(s)]) + s
             else:
