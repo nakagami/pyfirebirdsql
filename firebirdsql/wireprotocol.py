@@ -11,10 +11,6 @@ import sys
 import os
 import socket
 import xdrlib, time, datetime, decimal, struct, select
-try:
-    import crypt
-except ImportError: # Not posix
-    crypt = None
 from firebirdsql.fberrmsgs import messages
 from firebirdsql import (DisconnectByPeer,
     DatabaseError, InternalError, OperationalError,
@@ -336,14 +332,16 @@ class WireProtocol(object):
         r = b''
 
         if auth_plugin_list:
+            specific_data = None
             if auth_plugin_list[0] == 'Srp':
                 self.client_public_key, self.client_private_key = \
                                     srp.client_seed()
                 specific_data = bytes_to_hex(
                                     srp.long2bytes(self.client_public_key))
             elif auth_plugin_list[0] == 'Legacy_Auth':
-                specific_data = self.str_to_bytes(
-                                        crypt.crypt(self.password, '9z')[2:])
+                enc_pass = get_crypt(self.password)
+                if enc_pass:
+                    specific_data = self.str_to_bytes(enc_pass)
             else:
                 if not isinstance(auth_plugin_list, tuple):
                     raise OperationalError("Auth plugin list need tuple.")
@@ -363,7 +361,8 @@ class WireProtocol(object):
                                 self.str_to_bytes(self.user.upper()))
             r += pack_cnct_param(CNCT_plugin_name, self.plugin_name)
             r += pack_cnct_param(CNCT_plugin_list, self.plugin_list)
-            r += pack_cnct_param(CNCT_specific_data, specific_data)
+            if specific_data:
+                r += pack_cnct_param(CNCT_specific_data, specific_data)
             r += pack_cnct_param(CNCT_client_crypt, client_crypt)
         r += pack_cnct_param(CNCT_user, self.str_to_bytes(user))
         r += pack_cnct_param(CNCT_host, self.str_to_bytes(hostname))
@@ -404,12 +403,13 @@ class WireProtocol(object):
         s = self.str_to_bytes(self.user)
         dpb += bs([isc_dpb_user_name, len(s)]) + s
         if self.accept_version < PROTOCOL_VERSION13:
-            if self.accept_version == PROTOCOL_VERSION10:
+            enc_pass = get_crypt(self.password)
+            if self.accept_version == PROTOCOL_VERSION10 or not enc_pass:
                 s = self.str_to_bytes(self.password)
                 dpb += bs([isc_dpb_password, len(s)]) + s
             else:
-                s = self.str_to_bytes(crypt.crypt(self.password, '9z')[2:])
-                dpb += bs([isc_dpb_password_enc, len(s)]) + s
+                enc_pass = self.str_to_bytes(enc_pass)
+                dpb += bs([isc_dpb_password_enc, len(enc_pass)]) + enc_pass
         if self.role:
             s = self.str_to_bytes(self.role)
             dpb += bs([isc_dpb_sql_role_name, len(s)]) + s
@@ -515,12 +515,13 @@ class WireProtocol(object):
         s = self.str_to_bytes(self.user)
         dpb += bs([isc_dpb_user_name, len(s)]) + s
         if self.accept_version < PROTOCOL_VERSION13:
-            if self.accept_version == PROTOCOL_VERSION10:
+            enc_pass = get_crypt(self.password)
+            if self.accept_version == PROTOCOL_VERSION10 or not enc_pass:
                 s = self.str_to_bytes(self.password)
                 dpb += bs([isc_dpb_password, len(s)]) + s
             else:
-                s = self.str_to_bytes(crypt.crypt(self.password, '9z')[2:])
-                dpb += bs([isc_dpb_password_enc, len(s)]) + s
+                enc_pass = self.str_to_bytes(enc_pass)
+                dpb += bs([isc_dpb_password_enc, len(enc_pass)]) + enc_pass
         if self.role:
             s = self.str_to_bytes(self.role)
             dpb += bs([isc_dpb_sql_role_name, len(s)]) + s
