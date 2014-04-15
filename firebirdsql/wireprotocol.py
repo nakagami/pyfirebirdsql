@@ -340,7 +340,9 @@ class WireProtocol(object):
                 specific_data = bytes_to_hex(
                                     srp.long2bytes(self.client_public_key))
             elif auth_plugin_list[0] == 'Legacy_Auth':
-                specific_data = self.str_to_bytes(get_crypt(self.password))
+                enc_pass = get_crypt(self.password)
+                if enc_pass:
+                    specific_data = self.str_to_bytes(enc_pass)
             else:
                 if not isinstance(auth_plugin_list, tuple):
                     raise OperationalError("Auth plugin list need tuple.")
@@ -402,11 +404,12 @@ class WireProtocol(object):
         s = self.str_to_bytes(self.user)
         dpb += bs([isc_dpb_user_name, len(s)]) + s
         if self.accept_version < PROTOCOL_VERSION13:
-            enc_pass = self.str_to_bytes(get_crypt(self.password))
+            enc_pass = get_crypt(self.password)
             if self.accept_version == PROTOCOL_VERSION10 or not enc_pass:
                 s = self.str_to_bytes(self.password)
                 dpb += bs([isc_dpb_password, len(s)]) + s
             else:
+                enc_pass = self.str_to_bytes(enc_pass)
                 dpb += bs([isc_dpb_password_enc, len(enc_pass)]) + enc_pass
         if self.role:
             s = self.str_to_bytes(self.role)
@@ -513,11 +516,12 @@ class WireProtocol(object):
         s = self.str_to_bytes(self.user)
         dpb += bs([isc_dpb_user_name, len(s)]) + s
         if self.accept_version < PROTOCOL_VERSION13:
-            enc_pass = self.str_to_bytes(get_crypt(self.password))
+            enc_pass = get_crypt(self.password)
             if self.accept_version == PROTOCOL_VERSION10 or not enc_pass:
                 s = self.str_to_bytes(self.password)
                 dpb += bs([isc_dpb_password, len(s)]) + s
             else:
+                enc_pass = self.str_to_bytes(enc_pass)
                 dpb += bs([isc_dpb_password_enc, len(enc_pass)]) + enc_pass
         if self.role:
             s = self.str_to_bytes(self.role)
