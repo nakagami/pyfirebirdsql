@@ -68,7 +68,6 @@ Shortcut for the Experienced and Impatient::
 
   (decompress pyfirebirdsql into *temp_dir*)
   cd *temp_dir*
-  python setup.py build
   python setup.py install
   python -c "import firebirdsql"
   (delete *temp_dir*)
@@ -97,7 +96,7 @@ number is what you expected, you are finished. Next, consider reading
 the pyfirebirdsql Usage Guide.
 
 You should not encounter any errors at this stage since you have
-already completed the compilation and installation steps successfully.
+already completed the installation steps successfully.
 If you do, please report them to the `firebird-python  support list
 <http://tech.groups.yahoo.com/group/firebird-python/>`__.
 
