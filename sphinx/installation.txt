@@ -13,7 +13,7 @@ scope of this document; consult the dependency distributor for
 installation instructions.
 
 Satisfying the dependencies is not difficult! For mainstream
-operating systems -- including Windows and Linux -- easily installable
+operating systems -- including Windows , Macosx and Linux -- easily installable
 binary distributions are available for *all* of pyfirebirdsql's
 dependencies (see the download links below).
 
@@ -21,12 +21,13 @@ dependencies (see the download links below).
 #. Operating System - one of:
 
     + Windows (32/64)
-    + Linux Any Cpu (Known to work fine on both x86 and x86-64.)
+    + Linux Any Cpu 
     + FreeBSD
-    + Other Unix or Unix-like operating system (Macosx)
+    + Macosx 
+    + Other Unix or Unix-like operating system 
 
-#. `Firebird <http://www.firebirdsql.org>`__ 2.1 or later - client or server  
-   installation [`download here <http://www.firebirdsql.org/en/server-packages/>`__] (fb client is not necessary to connect to a server)
+#. `Firebird <http://www.firebirdsql.org>`__ 2.1 or later server version 
+   installation [`download here <http://www.firebirdsql.org/en/server-packages/>`__] (Firebird client is not necessary to connect to a server)
 
 #. `Python <http://www.python.org>`__ [`download here
    <http://www.python.org/download/>`__] 2.6 or later (including Python 3.x) It was tested with cpython , ironpython and pypy
@@ -67,7 +68,6 @@ Shortcut for the Experienced and Impatient::
 
   (decompress pyfirebirdsql into *temp_dir*)
   cd *temp_dir*
-  python setup.py build
   python setup.py install
   python -c "import firebirdsql"
   (delete *temp_dir*)
@@ -96,7 +96,7 @@ number is what you expected, you are finished. Next, consider reading
 the pyfirebirdsql Usage Guide.
 
 You should not encounter any errors at this stage since you have
-already completed the compilation and installation steps successfully.
+already completed the installation steps successfully.
 If you do, please report them to the `firebird-python  support list
 <http://tech.groups.yahoo.com/group/firebird-python/>`__.
 
