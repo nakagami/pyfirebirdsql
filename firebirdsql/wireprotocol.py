@@ -441,7 +441,7 @@ class WireProtocol(object):
         self.accept_architecture = bytes_to_bint(b[4:8])
         self.accept_type =  bytes_to_bint(b[8:])
 
-        self.auth_key = None
+        auth_key = None
         if op_code == self.op_cond_accept or op_code == self.op_accept_data:
             read_length = 0
 
@@ -477,7 +477,7 @@ class WireProtocol(object):
                 self.server_public_key = hex_to_bytes(data[4+ln:])
                 self.server_public_key = srp.bytes2long(self.server_public_key)
 
-                self.client_proof, self.auth_key = srp.client_proof(
+                client_proof, auth_key = srp.client_proof(
                                         self.str_to_bytes(self.user.upper()),
                                         self.str_to_bytes(self.password),
                                         self.server_salt,
@@ -487,7 +487,7 @@ class WireProtocol(object):
                 # send op_cont_auth
                 p = xdrlib.Packer()
                 p.pack_int(self.op_cont_auth)
-                p.pack_string(bytes_to_hex(self.client_proof))
+                p.pack_string(bytes_to_hex(client_proof))
                 p.pack_bytes(self.plugin_name)
                 p.pack_bytes(self.plugin_list)
                 p.pack_bytes(b'')
@@ -497,14 +497,14 @@ class WireProtocol(object):
         else:
             assert op_code == self.op_accept
 
-        if self.auth_key:
+        if auth_key:
             # op_crypt: plugin[Arc4] key[Symmetric]
             p = xdrlib.Packer()
             p.pack_int(self.op_crypt)
             p.pack_string(b'Arc4')
             p.pack_string(b'Symmetric')
             self.sock.send(p.get_buffer())
-            self.sock.set_translator(Arc4(self.auth_key), Arc4(self.auth_key))
+            self.sock.set_translator(Arc4(auth_key), Arc4(auth_key))
             (h, oid, buf) = self._op_response()
 
     @wire_operation
