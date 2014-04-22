@@ -110,6 +110,7 @@ class TestProc(TestBase):
     def test_insert_returning(self):
         cur = self.connection.cursor()
         cur.execute("insert into foo_table(a, b) values (4, 'b') returning e")
+        self.assertEqual(cur.rowcount, 1)
         self.assertEqual(cur.fetchone()[0], datetime.date(1967, 8, 11))
         cur.close()
 

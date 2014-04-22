@@ -75,6 +75,11 @@ class TestBasic(TestBase):
         self.assertEqual(len(cur.fetchall()), 1)
         self.assertEqual(cur.rowcount, 1)
         cur.close()
+        cur = conn.cursor()
+        cur.execute("select * from foo")
+        self.assertEqual(len(cur.fetchall()), 3)
+        self.assertEqual(cur.rowcount, 3)
+        cur.close()
 
         # update rowcount
         cur = conn.cursor()
