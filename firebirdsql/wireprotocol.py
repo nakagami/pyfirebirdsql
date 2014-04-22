@@ -441,7 +441,6 @@ class WireProtocol(object):
         self.accept_architecture = bytes_to_bint(b[4:8])
         self.accept_type =  bytes_to_bint(b[8:])
 
-        auth_key = None
         if op_code == self.op_cond_accept or op_code == self.op_accept_data:
             read_length = 0
 
@@ -494,18 +493,16 @@ class WireProtocol(object):
                 self.sock.send(p.get_buffer())
                 (h, oid, buf) = self._op_response()
 
+                # op_crypt: plugin[Arc4] key[Symmetric]
+                p = xdrlib.Packer()
+                p.pack_int(self.op_crypt)
+                p.pack_string(b'Arc4')
+                p.pack_string(b'Symmetric')
+                self.sock.send(p.get_buffer())
+                self.sock.set_translator(Arc4(auth_key), Arc4(auth_key))
+                (h, oid, buf) = self._op_response()
         else:
             assert op_code == self.op_accept
-
-        if auth_key:
-            # op_crypt: plugin[Arc4] key[Symmetric]
-            p = xdrlib.Packer()
-            p.pack_int(self.op_crypt)
-            p.pack_string(b'Arc4')
-            p.pack_string(b'Symmetric')
-            self.sock.send(p.get_buffer())
-            self.sock.set_translator(Arc4(auth_key), Arc4(auth_key))
-            (h, oid, buf) = self._op_response()
 
     @wire_operation
     def _op_attach(self):
