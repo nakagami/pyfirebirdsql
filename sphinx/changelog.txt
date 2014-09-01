@@ -120,6 +120,7 @@ Version 0.9.3
    - fix issue #50 alternative to crypt on windows
 
 Version 0.9.4
+=============
 
    - fix Cursor.rowcount.
    - Cursor.callproc() return out parameters.
