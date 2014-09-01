@@ -286,7 +286,7 @@ class Cursor(object):
                     raise IntegrityError(e._message, e.gds_codes, e.sql_code)
                 if e.sql_code == -303:
                     warnings.warn(e._message)
-                    return
+                    return self
                 else:
                     raise OperationalError(e._message, e.gds_codes, e.sql_code)
 
@@ -298,10 +298,13 @@ class Cursor(object):
             self._callproc_result = None
         self.transaction.is_dirty = True
 
+        return self
+
     def callproc(self, procname, params=[]):
         DEBUG_OUTPUT("Cursor::callproc()")
         query = 'EXECUTE PROCEDURE ' + procname + ' ' + ','.join('?'*len(params))
-        return self.execute(query, params)
+        self.execute(query, params)
+        return self._callproc_result
 
     def executemany(self, query, seq_of_params):
         for params in seq_of_params:

@@ -44,4 +44,9 @@ class TestIssues(TestBase):
         self.assertEqual(cur.fetchone()[0], 'BAR')
         cur.close()
 
+    def test_issue_54(self):
+        cur = self.connection.cursor()
+        self.assertEqual(cur.execute("select count(*) from rdb$relation_fields"), cur)
+
+        cur.close()
 

@@ -74,8 +74,8 @@ class TestProc(TestBase):
 
     def test_call_proc(self):
         cur = self.connection.cursor()
-        self.assertEqual(None, cur.callproc("foo_proc"))
-        self.assertEqual(cur.fetchone()[0], 1, 'ABC')
+        r = cur.callproc("foo_proc")
+        self.assertEqual(cur.fetchone(), r)
         cur.close()
 
         cur = self.connection.cursor()
