@@ -118,3 +118,9 @@ Version 0.9.3
 
    - refactoring
    - fix issue #50 alternative to crypt on windows
+
+Version 0.9.4
+
+   - fix Cursor.rowcount.
+   - Cursor.callproc() return out parameters.
+   - Cursor.execute() return cursor instance itself.
