@@ -375,9 +375,9 @@ class WireProtocol(object):
         max_arch_type = 5
         protocol_version_understood_count = 4
         # accept_type = 5
-#        more_protocol = hex_to_bytes('ffff800b00000001000000000000000500000004ffff800c00000001000000000000000500000006ffff800d00000001000000000000000500000008')
+        more_protocol = hex_to_bytes('ffff800b00000001000000000000000500000004ffff800c00000001000000000000000500000006ffff800d00000001000000000000000500000008')
         # accept_type = 4
-        more_protocol = hex_to_bytes('ffff800b00000001000000000000000400000004ffff800c00000001000000000000000400000006ffff800d00000001000000000000000400000008')
+#        more_protocol = hex_to_bytes('ffff800b00000001000000000000000400000004ffff800c00000001000000000000000400000006ffff800d00000001000000000000000400000008')
         p = xdrlib.Packer()
         p.pack_int(self.op_connect)
         p.pack_int(self.op_attach)
@@ -439,6 +439,7 @@ class WireProtocol(object):
         self.accept_version = byte_to_int(b[3])
         self.accept_architecture = bytes_to_bint(b[4:8])
         self.accept_type =  bytes_to_bint(b[8:])
+        self.lazy_response_count = 0
 
         if op_code == self.op_cond_accept or op_code == self.op_accept_data:
             read_length = 0
@@ -912,6 +913,9 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_response(self):
+        while self.lazy_response_count:
+            self.lazy_response_count -= 1
+            self._op_response()
         b = self.recv_channel(4)
         if b is None:
             return

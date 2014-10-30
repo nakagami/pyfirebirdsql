@@ -20,7 +20,7 @@ from firebirdsql.utils import *
 from firebirdsql.wireprotocol import WireProtocol, INFO_SQL_SELECT_DESCRIBE_VARS
 from firebirdsql.socketstream import SocketStream
 from firebirdsql.xsqlvar import XSQLVAR, calc_blr, parse_select_items, parse_xsqlda
-__version__ = '0.9.4'
+__version__ = '0.9.5'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
@@ -95,6 +95,7 @@ class Statement(object):
     def _allocate_stmt(self):
         self.trans.connection._op_allocate_statement()
         if self.trans.connection.accept_type == ptype_lazy_send:
+            self.trans.connection.lazy_response_count += 1
             self.handle = -1
         else:
             (h, oid, buf) = self.trans.connection._op_response()
@@ -110,6 +111,12 @@ class Statement(object):
             self.trans.connection._op_prepare_statement(
                 self.handle, self.trans.trans_handle, sql)
             self.plan = None
+
+        if (self.trans.connection.accept_type == ptype_lazy_send
+                                and self.trans.connection.lazy_response_count):
+            self.trans.connection.lazy_response_count -= 1
+            (h, oid, buf) = self.trans.connection._op_response()
+            self.handle = h
 
         (h, oid, buf) = self.trans.connection._op_response()
 
@@ -131,6 +138,8 @@ class Statement(object):
             self.trans.connection._op_free_statement(self.handle, DSQL_close)
             if self.trans.connection.accept_type != ptype_lazy_send:
                 (h, oid, buf) = self.trans.connection._op_response()
+            else:
+                self.trans.connection.lazy_response_count += 1
         self._is_open = False
 
     def drop(self):
@@ -139,6 +148,8 @@ class Statement(object):
             self.trans.connection._op_free_statement(self.handle, DSQL_drop)
             if self.trans.connection.accept_type != ptype_lazy_send:
                 (h, oid, buf) = self.trans.connection._op_response()
+            else:
+                self.trans.connection.lazy_response_count += 1
         self._is_open = False
         self.handle = -1
 
@@ -149,13 +160,10 @@ class Statement(object):
 class PreparedStatement(object):
     def __init__(self, cur, sql, explain_plan=False):
         DEBUG_OUTPUT("PreparedStatement::__init__()")
-        self.cur = cur
-        self.sql = sql
-        transaction = self.cur.transaction
-        connection = transaction.connection
-
-        self.stmt = Statement(transaction)
+        cur.transaction.check_trans_handle()
+        self.stmt = Statement(cur.transaction)
         self.stmt.prepare(sql, explain_plan)
+        self.sql = sql
 
     def __getattr__(self, attrname):
         if attrname == 'description':
@@ -203,6 +211,8 @@ def _fetch_generator(stmt):
                     connection._op_close_blob(h)
                     if connection.accept_type != ptype_lazy_send:
                         (h, oid, buf) = connection._op_response()
+                    else:
+                        connection.lazy_response_count += 1
                     r[i] = v
                     if x.sqlsubtype == 1:    # TEXT
                         if connection.use_unicode:
@@ -261,6 +271,7 @@ class Cursor(object):
 
     def execute(self, query, params=[]):
         DEBUG_OUTPUT("Cursor::execute()", query, params)
+        self.transaction.check_trans_handle()
         stmt = self._get_stmt(query)
         cooked_params = self._convert_params(params)
         if stmt.stmt_type == isc_info_sql_stmt_exec_procedure:
@@ -507,6 +518,7 @@ class Connection(WireProtocol):
         if self._transaction is None:
             self._transaction = Transaction(self, self._autocommit)
             self._transaction.begin()
+        self._transaction.check_trans_handle()
         self._op_exec_immediate(
             self._transaction.trans_handle, query=query)
         (h, oid, buf) = self._op_response()
@@ -874,14 +886,17 @@ class Transaction(object):
                 results[info_requests[i]] = v
             return results
 
+    def check_trans_handle(self):
+        if self._trans_handle is None:
+            self._begin()
+
     @property
     def connection(self):
         return self._connection
 
     @property
     def trans_handle(self):
-        if self._trans_handle is None:
-            self._begin()
+        assert(self._trans_handle is not None)
         return self._trans_handle
 
 

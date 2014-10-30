@@ -125,3 +125,8 @@ Version 0.9.4
    - fix Cursor.rowcount.
    - Cursor.callproc() return out parameters.
    - Cursor.execute() return cursor instance itself.
+
+Version 0.9.5
+=============
+
+   - Protocol version 11 support
