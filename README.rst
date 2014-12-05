@@ -14,7 +14,9 @@ Example
 ::
 
    import firebirdsql
-   conn = firebirdsql.connect(dsn='localhost:3050/foo/bar.fdb', user='alice', password='secret')
+   conn = firebirdsql.connect(dsn='localhost:3050/foo/bar.fdb',
+                               user='alice',
+                               password='secret')
    cur = conn.cursor()
    cur.execute("select * from baz")
    for c in cur.fetchall():
