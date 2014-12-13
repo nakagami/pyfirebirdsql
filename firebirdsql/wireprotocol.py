@@ -769,15 +769,32 @@ class WireProtocol(object):
         rows = []
         while count:
             r = [None] * len(xsqlda)
-            for i in range(len(xsqlda)):
-                x = xsqlda[i]
-                if x.io_length() < 0:
-                    b = self.recv_channel(4)
-                    ln = bytes_to_bint(b)
-                else:
-                    ln = x.io_length()
-                raw_value = self.recv_channel(ln, word_alignment=True)
-                if self.recv_channel(4) == bs([0]) * 4: # Not NULL
+            if self.accept_version < PROTOCOL_VERSION13:
+                for i in range(len(xsqlda)):
+                    x = xsqlda[i]
+                    if x.io_length() < 0:
+                        b = self.recv_channel(4)
+                        ln = bytes_to_bint(b)
+                    else:
+                        ln = x.io_length()
+                    raw_value = self.recv_channel(ln, word_alignment=True)
+                    if self.recv_channel(4) == bs([0]) * 4: # Not NULL
+                        r[i] = x.value(raw_value)
+            else:   # PROTOCOL_VERSION13
+                n = len(xsqlda) // 8
+                if len(xsqlda) % 8 != 0:
+                    n += 1
+                null_indicator = srp.bytes2long(self.recv_channel(n, word_alignment=True))
+                for i in range(len(xsqlda)):
+                    x = xsqlda[i]
+                    if null_indicator & (1 << i):
+                        continue
+                    if x.io_length() < 0:
+                        b = self.recv_channel(4)
+                        ln = bytes_to_bint(b)
+                    else:
+                        ln = x.io_length()
+                    raw_value = self.recv_channel(ln, word_alignment=True)
                     r[i] = x.value(raw_value)
             rows.append(r)
             b = self.recv_channel(12)
