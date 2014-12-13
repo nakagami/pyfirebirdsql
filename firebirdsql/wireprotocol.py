@@ -784,7 +784,10 @@ class WireProtocol(object):
                 n = len(xsqlda) // 8
                 if len(xsqlda) % 8 != 0:
                     n += 1
-                null_indicator = srp.bytes2long(self.recv_channel(n, word_alignment=True))
+                null_indicator = 0
+                for c in reversed(self.recv_channel(n, word_alignment=True)):
+                    null_indicator <<=8
+                    null_indicator += c if PYTHON_MAJOR_VER == 3 else ord(c)
                 for i in range(len(xsqlda)):
                     x = xsqlda[i]
                     if null_indicator & (1 << i):
