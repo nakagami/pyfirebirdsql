@@ -975,18 +975,39 @@ class WireProtocol(object):
         r = []
         if count == 0:
             return []
-        for i in range(len(xsqlda)):
-            x = xsqlda[i]
-            if x.io_length() < 0:
-                b = self.recv_channel(4)
-                ln = bytes_to_bint(b)
-            else:
-                ln = x.io_length()
-            raw_value = self.recv_channel(ln, word_alignment=True)
-            if self.recv_channel(4) == bs([0]) * 4: # Not NULL
-                r.append(x.value(raw_value))
-            else:
-                r.append(None)
+        if self.accept_version < PROTOCOL_VERSION13:
+            for i in range(len(xsqlda)):
+                x = xsqlda[i]
+                if x.io_length() < 0:
+                    b = self.recv_channel(4)
+                    ln = bytes_to_bint(b)
+                else:
+                    ln = x.io_length()
+                raw_value = self.recv_channel(ln, word_alignment=True)
+                if self.recv_channel(4) == bs([0]) * 4: # Not NULL
+                    r.append(x.value(raw_value))
+                else:
+                    r.append(None)
+        else:
+            n = len(xsqlda) // 8
+            if len(xsqlda) % 8 != 0:
+                n += 1
+            null_indicator = 0
+            for c in reversed(self.recv_channel(n, word_alignment=True)):
+                null_indicator <<=8
+                null_indicator += c if PYTHON_MAJOR_VER == 3 else ord(c)
+            for i in range(len(xsqlda)):
+                x = xsqlda[i]
+                if null_indicator & (1 << i):
+                    r.append(None)
+                else:
+                    if x.io_length() < 0:
+                        b = self.recv_channel(4)
+                        ln = bytes_to_bint(b)
+                    else:
+                        ln = x.io_length()
+                    raw_value = self.recv_channel(ln, word_alignment=True)
+                    r.append(x.value(raw_value))
         return r
 
     def _wait_for_event(self, timeout):
