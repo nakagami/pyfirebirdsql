@@ -239,7 +239,11 @@ class WireProtocol(object):
         "Convert parameter array to BLR and values format."
         ln = len(params) * 2
         blr = bs([5, 2, 4, 0, ln & 255, ln >> 8])
-        values = bs([])
+        if self.accept_version < PROTOCOL_VERSION13:
+            values = bs([])
+        else:
+            # TODO: set null indicator 
+            values = b'\x00\x00\x00\x00'
         for p in params:
             t = type(p)
             if ((PYTHON_MAJOR_VER == 2 and type(p) == unicode) or
@@ -303,12 +307,9 @@ class WireProtocol(object):
                 v += bs([0]) * pad_length
                 blr += bs([14, nbytes & 255, nbytes >> 8])
             blr += bs([7, 0])
+            values += v
             if self.accept_version < PROTOCOL_VERSION13:
-                values += v
                 values += bs([0]) * 4 if p != None else bs([0xff,0xff,0xff,0xff])
-            else:
-                values += bs([0]) * 4 if p != None else bs([0xff,0xff,0xff,0xff])
-                values += v
         blr += bs([255, 76])    # [blr_end, blr_eoc]
         return blr, values
 
