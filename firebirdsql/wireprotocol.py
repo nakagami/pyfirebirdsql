@@ -242,15 +242,33 @@ class WireProtocol(object):
         if self.accept_version < PROTOCOL_VERSION13:
             values = bs([])
         else:
-            # TODO: set null indicator 
-            values = b'\x00\x00\x00\x00'
+            # start with null indicator bitmap
+            null_indicator = 0
+            for i, p in enumerate(reversed(params)):
+                if p is None:
+                    null_indicator &= (1 << i)
+            n = len(params) // 8
+            if len(params) % 8 != 0:
+                n += 1
+            null_indicator_bytes = []
+            for i in range(n):
+                null_indicator_bytes.append(null_indicator & 255)
+                null_indicator >>= 8
+            if len(null_indicator_bytes) % 4:   # padding
+                null_indicator_bytes += [0] * (4 - len(null_indicator_bytes) % 4)
+            values = bs(null_indicator_bytes)
         for p in params:
-            t = type(p)
             if ((PYTHON_MAJOR_VER == 2 and type(p) == unicode) or
                 (PYTHON_MAJOR_VER == 3 and type(p) == str)):
                 p = self.str_to_bytes(p)
-                t = type(p)
-            if ((PYTHON_MAJOR_VER == 2 and t == str) or
+            t = type(p)
+            if p is None:
+                if self.accept_version < PROTOCOL_VERSION13:
+                    v = bs([])
+                    blr += bs([14, 0, 0])
+                else:
+                    continue
+            elif ((PYTHON_MAJOR_VER == 2 and t == str) or
                 (PYTHON_MAJOR_VER == 3 and t == bytes)):
                 if len(p) > MAX_CHAR_LENGTH:
                     v = self._create_blob(trans_handle, p)
@@ -294,14 +312,11 @@ class WireProtocol(object):
                 v = bs([1, 0, 0, 0]) if p else bs([0, 0, 0, 0])
                 blr += bs([23])
             else:   # fallback, convert to string
-                if p is None:
-                    v = bs([])
-                else:
-                    p = p.__repr__()
-                    if (PYTHON_MAJOR_VER==3 or
-                        (PYTHON_MAJOR_VER == 2 and type(p)==unicode)):
-                        p = self.str_to_bytes(p)
-                    v = p
+                p = p.__repr__()
+                if (PYTHON_MAJOR_VER==3 or
+                    (PYTHON_MAJOR_VER == 2 and type(p)==unicode)):
+                    p = self.str_to_bytes(p)
+                v = p
                 nbytes = len(v)
                 pad_length = ((4-nbytes) & 3)
                 v += bs([0]) * pad_length
