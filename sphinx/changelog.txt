@@ -130,3 +130,8 @@ Version 0.9.5
 =============
 
    - Protocol version 11 support
+
+Version 0.9.6
+=============
+
+   - support Firebird 3 (CORE-2897)
