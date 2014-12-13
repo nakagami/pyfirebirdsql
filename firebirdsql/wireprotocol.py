@@ -302,9 +302,13 @@ class WireProtocol(object):
                 pad_length = ((4-nbytes) & 3)
                 v += bs([0]) * pad_length
                 blr += bs([14, nbytes & 255, nbytes >> 8])
-            values += v
             blr += bs([7, 0])
-            values += bs([0]) * 4 if p != None else bs([0xff,0xff,0xff,0xff])
+            if self.accept_version < PROTOCOL_VERSION13:
+                values += v
+                values += bs([0]) * 4 if p != None else bs([0xff,0xff,0xff,0xff])
+            else:
+                values += bs([0]) * 4 if p != None else bs([0xff,0xff,0xff,0xff])
+                values += v
         blr += bs([255, 76])    # [blr_end, blr_eoc]
         return blr, values
 
