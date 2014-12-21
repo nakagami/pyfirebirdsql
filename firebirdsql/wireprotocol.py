@@ -19,7 +19,10 @@ from firebirdsql import (DisconnectByPeer,
 from firebirdsql.consts import *
 from firebirdsql.utils import *
 from firebirdsql import srp
-from firebirdsql.arc4 import ARC4
+try:
+    from Crypto.Cipher import ARC4
+except ImportError:
+    from firebirdsql.arc4 import ARC4
 
 DEBUG = False
 

@@ -47,9 +47,5 @@ class ARC4:
     @staticmethod
     def new(key):
         return ARC4(key)
-
-    def encrypt(self, plain):
-        return self.translate(plain)
-
-    def decrypt(self, enc):
-        return self.translate(enc)
+    encrypt = translate
+    decrypt = translate
