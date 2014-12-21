@@ -37,12 +37,12 @@ class SocketStream(object):
     def recv(self, nbytes):
         b = self._sock.recv(nbytes)
         if self.read_translator:
-            b = self.read_translator.translate(b)
+            b = self.read_translator.decrypt(b)
         return b
 
     def send(self, b):
         if self.write_translator:
-            b = self.write_translator.translate(b)
+            b = self.write_translator.encrypt(b)
         n = 0
         while (n < len(b)):
             n += self._sock.send(b[n:])

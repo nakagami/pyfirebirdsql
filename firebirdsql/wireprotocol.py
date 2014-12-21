@@ -19,7 +19,7 @@ from firebirdsql import (DisconnectByPeer,
 from firebirdsql.consts import *
 from firebirdsql.utils import *
 from firebirdsql import srp
-from firebirdsql.arc4 import Arc4
+from firebirdsql.arc4 import ARC4
 
 DEBUG = False
 
@@ -519,7 +519,7 @@ class WireProtocol(object):
                 p.pack_string(b'Arc4')
                 p.pack_string(b'Symmetric')
                 self.sock.send(p.get_buffer())
-                self.sock.set_translator(Arc4(auth_key), Arc4(auth_key))
+                self.sock.set_translator(ARC4.new(auth_key), ARC4.new(auth_key))
                 (h, oid, buf) = self._op_response()
         else:
             assert op_code == self.op_accept

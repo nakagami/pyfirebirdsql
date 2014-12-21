@@ -14,7 +14,7 @@ if PYTHON_MAJOR_VER == 3:
     def ord(c):
         return c
 
-class Arc4:
+class ARC4:
     def __init__(self, key):
         state = list(range(256))
         index1 = 0
@@ -42,3 +42,14 @@ class Arc4:
             else:
                 enc += chr(ord(plain[i]) ^ state[xorIndex])
         return enc
+
+    # PyCrypto compatible method
+    @staticmethod
+    def new(key):
+        return ARC4(key)
+
+    def encrypt(self, plain):
+        return self.translate(plain)
+
+    def decrypt(self, enc):
+        return self.translate(enc)
