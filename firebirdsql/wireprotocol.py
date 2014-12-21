@@ -250,12 +250,12 @@ class WireProtocol(object):
             n = len(params) // 8
             if len(params) % 8 != 0:
                 n += 1
+            if n % 4:   # padding
+                n += 4 - n % 4
             null_indicator_bytes = []
             for i in range(n):
                 null_indicator_bytes.append(null_indicator & 255)
                 null_indicator >>= 8
-            if len(null_indicator_bytes) % 4:   # padding
-                null_indicator_bytes += [0] * (4 - len(null_indicator_bytes) % 4)
             values = bs(null_indicator_bytes)
         for p in params:
             if ((PYTHON_MAJOR_VER == 2 and type(p) == unicode) or
