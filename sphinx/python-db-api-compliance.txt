@@ -74,21 +74,6 @@ subsection elsewhere.
       firebirdsql.connect(dsn='host:/path/database.db', user='sysdba',
           password='pass', charset='UTF8')
 
-   :dialect:  The SQL dialect is feature for backward compatibility with Interbase® 5.5
-              or earlier. The default dialect is `3` (the most featureful dialect, default
-              for Firebird). If you want to connect to `legacy` databases, you must
-              explicitly set this argument's value to `1`. Dialect `2` is a transitional
-              dialect that is normally used only during ports from IB < 6 to IB >= 6 
-              or Firebird. See Firebird documentation for more information about
-              SQL Dialects.
-
-   *Example:*
-
-   .. sourcecode:: python
-
-      firebirdsql.connect(dsn='host:/path/database.db', user='sysdba',
-         password='pass', dialect=1)
-
    :timeout:  (`Optional`) Dictionary with timeout and action specification. See section
               about `Connection Timeouts <beyond-python-db-api.html#connection-timeout>`_ for details.
 
@@ -100,13 +85,6 @@ subsection elsewhere.
       parameter of :func:`firebirdsql.connect()`). See Firebird Documentation for a list
       of available character sets, and `Unicode Fields and pyfirebirdsql` section
       for information on handling extended character sets with pyfirebirdsql.
-
-   .. attribute:: dialect 
-
-      This integer attribute indicates which SQL dialect the connection is using.
-      You should not change a connection's dialect; instead, discard the connection
-      and establish a new one with the desired dialect. For more information, see
-      the documentation of the `dialect` argument of the `connect` function.
 
    .. attribute:: server_version
 
