@@ -1,15 +1,4 @@
 #!/usr/bin/env python
-""" firebirdsql package is a set of Firebird RDBMS bindings for python.
-It works on Python 2.6+ (include Python 3.x).
-
-import firebirdsql
-conn = firebirdsql.connect(dsn='localhost:3050/foo/bar.fdb', user='alice', password='secret')
-cur = conn.cursor()
-cur.execute("select * from baz")
-for c in cur.fetchall():
-    print(c)
-conn.close()
-"""
 import sys
 from distutils.core import setup, Command
 import firebirdsql
@@ -54,6 +43,5 @@ setup(name='firebirdsql',
         author='Hajime Nakagami',
         author_email='nakagami@gmail.com',
         packages = ['firebirdsql'],
-        long_description=__doc__,
         cmdclass = cmdclass,
 )
