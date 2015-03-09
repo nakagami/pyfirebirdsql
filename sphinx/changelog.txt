@@ -135,3 +135,9 @@ Version 0.9.6
 =============
 
    - support Firebird 3 (CORE-2897)
+
+Version 0.9.7
+=============
+
+   - fix null indicator for Firebird 3
+   - PyCrypto support for Firebird 3
