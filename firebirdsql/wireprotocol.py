@@ -249,7 +249,7 @@ class WireProtocol(object):
             null_indicator = 0
             for i, p in enumerate(reversed(params)):
                 if p is None:
-                    null_indicator &= (1 << i)
+                    null_indicator |= (1 << i)
             n = len(params) // 8
             if len(params) % 8 != 0:
                 n += 1
@@ -266,11 +266,8 @@ class WireProtocol(object):
                 p = self.str_to_bytes(p)
             t = type(p)
             if p is None:
-                if self.accept_version < PROTOCOL_VERSION13:
-                    v = bs([])
-                    blr += bs([14, 0, 0])
-                else:
-                    continue
+                v = bs([])
+                blr += bs([14, 0, 0])
             elif ((PYTHON_MAJOR_VER == 2 and t == str) or
                 (PYTHON_MAJOR_VER == 3 and t == bytes)):
                 if len(p) > MAX_CHAR_LENGTH:
