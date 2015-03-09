@@ -285,6 +285,13 @@ class TestBasic(TestBase):
         except firebirdsql.OperationalError:
             pass
 
+    def test_null_parameter(self):
+        cur = self.connection.cursor()
+        cur.execute("insert into foo(a, b, c) values (1, 'B', ?)", (None,))
+        cur.execute("select count(*) from foo where c is null")
+        self.assertEqual(cur.fetchone()[0], 1)
+        cur.close()
+
     def test_execute_immediate(self):
         self.connection.execute_immediate(
             "insert into foo(a, b) values (1, 'B')")
