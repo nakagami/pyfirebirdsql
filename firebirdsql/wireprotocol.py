@@ -247,7 +247,7 @@ class WireProtocol(object):
         else:
             # start with null indicator bitmap
             null_indicator = 0
-            for i, p in enumerate(reversed(params)):
+            for i, p in enumerate(params):
                 if p is None:
                     null_indicator |= (1 << i)
             n = len(params) // 8
