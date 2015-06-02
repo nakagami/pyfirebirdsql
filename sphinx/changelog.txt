@@ -141,3 +141,8 @@ Version 0.9.7
 
    - fix null indicator for Firebird 3
    - PyCrypto support for Firebird 3
+
+Version 0.9.8
+=============
+
+   - fix issue #58 wrong logic for handling lage BLOBs.
