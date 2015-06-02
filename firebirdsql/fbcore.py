@@ -200,8 +200,8 @@ def _fetch_generator(stmt):
                     connection._op_open_blob(r[i], stmt.trans.trans_handle)
                     (h, oid, buf) = connection._op_response()
                     v = bs([])
-                    n = 1   # 1:mora data 2:no more data
-                    while n == 1:
+                    n = 1   # 0,1:mora data 2:no more data
+                    while n != 2:
                         connection._op_get_segment(h)
                         (n, oid, buf) = connection._op_response()
                         while buf:
