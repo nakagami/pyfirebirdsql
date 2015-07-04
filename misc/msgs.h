@@ -169,7 +169,7 @@ static const struct {
 	{335544466, "violation of FOREIGN KEY constraint \"@1\" on table \"@2\""},		/* foreign_key */
 	{335544467, "minor version too high found @1 expected @2"},		/* high_minor */
 	{335544468, "transaction @1 is @2"},		/* tra_state */
-	{335544469, "transaction marked invalid by I/O error"},		/* trans_invalid */
+	{335544469, "transaction marked invalid and cannot be committed"},		/* trans_invalid */
 	{335544470, "cache buffer for page @1 invalid"},		/* buf_invalid */
 	{335544471, "there is no index in table @1 with id @2"},		/* indexnotdefined */
 	{335544472, "Your user name and password are not defined. Ask your database administrator to set up a Firebird login."},		/* login */
@@ -483,7 +483,7 @@ static const struct {
 	{335544779, "Integer overflow.  The result of an integer operation caused the most significant bit of the result to carry."},		/* exception_integer_overflow */
 	{335544780, "An exception occurred that does not have a description.  Exception number @1."},		/* exception_unknown */
 	{335544781, "Stack overflow.  The resource requirements of the runtime stack have exceeded the memory available to it."},		/* exception_stack_overflow */
-	{335544782, "Segmentation Fault. The code attempted to access memory without priviledges."},		/* exception_sigsegv */
+	{335544782, "Segmentation Fault. The code attempted to access memory without privileges."},		/* exception_sigsegv */
 	{335544783, "Illegal Instruction. The Code attempted to perfrom an illegal operation."},		/* exception_sigill */
 	{335544784, "Bus Error. The Code caused a system bus error."},		/* exception_sigbus */
 	{335544785, "Floating Point Error. The Code caused an Arithmetic Exception or a floating point exception."},		/* exception_sigfpe */
@@ -518,8 +518,8 @@ static const struct {
 	{335544814, "Services functionality will be supported in a later version  of the product"},		/* service_not_supported */
 	{335544815, "GENERATOR @1"},		/* generator_name */
 	{335544816, "UDF @1"},		/* udf_name */
-	{335544817, "Invalid parameter to FIRST.  Only integers >= 0 are allowed."},		/* bad_limit_param */
-	{335544818, "Invalid parameter to SKIP.  Only integers >= 0 are allowed."},		/* bad_skip_param */
+	{335544817, "Invalid parameter to FETCH or FIRST. Only integers >= 0 are allowed."},		/* bad_limit_param */
+	{335544818, "Invalid parameter to OFFSET or SKIP. Only integers >= 0 are allowed."},		/* bad_skip_param */
 	{335544819, "File exceeded maximum size of 2GB.  Add another database file or use a 64 bit I/O version of Firebird."},		/* io_32bit_exceeded_err */
 	{335544820, "Unable to find savepoint with name @1 in transaction context"},		/* invalid_savepoint */
 	{335544821, "Invalid column position used in the @1 clause"},		/* dsql_column_pos_err */
@@ -708,11 +708,11 @@ Data source : @4"},		/* eds_statement */
 	{335545001, "External engine @1 not found"},		/* eem_engine_notfound */
 	{335545002, "Attachment is in use"},		/* attachment_in_use */
 	{335545003, "Transaction is in use"},		/* transaction_in_use */
-	{335545004, "Plugin @1 not found"},		/* pman_plugin_notfound */
-	{335545005, "Module @1 exists, but can not be loaded"},		/* pman_cannot_load_plugin */
-	{335545006, "Entrypoint of plugin @1 does not exist"},		/* pman_entrypoint_notfound */
-	{335545007, "Invalid value @1 for parameter index at PluginImpl::getConfigInfo: out of bounds"},		/* pman_bad_conf_index */
-	{335545008, "Plugin @1 does not create @2 instances"},		/* pman_unknown_instance */
+	{335545004, "Error loading plugin @1"},		/* pman_cannot_load_plugin */
+	{335545005, "Loadable module @1 not found"},		/* pman_module_notfound */
+	{335545006, "Standard plugin entrypoint does not exist in module @1"},		/* pman_entrypoint_notfound */
+	{335545007, "Module @1 exists but can not be loaded"},		/* pman_module_bad */
+	{335545008, "Module @1 does not contain plugin @2 type @3"},		/* pman_plugin_notfound */
 	{335545009, "Invalid usage of context namespace DDL_TRIGGER"},		/* sysf_invalid_trig_namespace */
 	{335545010, "Value is NULL but isNull parameter was not informed"},		/* unexpected_null */
 	{335545011, "Type @1 is incompatible with BLOB"},		/* type_notcompat_blob */
@@ -733,7 +733,7 @@ Data source : @4"},		/* eds_statement */
 	{335545026, "External BLR message mismatch: invalid null descriptor at field @1"},		/* ee_blr_mismatch_null */
 	{335545027, "External BLR message mismatch: length = @1, expected @2"},		/* ee_blr_mismatch_length */
 	{335545028, "Subscript @1 out of bounds [@2, @3]"},		/* ss_out_of_bounds */
-	{335545029, "Install incomplete, please read chapter \"Initializing security database\" in Quick Start Guide"},		/* missing_data_structures */
+	{335545029, "Install incomplete, please read the Compatibility chapter in the release notes for this version"},		/* missing_data_structures */
 	{335545030, "@1 operation is not allowed for system table @2"},		/* protect_sys_tab */
 	{335545031, "Libtommath error code @1 in function @2"},		/* libtommath_generic */
 	{335545032, "unsupported BLR version (expected between @1 and @2, encountered @3)"},		/* wroblrver2 */
@@ -764,7 +764,7 @@ Data source : @4"},		/* eds_statement */
 	{335545057, "File to include not found"},		/* include_miss */
 	{335545058, "Only the owner can change the ownership"},		/* protect_ownership */
 	{335545059, "undefined variable number"},		/* badvarnum */
-	{335545060, "Missing security context for database @1"},		/* sec_context */
+	{335545060, "Missing security context for @1"},		/* sec_context */
 	{335545061, "Missing segment @1 in multisegment connect block parameter"},		/* multi_segment */
 	{335545062, "Different logins in connect and attach packets - client library error"},		/* login_changed */
 	{335545063, "Exceeded exchange limit during authentication handshake"},		/* auth_handshake_limit */
@@ -777,6 +777,37 @@ Data source : @4"},		/* eds_statement */
 	{335545070, "Client authentication plugin expected @2 bytes of @3 from server, got @1"},		/* auth_datalength */
 	{335545071, "Attempt to get information about an unprepared dynamic SQL statement."},		/* info_unprepared_stmt */
 	{335545072, "Problematic key value is @1"},		/* idx_key_value */
+	{335545073, "Cannot select virtual table @1 for update WITH LOCK"},		/* forupdate_virtualtbl */
+	{335545074, "Cannot select system table @1 for update WITH LOCK"},		/* forupdate_systbl */
+	{335545075, "Cannot select temporary table @1 for update WITH LOCK"},		/* forupdate_temptbl */
+	{335545076, "System @1 @2 cannot be modified"},		/* cant_modify_sysobj */
+	{335545077, "Server misconfigured - contact administrator please"},		/* server_misconfigured */
+	{335545078, "Deprecated backward compatibility ALTER ROLE ... SET/DROP AUTO ADMIN mapping may be used only for RDB$ADMIN role"},		/* alter_role */
+	{335545079, "Mapping @1 already exists"},		/* map_already_exists */
+	{335545080, "Mapping @1 does not exist"},		/* map_not_exists */
+	{335545081, "@1 failed when loading mapping cache"},		/* map_load */
+	{335545082, "Invalid name <*> in authentication block"},		/* map_aster */
+	{335545083, "Multiple maps found for @1"},		/* map_multi */
+	{335545084, "Undefined mapping result - more than one different results found"},		/* map_undefined */
+	{335545085, "Incompatible mode of attachment to damaged database"},		/* baddpb_damaged_mode */
+	{335545086, "Attempt to set in database number of buffers which is out of acceptable range [@1:@2]"},		/* baddpb_buffers_range */
+	{335545087, "Attempt to temporarily set number of buffers less than @1"},		/* baddpb_temp_buffers */
+	{335545088, "Global mapping is not available when database @1 is not present"},		/* map_nodb */
+	{335545089, "Global mapping is not available when table RDB$MAP is not present in database @1"},		/* map_notable */
+	{335545090, "Your attachment has no trusted role"},		/* miss_trusted_role */
+	{335545091, "Role @1 is invalid or unavailable"},		/* set_invalid_role */
+	{335545092, "Cursor @1 is not positioned in a valid record"},		/* cursor_not_positioned */
+	{335545093, "Duplicated user attribute @1"},		/* dup_attribute */
+	{335545094, "There is no privilege for this operation"},		/* dyn_no_priv */
+	{335545095, "Using GRANT OPTION on @1 not allowed"},		/* dsql_cant_grant_option */
+	{335545096, "read conflicts with concurrent update"},		/* read_conflict */
+	{335545097, "@1 failed when working with CREATE DATABASE grants"},		/* crdb_load */
+	{335545098, "CREATE DATABASE grants check is not possible when database @1 is not present"},		/* crdb_nodb */
+	{335545099, "CREATE DATABASE grants check is not possible when table RDB$DB_CREATORS is not present in database @1"},		/* crdb_notable */
+	{335545100, "Interface @3 version too old: expected @1, found @2"},		/* interface_version_too_old */
+	{335545101, "Input parameter mismatch for function @1"},		/* fun_param_mismatch */
+	{335545102, "Error during savepoint backout - transaction invalidated"},		/* savepoint_backout_err */
+	{335545103, "Domain used in the PRIMARY KEY constraint of table @1 must be NOT NULL"},		/* domain_primary_key_notnull */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */
@@ -906,6 +937,10 @@ Data source : @4"},		/* eds_statement */
 	{336068889, "Collation @1 is used in function @2 (parameter name @3) and cannot be dropped"},		/* dyn_coll_used_function */
 	{336068890, "Domain @1 is used in function @2 (parameter name @3) and cannot be dropped"},		/* dyn_domain_used_function */
 	{336068891, "ALTER USER requires at least one clause to be specified"},		/* dyn_alter_user_no_clause */
+	{336068894, "Duplicate @1 @2"},		/* dyn_duplicate_package_item */
+	{336068895, "System @1 @2 cannot be modified"},		/* dyn_cant_modify_sysobj */
+	{336068896, "INCREMENT BY 0 is an illegal option for sequence @1"},		/* dyn_cant_use_zero_increment */
+	{336068897, "Can't use @1 in FOREIGN KEY constraint"},		/* dyn_cant_use_in_foreignkey */
 	{336330753, "found unknown switch"},		/* gbak_unknown_switch */
 	{336330754, "page size parameter missing"},		/* gbak_page_size_missing */
 	{336330755, "Page size specified (@1) greater than limit (16384 bytes)"},		/* gbak_page_size_toobig */
@@ -1121,6 +1156,16 @@ Data source : @4"},		/* eds_statement */
 	{336397319, "GRANT failed"},		/* dsql_grant_failed */
 	{336397320, "REVOKE failed"},		/* dsql_revoke_failed */
 	{336397321, "Recursive member of CTE cannot use aggregate or window function"},		/* dsql_cte_recursive_aggregate */
+	{336397322, "@2 MAPPING @1 failed"},		/* dsql_mapping_failed */
+	{336397323, "ALTER SEQUENCE @1 failed"},		/* dsql_alter_sequence_failed */
+	{336397324, "CREATE GENERATOR @1 failed"},		/* dsql_create_generator_failed */
+	{336397325, "SET GENERATOR @1 failed"},		/* dsql_set_generator_failed */
+	{336397326, "WITH LOCK can be used only with a single physical table"},		/* dsql_wlock_simple */
+	{336397327, "FIRST/SKIP cannot be used with OFFSET/FETCH or ROWS"},		/* dsql_firstskip_rows */
+	{336397328, "WITH LOCK cannot be used with aggregates"},		/* dsql_wlock_aggregates */
+	{336397329, "WITH LOCK cannot be used with @1"},		/* dsql_wlock_conflict */
+	{336397330, "Number of arguments (@1) exceeds the maximum (@2) number of EXCEPTION USING arguments"},		/* dsql_max_exception_arguments */
+	{336397331, "String literal with @1 bytes exceeds the maximum length of @2 bytes"},		/* dsql_string_length */
 	{336723983, "unable to open database"},		/* gsec_cant_open_db */
 	{336723984, "error in switch specifications"},		/* gsec_switches_error */
 	{336723985, "no operation specified"},		/* gsec_no_op_spec */
@@ -1211,6 +1256,7 @@ Data source : @4"},		/* eds_statement */
 	{337117251, "Cannot get backup guid clumplet from L0 backup"},		/* nbackup_lostguid_l0bk */
 	{337117255, "Wrong parameter @1 for switch -D, need ON or OFF"},		/* nbackup_switchd_parameter */
 	{337117257, "Terminated due to user request"},		/* nbackup_user_stop */
+	{337117259, "Too complex decompress command (> @1 arguments)"},		/* nbackup_deco_parse */
 	{337182750, "conflicting actions \"@1\" and \"@2\" found"},		/* trace_conflict_acts */
 	{337182751, "action switch not found"},		/* trace_act_notfound */
 	{337182752, "switch \"@1\" must be set only once"},		/* trace_switch_once */

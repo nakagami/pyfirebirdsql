@@ -9,7 +9,7 @@
 #define	SLONG long
 #define SCHAR char
 
-/*https://github.com/asfernandes/firebird/blob/master/src/include/gen/msgs.h*/
+/*https://raw.githubusercontent.com/FirebirdSQL/core/master/src/include/gen/msgs.h*/
 #include "msgs.h"   
 
 int main(int argc, char *argv[])
