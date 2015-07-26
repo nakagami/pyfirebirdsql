@@ -445,6 +445,7 @@ class Cursor(object):
 
 class EventConduit(WireProtocol):
     def __init__(self, conn, names, timeout):
+        self.sock = None
         self.connection = conn
         self.event_names = {}
         for name in names:
@@ -531,6 +532,7 @@ class Connection(WireProtocol):
                     auth_plugin_list=('Srp', 'Legacy_Auth'),
                     wire_crypt=True, create_new=False):
         DEBUG_OUTPUT("Connection::__init__()")
+        self.sock = None
         self.db_handle = None
         if dsn:
             i = dsn.find(':')
