@@ -1,6 +1,7 @@
 ================
 PyfirebirdSQL
 ================
+
 .. image:: https://travis-ci.org/nakagami/pyfirebirdsql.svg?branch=master
    :target: https://travis-ci.org/nakagami/pyfirebirdsql
     
@@ -18,9 +19,10 @@ It works on Python 2.6+ (including Python 3.x)
 
 see https://pyfirebirdsql.readthedocs.org/en/latest/
 
------------
+
 Example
 -----------
+
 ::
 
    import firebirdsql
@@ -32,3 +34,12 @@ Example
    for c in cur.fetchall():
        print(c)
        conn.close()
+
+test with Firebird3
+----------------------
+
+::
+
+   AuthServer = Srp, Legacy_Auth
+   WireCrypt = Enabled
+
