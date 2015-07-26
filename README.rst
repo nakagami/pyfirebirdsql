@@ -38,7 +38,7 @@ Example
 test with Firebird3
 ----------------------
 
-::
+firebird.conf::
 
    AuthServer = Srp, Legacy_Auth
    WireCrypt = Enabled
