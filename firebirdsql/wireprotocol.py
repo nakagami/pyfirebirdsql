@@ -342,46 +342,47 @@ class WireProtocol(object):
             b += bs([k, len(v)+1, i]) + v
             return b
 
+        assert isinstance(auth_plugin_list, tuple), "Auth plugin list need tuple."
+        assert auth_plugin_list, "Need auth auth_plugin_list."
+
+        # get and calculate CNCT_xxxx values
         if sys.platform == 'win32':
             user = os.environ['USERNAME']
             hostname = os.environ['COMPUTERNAME']
         else:
             user = os.environ.get('USER', '')
             hostname = socket.gethostname()
+
+        specific_data = None
+        if auth_plugin_list[0] == 'Srp':
+            self.client_public_key, self.client_private_key = \
+                                srp.client_seed()
+            specific_data = bytes_to_hex(
+                                srp.long2bytes(self.client_public_key))
+        elif auth_plugin_list[0] == 'Legacy_Auth':
+            enc_pass = get_crypt(self.password)
+            if enc_pass:
+                specific_data = self.str_to_bytes(enc_pass)
+        else:
+            raise OperationalError("Unknown auth plugin name '%s'" % (auth_plugin_list[0]))
+        auth_plugin_list = [s.encode('utf-8') for s in auth_plugin_list]
+        self.plugin_name = auth_plugin_list[0]
+        self.plugin_list = b','.join(auth_plugin_list)
+        if wire_crypt:
+            client_crypt = int_to_bytes(1, 4)
+        else:
+            client_crypt = int_to_bytes(0, 4)
+
+        # set CNCT_xxxx values
         r = b''
+        r += pack_cnct_param(CNCT_login,
+                            self.str_to_bytes(self.user.upper()))
+        r += pack_cnct_param(CNCT_plugin_name, self.plugin_name)
+        r += pack_cnct_param(CNCT_plugin_list, self.plugin_list)
+        if specific_data:
+            r += pack_cnct_param(CNCT_specific_data, specific_data)
+        r += pack_cnct_param(CNCT_client_crypt, client_crypt)
 
-        if auth_plugin_list:
-            specific_data = None
-            if auth_plugin_list[0] == 'Srp':
-                self.client_public_key, self.client_private_key = \
-                                    srp.client_seed()
-                specific_data = bytes_to_hex(
-                                    srp.long2bytes(self.client_public_key))
-            elif auth_plugin_list[0] == 'Legacy_Auth':
-                enc_pass = get_crypt(self.password)
-                if enc_pass:
-                    specific_data = self.str_to_bytes(enc_pass)
-            else:
-                if not isinstance(auth_plugin_list, tuple):
-                    raise OperationalError("Auth plugin list need tuple.")
-                else:
-                    raise OperationalError(
-                        "Unknown auth plugin name '%s'" % (auth_plugin_list[0]))
-            auth_plugin_list = [s.encode('utf-8') for s in auth_plugin_list]
-            self.plugin_name = auth_plugin_list[0]
-            self.plugin_list = b','.join(auth_plugin_list)
-            if wire_crypt:
-                client_crypt = int_to_bytes(1, 4)
-            else:
-                client_crypt = int_to_bytes(0, 4)
-
-            r += pack_cnct_param(CNCT_login,
-                                self.str_to_bytes(self.user.upper()))
-            r += pack_cnct_param(CNCT_plugin_name, self.plugin_name)
-            r += pack_cnct_param(CNCT_plugin_list, self.plugin_list)
-            if specific_data:
-                r += pack_cnct_param(CNCT_specific_data, specific_data)
-            r += pack_cnct_param(CNCT_client_crypt, client_crypt)
         r += pack_cnct_param(CNCT_user, self.str_to_bytes(user))
         r += pack_cnct_param(CNCT_host, self.str_to_bytes(hostname))
         r += pack_cnct_param(CNCT_user_verification, b'')
