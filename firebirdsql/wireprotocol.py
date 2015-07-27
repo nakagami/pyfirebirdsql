@@ -385,28 +385,24 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_connect(self, auth_plugin_list, wire_crypt):
-        arch_type = 36
-        min_arch_type = 0
-        max_arch_type = 5
-        protocol_version_understood_count = 4
-        # accept_type = 5
-        more_protocol = hex_to_bytes('ffff800b00000001000000000000000500000004ffff800c00000001000000000000000500000006ffff800d00000001000000000000000500000008')
-        # accept_type = 4
-#        more_protocol = hex_to_bytes('ffff800b00000001000000000000000400000004ffff800c00000001000000000000000400000006ffff800d00000001000000000000000400000008')
+        protocols = [
+            # PROTOCOL_VERSION,Protocol Arch type (Generic = 1), min, max, weight
+            '0000000a00000001000000000000000500000002', # 10, 1, 0, 5, 2
+            'ffff800b00000001000000000000000500000004', # 11, 1, 0, 5, 4
+            'ffff800c00000001000000000000000500000006', # 12, 1, 0, 4, 6
+            'ffff800d00000001000000000000000500000008', # 13, 1, 0, 5, 8
+        ]
         p = xdrlib.Packer()
         p.pack_int(self.op_connect)
         p.pack_int(self.op_attach)
         p.pack_int(3)   # CONNECT_VERSION
-        p.pack_int(arch_type)
+        p.pack_int(36)  # arch_type
         p.pack_string(self.str_to_bytes(self.filename if self.filename else ''))
-        p.pack_int(protocol_version_understood_count)
+
+        p.pack_int(len(protocols))
         p.pack_bytes(self.uid(auth_plugin_list, wire_crypt))
-        p.pack_int(PROTOCOL_VERSION10)
-        p.pack_int(1)   # Protocol Arch type (Generic = 1)
-        p.pack_int(min_arch_type)
-        p.pack_int(max_arch_type)
-        p.pack_int(2)   # Preference weight
-        self.sock.send(p.get_buffer()+more_protocol)
+        self.sock.send(p.get_buffer())
+        self.sock.send(hex_to_bytes(''.join(protocols)))
 
     @wire_operation
     def _op_create(self, page_size=4096):
