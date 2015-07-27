@@ -375,7 +375,6 @@ class WireProtocol(object):
             else:
                 client_crypt = int_to_bytes(0, 4)
 
-        if auth_plugin_list:
             r += pack_cnct_param(CNCT_login,
                                 self.str_to_bytes(self.user.upper()))
             r += pack_cnct_param(CNCT_plugin_name, self.plugin_name)
