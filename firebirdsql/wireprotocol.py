@@ -364,13 +364,14 @@ class WireProtocol(object):
         else:
             raise OperationalError("Unknown auth plugin name '%s'" % (auth_plugin_list[0]))
         self.plugin_name = auth_plugin_list[0]
-        auth_plugin_list = b','.join([s.encode('utf-8') for s in auth_plugin_list])
+        self.plugin_list = b','.join([s.encode('utf-8') for s in auth_plugin_list])
         client_crypt = b'\x01\x00\x00\x00' if wire_crypt else b'\x00\x00\x00\x00'
         # set CNCT_xxxx values
         r = b''
         r += pack_cnct_param(CNCT_login,
                             self.str_to_bytes(self.user.upper()))
-        r += pack_cnct_param(CNCT_plugin_name, self.plugin_name)
+        r += pack_cnct_param(CNCT_plugin_name,
+                            self.str_to_bytes(self.plugin_name))
         r += pack_cnct_param(CNCT_plugin_list, self.plugin_list)
         if specific_data:
             r += pack_cnct_param(CNCT_specific_data, specific_data)
