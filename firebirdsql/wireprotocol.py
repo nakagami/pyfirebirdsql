@@ -355,24 +355,17 @@ class WireProtocol(object):
 
         specific_data = None
         if auth_plugin_list[0] == 'Srp':
-            self.client_public_key, self.client_private_key = \
-                                srp.client_seed()
-            specific_data = bytes_to_hex(
-                                srp.long2bytes(self.client_public_key))
+            self.client_public_key, self.client_private_key = srp.client_seed()
+            specific_data = bytes_to_hex(srp.long2bytes(self.client_public_key))
         elif auth_plugin_list[0] == 'Legacy_Auth':
             enc_pass = get_crypt(self.password)
             if enc_pass:
                 specific_data = self.str_to_bytes(enc_pass)
         else:
             raise OperationalError("Unknown auth plugin name '%s'" % (auth_plugin_list[0]))
-        auth_plugin_list = [s.encode('utf-8') for s in auth_plugin_list]
         self.plugin_name = auth_plugin_list[0]
-        self.plugin_list = b','.join(auth_plugin_list)
-        if wire_crypt:
-            client_crypt = int_to_bytes(1, 4)
-        else:
-            client_crypt = int_to_bytes(0, 4)
-
+        auth_plugin_list = b','.join([s.encode('utf-8') for s in auth_plugin_list])
+        client_crypt = b'\x01\x00\x00\x00' if wire_crypt else b'\x00\x00\x00\x00'
         # set CNCT_xxxx values
         r = b''
         r += pack_cnct_param(CNCT_login,
