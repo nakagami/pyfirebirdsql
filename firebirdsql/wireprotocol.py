@@ -396,7 +396,7 @@ class WireProtocol(object):
         p.pack_int(self.op_connect)
         p.pack_int(self.op_attach)
         p.pack_int(3)   # CONNECT_VERSION
-        p.pack_int(36)  # arch_type
+        p.pack_int(1)   # arch_generic
         p.pack_string(self.str_to_bytes(self.filename if self.filename else ''))
 
         p.pack_int(len(protocols))
