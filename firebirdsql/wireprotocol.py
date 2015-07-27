@@ -366,6 +366,7 @@ class WireProtocol(object):
         self.plugin_name = auth_plugin_list[0]
         self.plugin_list = b','.join([s.encode('utf-8') for s in auth_plugin_list])
         client_crypt = b'\x01\x00\x00\x00' if wire_crypt else b'\x00\x00\x00\x00'
+
         # set CNCT_xxxx values
         r = b''
         r += pack_cnct_param(CNCT_login,
