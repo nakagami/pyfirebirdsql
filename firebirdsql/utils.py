@@ -9,11 +9,6 @@
 import sys
 import binascii
 import struct
-try:
-    import crypt
-except ImportError: # Not posix
-    crypt = None
-
 
 PYTHON_MAJOR_VER = sys.version_info[0]
 
@@ -106,7 +101,3 @@ def byte_to_int(b):
     else:
         return ord(b)
 
-def get_crypt(plain):
-    if crypt is None:
-        return None
-    return crypt.crypt(plain, '9z')[2:]

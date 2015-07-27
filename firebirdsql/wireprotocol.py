@@ -11,6 +11,10 @@ import sys
 import os
 import socket
 import xdrlib, time, datetime, decimal, struct, select
+try:
+    import crypt
+except ImportError: # Not posix
+    crypt = None
 from firebirdsql.fberrmsgs import messages
 from firebirdsql import (DisconnectByPeer,
     DatabaseError, InternalError, OperationalError,
@@ -47,6 +51,9 @@ INFO_SQL_SELECT_DESCRIBE_VARS = bs([
     isc_info_sql_owner,
     isc_info_sql_alias,
     isc_info_sql_describe_end])
+
+def get_crypt(plain):
+    return crypt.crypt(plain, '9z')[2:]
 
 def convert_date(v):  # Convert datetime.date to BLR format data
     i = v.month + 9
@@ -358,9 +365,8 @@ class WireProtocol(object):
             self.client_public_key, self.client_private_key = srp.client_seed()
             specific_data = bytes_to_hex(srp.long2bytes(self.client_public_key))
         elif auth_plugin_list[0] == 'Legacy_Auth':
-            enc_pass = get_crypt(self.password)
-            if enc_pass:
-                specific_data = self.str_to_bytes(enc_pass)
+            assert crypt, "Legacy_Auth needs crypt module"
+            specific_data = self.str_to_bytes(get_crypt(self.password))
         else:
             raise OperationalError("Unknown auth plugin name '%s'" % (auth_plugin_list[0]))
         self.plugin_name = auth_plugin_list[0]
