@@ -392,10 +392,10 @@ class WireProtocol(object):
     @wire_operation
     def _op_connect(self, auth_plugin_list, wire_crypt):
         protocols = [
-            # PROTOCOL_VERSION,Protocol Arch type (Generic = 1), min, max, weight
+            # PROTOCOL_VERSION, Arch type (Generic=1), min, max, weight
             '0000000a00000001000000000000000500000002', # 10, 1, 0, 5, 2
             'ffff800b00000001000000000000000500000004', # 11, 1, 0, 5, 4
-            'ffff800c00000001000000000000000500000006', # 12, 1, 0, 4, 6
+            'ffff800c00000001000000000000000500000006', # 12, 1, 0, 5, 6
             'ffff800d00000001000000000000000500000008', # 13, 1, 0, 5, 8
         ]
         p = xdrlib.Packer()
