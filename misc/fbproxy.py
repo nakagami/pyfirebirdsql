@@ -946,6 +946,7 @@ isc_info_sql_names = [
   'isc_info_sql_field', 'isc_info_sql_relation', 'isc_info_sql_owner',
   'isc_info_sql_alias', 'isc_info_sql_sqlda_start', 'isc_info_sql_stmt_type',
   'isc_info_sql_get_plan', 'isc_info_sql_records', 'isc_info_sql_batch_fetch',
+  'isc_info_sql_relation_alias',
 ]
 
 isc_info_sql_stmt_names = [
