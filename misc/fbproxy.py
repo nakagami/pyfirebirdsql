@@ -2114,6 +2114,9 @@ def process_wire(client_socket, server_name, server_port):
         unpacker = xdrlib.Unpacker(client_head)
         op_req_code = unpacker.unpack_int()
         op_req_name = op_names[op_req_code]
+        if op_req_name == 'op_void':
+            print('op_void .. skip')
+            continue
         print(thread.get_ident(), '<--', op_req_code, op_req_name)
         if op_req_name in globals():
             client_msg = globals()[op_req_name](client_socket)
