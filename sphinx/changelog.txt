@@ -147,3 +147,9 @@ Version 0.9.8
 
    - fix issue #58 wrong logic for handling lage BLOBs.
    - update error messages.
+
+Version 0.9.9
+=============
+
+   - refactoring
+   - fix issue #60
