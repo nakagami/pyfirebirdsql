@@ -60,6 +60,6 @@ class TestIssues(TestBase):
         cur.close()
         cur = self.connection.cursor()
         cur.execute("SELECT b from issue_60")
-        cur.fetchall()
+        self.assertEqual(len(cur.fetchall()), 400)
         cur.close()
 

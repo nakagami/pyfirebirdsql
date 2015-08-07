@@ -776,8 +776,9 @@ class WireProtocol(object):
         b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
             b = self.recv_channel(4)
-        if bytes_to_bint(b) == self.op_response:
-            return self._parse_op_response()    # error occured
+        while bytes_to_bint(b) == self.op_response:
+            h, oid, buf = self._parse_op_response()
+            b = self.recv_channel(4)
         if bytes_to_bint(b) != self.op_fetch_response:
             raise InternalError
         b = self.recv_channel(8)
