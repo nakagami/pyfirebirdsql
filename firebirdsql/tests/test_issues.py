@@ -50,3 +50,16 @@ class TestIssues(TestBase):
 
         cur.close()
 
+    def test_issue_60(self):
+        self.connection.cursor().execute("CREATE TABLE issue_60 (b BLOB SUB_TYPE 1)")
+        self.connection.commit()
+
+        cur = self.connection.cursor()
+        for i in range(400):
+            cur.execute("INSERT INTO issue_60 (b) VALUES ('')")
+        cur.close()
+        cur = self.connection.cursor()
+        cur.execute("SELECT b from issue_60")
+        cur.fetchall()
+        cur.close()
+
