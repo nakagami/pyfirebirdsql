@@ -153,3 +153,8 @@ Version 0.9.9
 
    - refactoring
    - fix issue #60
+
+Version 0.9.10
+==============
+
+   - fix bug for non posix (windows) environment. issue #62
