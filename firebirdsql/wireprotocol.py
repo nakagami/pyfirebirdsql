@@ -53,6 +53,8 @@ INFO_SQL_SELECT_DESCRIBE_VARS = bs([
     isc_info_sql_describe_end])
 
 def get_crypt(plain):
+    if crypt is None:
+        return None
     return crypt.crypt(plain, '9z')[2:]
 
 def convert_date(v):  # Convert datetime.date to BLR format data
