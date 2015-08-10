@@ -972,6 +972,7 @@ class WireProtocol(object):
         while bytes_to_bint(b) == self.op_dummy:
             b = self.recv_channel(4)
         if bytes_to_bint(b) == self.op_response:
+            self.lazy_response_count -= 1
             return self._parse_op_response()
         if bytes_to_bint(b) == self.op_exit or bytes_to_bint(b) == self.op_exit:
             raise DisconnectByPeer
