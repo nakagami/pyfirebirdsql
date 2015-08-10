@@ -779,6 +779,7 @@ class WireProtocol(object):
         while bytes_to_bint(b) == self.op_dummy:
             b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_response:
+            self.lazy_response_count -= 1
             h, oid, buf = self._parse_op_response()
             b = self.recv_channel(4)
         if bytes_to_bint(b) != self.op_fetch_response:
