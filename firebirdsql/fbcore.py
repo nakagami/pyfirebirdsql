@@ -20,7 +20,7 @@ from firebirdsql.utils import *
 from firebirdsql.wireprotocol import WireProtocol, INFO_SQL_SELECT_DESCRIBE_VARS
 from firebirdsql.socketstream import SocketStream
 from firebirdsql.xsqlvar import XSQLVAR, calc_blr, parse_select_items, parse_xsqlda
-__version__ = '0.9.10'
+__version__ = '0.9.11'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'

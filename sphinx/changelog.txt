@@ -158,3 +158,8 @@ Version 0.9.10
 ==============
 
    - fix bug for non posix (windows) environment. issue #62
+
+Version 0.9.11
+==============
+
+   - fix issue #60 (again)
