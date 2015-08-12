@@ -35,11 +35,19 @@ Example
        print(c)
        conn.close()
 
-test with Firebird3
+Test with Firebird3
 ----------------------
 
-firebird.conf::
+You can unit test with Firebird3.
+
+Set firebird.conf like this ::
 
    AuthServer = Srp, Legacy_Auth
    WireCrypt = Enabled
 
+and execute bellow command:
+
+   $ pytohn manage.py test
+
+On the other hand you can use it with Firebird3 wire protocol 13
+(Srp authentication and wire encryption) with default firebird.conf
