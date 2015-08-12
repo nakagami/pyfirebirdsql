@@ -35,7 +35,7 @@ Example
        print(c)
        conn.close()
 
-test with Firebird3
+You can use it with Firebird3 wire protocol 13 (Srp)
 ----------------------
 
 firebird.conf::
