@@ -163,3 +163,10 @@ Version 0.9.11
 ==============
 
    - fix issue #60 (again)
+
+Version 0.9.12
+==============
+
+   - Enable Srp authentication and disable Wireprotocol for Firebird 3
+
+
