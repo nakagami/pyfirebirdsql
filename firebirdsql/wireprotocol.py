@@ -513,7 +513,7 @@ class WireProtocol(object):
                     # send op_cont_auth
                     p = xdrlib.Packer()
                     p.pack_int(self.op_cont_auth)
-                    p.pack_string(bytes_to_hex(self.auth_data))
+                    p.pack_string(bytes_to_hex(auth_data))
                     p.pack_bytes(self.accept_plugin_name)
                     p.pack_bytes(self.plugin_list)
                     p.pack_bytes(b'')
@@ -529,7 +529,7 @@ class WireProtocol(object):
                     self.sock.set_translator(
                         ARC4.new(session_key), ARC4.new(session_key))
                     (h, oid, buf) = self._op_response()
-                else:
+                else:   # use later _op_attach() and _op_create()
                     self.auth_data = auth_data
         else:
             assert op_code == self.op_accept
