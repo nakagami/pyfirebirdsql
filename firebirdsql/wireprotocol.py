@@ -434,7 +434,7 @@ class WireProtocol(object):
         if self.role:
             s = self.str_to_bytes(self.role)
             dpb += bs([isc_dpb_sql_role_name, len(s)]) + s
-        if self.auth_data and not self.wire_crypt:
+        if self.auth_data:
             s = self.str_to_bytes(bytes_to_hex(self.auth_data))
             dbp += bs([isc_dpb_specific_auth_data, len(s)]) + s
         dpb += bs([isc_dpb_sql_dialect, 4]) + int_to_bytes(3, 4)
@@ -498,7 +498,7 @@ class WireProtocol(object):
                     server_salt = data[2:ln+2]
                     server_public_key = srp.bytes2long(
                         hex_to_bytes(data[4+ln:]))
-                    self.auth_data, session_key = srp.client_proof(
+                    auth_data, session_key = srp.client_proof(
                         self.str_to_bytes(self.user.upper()),
                         self.str_to_bytes(self.password),
                         server_salt,
@@ -506,7 +506,7 @@ class WireProtocol(object):
                         server_public_key,
                         self.client_private_key)
                 elif self.accept_plugin_name == b'Legacy_Auth':
-                    self.auth_data = get_crypt(self.password)
+                    auth_data = get_crypt(self.password)
                 else:
                     raise OperationalError('Unauthorized')
                 if self.wire_crypt:
@@ -529,6 +529,8 @@ class WireProtocol(object):
                     self.sock.set_translator(
                         ARC4.new(session_key), ARC4.new(session_key))
                     (h, oid, buf) = self._op_response()
+                else:
+                    self.auth_data = auth_data
         else:
             assert op_code == self.op_accept
 
@@ -550,7 +552,7 @@ class WireProtocol(object):
         if self.role:
             s = self.str_to_bytes(self.role)
             dpb += bs([isc_dpb_sql_role_name, len(s)]) + s
-        if self.auth_data and not self.wire_crypt:
+        if self.auth_data:
             s = self.str_to_bytes(bytes_to_hex(self.auth_data))
             dpb += bs([isc_dpb_specific_auth_data, len(s)]) + s
         p = xdrlib.Packer()
