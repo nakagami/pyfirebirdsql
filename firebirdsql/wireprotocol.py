@@ -744,21 +744,20 @@ class WireProtocol(object):
         p.pack_int(trans_handle)
 
         if len(params) == 0:
+            values = b''
             p.pack_bytes(bs([]))
             p.pack_int(0)
             p.pack_int(0)
-            self.sock.send(p.get_buffer())
         else:
             (blr, values) = self.params_to_blr(trans_handle, params)
             p.pack_bytes(blr)
             p.pack_int(0)
             p.pack_int(1)
-            self.sock.send(p.get_buffer() + values)
 
-        p = xdrlib.Packer()
-        p.pack_bytes(output_blr)
-        p.pack_int(0)
-        self.sock.send(p.get_buffer())
+        q = xdrlib.Packer()
+        q.pack_bytes(output_blr)
+        q.pack_int(0)
+        self.sock.send(p.get_buffer() + values + q.get_buffer())
 
     @wire_operation
     def _op_exec_immediate(self, trans_handle, query):
