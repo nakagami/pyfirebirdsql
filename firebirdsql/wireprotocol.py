@@ -471,7 +471,7 @@ class WireProtocol(object):
                 read_length += 4 - read_length % 4
 
             ln = bytes_to_bint(self.recv_channel(4))
-            self.plugin_name = self.recv_channel(ln)
+            self.accept_plugin_name = self.recv_channel(ln)
             read_length += 4 + ln
             if read_length % 4:
                 self.recv_channel(4 - read_length % 4) # padding
@@ -486,10 +486,10 @@ class WireProtocol(object):
                 self.recv_channel(4 - read_length % 4) # padding
                 read_length += 4 - read_length % 4
 
-            if self.plugin_name == b'Legacy_Auth' and is_authenticated == 0:
+            if self.accept_plugin_name != b'Srp' and is_authenticated == 0:
                 raise OperationalError('Unauthorized')
 
-            if self.plugin_name == b'Srp':
+            if self.accept_plugin_name == b'Srp':
                 ln = bytes_to_int(data[:2])
                 server_salt = data[2:ln+2]
                 server_public_key = srp.bytes2long(
