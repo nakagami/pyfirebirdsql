@@ -532,6 +532,7 @@ class Connection(WireProtocol):
                     auth_plugin_list=('Srp', 'Legacy_Auth'),
                     wire_crypt=True, create_new=False):
         DEBUG_OUTPUT("Connection::__init__()")
+        WireProtocol.__init__(self)
         self.sock = None
         self.db_handle = None
         if dsn:

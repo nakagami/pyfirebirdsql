@@ -144,6 +144,10 @@ class WireProtocol(object):
     op_crypt_key_callback = 97
     op_cond_accept = 98
 
+    def __init__(self):
+        self.accept_plugin_name = ''
+        self.auth_data = b''
+
     def recv_channel(self, nbytes, word_alignment=False):
         n = nbytes
         if word_alignment and (n % 4):
@@ -431,6 +435,9 @@ class WireProtocol(object):
         if self.role:
             s = self.str_to_bytes(self.role)
             dpb += bs([isc_dpb_sql_role_name, len(s)]) + s
+        if self.auth_data and not self.wire_crypt:
+            s = self.str_to_bytes(bytes_to_hex(self.auth_data))
+            dbp += bs([isc_dpb_specific_auth_data, len(s)]) + s
         dpb += bs([isc_dpb_sql_dialect, 4]) + int_to_bytes(3, 4)
         dpb += bs([isc_dpb_force_write, 4]) + int_to_bytes(1, 4)
         dpb += bs([isc_dpb_overwrite, 4]) + int_to_bytes(1, 4)
@@ -495,31 +502,32 @@ class WireProtocol(object):
                 server_public_key = srp.bytes2long(
                                         hex_to_bytes(data[4+ln:]))
 
-                client_proof, auth_key = srp.client_proof(
+                self.auth_data, session_key = srp.client_proof(
                                         self.str_to_bytes(self.user.upper()),
                                         self.str_to_bytes(self.password),
                                         server_salt,
                                         self.client_public_key,
                                         server_public_key,
                                         self.client_private_key)
-                # send op_cont_auth
-                p = xdrlib.Packer()
-                p.pack_int(self.op_cont_auth)
-                p.pack_string(bytes_to_hex(client_proof))
-                p.pack_bytes(self.plugin_name)
-                p.pack_bytes(self.plugin_list)
-                p.pack_bytes(b'')
-                self.sock.send(p.get_buffer())
-                (h, oid, buf) = self._op_response()
+                if self.wire_crypt:
+                    # send op_cont_auth
+                    p = xdrlib.Packer()
+                    p.pack_int(self.op_cont_auth)
+                    p.pack_string(bytes_to_hex(self.auth_data))
+                    p.pack_bytes(self.plugin_name)
+                    p.pack_bytes(self.plugin_list)
+                    p.pack_bytes(b'')
+                    self.sock.send(p.get_buffer())
+                    (h, oid, buf) = self._op_response()
 
-                # op_crypt: plugin[Arc4] key[Symmetric]
-                p = xdrlib.Packer()
-                p.pack_int(self.op_crypt)
-                p.pack_string(b'Arc4')
-                p.pack_string(b'Symmetric')
-                self.sock.send(p.get_buffer())
-                self.sock.set_translator(ARC4.new(auth_key), ARC4.new(auth_key))
-                (h, oid, buf) = self._op_response()
+                    # op_crypt: plugin[Arc4] key[Symmetric]
+                    p = xdrlib.Packer()
+                    p.pack_int(self.op_crypt)
+                    p.pack_string(b'Arc4')
+                    p.pack_string(b'Symmetric')
+                    self.sock.send(p.get_buffer())
+                    self.sock.set_translator(ARC4.new(session_key), ARC4.new(session_key))
+                    (h, oid, buf) = self._op_response()
         else:
             assert op_code == self.op_accept
 
@@ -541,6 +549,9 @@ class WireProtocol(object):
         if self.role:
             s = self.str_to_bytes(self.role)
             dpb += bs([isc_dpb_sql_role_name, len(s)]) + s
+        if self.auth_data and not self.wire_crypt:
+            s = self.str_to_bytes(bytes_to_hex(self.auth_data))
+            dpb += bs([isc_dpb_specific_auth_data, len(s)]) + s
         p = xdrlib.Packer()
         p.pack_int(self.op_attach)
         p.pack_int(0)                       # Database Object ID
