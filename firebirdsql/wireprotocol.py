@@ -492,28 +492,29 @@ class WireProtocol(object):
                 self.recv_channel(4 - read_length % 4) # padding
                 read_length += 4 - read_length % 4
 
-            if self.accept_plugin_name != b'Srp' and is_authenticated == 0:
-                raise OperationalError('Unauthorized')
-
-            if self.accept_plugin_name == b'Srp':
-                ln = bytes_to_int(data[:2])
-                server_salt = data[2:ln+2]
-                server_public_key = srp.bytes2long(
-                                        hex_to_bytes(data[4+ln:]))
-
-                self.auth_data, session_key = srp.client_proof(
-                                        self.str_to_bytes(self.user.upper()),
-                                        self.str_to_bytes(self.password),
-                                        server_salt,
-                                        self.client_public_key,
-                                        server_public_key,
-                                        self.client_private_key)
+            if is_authenticated == 0:
+                if self.accept_plugin_name == b'Srp':
+                    ln = bytes_to_int(data[:2])
+                    server_salt = data[2:ln+2]
+                    server_public_key = srp.bytes2long(
+                        hex_to_bytes(data[4+ln:]))
+                    self.auth_data, session_key = srp.client_proof(
+                        self.str_to_bytes(self.user.upper()),
+                        self.str_to_bytes(self.password),
+                        server_salt,
+                        self.client_public_key,
+                        server_public_key,
+                        self.client_private_key)
+                elif self.accept_plugin_name == b'Legacy_Auth':
+                    self.auth_data = get_crypt(self.password)
+                else:
+                    raise OperationalError('Unauthorized')
                 if self.wire_crypt:
                     # send op_cont_auth
                     p = xdrlib.Packer()
                     p.pack_int(self.op_cont_auth)
                     p.pack_string(bytes_to_hex(self.auth_data))
-                    p.pack_bytes(self.plugin_name)
+                    p.pack_bytes(self.accept_plugin_name)
                     p.pack_bytes(self.plugin_list)
                     p.pack_bytes(b'')
                     self.sock.send(p.get_buffer())
@@ -525,7 +526,8 @@ class WireProtocol(object):
                     p.pack_string(b'Arc4')
                     p.pack_string(b'Symmetric')
                     self.sock.send(p.get_buffer())
-                    self.sock.set_translator(ARC4.new(session_key), ARC4.new(session_key))
+                    self.sock.set_translator(
+                        ARC4.new(session_key), ARC4.new(session_key))
                     (h, oid, buf) = self._op_response()
         else:
             assert op_code == self.op_accept
