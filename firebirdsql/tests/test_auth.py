@@ -36,7 +36,6 @@ class TestAuth(TestBase):
         self.assertEqual(self.connection.accept_plugin_name, 'Srp')
         self.connection.close()
 
-    @unittest.skip("still it does not work")
     def test_srp_no_wirecrypt(self):
         self.connection = firebirdsql.connect(
                 auth_plugin_list=("Srp",), 

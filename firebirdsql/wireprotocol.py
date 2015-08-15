@@ -413,8 +413,7 @@ class WireProtocol(object):
 
         p.pack_int(len(protocols))
         p.pack_bytes(self.uid(auth_plugin_list, wire_crypt))
-        self.sock.send(p.get_buffer())
-        self.sock.send(hex_to_bytes(''.join(protocols)))
+        self.sock.send(p.get_buffer() + hex_to_bytes(''.join(protocols)))
 
     @wire_operation
     def _op_create(self, page_size=4096):
