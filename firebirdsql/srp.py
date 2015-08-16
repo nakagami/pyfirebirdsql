@@ -242,11 +242,14 @@ def client_proof(user, password, salt, A, B, a):
 
 def get_salt():
     if DEBUG:
-        return b'\00' * SRP_SALT_SIZE
-    if PYTHON_MAJOR_VER == 3:
-        return bytes([random.randrange(0, 256) for x in range(SRP_SALT_SIZE)])
+        salt = b'\00' * SRP_SALT_SIZE
     else:
-        return b''.join([chr(random.randrange(0, 256)) for x in range(SRP_SALT_SIZE)])
+        if PYTHON_MAJOR_VER == 3:
+            salt = bytes([random.randrange(0, 256) for x in range(SRP_SALT_SIZE)])
+        else:
+            salt = b''.join([chr(random.randrange(0, 256)) for x in range(SRP_SALT_SIZE)])
+    if DEBUG_PRINT:
+        print('salt=', binascii.b2a_hex(salt), end='\n')
 
 def get_verifier(user, password, salt):
     N, g, k = get_prime()
