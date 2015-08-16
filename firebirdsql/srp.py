@@ -174,8 +174,11 @@ def server_seed(v):
         kv = (k * v) % N
         B = (kv + gb) % N
     if DEBUG_PRINT:
-        print('B=', binascii.b2a_hex(long2bytes(B)), end='\n')
+        print("v", v, end='\n')
         print('b=', binascii.b2a_hex(long2bytes(b)), end='\n')
+        print("gb", gb, end='\n')
+        print("kv", kv, end='\n')
+        print('B=', binascii.b2a_hex(long2bytes(B)), end='\n')
     return B, b
 
 def client_session(user, password, salt, A, B, a):
@@ -250,6 +253,7 @@ def get_salt():
             salt = b''.join([chr(random.randrange(0, 256)) for x in range(SRP_SALT_SIZE)])
     if DEBUG_PRINT:
         print('salt=', binascii.b2a_hex(salt), end='\n')
+    return salt
 
 def get_verifier(user, password, salt):
     N, g, k = get_prime()
