@@ -125,6 +125,8 @@ def pad(n):
     for x in range(SRP_KEY_SIZE):
         s.insert(0, n & 255)
         n >>= 8
+        if n == 0:
+            break
     if PYTHON_MAJOR_VER == 3:
         return bytes(s)
     else:
