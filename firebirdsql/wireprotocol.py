@@ -383,12 +383,12 @@ class WireProtocol(object):
         r = b''
         r += pack_cnct_param(CNCT_login,
                             self.str_to_bytes(self.user.upper()))
-        r += pack_cnct_param(CNCT_plugin_name,
-                            self.str_to_bytes(self.plugin_name))
-        r += pack_cnct_param(CNCT_plugin_list, self.plugin_list)
         if specific_data:
+            r += pack_cnct_param(CNCT_plugin_name,
+                            self.str_to_bytes(self.plugin_name))
+            r += pack_cnct_param(CNCT_plugin_list, self.plugin_list)
             r += pack_cnct_param(CNCT_specific_data, specific_data)
-        r += pack_cnct_param(CNCT_client_crypt, client_crypt)
+            r += pack_cnct_param(CNCT_client_crypt, client_crypt)
 
         r += pack_cnct_param(CNCT_user, self.str_to_bytes(user))
         r += pack_cnct_param(CNCT_host, self.str_to_bytes(hostname))
