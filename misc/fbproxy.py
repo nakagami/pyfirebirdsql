@@ -1344,27 +1344,6 @@ def _database_parameter_block(bytes):
             i = i + 1
         print()
 
-def _service_parameter_block(bs):
-    i = 0
-    while i < len(bs):
-        print('\t', _ord(bs[i]), end='')
-        s = isc_spb_names[_ord(bs[i])]
-        print('\t', s, end='')
-        if s in ['isc_spb_bkp_file', 'isc_spb_command_line', 
-            'isc_spb_dbname']:
-            l = _bytes_to_int(bs, i+1, 2)
-            print('[' + bs[i+3:i+3+l] + ']')
-            i += 3 + l
-        elif s in ['isc_spb_bkp_length',
-                'isc_spb_res_buffers', 'isc_spb_res_page_size']:
-            print (_bytes_to_int(bs, i+1, 4))
-            i = i + 5
-        elif s in ['isc_spb_options']:
-            print('[' + binascii.b2a_hex(bs[i+1:i+5]) + ']')
-            i = i + 5
-        else:
-            print()
-            i += 1
 
 def parse_sql_info(b, statement):
     if len(b) == 0:     # Error occured.
@@ -1969,7 +1948,6 @@ def op_service_start(sock):
     assert up.unpack_int() == 0 # object
     param = up.unpack_bytes()
     print('\tparam=[' +  binascii.b2a_hex(param) + ']')
-    _service_parameter_block(param)
     up.done()
     return msg
 
