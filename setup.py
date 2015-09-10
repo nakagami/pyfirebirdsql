@@ -3,8 +3,9 @@ import sys
 from distutils.core import setup, Command
 import firebirdsql
 
+
 class TestCommand(Command):
-    user_options = [ ]
+    user_options = []
 
     def initialize_options(self):
         pass
@@ -20,7 +21,7 @@ class TestCommand(Command):
         import unittest
         unittest.main(tests, argv=sys.argv[:1])
 
-cmdclass = { 'test': TestCommand }
+cmdclass = {'test': TestCommand}
 
 
 classifiers = [
@@ -33,15 +34,16 @@ classifiers = [
     'Topic :: Database',
 ]
 
-setup(name='firebirdsql', 
-        version=firebirdsql.__version__,
-        description = 'Firebird RDBMS bindings for python.', 
-        url='http://github.com/nakagami/pyfirebirdsql/',
-        classifiers=classifiers,
-        keywords=['Firebird'],
-        license='BSD',
-        author='Hajime Nakagami',
-        author_email='nakagami@gmail.com',
-        packages = ['firebirdsql'],
-        cmdclass = cmdclass,
+setup(
+    name='firebirdsql',
+    version=firebirdsql.__version__,
+    description='Firebird RDBMS bindings for python.',
+    url='http://github.com/nakagami/pyfirebirdsql/',
+    classifiers=classifiers,
+    keywords=['Firebird'],
+    license='BSD',
+    author='Hajime Nakagami',
+    author_email='nakagami@gmail.com',
+    packages=['firebirdsql'],
+    cmdclass=cmdclass,
 )
