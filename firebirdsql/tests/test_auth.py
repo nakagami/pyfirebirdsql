@@ -25,7 +25,7 @@ class TestAuth(TestBase):
 
     def test_srp_wireencrypt(self):
         self.connection = firebirdsql.connect(
-                auth_plugin_list=("Srp",), 
+                auth_plugin_name="Srp", 
                 wire_crypt=True,
                 host=self.host,
                 port=self.port,
@@ -39,7 +39,7 @@ class TestAuth(TestBase):
 
     def test_srp_no_wirecrypt(self):
         self.connection = firebirdsql.connect(
-                auth_plugin_list=("Srp",), 
+                auth_plugin_name="Srp", 
                 wire_crypt=False,
                 host=self.host,
                 port=self.port,
@@ -51,7 +51,7 @@ class TestAuth(TestBase):
 
     def test_legacy_auth_wirecrypt(self):
         self.connection = firebirdsql.connect(
-                auth_plugin_list=("Legacy_Auth",), 
+                auth_plugin_name="Legacy_Auth", 
                 wire_crypt=True,
                 host=self.host,
                 port=self.port,
@@ -65,7 +65,7 @@ class TestAuth(TestBase):
 
     def test_legacy_auth_no_wirecrypt(self):
         self.connection = firebirdsql.connect(
-                auth_plugin_list=("Legacy_Auth",), 
+                auth_plugin_name="Legacy_Auth", 
                 wire_crypt=False,
                 host=self.host,
                 port=self.port,
