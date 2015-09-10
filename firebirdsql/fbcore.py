@@ -529,9 +529,10 @@ class Connection(WireProtocol):
                     database=None, charset=DEFAULT_CHARSET, port=3050,
                     page_size=4096, is_services=False, cloexec=False,
                     timeout=None, isolation_level=None, use_unicode=None,
-                    auth_plugin_list=('Srp', 'Legacy_Auth'),
-                    wire_crypt=True, create_new=False):
+                    auth_plugin_name=None, wire_crypt=True, create_new=False):
         DEBUG_OUTPUT("Connection::__init__()")
+        if auth_plugin_name is None:
+            auth_plugin_name = 'Srp'
         WireProtocol.__init__(self)
         self.sock = None
         self.db_handle = None
@@ -560,7 +561,7 @@ class Connection(WireProtocol):
         self.role = role
         self.charset = charset
         self.timeout = float(timeout) if timeout is not None else None
-        self.auth_plugin_list = auth_plugin_list
+        self.auth_plugin_name = auth_plugin_name
         self.wire_crypt = wire_crypt
         self.page_size = page_size
         self.is_services = is_services
@@ -575,7 +576,7 @@ class Connection(WireProtocol):
         self._transaction = None
         self.sock = SocketStream(self.hostname, self.port, self.timeout, cloexec)
 
-        self._op_connect(auth_plugin_list, wire_crypt)
+        self._op_connect(auth_plugin_name, wire_crypt)
         try:
             self._op_accept()
         except OperationalError as e:
