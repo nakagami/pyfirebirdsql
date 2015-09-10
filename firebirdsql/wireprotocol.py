@@ -341,7 +341,7 @@ class WireProtocol(object):
         blr += bs([255, 76])    # [blr_end, blr_eoc]
         return blr, values
 
-    def uid(self, auth_plugin_list, wire_crypt):
+    def uid(self, auth_plugin_name, wire_crypt):
         def pack_cnct_param(k, v):
             if k != CNCT_specific_data:
                 return bs([k] + [len(v)]) + v
@@ -355,9 +355,7 @@ class WireProtocol(object):
             b += bs([k, len(v)+1, i]) + v
             return b
 
-        assert isinstance(auth_plugin_list, tuple), "Auth plugin list need tuple."
-        assert auth_plugin_list, "Need auth auth_plugin_list."
-
+        auth_plugin_list = ('Srp', 'Legacy_Auth')
         # get and calculate CNCT_xxxx values
         if sys.platform == 'win32':
             user = os.environ['USERNAME']
@@ -367,22 +365,21 @@ class WireProtocol(object):
             hostname = socket.gethostname()
 
         specific_data = None
-        if auth_plugin_list[0] == 'Srp':
+        if auth_plugin_name == 'Srp':
             self.client_public_key, self.client_private_key = srp.client_seed()
             specific_data = bytes_to_hex(srp.long2bytes(self.client_public_key))
-        elif auth_plugin_list[0] == 'Legacy_Auth':
+        elif auth_plugin_name == 'Legacy_Auth':
             assert crypt, "Legacy_Auth needs crypt module"
             specific_data = self.str_to_bytes(get_crypt(self.password))
         else:
-            raise OperationalError("Unknown auth plugin name '%s'" % (auth_plugin_list[0]))
-        self.plugin_name = auth_plugin_list[0]
+            raise OperationalError("Unknown auth plugin name '%s'" % (auth_plugin_name,))
+        self.plugin_name = auth_plugin_name
         self.plugin_list = b','.join([s.encode('utf-8') for s in auth_plugin_list])
         client_crypt = b'\x01\x00\x00\x00' if wire_crypt else b'\x00\x00\x00\x00'
 
         # set CNCT_xxxx values
         r = b''
-        r += pack_cnct_param(CNCT_login,
-                            self.str_to_bytes(self.user.upper()))
+        r += pack_cnct_param(CNCT_login, self.str_to_bytes(self.user.upper()))
         if specific_data:
             r += pack_cnct_param(CNCT_plugin_name,
                             self.str_to_bytes(self.plugin_name))
@@ -396,7 +393,7 @@ class WireProtocol(object):
         return r
 
     @wire_operation
-    def _op_connect(self, auth_plugin_list, wire_crypt):
+    def _op_connect(self, auth_plugin_name, wire_crypt):
         protocols = [
             # PROTOCOL_VERSION, Arch type (Generic=1), min, max, weight
             '0000000a00000001000000000000000500000002', # 10, 1, 0, 5, 2
@@ -412,7 +409,7 @@ class WireProtocol(object):
         p.pack_string(self.str_to_bytes(self.filename if self.filename else ''))
 
         p.pack_int(len(protocols))
-        p.pack_bytes(self.uid(auth_plugin_list, wire_crypt))
+        p.pack_bytes(self.uid(auth_plugin_name, wire_crypt))
         self.sock.send(p.get_buffer() + hex_to_bytes(''.join(protocols)))
 
     @wire_operation

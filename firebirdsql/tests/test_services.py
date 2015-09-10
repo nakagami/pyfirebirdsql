@@ -8,7 +8,7 @@ class TestServices(TestBase):
     def setUp(self):
         self.database=tempfile.mktemp()
         conn = firebirdsql.create_database(
-                auth_plugin_list=self.auth_plugin_list,
+                auth_plugin_name=self.auth_plugin_name,
                 wire_crypt=self.wire_crypt,
                 host=self.host,
                 port=self.port,
@@ -23,7 +23,7 @@ class TestServices(TestBase):
 
     def test_services(self):
         svc = firebirdsql.services.connect(
-            auth_plugin_list=self.auth_plugin_list,
+            auth_plugin_name=self.auth_plugin_name,
             wire_crypt=self.wire_crypt,
             host=self.host,
             user=self.user,
@@ -46,7 +46,7 @@ class TestServices(TestBase):
     @unittest.skip("Fail by OperationalError in Ubuntu12.04")
     def test_repair(self):
         svc = firebirdsql.services.connect(
-            auth_plugin_list=self.auth_plugin_list,
+            auth_plugin_name=self.auth_plugin_name,
             wire_crypt=self.wire_crypt,
             host=self.host,
             user=self.user,
@@ -56,7 +56,7 @@ class TestServices(TestBase):
     
     def shutdown(self):
         svc = firebirdsql.services.connect(
-            auth_plugin_list=self.auth_plugin_list,
+            auth_plugin_name=self.auth_plugin_name,
             wire_crypt=self.wire_crypt,
             host=self.host,
             user=self.user,
@@ -66,7 +66,7 @@ class TestServices(TestBase):
 
     def bringOnline(self):
         svc = firebirdsql.services.connect(
-            auth_plugin_list=self.auth_plugin_list,
+            auth_plugin_name=self.auth_plugin_name,
             wire_crypt=self.wire_crypt,
             host=self.host,
             user=self.user,

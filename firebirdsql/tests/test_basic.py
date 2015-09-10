@@ -180,7 +180,7 @@ class TestBasic(TestBase):
 
         conn.close()
 
-        with firebirdsql.connect(auth_plugin_list=self.auth_plugin_list,
+        with firebirdsql.connect(auth_plugin_name=self.auth_plugin_name,
                                     wire_crypt=self.wire_crypt,
                                     host=self.host,
                                     database=self.database,
@@ -190,7 +190,7 @@ class TestBasic(TestBase):
             with conn.cursor() as cur:
                 cur.execute("update foo set c='Toshihide' where a=1")
 
-        conn = firebirdsql.connect(auth_plugin_list=self.auth_plugin_list,
+        conn = firebirdsql.connect(auth_plugin_name=self.auth_plugin_name,
                                     wire_crypt=self.wire_crypt,
                                     host=self.host,
                                     database=self.database,
