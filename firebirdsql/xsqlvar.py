@@ -6,13 +6,13 @@
 #
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
-import sys
 import datetime
 import decimal
 
 from firebirdsql.consts import *
 from firebirdsql.utils import *
 from firebirdsql.wireprotocol import INFO_SQL_SELECT_DESCRIBE_VARS
+
 
 class XSQLVAR:
     type_length = {
@@ -77,17 +77,17 @@ class XSQLVAR:
         return None
 
     def __str__(self):
-        s  = '[' + str(self.sqltype) + ',' + str(self.sqlscale) + ',' \
-                + str(self.sqlsubtype) + ',' + str(self.sqllen)  + ',' \
-                + str(self.null_ok) + ',' + self.fieldname + ',' \
-                + self.relname + ',' + self.ownname + ',' \
-                + self.aliasname + ']'
-        return s
+        s = ','.join([
+            str(self.sqltype), str(self.sqlscale), str(self.sqlsubtype),
+            str(self.sqllen), str(self.null_ok), self.fieldname,
+            self.relname, self.ownname, self.aliasname,
+        ])
+        return '[' + s + ']'
 
     def _parse_date(self, raw_value):
         "Convert raw data to datetime.date"
         nday = bytes_to_bint(raw_value) + 678882
-        century = (4 * nday -1) // 146097
+        century = (4 * nday - 1) // 146097
         nday = 4 * nday - 1 - 146097 * century
         day = nday // 4
 
@@ -95,7 +95,7 @@ class XSQLVAR:
         day = 4 * day + 3 - 1461 * nday
         day = (day + 4) // 4
 
-        month = (5 * day -3) // 153
+        month = (5 * day - 3) // 153
         day = 5 * day - 3 - 153 * month
         day = (day + 5) // 5
         year = 100 * century + nday
@@ -159,9 +159,10 @@ sqltype2blr = {
     SQL_TYPE_BOOLEAN: [23],
     }
 
+
 def calc_blr(xsqlda):
     "Calculate  BLR from XSQLVAR array."
-    ln = len(xsqlda) *2
+    ln = len(xsqlda) * 2
     blr = [5, 2, 4, 0, ln & 255, ln >> 8]
     for x in xsqlda:
         sqltype = x.sqltype
@@ -185,6 +186,7 @@ def calc_blr(xsqlda):
     # x.sqlscale value shoud be negative, so b convert to range(0, 256)
     return bs(256 + b if b < 0 else b for b in blr)
 
+
 def parse_select_items(buf, xsqlda, connection):
     index = 0
     i = 0
@@ -193,9 +195,7 @@ def parse_select_items(buf, xsqlda, connection):
         if item == isc_info_sql_sqlda_seq:
             l = bytes_to_int(buf[i+1:i+3])
             index = bytes_to_int(buf[i+3:i+3+l])
-            xsqlda[index-1] = XSQLVAR(connection.bytes_to_ustr
-                                        if connection.use_unicode
-                                        else connection.bytes_to_str)
+            xsqlda[index-1] = XSQLVAR(connection.bytes_to_ustr if connection.use_unicode else connection.bytes_to_str)
             i = i + 3 + l
         elif item == isc_info_sql_type:
             l = bytes_to_int(buf[i+1:i+3])
@@ -243,12 +243,13 @@ def parse_select_items(buf, xsqlda, connection):
         item = byte_to_int(buf[i])
     return -1   # no more info
 
+
 def parse_xsqlda(buf, connection, stmt_handle):
     xsqlda = []
     stmt_type = None
     i = 0
     while i < len(buf):
-        if buf[i:i+3] == bs([isc_info_sql_stmt_type,0x04,0x00]):
+        if buf[i:i+3] == bs([isc_info_sql_stmt_type, 0x04, 0x00]):
             stmt_type = bytes_to_int(buf[i+3:i+7])
             i += 7
         elif buf[i:i+2] == bs([isc_info_sql_select, isc_info_sql_describe_vars]):
@@ -259,16 +260,15 @@ def parse_xsqlda(buf, connection, stmt_handle):
             xsqlda = [None] * col_len
             next_index = parse_select_items(buf[i+l:], xsqlda, connection)
             while next_index > 0:   # more describe vars
-                connection._op_info_sql(stmt_handle,
-                            bs([isc_info_sql_sqlda_start, 2])
-                                + int_to_bytes(next_index, 2)
-                                + INFO_SQL_SELECT_DESCRIBE_VARS)
+                connection._op_info_sql(
+                    stmt_handle,
+                    bs([isc_info_sql_sqlda_start, 2]) + int_to_bytes(next_index, 2) + INFO_SQL_SELECT_DESCRIBE_VARS
+                )
                 (h, oid, buf) = connection._op_response()
-                assert buf[:2] == bs([0x04,0x07])
+                assert buf[:2] == bs([0x04, 0x07])
                 l = bytes_to_int(buf[2:4])
                 assert bytes_to_int(buf[4:4+l]) == col_len
                 next_index = parse_select_items(buf[4+l:], xsqlda, connection)
         else:
             break
     return stmt_type, xsqlda
-
