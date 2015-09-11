@@ -2167,7 +2167,10 @@ def process_wire(client_socket, server_name, server_port):
             server_head = server_socket.recv(4)
             unpacker = xdrlib.Unpacker(server_head)
             op_res_code = unpacker.unpack_int()
-            op_res_name = op_names[op_res_code]
+            try:
+                op_res_name = op_names[op_res_code]
+            except IndexError:
+                op_res_name = 'op_XXXXX'
             print(thread.get_ident(), '-->', op_res_code, op_res_name)
             if op_res_name in globals():
                 server_msg = globals()[op_res_name](server_socket)
