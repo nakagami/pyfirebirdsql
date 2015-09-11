@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 ##############################################################################
-# Copyright (c) 2011 Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2011,2015 Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 # Licensed under the New BSD License
 # (http://www.freebsd.org/copyright/freebsd-license.html)
 #
-# Python DB-API 2.0 module for Firebird. 
+# Python DB-API 2.0 module for Firebird.
 ##############################################################################
-import os,sys
+import sys
 sys.path.append('./../')
 from firebirdsql import services
 
@@ -15,12 +15,14 @@ HOST = 'localhost'
 USER = 'sysdba'
 PASS = 'masterkey'
 
+
 def debug_print(msg):
     print(msg)
 
+
 def print_usage():
-    print(sys.argv[0] + 
-        ' start [name]|stop <trc_id>|suspend <trc_id>|resume <trc_id>|list')
+    print(sys.argv[0] + ' start [name]|stop <trc_id>|suspend <trc_id>|resume <trc_id>|list')
+
 
 if len(sys.argv) < 2:
     print_usage()
