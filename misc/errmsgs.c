@@ -23,14 +23,14 @@ int main(int argc, char *argv[])
 # License Version 1.0 (the \"License\"); you may not use this file\n\
 # except in compliance with the License. You may obtain a copy\n\
 # of the License at http://www.Inprise.com/IPL.html\n\
-# \n\
+#\n\
 # Software distributed under the License is distributed on an\n\
 # \"AS IS\" basis, WITHOUT WARRANTY OF ANY KIND, either express\n\
 # or implied. See the License for the specific language governing\n\
 # rights and limitations under the License.\n\n");
     fprintf(fp, "messages = {\n");
     for (i = 0; messages[i].code_text; i++) {
-        fprintf(fp, "    %d : '''%s\\n''', \n", messages[i].code_number, messages[i].code_text);
+        fprintf(fp, "    %d: '''%s\\n''',\n", messages[i].code_number, messages[i].code_text);
     }
     fprintf(fp, "}\n");
 
