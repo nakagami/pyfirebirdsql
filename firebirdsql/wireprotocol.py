@@ -570,17 +570,17 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_service_attach(self):
-        dpb = bs([2,2])
+        spb = bs([2,2])
         s = self.str_to_bytes(self.user)
-        dpb += bs([isc_spb_user_name, len(s)]) + s
+        spb += bs([isc_spb_user_name, len(s)]) + s
         s = self.str_to_bytes(self.password)
-        dpb += bs([isc_spb_password, len(s)]) + s
-        dpb += bs([isc_spb_dummy_packet_interval,0x04,0x78,0x0a,0x00,0x00])
+        spb += bs([isc_spb_password, len(s)]) + s
+        spb += bs([isc_spb_dummy_packet_interval,0x04,0x78,0x0a,0x00,0x00])
         p = xdrlib.Packer()
         p.pack_int(self.op_service_attach)
         p.pack_int(0)
         p.pack_string(self.str_to_bytes('service_mgr'))
-        p.pack_bytes(dpb)
+        p.pack_bytes(spb)
         self.sock.send(p.get_buffer())
 
     @wire_operation
