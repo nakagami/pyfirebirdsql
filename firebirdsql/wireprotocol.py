@@ -573,8 +573,17 @@ class WireProtocol(object):
         spb = bs([2,2])
         s = self.str_to_bytes(self.user)
         spb += bs([isc_spb_user_name, len(s)]) + s
-        s = self.str_to_bytes(self.password)
-        spb += bs([isc_spb_password, len(s)]) + s
+        if self.accept_version < PROTOCOL_VERSION13:
+            enc_pass = get_crypt(self.password)
+            if self.accept_version == PROTOCOL_VERSION10 or not enc_pass:
+                s = self.str_to_bytes(self.password)
+                spb += bs([isc_dpb_password, len(s)]) + s
+            else:
+                enc_pass = self.str_to_bytes(enc_pass)
+                spb += bs([isc_dpb_password_enc, len(enc_pass)]) + enc_pass
+        if self.auth_data:
+            s = self.str_to_bytes(bytes_to_hex(self.auth_data))
+            spb += bs([isc_dpb_specific_auth_data, len(s)]) + s
         spb += bs([isc_spb_dummy_packet_interval,0x04,0x78,0x0a,0x00,0x00])
         p = xdrlib.Packer()
         p.pack_int(self.op_service_attach)
