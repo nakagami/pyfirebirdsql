@@ -4,13 +4,13 @@
 # Licensed under the New BSD License
 # (http://www.freebsd.org/copyright/freebsd-license.html)
 #
-# Python DB-API 2.0 module for Firebird. 
+# Python DB-API 2.0 module for Firebird.
 ##############################################################################
 import sys
 
 PYTHON_MAJOR_VER = sys.version_info[0]
 
-DEFAULT_CHARSET='UTF8'
+DEFAULT_CHARSET = 'UTF8'
 
 ISC_TIME_SECONDS_PRECISION = 10000
 MAX_CHAR_LENGTH = 32767
@@ -238,7 +238,7 @@ isc_dpb_auth_block = 79
 isc_dpb_client_version = 80
 isc_dpb_remote_protocol = 81
 isc_dpb_host_name = 82
-isc_dpb_os_user	 = 83
+isc_dpb_os_user = 83
 isc_dpb_specific_auth_data = 84
 isc_dpb_auth_plugin_list = 85
 isc_dpb_auth_plugin_name = 86
@@ -348,7 +348,7 @@ isc_spb_num_db = 6
 
 # isc_info_svc_db_stats params
 isc_spb_sts_data_pages = 0x01
-isc_spb_sts_db_log =0x02
+isc_spb_sts_db_log = 0x02
 isc_spb_sts_hdr_pages = 0x04
 isc_spb_sts_idx_pages = 0x08
 isc_spb_sts_sys_relations = 0x10
@@ -484,47 +484,47 @@ DSQL_drop = 2
 charset_map = {
     # DB CHAR SET NAME    :   PYTHON CODEC NAME (CANONICAL)
     # --------------------------------------------------------------------------
-    'OCTETS'              :   None, # Allow to pass through unchanged.
-    'UNICODE_FSS'         :   'utf_8',
-    'UTF8'                :   'utf_8', # (Firebird 2.0+)
-    'SJIS_0208'           :   'shift_jis',
-    'EUCJ_0208'           :   'euc_jp',
-    'DOS737'              :   'cp737',
-    'DOS437'              :   'cp437',
-    'DOS850'              :   'cp850',
-    'DOS865'              :   'cp865',
-    'DOS860'              :   'cp860',
-    'DOS863'              :   'cp863',
-    'DOS775'              :   'cp775',
-    'DOS862'              :   'cp862',
-    'DOS864'              :   'cp864',
-    'ISO8859_1'           :   'iso8859_1',
-    'ISO8859_2'           :   'iso8859_2',
-    'ISO8859_3'           :   'iso8859_3',
-    'ISO8859_4'           :   'iso8859_4',
-    'ISO8859_5'           :   'iso8859_5',
-    'ISO8859_6'           :   'iso8859_6',
-    'ISO8859_7'           :   'iso8859_7',
-    'ISO8859_8'           :   'iso8859_8',
-    'ISO8859_9'           :   'iso8859_9',
-    'ISO8859_13'          :   'iso8859_13',
-    'KSC_5601'            :   'euc_kr',
-    'DOS852'              :   'cp852',
-    'DOS857'              :   'cp857',
-    'DOS861'              :   'cp861',
-    'DOS866'              :   'cp866',
-    'DOS869'              :   'cp869',
-    'WIN1250'             :   'cp1250',
-    'WIN1251'             :   'cp1251',
-    'WIN1252'             :   'cp1252',
-    'WIN1253'             :   'cp1253',
-    'WIN1254'             :   'cp1254',
-    'BIG_5'               :   'big5',
-    'GB_2312'             :   'gb2312',
-    'WIN1255'             :   'cp1255',
-    'WIN1256'             :   'cp1256',
-    'WIN1257'             :   'cp1257',
-    'KOI8-R'              :   'koi8_r', # (Firebird 2.0+)
-    'KOI8-U'              :   'koi8_u', # (Firebird 2.0+)
-    'WIN1258'             :   'cp1258', # (Firebird 2.0+)
+    'OCTETS':   None,   # Allow to pass through unchanged.
+    'UNICODE_FSS':   'utf_8',
+    'UTF8':   'utf_8',  # (Firebird 2.0+)
+    'SJIS_0208':   'shift_jis',
+    'EUCJ_0208':   'euc_jp',
+    'DOS737':   'cp737',
+    'DOS437':   'cp437',
+    'DOS850':   'cp850',
+    'DOS865':   'cp865',
+    'DOS860':   'cp860',
+    'DOS863':   'cp863',
+    'DOS775':   'cp775',
+    'DOS862':   'cp862',
+    'DOS864':   'cp864',
+    'ISO8859_1':   'iso8859_1',
+    'ISO8859_2':   'iso8859_2',
+    'ISO8859_3':   'iso8859_3',
+    'ISO8859_4':   'iso8859_4',
+    'ISO8859_5':   'iso8859_5',
+    'ISO8859_6':   'iso8859_6',
+    'ISO8859_7':   'iso8859_7',
+    'ISO8859_8':   'iso8859_8',
+    'ISO8859_9':   'iso8859_9',
+    'ISO8859_13':   'iso8859_13',
+    'KSC_5601':   'euc_kr',
+    'DOS852':   'cp852',
+    'DOS857':   'cp857',
+    'DOS861':   'cp861',
+    'DOS866':   'cp866',
+    'DOS869':   'cp869',
+    'WIN1250':   'cp1250',
+    'WIN1251':   'cp1251',
+    'WIN1252':   'cp1252',
+    'WIN1253':   'cp1253',
+    'WIN1254':   'cp1254',
+    'BIG_5':   'big5',
+    'GB_2312':   'gb2312',
+    'WIN1255':   'cp1255',
+    'WIN1256':   'cp1256',
+    'WIN1257':   'cp1257',
+    'KOI8-R':   'koi8_r',   # (Firebird 2.0+)
+    'KOI8-U':   'koi8_u',   # (Firebird 2.0+)
+    'WIN1258':   'cp1258',  # (Firebird 2.0+)
 }
