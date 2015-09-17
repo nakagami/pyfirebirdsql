@@ -4,22 +4,23 @@
 # Licensed under the New BSD License
 # (http://www.freebsd.org/copyright/freebsd-license.html)
 #
-# Python DB-API 2.0 module for Firebird. 
+# Python DB-API 2.0 module for Firebird.
 ##############################################################################
 from __future__ import print_function
 import sys
 import os
 import socket
-import xdrlib, time, datetime, decimal, struct, select
+import xdrlib
+import datetime
+import decimal
+import select
+
 try:
     import crypt
 except ImportError: # Not posix
     crypt = None
 from firebirdsql.fberrmsgs import messages
-from firebirdsql import (DisconnectByPeer,
-    DatabaseError, InternalError, OperationalError,
-    ProgrammingError, IntegrityError, DataError, NotSupportedError,
-)
+from firebirdsql import DisconnectByPeer, InternalError, OperationalError
 from firebirdsql.consts import *
 from firebirdsql.utils import *
 from firebirdsql import srp
@@ -29,6 +30,7 @@ except ImportError:
     from firebirdsql.arc4 import ARC4
 
 DEBUG = False
+
 
 def DEBUG_OUTPUT(*argv):
     if not DEBUG:
@@ -52,30 +54,36 @@ INFO_SQL_SELECT_DESCRIBE_VARS = bs([
     isc_info_sql_alias,
     isc_info_sql_describe_end])
 
+
 def get_crypt(plain):
     if crypt is None:
         return None
     return crypt.crypt(plain, '9z')[2:]
 
+
 def convert_date(v):  # Convert datetime.date to BLR format data
     i = v.month + 9
-    jy = v.year + (i // 12) -1
+    jy = v.year + (i // 12) - 1
     jm = i % 12
     c = jy // 100
     jy -= 100 * c
     j = (146097*c) // 4 + (1461*jy) // 4 + (153*jm+2) // 5 + v.day - 678882
     return bint_to_bytes(j, 4)
 
+
 def convert_time(v):  # Convert datetime.time to BLR format time
-    t = (v.hour*3600 + v.minute*60 + v.second) *10000 + v.microsecond // 100
+    t = (v.hour*3600 + v.minute*60 + v.second) * 10000 + v.microsecond // 100
     return bint_to_bytes(t, 4)
+
 
 def convert_timestamp(v):   # Convert datetime.datetime to BLR format timestamp
     return convert_date(v.date()) + convert_time(v.time())
 
+
 def wire_operation(fn):
     if not DEBUG:
         return fn
+
     def f(*args, **kwargs):
         DEBUG_OUTPUT('<--', fn, '-->')
         r = fn(*args, **kwargs)
@@ -154,8 +162,7 @@ class WireProtocol(object):
             n += 4 - nbytes % 4  # 4 bytes word alignment
         r = bs([])
         while n:
-            if (self.timeout is not None
-                and select.select([self.sock._sock], [], [], self.timeout)[0] == []):
+            if (self.timeout is not None and select.select([self.sock._sock], [], [], self.timeout)[0] == []):
                 break
             b = self.sock.recv(n)
             if not b:
@@ -169,7 +176,7 @@ class WireProtocol(object):
     def str_to_bytes(self, s):
         "convert str to bytes"
         if (PYTHON_MAJOR_VER == 3 or
-                (PYTHON_MAJOR_VER == 2 and type(s)==unicode)):
+                (PYTHON_MAJOR_VER == 2 and type(s) == unicode)):
             return s.encode(charset_map.get(self.charset, self.charset))
         return s
 
@@ -215,7 +222,6 @@ class WireProtocol(object):
 
         return (gds_codes, sql_code, message)
 
-
     def _parse_op_response(self):
         b = self.recv_channel(16)
         h = bytes_to_bint(b[0:4])         # Object handle
@@ -230,7 +236,7 @@ class WireProtocol(object):
         return (h, oid, buf)
 
     def _parse_op_event(self):
-        b = self.recv_channel(4096) # too large TODO: read step by step
+        b = self.recv_channel(4096)     # too large TODO: read step by step
         # TODO: parse event name
         db_handle = bytes_to_bint(b[0:4])
         event_id = bytes_to_bint(b[-4:])
@@ -274,15 +280,19 @@ class WireProtocol(object):
                 null_indicator >>= 8
             values = bs(null_indicator_bytes)
         for p in params:
-            if ((PYTHON_MAJOR_VER == 2 and type(p) == unicode) or
-                (PYTHON_MAJOR_VER == 3 and type(p) == str)):
+            if (
+                (PYTHON_MAJOR_VER == 2 and type(p) == unicode) or
+                (PYTHON_MAJOR_VER == 3 and type(p) == str)
+            ):
                 p = self.str_to_bytes(p)
             t = type(p)
             if p is None:
                 v = bs([])
                 blr += bs([14, 0, 0])
-            elif ((PYTHON_MAJOR_VER == 2 and t == str) or
-                (PYTHON_MAJOR_VER == 3 and t == bytes)):
+            elif (
+                (PYTHON_MAJOR_VER == 2 and t == str) or
+                (PYTHON_MAJOR_VER == 3 and t == bytes)
+            ):
                 if len(p) > MAX_CHAR_LENGTH:
                     v = self._create_blob(trans_handle, p)
                     blr += bs([9, 0])
@@ -305,7 +315,7 @@ class WireProtocol(object):
                 v = 0
                 ln = len(digits)
                 for i in range(ln):
-                    v += digits[i] * (10 ** (ln -i-1))
+                    v += digits[i] * (10 ** (ln - i - 1))
                 if sign:
                     v *= -1
                 v = bint_to_bytes(v, 8)
@@ -326,8 +336,7 @@ class WireProtocol(object):
                 blr += bs([23])
             else:   # fallback, convert to string
                 p = p.__repr__()
-                if (PYTHON_MAJOR_VER==3 or
-                    (PYTHON_MAJOR_VER == 2 and type(p)==unicode)):
+                if PYTHON_MAJOR_VER == 3 or (PYTHON_MAJOR_VER == 2 and type(p) == unicode):
                     p = self.str_to_bytes(p)
                 v = p
                 nbytes = len(v)
@@ -337,7 +346,7 @@ class WireProtocol(object):
             blr += bs([7, 0])
             values += v
             if self.accept_version < PROTOCOL_VERSION13:
-                values += bs([0]) * 4 if p != None else bs([0xff,0xff,0xff,0xff])
+                values += bs([0]) * 4 if not p is None else bs([0xff, 0xff, 0xff, 0xff])
         blr += bs([255, 76])    # [blr_end, blr_eoc]
         return blr, values
 
@@ -381,8 +390,7 @@ class WireProtocol(object):
         r = b''
         r += pack_cnct_param(CNCT_login, self.str_to_bytes(self.user.upper()))
         if specific_data:
-            r += pack_cnct_param(CNCT_plugin_name,
-                            self.str_to_bytes(self.plugin_name))
+            r += pack_cnct_param(CNCT_plugin_name, self.str_to_bytes(self.plugin_name))
             r += pack_cnct_param(CNCT_plugin_list, self.plugin_list)
             r += pack_cnct_param(CNCT_specific_data, specific_data)
             r += pack_cnct_param(CNCT_client_crypt, client_crypt)
@@ -396,10 +404,10 @@ class WireProtocol(object):
     def _op_connect(self, auth_plugin_name, wire_crypt):
         protocols = [
             # PROTOCOL_VERSION, Arch type (Generic=1), min, max, weight
-            '0000000a00000001000000000000000500000002', # 10, 1, 0, 5, 2
-            'ffff800b00000001000000000000000500000004', # 11, 1, 0, 5, 4
-            'ffff800c00000001000000000000000500000006', # 12, 1, 0, 5, 6
-            'ffff800d00000001000000000000000500000008', # 13, 1, 0, 5, 8
+            '0000000a00000001000000000000000500000002',     # 10, 1, 0, 5, 2
+            'ffff800b00000001000000000000000500000004',     # 11, 1, 0, 5, 4
+            'ffff800c00000001000000000000000500000006',     # 12, 1, 0, 5, 6
+            'ffff800d00000001000000000000000500000008',     # 13, 1, 0, 5, 8
         ]
         p = xdrlib.Packer()
         p.pack_int(self.op_connect)
@@ -460,7 +468,7 @@ class WireProtocol(object):
         b = self.recv_channel(12)
         self.accept_version = byte_to_int(b[3])
         self.accept_architecture = bytes_to_bint(b[4:8])
-        self.accept_type =  bytes_to_bint(b[8:])
+        self.accept_type = bytes_to_bint(b[8:])
         self.lazy_response_count = 0
 
         if op_code == self.op_cond_accept or op_code == self.op_accept_data:
@@ -470,23 +478,23 @@ class WireProtocol(object):
             data = self.recv_channel(ln)
             read_length += 4 + ln
             if read_length % 4:
-                self.recv_channel(4 - read_length % 4) # padding
+                self.recv_channel(4 - read_length % 4)  # padding
                 read_length += 4 - read_length % 4
 
             ln = bytes_to_bint(self.recv_channel(4))
             self.accept_plugin_name = self.recv_channel(ln)
             read_length += 4 + ln
             if read_length % 4:
-                self.recv_channel(4 - read_length % 4) # padding
+                self.recv_channel(4 - read_length % 4)  # padding
                 read_length += 4 - read_length % 4
 
             is_authenticated = bytes_to_bint(self.recv_channel(4))
             read_length += 4
             ln = bytes_to_bint(self.recv_channel(4))
-            keys = self.recv_channel(ln)
+            self.recv_channel(ln)   # keys
             read_length += 4 + ln
             if read_length % 4:
-                self.recv_channel(4 - read_length % 4) # padding
+                self.recv_channel(4 - read_length % 4)  # padding
                 read_length += 4 - read_length % 4
 
             if is_authenticated == 0:
@@ -550,7 +558,7 @@ class WireProtocol(object):
             s = self.str_to_bytes(self.role)
             dpb += bs([isc_dpb_sql_role_name, len(s)]) + s
         if self.auth_data:
-            s = self.str_to_bytes(bytes_to_hex(self.auth_data))
+            s = bytes_to_hex(self.auth_data)
             dpb += bs([isc_dpb_specific_auth_data, len(s)]) + s
         p = xdrlib.Packer()
         p.pack_int(self.op_attach)
@@ -570,7 +578,7 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_service_attach(self):
-        spb = bs([2,2])
+        spb = bs([2, 2])
         s = self.str_to_bytes(self.user)
         spb += bs([isc_spb_user_name, len(s)]) + s
         if self.accept_version < PROTOCOL_VERSION13:
@@ -584,7 +592,7 @@ class WireProtocol(object):
         if self.auth_data:
             s = self.str_to_bytes(bytes_to_hex(self.auth_data))
             spb += bs([isc_dpb_specific_auth_data, len(s)]) + s
-        spb += bs([isc_spb_dummy_packet_interval,0x04,0x78,0x0a,0x00,0x00])
+        spb += bs([isc_spb_dummy_packet_interval, 0x04, 0x78, 0x0a, 0x00, 0x00])
         p = xdrlib.Packer()
         p.pack_int(self.op_service_attach)
         p.pack_int(0)
@@ -818,7 +826,7 @@ class WireProtocol(object):
                     else:
                         ln = x.io_length()
                     raw_value = self.recv_channel(ln, word_alignment=True)
-                    if self.recv_channel(4) == bs([0]) * 4: # Not NULL
+                    if self.recv_channel(4) == bs([0]) * 4:     # Not NULL
                         r[i] = x.value(raw_value)
             else:   # PROTOCOL_VERSION13
                 n = len(xsqlda) // 8
@@ -826,7 +834,7 @@ class WireProtocol(object):
                     n += 1
                 null_indicator = 0
                 for c in reversed(self.recv_channel(n, word_alignment=True)):
-                    null_indicator <<=8
+                    null_indicator <<= 8
                     null_indicator += c if PYTHON_MAJOR_VER == 3 else ord(c)
                 for i in range(len(xsqlda)):
                     x = xsqlda[i]
@@ -841,7 +849,7 @@ class WireProtocol(object):
                     r[i] = x.value(raw_value)
             rows.append(r)
             b = self.recv_channel(12)
-            op = bytes_to_bint(b[:4])
+            # op = bytes_to_bint(b[:4])
             status = bytes_to_bint(b[4:8])
             count = bytes_to_bint(b[8:])
         return rows, status != 100
@@ -899,8 +907,7 @@ class WireProtocol(object):
         p.pack_int(ln + 2)
         p.pack_int(ln + 2)
         pad_length = ((4-(ln+2)) & 3)
-        self.sock.send(p.get_buffer() 
-                + int_to_bytes(ln, 2) + seg_data + bs([0])*pad_length)
+        self.sock.send(p.get_buffer() + int_to_bytes(ln, 2) + seg_data + bs([0])*pad_length)
 
     @wire_operation
     def _op_close_blob(self, blob_handle):
@@ -1021,7 +1028,7 @@ class WireProtocol(object):
                 else:
                     ln = x.io_length()
                 raw_value = self.recv_channel(ln, word_alignment=True)
-                if self.recv_channel(4) == bs([0]) * 4: # Not NULL
+                if self.recv_channel(4) == bs([0]) * 4:     # Not NULL
                     r.append(x.value(raw_value))
                 else:
                     r.append(None)
@@ -1031,7 +1038,7 @@ class WireProtocol(object):
                 n += 1
             null_indicator = 0
             for c in reversed(self.recv_channel(n, word_alignment=True)):
-                null_indicator <<=8
+                null_indicator <<= 8
                 null_indicator += c if PYTHON_MAJOR_VER == 3 else ord(c)
             for i in range(len(xsqlda)):
                 x = xsqlda[i]
@@ -1060,7 +1067,7 @@ class WireProtocol(object):
             elif op == self.op_exit or op == self.op_disconnect:
                 break
             elif op == self.op_event:
-                db_handle = bytes_to_int(self.recv_channel(4))
+                bytes_to_int(self.recv_channel(4))  # db_handle
                 ln = bytes_to_bint(self.recv_channel(4))
                 b = self.recv_channel(ln, word_alignment=True)
                 assert byte_to_int(b[0]) == 1
