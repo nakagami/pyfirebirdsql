@@ -4,7 +4,7 @@
 # Licensed under the New BSD License
 # (http://www.freebsd.org/copyright/freebsd-license.html)
 #
-# Python DB-API 2.0 module for Firebird. 
+# Python DB-API 2.0 module for Firebird.
 ##############################################################################
 # This SRP implementation is in reference to
 '''
@@ -12,10 +12,14 @@ Following document was copied from <http://srp.stanford.edu/design.html>.
 -----
 SRP Protocol Design
 
-SRP is the newest addition to a new class of strong authentication protocols that resist all the well-known passive and active attacks over the network. SRP borrows some elements from other key-exchange and identification protcols and adds some subtlee
- modifications and refinements. The result is a protocol that preserves the strength and efficiency of the EKE family protocols while fixing some of their shortcomings. 
+SRP is the newest addition to a new class of strong authentication protocols
+that resist all the well-known passive and active attacks over the network. SRP
+borrows some elements from other key-exchange and identification protcols and
+adds some subtlee modifications and refinements. The result is a protocol that
+preserves the strength and efficiency of the EKE family protocols while fixing
+some of their shortcomings.
 
-The following is a description of SRP-6 and 6a, the latest versions of SRP: 
+The following is a description of SRP-6 and 6a, the latest versions of SRP:
 
   N    A large safe prime (N = 2q+1, where q is prime)
        All arithmetic is done modulo N.
@@ -32,12 +36,13 @@ The following is a description of SRP-6 and 6a, the latest versions of SRP:
   x    Private key (derived from p and s)
   v    Password verifier
 
-The host stores passwords using the following formula: 
+The host stores passwords using the following formula:
 
   x = H(s, p)               (s is chosen randomly)
   v = g^x                   (computes password verifier)
 
-The host then keeps {I, s, v} in its password database. The authentication protocol itself goes as follows: 
+The host then keeps {I, s, v} in its password database. The authentication
+protocol itself goes as follows:
 
 User -> Host:  I, A = g^a                  (identifies self, a = random number)
 Host -> User:  s, B = kv + g^b             (sends salt, b = random number)
@@ -51,28 +56,31 @@ Host -> User:  s, B = kv + g^b             (sends salt, b = random number)
         Host:  S = (Av^u) ^ b              (computes session key)
         Host:  K = H(S)
 
-Now the two parties have a shared, strong session key K. To complete authentication, they need to prove to each other that their keys match. One possible way: 
+Now the two parties have a shared, strong session key K. To complete
+authentication, they need to prove to each other that their keys match.
+One possible way: 
 
 User -> Host:  M = H(H(N) xor H(g), H(I), s, A, B, K)
 Host -> User:  H(A, M, K)
 
-The two parties also employ the following safeguards: 
+The two parties also employ the following safeguards:
 
-  1. The user will abort if he receives B == 0 (mod N) or u == 0. 
-  2. The host will abort if it detects that A == 0 (mod N). 
-  3. The user must show his proof of K first. If the server detects that the user's proof is incorrect, it must abort without showing its own proof of K. 
+  1. The user will abort if he receives B == 0 (mod N) or u == 0.
+  2. The host will abort if it detects that A == 0 (mod N).
+  3. The user must show his proof of K first. If the server detects that the user's proof is incorrect, it must abort without showing its own proof of K.
 
 See http://srp.stanford.edu/ for more information.
 '''
 from __future__ import print_function
 import sys
 import hashlib
-import hmac
 import random
 import binascii
 
-DEBUG=False
-DEBUG_PRINT=False
+DEBUG = False
+DEBUG_PRINT = False
+
+
 if DEBUG:
     DEBUG_PRIVATE_KEY = 0x60975527035CF2AD1989806F0407210BC81EDC04E2762A56AFD529DDDA2D4393
 
@@ -84,6 +92,7 @@ if PYTHON_MAJOR_VER == 3:
 
 SRP_KEY_SIZE = 128
 SRP_SALT_SIZE = 32
+
 
 def get_prime():
     N = 0xE67D2E994B2F900C3F41F08F5BB2627ED0D49EE1FE767A52EFCD565CD6E768812C3E1E9CE8F0A8BEA6CB13CD29DDEBF7A96D4A93B55D488DF099A15C89DCB0640738EB2CBDD9A8F7BAB561AB1B0DC1C6CDABF303264A08D1BCA932D1F1EE428B619D970F342ABA9A65793B8B2F041AE5364350C16F735F56ECBCA87BD57B29E7
@@ -102,15 +111,17 @@ def bytes2long(s):
         n += ord(c)
     return n
 
+
 def long2bytes(n):
     s = []
     while n > 0:
-      s.insert(0, n & 255)
-      n >>= 8
+        s.insert(0, n & 255)
+        n >>= 8
     if PYTHON_MAJOR_VER == 3:
         return bytes(s)
     else:
         return b''.join([chr(c) for c in s])
+
 
 def sha1(*args):
     sha1 = hashlib.sha1()
@@ -119,6 +130,7 @@ def sha1(*args):
             v = long2bytes(v)
         sha1.update(v)
     return sha1.digest()
+
 
 def pad(n):
     s = []
@@ -132,24 +144,27 @@ def pad(n):
     else:
         return b''.join([chr(c) for c in s])
 
+
 def get_scramble(x, y):
     return bytes2long(sha1(pad(x), pad(y)))
+
 
 def getUserHash(salt, user, password):
     assert isinstance(user, bytes)
     assert isinstance(password, bytes)
     hash1 = sha1(user, b':', password)
     hash2 = sha1(salt, hash1)
-    rc =  bytes2long(hash2)
+    rc = bytes2long(hash2)
 
     return rc
+
 
 def client_seed():
     """
         A: Client public key
         a: Client private key
     """
-    N, g, k  = get_prime()
+    N, g, k = get_prime()
     a = random.randrange(0, 1 << SRP_KEY_SIZE)
     A = pow(g, a, N)
     if DEBUG:
@@ -159,6 +174,7 @@ def client_seed():
         print('A=', binascii.b2a_hex(long2bytes(A)), end='\n')
         print('a=', binascii.b2a_hex(long2bytes(a)), end='\n')
     return A, a
+
 
 def server_seed(v):
     """
@@ -183,6 +199,7 @@ def server_seed(v):
         print('B=', binascii.b2a_hex(long2bytes(B)), end='\n')
     return B, b
 
+
 def client_session(user, password, salt, A, B, a):
     """
     Client session secret
@@ -205,6 +222,7 @@ def client_session(user, password, salt, A, B, a):
 
     return K
 
+
 def server_session(user, password, salt, A, B, b):
     """
     Server session secret
@@ -221,11 +239,11 @@ def server_session(user, password, salt, A, B, b):
     session_secret = pow(Avu, b, N)         # (Av^u) ^ b
     K = sha1(session_secret)
     if DEBUG_PRINT:
-        print('server session_secret=',
-            binascii.b2a_hex(long2bytes(session_secret)), end='\n')
+        print('server session_secret=', binascii.b2a_hex(long2bytes(session_secret)), end='\n')
         print('server session hash K=', binascii.b2a_hex(K))
 
     return K
+
 
 def client_proof(user, password, salt, A, B, a):
     """
@@ -245,6 +263,7 @@ def client_proof(user, password, salt, A, B, a):
 
     return M, K
 
+
 def get_salt():
     if DEBUG:
         salt = b'\00' * SRP_SALT_SIZE
@@ -257,10 +276,12 @@ def get_salt():
         print('salt=', binascii.b2a_hex(salt), end='\n')
     return salt
 
+
 def get_verifier(user, password, salt):
     N, g, k = get_prime()
     x = getUserHash(salt, user, password)
     return pow(g, x, N)
+
 
 if __name__ == '__main__':
     """
@@ -286,4 +307,3 @@ if __name__ == '__main__':
 
     # Client and Server has same key
     assert clientKey == serverKey
-
