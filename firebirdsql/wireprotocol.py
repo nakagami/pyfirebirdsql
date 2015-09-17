@@ -17,7 +17,7 @@ import select
 
 try:
     import crypt
-except ImportError: # Not posix
+except ImportError:     # Not posix
     crypt = None
 from firebirdsql.fberrmsgs import messages
 from firebirdsql import DisconnectByPeer, InternalError, OperationalError

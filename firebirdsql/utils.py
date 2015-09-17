@@ -4,7 +4,7 @@
 # Licensed under the New BSD License
 # (http://www.freebsd.org/copyright/freebsd-license.html)
 #
-# Python DB-API 2.0 module for Firebird. 
+# Python DB-API 2.0 module for Firebird.
 ##############################################################################
 import sys
 import binascii
@@ -12,6 +12,7 @@ import struct
 from firebirdsql import InternalError
 
 PYTHON_MAJOR_VER = sys.version_info[0]
+
 
 def bs(byte_array):
     if PYTHON_MAJOR_VER == 2:
