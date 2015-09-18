@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2009-2014 Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2009-2015 Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 # Licensed under the New BSD License
 # (http://www.freebsd.org/copyright/freebsd-license.html)
@@ -9,17 +9,15 @@
 from __future__ import print_function
 import sys
 import warnings
-import xdrlib, time, datetime, decimal, struct
+import time, datetime, decimal
 import itertools
 from collections import Mapping
-from firebirdsql.fberrmsgs import messages
-from firebirdsql import (DatabaseError, InternalError, OperationalError,
-    ProgrammingError, IntegrityError, DataError, NotSupportedError,)
+from firebirdsql import InternalError, OperationalError, IntegrityError, NotSupportedError
 from firebirdsql.consts import *
 from firebirdsql.utils import *
-from firebirdsql.wireprotocol import WireProtocol, INFO_SQL_SELECT_DESCRIBE_VARS
+from firebirdsql.wireprotocol import WireProtocol
 from firebirdsql.socketstream import SocketStream
-from firebirdsql.xsqlvar import XSQLVAR, calc_blr, parse_select_items, parse_xsqlda
+from firebirdsql.xsqlvar import calc_blr, parse_select_items, parse_xsqlda
 __version__ = '0.9.11'
 apilevel = '2.0'
 threadsafety = 1
@@ -321,7 +319,6 @@ class Cursor(object):
         for params in seq_of_params:
             self.execute(query, params)
 
-
     def fetchone(self):
         if not self.transaction.is_dirty:
             return None
@@ -359,9 +356,9 @@ class Cursor(object):
             return None
         if not self._fetch_records:
             if self._callproc_result:
-                r = [tuple(self._callproc_result)]
+                proc_r = [tuple(self._callproc_result)]
                 self._callproc_result = None
-                return r
+                return proc_r
             return []
         # select statement
         return [tuple(r) for r in self._fetch_records]
@@ -433,10 +430,9 @@ class Cursor(object):
         self.transaction.connection._op_info_sql(self.stmt.handle,
                                      bs([isc_info_sql_records]))
         (h, oid, buf) = self.transaction.connection._op_response()
-        assert buf[:3] == bs([0x17,0x1d,0x00]) # isc_info_sql_records
+        assert buf[:3] == bs([0x17, 0x1d, 0x00])    # isc_info_sql_records
         if self.stmt.stmt_type == isc_info_sql_stmt_select:
-            assert buf[17:20] == bs([0x0d,0x04,0x00])
-                                              # isc_info_req_select_count
+            assert buf[17:20] == bs([0x0d, 0x04, 0x00])     # isc_info_req_select_count
             count = bytes_to_int(buf[20:24])
         else:
             count = bytes_to_int(buf[27:31]) + bytes_to_int(buf[6:10]) + bytes_to_int(buf[13:17])
@@ -525,11 +521,13 @@ class Connection(WireProtocol):
         (h, oid, buf) = self._op_response()
         self._transaction.is_dirty=True
 
-    def __init__(self, dsn=None, user=None, password=None, role=None, host=None,
-                    database=None, charset=DEFAULT_CHARSET, port=3050,
-                    page_size=4096, is_services=False, cloexec=False,
-                    timeout=None, isolation_level=None, use_unicode=None,
-                    auth_plugin_name=None, wire_crypt=True, create_new=False):
+    def __init__(
+        self, dsn=None, user=None, password=None, role=None, host=None,
+        database=None, charset=DEFAULT_CHARSET, port=3050,
+        page_size=4096, is_services=False, cloexec=False,
+        timeout=None, isolation_level=None, use_unicode=None,
+        auth_plugin_name=None, wire_crypt=True, create_new=False
+    ):
         DEBUG_OUTPUT("Connection::__init__()")
         if auth_plugin_name is None:
             auth_plugin_name = 'Srp'
@@ -776,6 +774,7 @@ class Connection(WireProtocol):
     def is_disconnect(self):
         return self.sock is None
 
+
 class Transaction(object):
     def __init__(self, connection, is_autocommit=False):
         DEBUG_OUTPUT("Transaction::__init__()")
@@ -790,9 +789,8 @@ class Transaction(object):
         self.connection._op_transaction(tpb)
         (h, oid, buf) = self.connection._op_response()
         self._trans_handle = h
-        DEBUG_OUTPUT("Transaction::_begin()",
-            self._trans_handle,
-            self.connection)
+        DEBUG_OUTPUT(
+            "Transaction::_begin()", self._trans_handle, self.connection)
         self.is_dirty = False
 
     def begin(self):
@@ -802,16 +800,12 @@ class Transaction(object):
     def savepoint(self, name):
         if self._trans_handle is None:
             return
-        self.connection._op_exec_immediate(self._trans_handle,
-                        query='SAVEPOINT '+name)
+        self.connection._op_exec_immediate(self._trans_handle, query='SAVEPOINT '+name)
         (h, oid, buf) = self.connection._op_response()
 
     def commit(self, retaining=False):
-        DEBUG_OUTPUT("Transaction::commit()",
-                        self._trans_handle,
-                        self,
-                        self.connection,
-                        retaining)
+        DEBUG_OUTPUT(
+            "Transaction::commit()", self._trans_handle, self, self.connection, retaining)
         if self._trans_handle is None:
             return
         if not self.is_dirty:
@@ -826,17 +820,14 @@ class Transaction(object):
         self.is_dirty = False
 
     def rollback(self, retaining=False, savepoint=None):
-        DEBUG_OUTPUT("Transaction::rollback()",
-                        self._trans_handle,
-                        self,
-                        self.connection,
-                        retaining,
-                        savepoint)
+        DEBUG_OUTPUT(
+            "Transaction::rollback()", self._trans_handle, self,
+            self.connection, retaining, savepoint)
         if self._trans_handle is None:
             return
         if savepoint:
-            self.connection._op_exec_immediate(self._trans_handle,
-                        query='ROLLBACK TO '+savepoint)
+            self.connection._op_exec_immediate(
+                self._trans_handle, query='ROLLBACK TO '+savepoint)
             (h, oid, buf) = self.connection._op_response()
             return
         if not self.is_dirty:
@@ -852,11 +843,10 @@ class Transaction(object):
 
     def _trans_info(self, info_requests):
         if info_requests[-1] == isc_info_end:
-            self.connection._op_info_transaction(self.trans_handle,
-                    bs(info_requests))
+            self.connection._op_info_transaction(self.trans_handle, bs(info_requests))
         else:
-            self.connection._op_info_transaction(self.trans_handle,
-                    bs(info_requests+type(info_requests)([isc_info_end])))
+            self.connection._op_info_transaction(
+                self.trans_handle, bs(info_requests+type(info_requests)([isc_info_end])))
         (h, oid, buf) = self.connection._op_response()
         i = 0
         i_request = 0
@@ -952,4 +942,3 @@ class RowMapping(Mapping):
                   for desc in self._description]
         return ("<RowMapping at 0x%08x with fields: %s>" %
                 (id(self), ", ".join(values)))
-
