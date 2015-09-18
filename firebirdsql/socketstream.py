@@ -4,11 +4,9 @@
 # Licensed under the New BSD License
 # (http://www.freebsd.org/copyright/freebsd-license.html)
 #
-# Python DB-API 2.0 module for Firebird. 
+# Python DB-API 2.0 module for Firebird.
 ##############################################################################
-import os
 import socket
-import select
 
 try:
     import fcntl
@@ -22,6 +20,7 @@ else:
         fd = sock.fileno()
         flags = fcntl.fcntl(fd, fcntl.F_GETFD)
         fcntl.fcntl(fd, fcntl.F_SETFD, flags | fcntl.FD_CLOEXEC)
+
 
 class SocketStream(object):
     def __init__(self, host, port, timeout=None, cloexec=False):
