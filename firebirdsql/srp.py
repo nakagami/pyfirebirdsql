@@ -58,7 +58,7 @@ Host -> User:  s, B = kv + g^b             (sends salt, b = random number)
 
 Now the two parties have a shared, strong session key K. To complete
 authentication, they need to prove to each other that their keys match.
-One possible way: 
+One possible way:
 
 User -> Host:  M = H(H(N) xor H(g), H(I), s, A, B, K)
 Host -> User:  H(A, M, K)
