@@ -4,7 +4,7 @@
 # Licensed under the New BSD License
 # (http://www.freebsd.org/copyright/freebsd-license.html)
 #
-# Python DB-API 2.0 module for Firebird. 
+# Python DB-API 2.0 module for Firebird.
 ##############################################################################
 import sys
 
@@ -13,6 +13,7 @@ PYTHON_MAJOR_VER = sys.version_info[0]
 if PYTHON_MAJOR_VER == 3:
     def ord(c):
         return c
+
 
 class ARC4:
     def __init__(self, key):
@@ -31,7 +32,7 @@ class ARC4:
 
     def translate(self, plain):
         state = self.state
-        enc=b''
+        enc = b''
         for i in range(len(plain)):
             self.x = (self.x + 1) % 256
             self.y = (self.y + state[self.x]) % 256

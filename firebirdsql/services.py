@@ -4,18 +4,16 @@
 # Licensed under the New BSD License
 # (http://www.freebsd.org/copyright/freebsd-license.html)
 #
-# Python DB-API 2.0 module for Firebird. 
+# Python DB-API 2.0 module for Firebird.
 ##############################################################################
-import sys, os, socket
-import xdrlib, time, datetime, decimal, struct
 from firebirdsql.consts import *
 from firebirdsql.utils import *
 from firebirdsql.fbcore import Connection
 
-class Services(Connection):
 
+class Services(Connection):
     def sweep(self, database_name, callback=None):
-        spb = bs([isc_spb_rpr_validate_db|isc_spb_rpr_sweep_db])
+        spb = bs([isc_spb_rpr_validate_db | isc_spb_rpr_sweep_db])
         s = self.str_to_bytes(database_name)
         spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
 
@@ -28,12 +26,12 @@ class Services(Connection):
         while True:
             self._op_service_info(bs([0x02]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
+            if buf[:4] == bs([0x3e, 0x00, 0x00, 0x01]):
                 break
             if callback:
                 ln = bytes_to_int(buf[1:3])
                 callback(self.bytes_to_str(buf[3:3+ln]))
-    
+
     def bringOnline(self, database_name, callback=None):
         spb = bs([isc_action_svc_properties])
         s = self.str_to_bytes(database_name)
@@ -49,18 +47,17 @@ class Services(Connection):
         while True:
             self._op_service_info(bs([0x02]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
+            if buf[:4] == bs([0x3e, 0x00, 0x00, 0x01]):
                 break
             if callback:
                 ln = bytes_to_int(buf[1:3])
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def shutdown(self, database_name,
-                       timeout=0,
-                       shutForce=True,
-                       shutDenyNewAttachments=False,
-                       shutDenyNewTransactions=False,
-                       callback=None):
+    def shutdown(
+        self, database_name, timeout=0, shutForce=True,
+        shutDenyNewAttachments=False, shutDenyNewTransactions=False,
+        callback=None
+    ):
         spb = bs([isc_action_svc_properties])
         s = self.str_to_bytes(database_name)
         spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
@@ -78,21 +75,18 @@ class Services(Connection):
         while True:
             self._op_service_info(bs([0x02]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
+            if buf[:4] == bs([0x3e, 0x00, 0x00, 0x01]):
                 break
             if callback:
                 ln = bytes_to_int(buf[1:3])
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def repair(self, database_name,
-                     readOnlyValidation=True,
-                     ignoreChecksums=False,
-                     killUnavailableShadows=False,
-                     mendDatabase=False,
-                     validateDatabase=False,
-                     validateRecordFragments=False,
-                     callback=None):
-
+    def repair(
+        self, database_name,
+        readOnlyValidation=True, ignoreChecksums=False,
+        killUnavailableShadows=False, mendDatabase=False,
+        validateDatabase=False, validateRecordFragments=False, callback=None
+    ):
         spb = bs([isc_action_svc_repair])
 
         s = self.str_to_bytes(database_name)
@@ -120,21 +114,18 @@ class Services(Connection):
         while True:
             self._op_service_info(bs([0x02]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
+            if buf[:4] == bs([0x3e, 0x00, 0x00, 0x01]):
                 break
             if callback:
                 ln = bytes_to_int(buf[1:3])
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def backup_database(self, database_name, backup_filename,
-                                    transportable=True,
-                                    metadataOnly=False,
-                                    garbageCollect=True,
-                                    ignoreLimboTransactions=False,
-                                    ignoreChecksums=False,
-                                    convertExternalTablesToInternalTables=True,
-                                    expand=False,
-                                    callback=None):
+    def backup_database(
+        self, database_name, backup_filename,
+        transportable=True, metadataOnly=False, garbageCollect=True,
+        ignoreLimboTransactions=False, ignoreChecksums=False,
+        convertExternalTablesToInternalTables=True, expand=False, callback=None
+    ):
         spb = bs([isc_action_svc_backup])
         s = self.str_to_bytes(database_name)
         spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
@@ -164,21 +155,19 @@ class Services(Connection):
         while True:
             self._op_service_info(bs([0x02]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
+            if buf[:4] == bs([0x3e, 0x00, 0x00, 0x01]):
                 break
             if callback:
                 ln = bytes_to_int(buf[1:3])
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def restore_database(self, restore_filename, database_name,
-                            replace=False,
-                            create=False,
-                            deactivateIndexes=False,
-                            doNotRestoreShadows=False,
-                            doNotEnforceConstraints=False,
-                            commitAfterEachTable=False,
-                            useAllPageSpace=False,
-                            pageSize=None, cacheBuffers=None, callback=None):
+    def restore_database(
+        self, restore_filename, database_name,
+        replace=False, create=False, deactivateIndexes=False,
+        doNotRestoreShadows=False, doNotEnforceConstraints=False,
+        commitAfterEachTable=False, useAllPageSpace=False, pageSize=None,
+        cacheBuffers=None, callback=None
+    ):
         spb = bs([isc_action_svc_restore])
         s = self.str_to_bytes(restore_filename)
         spb += bs([isc_spb_bkp_file]) + int_to_bytes(len(s), 2) + s
@@ -212,7 +201,7 @@ class Services(Connection):
         while True:
             self._op_service_info(bs([0x02]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
+            if buf[:4] == bs([0x3e, 0x00, 0x00, 0x01]):
                 break
             if callback:
                 ln = bytes_to_int(buf[1:3])
@@ -232,7 +221,7 @@ class Services(Connection):
         while True:
             self._op_service_info(bs([0x02]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
+            if buf[:4] == bs([0x3e, 0x00, 0x00, 0x01]):
                 break
             ln = bytes_to_int(buf[1:2])
             if callback:
@@ -288,7 +277,7 @@ class Services(Connection):
         while True:
             self._op_service_info(bs([0x02]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
+            if buf[:4] == bs([0x3e, 0x00, 0x00, 0x01]):
                 break
             ln = bytes_to_int(buf[1:2])
             if callback:
@@ -311,14 +300,14 @@ class Services(Connection):
         self._op_service_info(bs([]), bs([isc_info_svc_svr_db_info]))
         (h, oid, buf) = self._op_response()
         assert byte_to_int(buf[0]) == isc_info_svc_svr_db_info
-        db_names=[]
+        db_names = []
         i = 1
         while i < len(buf) and byte_to_int(buf[i]) != isc_info_flag_end:
             if byte_to_int(buf[i]) == isc_spb_num_att:
-                num_attach =  bytes_to_int(buf[i+1:i+5])
+                num_attach = bytes_to_int(buf[i+1:i+5])
                 i += 5
             elif byte_to_int(buf[i]) == isc_spb_num_db:
-                num_db =  bytes_to_int(buf[7:11])
+                bytes_to_int(buf[7:11])     # db_num
                 i += 5
             elif byte_to_int(buf[i]) == isc_spb_dbname:
                 ln = bytes_to_int(buf[i+1:i+3])
@@ -336,7 +325,7 @@ class Services(Connection):
         while True:
             self._op_service_info(bs([]), bs([0x3e]))
             (h, oid, buf) = self._op_response()
-            if buf[:4] == bs([0x3e,0x00,0x00,0x01]):
+            if buf[:4] == bs([0x3e, 0x00, 0x00, 0x01]):
                 break
             ln = bytes_to_int(buf[1:2])
             logs += self.bytes_to_str(buf[3:3+ln]) + '\n'
@@ -376,11 +365,13 @@ class Services(Connection):
         spb = bs([isc_action_svc_get_fb_log])
         return self._getLogLines(spb)
 
-    def getStatistics(self, dbname, showOnlyDatabaseLogPages=False,
-                                    showOnlyDatabaseHeaderPages=False,
-                                    showUserDataPages=True,
-                                    showUserIndexPages=True,
-                                    showSystemTablesAndIndexes=False):
+    def getStatistics(
+        self, dbname, showOnlyDatabaseLogPages=False,
+        showOnlyDatabaseHeaderPages=False,
+        showUserDataPages=True,
+        showUserIndexPages=True,
+        showSystemTablesAndIndexes=False
+    ):
         optionMask = 0
         if showUserDataPages:
             optionMask |= isc_spb_sts_data_pages
