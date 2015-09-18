@@ -9,7 +9,9 @@
 from __future__ import print_function
 import sys
 import warnings
-import time, datetime, decimal
+import time
+import datetime
+import decimal
 import itertools
 from collections import Mapping
 from firebirdsql import InternalError, OperationalError, IntegrityError, NotSupportedError
@@ -17,7 +19,7 @@ from firebirdsql.consts import *
 from firebirdsql.utils import *
 from firebirdsql.wireprotocol import WireProtocol
 from firebirdsql.socketstream import SocketStream
-from firebirdsql.xsqlvar import calc_blr, parse_select_items, parse_xsqlda
+from firebirdsql.xsqlvar import calc_blr, parse_xsqlda
 __version__ = '0.9.11'
 apilevel = '2.0'
 threadsafety = 1
@@ -25,12 +27,14 @@ paramstyle = 'qmark'
 
 DEBUG = False
 
+
 def DEBUG_OUTPUT(*argv):
     if not DEBUG:
         return
     for s in argv:
         print(s, end=' ', file=sys.stderr)
     print(file=sys.stderr)
+
 
 transaction_parameter_block = (
     # ISOLATION_LEVEL_READ_COMMITED_LEGACY
@@ -42,34 +46,46 @@ transaction_parameter_block = (
     # ISOLATION_LEVEL_SERIALIZABLE
     bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_consistency]),
     # ISOLATION_LEVEL_READ_COMMITED_RO
-    bs([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed,isc_tpb_rec_version]),
+    bs([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
 )
 
 Date = datetime.date
 Time = datetime.time
 TimeDelta = datetime.timedelta
 Timestamp = datetime.datetime
+
+
 def DateFromTicks(ticks):
-    return apply(Date,time.localtime(ticks)[:3])
+    return apply(Date, time.localtime(ticks)[:3])
+
+
 def TimeFromTicks(ticks):
-    return apply(Time,time.localtime(ticks)[3:6])
+    return apply(Time, time.localtime(ticks)[3:6])
+
+
 def TimestampFromTicks(ticks):
-    return apply(Timestamp,time.localtime(ticks)[:6])
+    return apply(Timestamp, time.localtime(ticks)[:6])
+
+
 def Binary(b):
     return bytes(b)
 
+
 class DBAPITypeObject:
-    def __init__(self,*values):
+    def __init__(self, *values):
         self.values = values
-    def __cmp__(self,other):
+
+    def __cmp__(self, other):
         if other in self.values:
             return 0
         if other < self.values:
             return 1
         else:
             return -1
+
+
 STRING = DBAPITypeObject(str)
-if PYTHON_MAJOR_VER==3:
+if PYTHON_MAJOR_VER == 3:
     BINARY = DBAPITypeObject(bytes)
 else:
     BINARY = DBAPITypeObject(str)
@@ -78,6 +94,7 @@ DATETIME = DBAPITypeObject(datetime.datetime, datetime.date, datetime.time)
 DATE = DBAPITypeObject(datetime.date)
 TIME = DBAPITypeObject(datetime.time)
 ROWID = DBAPITypeObject()
+
 
 class Statement(object):
     """
@@ -110,8 +127,10 @@ class Statement(object):
                 self.handle, self.trans.trans_handle, sql)
             self.plan = None
 
-        if (self.trans.connection.accept_type == ptype_lazy_send
-                                and self.trans.connection.lazy_response_count):
+        if (
+            self.trans.connection.accept_type == ptype_lazy_send
+            and self.trans.connection.lazy_response_count
+        ):
             self.trans.connection.lazy_response_count -= 1
             (h, oid, buf) = self.trans.connection._op_response()
             self.handle = h
@@ -123,8 +142,7 @@ class Statement(object):
             l = bytes_to_int(buf[i+1:i+3])
             self.plan = self.trans.connection.bytes_to_str(buf[i+3:i+3+l])
             i += 3 + l
-        self.stmt_type, self.xsqlda = parse_xsqlda(buf[i:],
-                                    self.trans.connection, self.handle)
+        self.stmt_type, self.xsqlda = parse_xsqlda(buf[i:], self.trans.connection, self.handle)
 
     def open(self):
         DEBUG_OUTPUT("Statement::open()")
@@ -155,6 +173,7 @@ class Statement(object):
     def is_opened(self):
         return self._is_open and self.handle != -1
 
+
 class PreparedStatement(object):
     def __init__(self, cur, sql, explain_plan=False):
         DEBUG_OUTPUT("PreparedStatement::__init__()")
@@ -169,9 +188,10 @@ class PreparedStatement(object):
                 return None
             r = []
             for x in self.stmt.xsqlda:
-                r.append((x.aliasname, x.sqltype, x.display_length(),
-                        x.io_length(), x.precision(),
-                        x.sqlscale, True if x.null_ok else False))
+                r.append((
+                    x.aliasname, x.sqltype, x.display_length(),
+                    x.io_length(), x.precision(),
+                    x.sqlscale, True if x.null_ok else False))
             return r
         elif attrname == 'n_output_params':
             return len(self.stmt.xsqlda)
@@ -186,8 +206,7 @@ def _fetch_generator(stmt):
         if not stmt.is_opened:
             raise StopIteration()
         connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda))
-        (rows, more_data) = connection._op_fetch_response(
-                                        stmt.handle, stmt.xsqlda)
+        (rows, more_data) = connection._op_fetch_response(stmt.handle, stmt.xsqlda)
         for r in rows:
             # Convert BLOB handle to data
             for i in range(len(stmt.xsqlda)):
@@ -221,6 +240,7 @@ def _fetch_generator(stmt):
     DEBUG_OUTPUT("_fetch_generator() StopIteration()")
     raise StopIteration()
 
+
 class Cursor(object):
     def __init__(self, trans):
         DEBUG_OUTPUT("Cursor::__init__()")
@@ -241,8 +261,7 @@ class Cursor(object):
     def _convert_params(self, params):
         cooked_params = []
         for param in params:
-            if (type(param)==str or
-                (PYTHON_MAJOR_VER == 2 and type(param)==unicode)):
+            if type(param) == str or (PYTHON_MAJOR_VER == 2 and type(param) == unicode):
                 param = self.transaction.connection.str_to_bytes(param)
             cooked_params.append(param)
         return cooked_params
@@ -263,8 +282,7 @@ class Cursor(object):
 
     def prep(self, query, explain_plan=False):
         DEBUG_OUTPUT("Cursor::prep()")
-        prepared_statement = PreparedStatement(self, query,
-                                                explain_plan=explain_plan)
+        prepared_statement = PreparedStatement(self, query, explain_plan=explain_plan)
         return prepared_statement
 
     def execute(self, query, params=[]):
@@ -273,25 +291,25 @@ class Cursor(object):
         stmt = self._get_stmt(query)
         cooked_params = self._convert_params(params)
         if stmt.stmt_type == isc_info_sql_stmt_exec_procedure:
-            self.transaction.connection._op_execute2(stmt.handle,
+            self.transaction.connection._op_execute2(
+                stmt.handle,
                 self.transaction.trans_handle, cooked_params,
                 calc_blr(stmt.xsqlda))
-            self._callproc_result = \
-                self.transaction.connection._op_sql_response(stmt.xsqlda)
+            self._callproc_result = self.transaction.connection._op_sql_response(stmt.xsqlda)
             self.transaction.connection._op_response()
             self._fetch_records = None
         else:
-            DEBUG_OUTPUT("Cursor::execute() _op_execute()",
-                                stmt.handle, self.transaction.trans_handle)
-            self.transaction.connection._op_execute(stmt.handle,
-                                self.transaction.trans_handle, cooked_params)
+            DEBUG_OUTPUT(
+                "Cursor::execute() _op_execute()",
+                stmt.handle, self.transaction.trans_handle)
+            self.transaction.connection._op_execute(
+                stmt.handle, self.transaction.trans_handle, cooked_params)
             try:
                 (h, oid, buf) = self.transaction.connection._op_response()
             except OperationalError as e:
                 self._fetch_records = None
                 self._callproc_result = None
-                if e.gds_codes.intersection(
-                    [335544665, 335544466, 335544838, 335544347]):
+                if e.gds_codes.intersection([335544665, 335544466, 335544838, 335544347]):
                     raise IntegrityError(e._message, e.gds_codes, e.sql_code)
                 if e.sql_code == -303:
                     warnings.warn(e._message)
@@ -417,9 +435,10 @@ class Cursor(object):
     def description(self):
         if not self.stmt:
             return None
-        return [(x.aliasname, x.sqltype, x.display_length(), x.io_length(),
-                    x.precision(), x.sqlscale, True if x.null_ok else False)
-                for x in self.stmt.xsqlda]
+        return [(
+            x.aliasname, x.sqltype, x.display_length(), x.io_length(),
+            x.precision(), x.sqlscale, True if x.null_ok else False
+        ) for x in self.stmt.xsqlda]
 
     @property
     def rowcount(self):
@@ -427,8 +446,7 @@ class Cursor(object):
         if self.stmt.handle == -1:
             return -1
 
-        self.transaction.connection._op_info_sql(self.stmt.handle,
-                                     bs([isc_info_sql_records]))
+        self.transaction.connection._op_info_sql(self.stmt.handle, bs([isc_info_sql_records]))
         (h, oid, buf) = self.transaction.connection._op_response()
         assert buf[:3] == bs([0x17, 0x1d, 0x00])    # isc_info_sql_records
         if self.stmt.stmt_type == isc_info_sql_stmt_select:
@@ -438,6 +456,7 @@ class Cursor(object):
             count = bytes_to_int(buf[27:31]) + bytes_to_int(buf[6:10]) + bytes_to_int(buf[13:17])
         DEBUG_OUTPUT("Cursor::rowcount()", self.stmt.stmt_type, count)
         return count
+
 
 class EventConduit(WireProtocol):
     def __init__(self, conn, names, timeout):
@@ -483,6 +502,7 @@ class EventConduit(WireProtocol):
         self.sock.close()
         self.sock = None
 
+
 class Connection(WireProtocol):
     def cursor(self):
         DEBUG_OUTPUT("Connection::cursor()")
@@ -519,7 +539,7 @@ class Connection(WireProtocol):
         self._op_exec_immediate(
             self._transaction.trans_handle, query=query)
         (h, oid, buf) = self._op_response()
-        self._transaction.is_dirty=True
+        self._transaction.is_dirty = True
 
     def __init__(
         self, dsn=None, user=None, password=None, role=None, host=None,
@@ -609,8 +629,7 @@ class Connection(WireProtocol):
         if info_requests[-1] == isc_info_end:
             self._op_info_database(bs(info_requests))
         else:
-            self._op_info_database(
-                        bs(info_requests+type(info_requests)([isc_info_end])))
+            self._op_info_database(bs(info_requests+type(info_requests)([isc_info_end])))
         (h, oid, buf) = self._op_response()
         i = 0
         i_request = 0
@@ -702,7 +721,7 @@ class Connection(WireProtocol):
             mm = (5 * dd - 3) // 153
             dd = 5 * dd - 3 - 153 * mm
             dd = (dd + 5) // 5
-            yyyy = 100 * century + nday;
+            yyyy = 100 * century + nday
             if mm < 10:
                 mm += 3
             else:
@@ -733,8 +752,7 @@ class Connection(WireProtocol):
                 if rs[i][0] == isc_info_error:
                     results[info_requests[i]] = None
                 else:
-                    results[info_requests[i]] = self._db_info_convert_type(
-                                                    info_requests[i], rs[i][1])
+                    results[info_requests[i]] = self._db_info_convert_type(info_requests[i], rs[i][1])
             return results
 
     def trans_info(self, info_requests):
