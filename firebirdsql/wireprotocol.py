@@ -475,27 +475,15 @@ class WireProtocol(object):
             read_length = 0
 
             ln = bytes_to_bint(self.recv_channel(4))
-            data = self.recv_channel(ln)
-            read_length += 4 + ln
-            if read_length % 4:
-                self.recv_channel(4 - read_length % 4)  # padding
-                read_length += 4 - read_length % 4
+            data = self.recv_channel(ln, word_alignment=True)
 
             ln = bytes_to_bint(self.recv_channel(4))
-            self.accept_plugin_name = self.recv_channel(ln)
-            read_length += 4 + ln
-            if read_length % 4:
-                self.recv_channel(4 - read_length % 4)  # padding
-                read_length += 4 - read_length % 4
+            self.accept_plugin_name = self.recv_channel(ln, word_alignment=True)
 
             is_authenticated = bytes_to_bint(self.recv_channel(4))
             read_length += 4
             ln = bytes_to_bint(self.recv_channel(4))
-            self.recv_channel(ln)   # keys
-            read_length += 4 + ln
-            if read_length % 4:
-                self.recv_channel(4 - read_length % 4)  # padding
-                read_length += 4 - read_length % 4
+            self.recv_channel(ln, word_alignment=True)   # keys
 
             if is_authenticated == 0:
                 if self.accept_plugin_name == b'Srp':
@@ -964,7 +952,8 @@ class WireProtocol(object):
         h = bytes_to_bint(self.recv_channel(4))
         self.recv_channel(8)  # garbase
         ln = bytes_to_bint(self.recv_channel(4))
-        ln += ln % 4    # padding
+        if ln % 4:  # padding
+            ln += 4 - ln % 4
         family = bytes_to_bint(self.recv_channel(2))
         port = bytes_to_bint(self.recv_channel(2), u=True)
         b = self.recv_channel(4)
