@@ -127,10 +127,7 @@ class Statement(object):
                 self.handle, self.trans.trans_handle, sql)
             self.plan = None
 
-        if (
-            self.trans.connection.accept_type == ptype_lazy_send
-            and self.trans.connection.lazy_response_count
-        ):
+        if self.trans.connection.lazy_response_count:
             self.trans.connection.lazy_response_count -= 1
             (h, oid, buf) = self.trans.connection._op_response()
             self.handle = h
@@ -152,20 +149,20 @@ class Statement(object):
         DEBUG_OUTPUT("Statement::close()", self.handle)
         if (self.stmt_type == isc_info_sql_stmt_select and self._is_open):
             self.trans.connection._op_free_statement(self.handle, DSQL_close)
-            if self.trans.connection.accept_type != ptype_lazy_send:
-                (h, oid, buf) = self.trans.connection._op_response()
-            else:
+            if self.trans.connection.accept_type == ptype_lazy_send:
                 self.trans.connection.lazy_response_count += 1
+            else:
+                (h, oid, buf) = self.trans.connection._op_response()
         self._is_open = False
 
     def drop(self):
         DEBUG_OUTPUT("Statement::drop()")
         if self.handle != -1:
             self.trans.connection._op_free_statement(self.handle, DSQL_drop)
-            if self.trans.connection.accept_type != ptype_lazy_send:
-                (h, oid, buf) = self.trans.connection._op_response()
-            else:
+            if self.trans.connection.accept_type == ptype_lazy_send:
                 self.trans.connection.lazy_response_count += 1
+            else:
+                (h, oid, buf) = self.trans.connection._op_response()
         self._is_open = False
         self.handle = -1
 
@@ -226,10 +223,10 @@ def _fetch_generator(stmt):
                             v += buf[2:ln+2]
                             buf = buf[ln+2:]
                     connection._op_close_blob(h)
-                    if connection.accept_type != ptype_lazy_send:
-                        (h, oid, buf) = connection._op_response()
-                    else:
+                    if connection.accept_type == ptype_lazy_send:
                         connection.lazy_response_count += 1
+                    else:
+                        (h, oid, buf) = connection._op_response()
                     r[i] = v
                     if x.sqlsubtype == 1:    # TEXT
                         if connection.use_unicode:
