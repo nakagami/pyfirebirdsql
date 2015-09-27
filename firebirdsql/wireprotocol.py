@@ -793,7 +793,7 @@ class WireProtocol(object):
         b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
             b = self.recv_channel(4)
-        while bytes_to_bint(b) == self.op_response:
+        while bytes_to_bint(b) == self.op_response and self.lazy_response_count:
             self.lazy_response_count -= 1
             h, oid, buf = self._parse_op_response()
             b = self.recv_channel(4)
@@ -969,13 +969,12 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_response(self):
-        while self.lazy_response_count:
-            self.lazy_response_count -= 1
-            self._op_response()
         b = self.recv_channel(4)
-        if b is None:
-            return
         while bytes_to_bint(b) == self.op_dummy:
+            b = self.recv_channel(4)
+        while bytes_to_bint(b) == self.op_response and self.lazy_response_count:
+            self.lazy_response_count -= 1
+            h, oid, buf = self._parse_op_response()
             b = self.recv_channel(4)
         if bytes_to_bint(b) != self.op_response:
             raise InternalError
@@ -986,9 +985,10 @@ class WireProtocol(object):
         b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
             b = self.recv_channel(4)
-        if bytes_to_bint(b) == self.op_response:
+        if bytes_to_bint(b) == self.op_response and self.lazy_response_count:
             self.lazy_response_count -= 1
-            return self._parse_op_response()
+            self._parse_op_response()
+            b = self.recv_channel(4)
         if bytes_to_bint(b) == self.op_exit or bytes_to_bint(b) == self.op_exit:
             raise DisconnectByPeer
         if bytes_to_bint(b) != self.op_event:
