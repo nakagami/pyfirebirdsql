@@ -169,5 +169,6 @@ Version 0.9.12
 
    - Enable Srp authentication and disable Wireprotocol for Firebird 3
    - fix a bug about srp authentication
+   - refactoring and flake8
 
 
