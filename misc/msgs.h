@@ -532,7 +532,7 @@ static const struct {
 	{335544828, "Wrong request type in EXECUTE STATEMENT '@1'"},		/* exec_sql_invalid_req */
 	{335544829, "Variable type (position @1) in EXECUTE STATEMENT '@2' INTO does not match returned column type"},		/* exec_sql_invalid_var */
 	{335544830, "Too many recursion levels of EXECUTE STATEMENT"},		/* exec_sql_max_call_exceeded */
-	{335544831, "Access to @1 \"@2\" is denied by server administrator"},		/* conf_access_denied */
+	{335544831, "Use of @1 at location @2 is not allowed by server configuration"},		/* conf_access_denied */
 	{335544832, "Cannot change difference file name while database is in backup mode"},		/* wrong_backup_state */
 	{335544833, "Physical backup is not allowed while Write-Ahead Log is in use"},		/* wal_backup_err */
 	{335544834, "Cursor is not open"},		/* cursor_not_open */
@@ -808,6 +808,8 @@ Data source : @4"},		/* eds_statement */
 	{335545101, "Input parameter mismatch for function @1"},		/* fun_param_mismatch */
 	{335545102, "Error during savepoint backout - transaction invalidated"},		/* savepoint_backout_err */
 	{335545103, "Domain used in the PRIMARY KEY constraint of table @1 must be NOT NULL"},		/* domain_primary_key_notnull */
+	{335545104, "CHARACTER SET @1 cannot be used as a attachment character set"},		/* invalid_attachment_charset */
+	{335545105, "Some database(s) were shutdown when trying to read mapping data"},		/* map_down */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */
@@ -927,7 +929,7 @@ Data source : @4"},		/* eds_statement */
 	{336068872, "Procedure @1 has not been defined on the package body @2"},		/* dyn_procnotdef_package */
 	{336068873, "Function @1 has a signature mismatch on package body @2"},		/* dyn_funcsignat_package */
 	{336068874, "Procedure @1 has a signature mismatch on package body @2"},		/* dyn_procsignat_package */
-	{336068875, "Default values for parameters are allowed only in declaration of packaged procedure @1.@2"},		/* dyn_defvaldecl_package */
+	{336068875, "Default values for parameters are allowed only in declaration of packaged procedure @1.@2"},		/* dyn_defvaldecl_package_proc */
 	{336068877, "Package body @1 already exists"},		/* dyn_package_body_exists */
 	{336068878, "Invalid DDL statement for function @1"},		/* dyn_invalid_ddl_func */
 	{336068879, "Cannot alter new style function @1 with ALTER EXTERNAL FUNCTION. Use ALTER FUNCTION instead."},		/* dyn_newfc_oldsyntax */
@@ -941,6 +943,7 @@ Data source : @4"},		/* eds_statement */
 	{336068895, "System @1 @2 cannot be modified"},		/* dyn_cant_modify_sysobj */
 	{336068896, "INCREMENT BY 0 is an illegal option for sequence @1"},		/* dyn_cant_use_zero_increment */
 	{336068897, "Can't use @1 in FOREIGN KEY constraint"},		/* dyn_cant_use_in_foreignkey */
+	{336068898, "Default values for parameters are allowed only in declaration of packaged function @1.@2"},		/* dyn_defvaldecl_package_func */
 	{336330753, "found unknown switch"},		/* gbak_unknown_switch */
 	{336330754, "page size parameter missing"},		/* gbak_page_size_missing */
 	{336330755, "Page size specified (@1) greater than limit (16384 bytes)"},		/* gbak_page_size_toobig */
@@ -1165,7 +1168,9 @@ Data source : @4"},		/* eds_statement */
 	{336397328, "WITH LOCK cannot be used with aggregates"},		/* dsql_wlock_aggregates */
 	{336397329, "WITH LOCK cannot be used with @1"},		/* dsql_wlock_conflict */
 	{336397330, "Number of arguments (@1) exceeds the maximum (@2) number of EXCEPTION USING arguments"},		/* dsql_max_exception_arguments */
-	{336397331, "String literal with @1 bytes exceeds the maximum length of @2 bytes"},		/* dsql_string_length */
+	{336397331, "String literal with @1 bytes exceeds the maximum length of @2 bytes"},		/* dsql_string_byte_length */
+	{336397332, "String literal with @1 characters exceeds the maximum length of @2 characters for the @3 character set"},		/* dsql_string_char_length */
+	{336397333, "Too many BEGIN...END nesting. Maximum level is @1"},		/* dsql_max_nesting */
 	{336723983, "unable to open database"},		/* gsec_cant_open_db */
 	{336723984, "error in switch specifications"},		/* gsec_switches_error */
 	{336723985, "no operation specified"},		/* gsec_no_op_spec */
