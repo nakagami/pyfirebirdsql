@@ -208,13 +208,15 @@ class WireProtocol(object):
                     sql_code = num
                 num_arg += 1
                 message = message.replace('@' + str(num_arg), str(num))
-            elif (n == isc_arg_string or
-                    n == isc_arg_interpreted
-                    or n == isc_arg_sql_state):
+            elif n == isc_arg_string:
                 nbytes = bytes_to_bint(self.recv_channel(4))
                 s = str(self.recv_channel(nbytes, word_alignment=True))
                 num_arg += 1
                 message = message.replace('@' + str(num_arg), s)
+            elif n == isc_arg_interpreted:
+                nbytes = bytes_to_bint(self.recv_channel(4))
+                s = str(self.recv_channel(nbytes, word_alignment=True))
+                message += s
             elif n == isc_arg_sql_state:
                 nbytes = bytes_to_bint(self.recv_channel(4))
                 s = str(self.recv_channel(nbytes, word_alignment=True))
