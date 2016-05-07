@@ -254,9 +254,7 @@ def client_proof(user, password, salt, A, B, a):
 
     n1 = bytes2long(sha1(N))
     n2 = bytes2long(sha1(g))
-    n1 = pow(n1, n2, N)
-    n2 = bytes2long(sha1(user))
-    M = sha1(n1, n2, salt, A, B, K)
+    M = sha1(pow(n1, n2, N), sha1(user), salt, A, B, K)
     if DEBUG_PRINT:
         print('client_proof:M=', binascii.b2a_hex(M), end='\n')
         print('client_proof:K=', binascii.b2a_hex(K), end='\n')
