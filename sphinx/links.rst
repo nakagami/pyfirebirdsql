@@ -9,8 +9,6 @@ python firebird database adapters
 
    + `pyfirebirdsql <https://github.com/nakagami/pyfirebirdsql>`__
 
-   + `KInterbasdb <http://www.firebirdsql.org/en/python-driver/>`__
-
    + `FDB <http://pypi.python.org/pypi/fdb/>`__
 
 Python + Databases
@@ -41,8 +39,6 @@ Firebird
 Help
 ^^^^
 
-+ `Brief Python DB API Tutorial <http://www.amk.ca/python/writing/DB-
-  API.html>`__
 + `Firebird-Python list <http://groups.yahoo.com/group/firebird-
   python/>`__ (Yahoo Group)
 + `Firebird-Support list <http://groups.yahoo.com/group/firebird-
