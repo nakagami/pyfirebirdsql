@@ -171,4 +171,7 @@ Version 0.9.12
    - fix a bug about srp authentication
    - refactoring and flake8
 
+Version 0.9.13
+==============
 
+   - PEP 479 issue #66
