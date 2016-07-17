@@ -237,50 +237,6 @@ def _fetch_generator(stmt):
     return
 
 
-def _fetch_generator_27(stmt):
-    "_fetch_generator() for python 2.7"
-    DEBUG_OUTPUT("_fetch_generator_27()", stmt.handle, stmt.trans._trans_handle)
-    connection = stmt.trans.connection
-    more_data = True
-    while more_data:
-        if not stmt.is_opened:
-            raise StopIteration()
-        connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda))
-        (rows, more_data) = connection._op_fetch_response(stmt.handle, stmt.xsqlda)
-        for r in rows:
-            # Convert BLOB handle to data
-            for i in range(len(stmt.xsqlda)):
-                x = stmt.xsqlda[i]
-                if x.sqltype == SQL_TYPE_BLOB:
-                    if not r[i]:
-                        continue
-                    connection._op_open_blob(r[i], stmt.trans.trans_handle)
-                    (h, oid, buf) = connection._op_response()
-                    v = bs([])
-                    n = 1   # 0,1:mora data 2:no more data
-                    while n != 2:
-                        connection._op_get_segment(h)
-                        (n, oid, buf) = connection._op_response()
-                        while buf:
-                            ln = bytes_to_int(buf[:2])
-                            v += buf[2:ln+2]
-                            buf = buf[ln+2:]
-                    connection._op_close_blob(h)
-                    if connection.accept_type == ptype_lazy_send:
-                        connection.lazy_response_count += 1
-                    else:
-                        (h, oid, buf) = connection._op_response()
-                    r[i] = v
-                    if x.sqlsubtype == 1:    # TEXT
-                        if connection.use_unicode:
-                            r[i] = connection.bytes_to_ustr(r[i])
-                        else:
-                            r[i] = connection.bytes_to_str(r[i])
-            yield tuple(r)
-    DEBUG_OUTPUT("_fetch_generator_27() StopIteration()")
-    raise StopIteration()
-
-
 class Cursor(object):
     def __init__(self, trans):
         DEBUG_OUTPUT("Cursor::__init__()")
@@ -358,10 +314,7 @@ class Cursor(object):
                     raise OperationalError(e._message, e.gds_codes, e.sql_code)
 
             if stmt.stmt_type == isc_info_sql_stmt_select:
-                if PYTHON_MAJOR_VER == 3:
-                    self._fetch_records = _fetch_generator(stmt)
-                else:
-                    self._fetch_records = _fetch_generator_27(stmt)
+                self._fetch_records = _fetch_generator(stmt)
                 stmt.open()
             else:
                 self._fetch_records = None
