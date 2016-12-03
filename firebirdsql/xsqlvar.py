@@ -93,7 +93,7 @@ class XSQLVAR:
             return self.type_display_length[sqltype]
 
     def precision(self):
-        return None
+        return self.display_length()
 
     def __str__(self):
         s = ','.join([
