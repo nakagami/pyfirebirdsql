@@ -2,7 +2,7 @@
 pyfirebirdsql LICENSE
 ######################
 
-Copyright (c) 2009-2014 Hajime Nakagami<nakagami@gmail.com>.All rights reserverd.
+Copyright (c) 2009-2016 Hajime Nakagami<nakagami@gmail.com>.All rights reserverd.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
