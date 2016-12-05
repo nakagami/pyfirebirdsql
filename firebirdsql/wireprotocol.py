@@ -962,30 +962,6 @@ class WireProtocol(object):
         p.pack_int(0)
         self.sock.send(p.get_buffer())
 
-        b = self.recv_channel(4)
-        while bytes_to_bint(b) == self.op_dummy:
-            b = self.recv_channel(4)
-        if bytes_to_bint(b) != self.op_response:
-            raise InternalError
-
-        h = bytes_to_bint(self.recv_channel(4))
-        self.recv_channel(8)  # garbase
-        ln = bytes_to_bint(self.recv_channel(4))
-        if ln % 4:  # padding
-            ln += 4 - ln % 4
-        family = bytes_to_bint(self.recv_channel(2))
-        port = bytes_to_bint(self.recv_channel(2), u=True)
-        b = self.recv_channel(4)
-        ip_address = '.'.join([str(byte_to_int(c)) for c in b])
-        ln -= 8
-        self.recv_channel(ln)
-
-        (gds_codes, sql_code, message) = self._parse_status_vector()
-        if sql_code or message:
-            raise OperationalError(message, gds_codes, sql_code)
-
-        return (h, port, family, ip_address)
-
     @wire_operation
     def _op_response(self):
         b = self.recv_channel(4)
