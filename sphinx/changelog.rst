@@ -175,3 +175,10 @@ Version 0.9.13
 ==============
 
    - PEP 479 issue #66
+
+Version 1.0.0
+==============
+
+   - refactoring
+   - Add license file.
+   - Documents update.
