@@ -99,6 +99,7 @@ class TestEvent(TestBase):
 
         self._delete()
         result = conduit.wait()
+        print(result)
         # 2 records are deleted
         self.assertEqual(result,  {'event_b': 0, 'event_a': 0, 'event_d': 2})
     
