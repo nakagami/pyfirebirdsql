@@ -486,7 +486,7 @@ class EventConduit(WireProtocol):
         self.connection.last_event_id += 1
         self.event_id = self.connection.last_event_id
 
-        self.connection._op_que_events(self.event_names, 0, 0, self.event_id)
+        self.connection._op_que_events(self.event_names, self.event_id)
         (h, oid, buf) = self.connection._op_response()
 
         (event_id, event_names) = self._wait_for_event(timeout=timeout)
@@ -494,7 +494,7 @@ class EventConduit(WireProtocol):
         self.event_names.update(event_names)
 
     def wait(self, timeout=None):
-        self.connection._op_que_events(self.event_names, 0, 0, self.event_id)
+        self.connection._op_que_events(self.event_names, self.event_id)
         (h, oid, buf) = self.connection._op_response()
 
         r = self._wait_for_event(timeout=timeout)
