@@ -7,6 +7,7 @@ python:
   - "3.5"
   - "3.6"
   - "pypy"
+  - "nightly"
 
 before_install:
   - sudo apt-get update -qq
