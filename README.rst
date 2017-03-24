@@ -33,7 +33,7 @@ Example
    cur.execute("select * from baz")
    for c in cur.fetchall():
        print(c)
-       conn.close()
+   conn.close()
 
 Test with Firebird3
 ----------------------
