@@ -47,7 +47,7 @@ Set firebird.conf like this ::
 
 and execute bellow command:
 
-   $ pytohn setup.py test
+   $ python setup.py test
 
 On the other hand, you can use it with Firebird3 wire protocol 13
 (Srp authentication and wire encryption) with default firebird.conf
