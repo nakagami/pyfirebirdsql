@@ -475,6 +475,7 @@ class WireProtocol(object):
     @wire_operation
     def _op_accept(self):
         b = self.recv_channel(4)
+        error_message = b
         while bytes_to_bint(b) == self.op_dummy:
             b = self.recv_channel(4)
         if bytes_to_bint(b) == self.op_reject:
@@ -544,6 +545,10 @@ class WireProtocol(object):
                 else:   # use later _op_attach() and _op_create()
                     self.auth_data = auth_data
         else:
+            error_message += b
+            b = self.recv_channel(30)
+            error_message +=b
+            print(error_message)
             assert op_code == self.op_accept
 
     @wire_operation
