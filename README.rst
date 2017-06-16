@@ -8,9 +8,6 @@ PyfirebirdSQL
 .. image:: https://img.shields.io/pypi/v/firebirdsql.png
    :target: https://pypi.python.org/pypi/firebirdsql
 
-.. image:: https://img.shields.io/pypi/dm/firebirdsql.png
-   :target: https://pypi.python.org/pypi/firebirdsql
-
 .. image:: https://img.shields.io/pypi/l/firebirdsql.png
 
 firebirdsql package is a set of Firebird RDBMS (http://firebirdsql.org/) bindings for Python (Written in pure Python : no C compiler needed or fbclient library)
