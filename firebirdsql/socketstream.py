@@ -43,12 +43,10 @@ else:
 
 class SocketStream(object):
     def __init__(self, host, port, timeout=None, cloexec=False):
-        self.timeout = timeout
-        self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._sock = socket.create_connection((host, port), timeout)
         if cloexec:
             setcloexec(self._sock)
         self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        self._sock.connect((host, port))
         self.read_translator = None
         self.write_translator = None
 
