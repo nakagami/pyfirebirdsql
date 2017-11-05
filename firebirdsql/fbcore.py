@@ -483,10 +483,17 @@ class EventConduit(WireProtocol):
         self.timeout = timeout
         self.connection._op_connect_request()
         (h, oid, buf) = self.connection._op_response()
-        family = bytes_to_bint(buf[:2])
+        family = buf[:2]
         port = bytes_to_bint(buf[2:4], u=True)
-        ip_address = '.'.join([str(byte_to_int(c)) for c in buf[4:8]])
-
+        if family == b'\x02\x00':     # IPv4
+            ip_address = '.'.join([str(byte_to_int(c)) for c in buf[4:8]])
+        elif family == b'\x0a\x00':  # IPv6
+            address = bytes_to_hex(buf[8:24])
+            if not isinstance(address, str):    # Py3
+                address = address.decode('ascii')
+            ip_address = ':'.join(
+                [address[i: i+4] for i in range(0, len(address), 4)]
+            )
         self.sock = SocketStream(ip_address, port, timeout)
         self.connection.last_event_id += 1
         self.event_id = self.connection.last_event_id
