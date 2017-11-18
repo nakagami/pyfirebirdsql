@@ -47,7 +47,7 @@ Install by pip
 
 ::
 
-  pip instal firebirdsql
+  pip install firebirdsql
 
 .. _`FreeBSD ports collection`:
 
