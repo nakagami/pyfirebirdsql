@@ -39,7 +39,7 @@ try:
 except ImportError:     # Not posix
     crypt = None
 from firebirdsql.fberrmsgs import messages
-from firebirdsql import DisconnectByPeer, InternalError, OperationalError
+from firebirdsql import DisconnectByPeer, InternalError, OperationalError, IntegrityError
 from firebirdsql.consts import *
 from firebirdsql.utils import *
 from firebirdsql import srp
@@ -251,9 +251,12 @@ class WireProtocol(object):
         buf = self.recv_channel(buf_len, word_alignment=True)
 
         (gds_codes, sql_code, message) = self._parse_status_vector()
-        if sql_code or message:
+        if gds_codes.intersection([335544838, 335544879, 335544880, 335544466, 335544665, 335544347]):
+            raise IntegrityError(message, gds_codes, sql_code)
+        elif sql_code == -303 or gds_codes.intersection([335544434]):
+            warnings.warn(message)
+        elif sql_code or message:
             raise OperationalError(message, gds_codes, sql_code)
-
         return (h, oid, buf)
 
     def _parse_op_event(self):
