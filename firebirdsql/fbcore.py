@@ -319,21 +319,8 @@ class Cursor(object):
                 stmt.handle, self.transaction.trans_handle)
             self.transaction.connection._op_execute(
                 stmt.handle, self.transaction.trans_handle, cooked_params)
-            try:
-                (h, oid, buf) = self.transaction.connection._op_response()
-            except OperationalError as e:
-                self._fetch_records = None
-                self._callproc_result = None
-                if e.gds_codes.intersection([335544434, 335544838, 335544879, 335544880, 335544466, 335544665, 335544347]):
-                    raise IntegrityError(e._message, e.gds_codes, e.sql_code)
-                elif e.sql_code == -303:
-                    warnings.warn(e._message)
-                    self._fetch_records = None
-                    self._callproc_result = None
-                    self.transaction.is_dirty = True
-                    return self
-                else:
-                    raise OperationalError(e._message, e.gds_codes, e.sql_code)
+            (h, oid, buf) = self.transaction.connection._op_response()
+
             if stmt.stmt_type == isc_info_sql_stmt_select:
                 self._fetch_records = _fetch_generator(stmt)
                 stmt.open()

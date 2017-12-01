@@ -34,8 +34,11 @@ class Error(Exception):
         self.sql_code = sql_code
         self.args = [message, sql_code]
 
-    def __str__(self):
+    def __repr__(self):
         return "%d:%s" % (self.sql_code, self._message)
+
+    def __str__(self):
+        return self._message
 
 
 class InterfaceError(Error):

@@ -27,7 +27,6 @@
 ##############################################################################
 from __future__ import print_function
 import sys
-import warnings
 import os
 import socket
 import xdrlib
@@ -254,8 +253,8 @@ class WireProtocol(object):
         (gds_codes, sql_code, message) = self._parse_status_vector()
         if gds_codes.intersection([335544434, 335544838, 335544879, 335544880, 335544466, 335544665, 335544347]):
             raise IntegrityError(message, gds_codes, sql_code)
-        elif sql_code == -303:
-            warnings.warn(message)
+        elif gds_codes.intersection([335544321]):
+            raise Warning(message)
         elif sql_code or message:
             raise OperationalError(message, gds_codes, sql_code)
         return (h, oid, buf)
@@ -817,15 +816,10 @@ class WireProtocol(object):
         while bytes_to_bint(b) == self.op_dummy:
             b = self.recv_channel(4)
 
-        # skip op_response
-#        while bytes_to_bint(b) == self.op_response and self.lazy_response_count:
-#            self.lazy_response_count -= 1
-#            h, oid, buf = self._parse_op_response()
-#            b = self.recv_channel(4)
-        while bytes_to_bint(b) == self.op_response:
+        while bytes_to_bint(b) == self.op_response and self.lazy_response_count:
+            self.lazy_response_count -= 1
             h, oid, buf = self._parse_op_response()
             b = self.recv_channel(4)
-        self.lazy_response_count = 0
 
         if bytes_to_bint(b) != self.op_fetch_response:
             raise InternalError
