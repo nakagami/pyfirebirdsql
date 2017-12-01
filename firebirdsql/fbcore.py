@@ -324,10 +324,14 @@ class Cursor(object):
             except OperationalError as e:
                 self._fetch_records = None
                 self._callproc_result = None
-                if e.gds_codes.intersection([335544838, 335544879, 335544880, 335544466, 335544665, 335544347]):
+                if e.gds_codes.intersection([335544434, 335544838, 335544879, 335544880, 335544466, 335544665, 335544347]):
                     raise IntegrityError(e._message, e.gds_codes, e.sql_code)
-                elif e.sql_code == -303 or e.gds_codes.intersection([335544434]):
+                elif e.sql_code == -303:
                     warnings.warn(e._message)
+                    self._fetch_records = None
+                    self._callproc_result = None
+                    self.transaction.is_dirty = True
+                    return self
                 else:
                     raise OperationalError(e._message, e.gds_codes, e.sql_code)
             if stmt.stmt_type == isc_info_sql_stmt_select:
