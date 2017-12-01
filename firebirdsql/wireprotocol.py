@@ -816,10 +816,17 @@ class WireProtocol(object):
         b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
             b = self.recv_channel(4)
-        while bytes_to_bint(b) == self.op_response and self.lazy_response_count:
-            self.lazy_response_count -= 1
+
+        # skip op_response
+#        while bytes_to_bint(b) == self.op_response and self.lazy_response_count:
+#            self.lazy_response_count -= 1
+#            h, oid, buf = self._parse_op_response()
+#            b = self.recv_channel(4)
+        while bytes_to_bint(b) == self.op_response:
             h, oid, buf = self._parse_op_response()
             b = self.recv_channel(4)
+        self.lazy_response_count = 0
+
         if bytes_to_bint(b) != self.op_fetch_response:
             raise InternalError
         b = self.recv_channel(8)

@@ -35,7 +35,7 @@ class Error(Exception):
         self.args = [message, sql_code]
 
     def __str__(self):
-        return self._message
+        return "%d:%s" % (self.sql_code, self._message)
 
 
 class InterfaceError(Error):
