@@ -182,3 +182,8 @@ Version 1.0.0
    - refactoring
    - Add license file.
    - Documents update.
+
+Version 1.0.1
+==============
+
+   - IPv6 support
