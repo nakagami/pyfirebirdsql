@@ -33,6 +33,7 @@ import xdrlib
 import datetime
 import decimal
 import select
+import warnings
 
 try:
     import crypt
@@ -251,11 +252,11 @@ class WireProtocol(object):
         buf = self.recv_channel(buf_len, word_alignment=True)
 
         (gds_codes, sql_code, message) = self._parse_status_vector()
-        if gds_codes.intersection([335544434, 335544838, 335544879, 335544880, 335544466, 335544665, 335544347]):
+        if gds_codes.intersection([335544838, 335544879, 335544880, 335544466, 335544665, 335544347]):
             raise IntegrityError(message, gds_codes, sql_code)
         elif gds_codes.intersection([335544321]):
-            raise Warning(message)
-        elif sql_code or message:
+            raise warnings.warn(message)
+        elif (sql_code or message) and not gds_codes.intersection([335544434]):
             raise OperationalError(message, gds_codes, sql_code)
         return (h, oid, buf)
 
