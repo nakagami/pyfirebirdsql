@@ -252,7 +252,9 @@ class WireProtocol(object):
         buf = self.recv_channel(buf_len, word_alignment=True)
 
         (gds_codes, sql_code, message) = self._parse_status_vector()
-        if gds_codes.intersection([335544838, 335544879, 335544880, 335544466, 335544665, 335544347]):
+        if gds_codes.intersection([
+            335544838, 335544879, 335544880, 335544466, 335544665, 335544347, 335544558
+        ]):
             raise IntegrityError(message, gds_codes, sql_code)
         elif gds_codes.intersection([335544321]):
             raise warnings.warn(message)
