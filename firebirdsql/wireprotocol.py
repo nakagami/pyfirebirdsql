@@ -257,7 +257,7 @@ class WireProtocol(object):
         ]):
             raise IntegrityError(message, gds_codes, sql_code)
         elif gds_codes.intersection([335544321]):
-            raise warnings.warn(message)
+            warnings.warn(message)
         elif (sql_code or message) and not gds_codes.intersection([335544434]):
             raise OperationalError(message, gds_codes, sql_code)
         return (h, oid, buf)

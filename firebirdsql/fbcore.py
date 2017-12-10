@@ -27,7 +27,6 @@
 ##############################################################################
 from __future__ import print_function
 import sys
-import warnings
 import time
 import datetime
 import decimal
