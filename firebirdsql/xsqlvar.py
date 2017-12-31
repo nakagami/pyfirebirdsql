@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2009-2016, Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2009-2018, Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,7 @@ import decimal
 from firebirdsql.consts import *
 from firebirdsql.utils import *
 from firebirdsql.wireprotocol import INFO_SQL_SELECT_DESCRIBE_VARS
+from firebirdsql import decfloat
 
 
 class XSQLVAR:
@@ -47,6 +48,9 @@ class XSQLVAR:
         SQL_TYPE_ARRAY: 8,
         SQL_TYPE_QUAD: 8,
         SQL_TYPE_INT64: 8,
+        SQL_TYPE_DEC64 : 8,
+        SQL_TYPE_DEC128 : 16,
+        SQL_TYPE_DEC_FIXED: 16,
         SQL_TYPE_BOOLEAN: 1,
         }
 
@@ -63,6 +67,9 @@ class XSQLVAR:
         SQL_TYPE_ARRAY: -1,
         SQL_TYPE_QUAD: 20,
         SQL_TYPE_INT64: 20,
+        SQL_TYPE_DEC64: 16,
+        SQL_TYPE_DEC128: 34,
+        SQL_TYPE_DEC_FIXED: 34,
         SQL_TYPE_BOOLEAN: 5,
         }
 
@@ -162,6 +169,12 @@ class XSQLVAR:
             return struct.unpack('!d', raw_value)[0]
         elif self.sqltype == SQL_TYPE_BOOLEAN:
             return True if byte_to_int(raw_value[0]) != 0 else False
+        elif self.sqltype == SQL_TYPE_DEC_FIXED:
+            return decfloat.decimal_fixed_to_decimal(raw_value, self.sqlscale)
+        elif self.sqltype == SQL_TYPE_DEC64:
+            return decfloat.decimal64_to_decimal(raw_value)
+        elif self.sqltype == SQL_TYPE_DEC128:
+            return decfloat.decimal128_to_decimal(raw_value)
         else:
             return raw_value
 
@@ -176,6 +189,8 @@ sqltype2blr = {
     SQL_TYPE_BLOB: [9, 0],
     SQL_TYPE_ARRAY: [9, 0],
     SQL_TYPE_BOOLEAN: [23],
+    SQL_TYPE_DEC64: [24],
+    SQL_TYPE_DEC128: [25],
     }
 
 
@@ -197,6 +212,8 @@ def calc_blr(xsqlda):
             blr += [16, x.sqlscale]
         elif sqltype == SQL_TYPE_QUAD:
             blr += [9, x.sqlscale]
+        elif sqltype == SQL_TYPE_DEC_FIXED:
+            blr += [26, x.sqlscale]
         else:
             blr += sqltype2blr[sqltype]
         blr += [7, 0]   # [blr_short, 0]

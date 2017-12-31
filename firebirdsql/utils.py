@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2014-2016, Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2014-2018, Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -66,20 +66,15 @@ def bytes_to_bint(b, u=False):           # Read as big endian
         fmtmap = {1: 'b', 2: '>h', 4: '>l', 8: '>q'}
     fmt = fmtmap.get(len(b))
     if fmt is None:
-        raise InternalError
+        raise InternalError("Invalid data length")
     return struct.unpack(fmt, b)[0]
 
-
-def bytes_to_int(b, u=False):            # Read as little endian.
-    if u:
-        fmtmap = {1: 'B', 2: '<H', 4: '<L', 8: '<Q'}
-    else:
-        fmtmap = {1: 'b', 2: '<h', 4: '<l', 8: '<q'}
+def bytes_to_int(b):        # Read as little endian.
+    fmtmap = {1: 'b', 2: '<h', 4: '<l', 8: '<q'}
     fmt = fmtmap.get(len(b))
     if fmt is None:
-        raise InternalError
+        raise InternalError("Invalid data length")
     return struct.unpack(fmt, b)[0]
-
 
 def bint_to_bytes(val, nbytes):     # Convert int value to big endian bytes.
     v = abs(val)

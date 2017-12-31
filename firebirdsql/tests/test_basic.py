@@ -366,3 +366,39 @@ class TestBasic(TestBase):
 
         self.connection.close()
 
+    @unittest.skip("FB 4")
+    def test_decfloat(self):
+        """
+        For FB4
+        """
+        cur = self.connection.cursor()
+        cur.execute('''
+            CREATE TABLE dec_test (
+                d DECIMAL(20, 2),
+                df64 DECFLOAT(16),
+                df128 DECFLOAT(34),
+                s varchar(32))
+        ''')
+        cur.close()
+        self.connection.commit()
+
+        cur = self.connection.cursor()
+        cur.execute("insert into dec_test(d, df64, df128, s) values (0.0, 0.0, 0.0, '0.0')")
+        cur.execute("insert into dec_test(d, df64, df128, s) values (1.0, 1.0, 1.0, '1.0')")
+        cur.execute("insert into dec_test(d, df64, df128, s) values (20.0, 20.0, 20.0, '20.0')")
+        cur.execute("insert into dec_test(d, df64, df128, s) values (-1.0, -1.0, -1.0, '-1.0')")
+        cur.execute("insert into dec_test(d, df64, df128, s) values (-20.0, -20.0, -20.0, '-20.0')")
+        cur.close()
+
+        cur = self.connection.cursor()
+        cur.execute("select * from dec_test")
+        for d, df64, df128, s in cur.fetchall():
+            val = Decimal(s)
+            self.assertEqual(d, val)
+            self.assertEqual(df64, val)
+            self.assertEqual(df128, val)
+        cur.close()
+
+
+        self.connection.close()
+
