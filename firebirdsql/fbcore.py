@@ -299,7 +299,9 @@ class Cursor(object):
         prepared_statement = PreparedStatement(self, query, explain_plan=explain_plan)
         return prepared_statement
 
-    def execute(self, query, params=[]):
+    def execute(self, query, params=None):
+        if params is None:
+            params = []
         DEBUG_OUTPUT("Cursor::execute()", query, params)
         self.transaction.check_trans_handle()
         stmt = self._get_stmt(query)
@@ -330,7 +332,9 @@ class Cursor(object):
 
         return self
 
-    def callproc(self, procname, params=[]):
+    def callproc(self, procname, params=None):
+        if params is None:
+            params = []
         DEBUG_OUTPUT("Cursor::callproc()")
         query = 'EXECUTE PROCEDURE ' + procname + ' ' + ','.join('?'*len(params))
         self.execute(query, params)
