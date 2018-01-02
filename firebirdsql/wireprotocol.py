@@ -724,7 +724,9 @@ class WireProtocol(object):
         self.sock.send(p.get_buffer())
 
     @wire_operation
-    def _op_prepare_statement(self, stmt_handle, trans_handle, query, option_items=bs([])):
+    def _op_prepare_statement(self, stmt_handle, trans_handle, query, option_items=None):
+        if option_items is None:
+            option_items=bs([])
         desc_items = option_items + bs([isc_info_sql_stmt_type])+INFO_SQL_SELECT_DESCRIBE_VARS
         p = xdrlib.Packer()
         p.pack_int(self.op_prepare_statement)
