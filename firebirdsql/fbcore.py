@@ -523,11 +523,11 @@ class EventConduit(WireProtocol):
 
 
 class Connection(WireProtocol):
-    def cursor(self):
+    def cursor(self, factory=Cursor):
         DEBUG_OUTPUT("Connection::cursor()")
         if self._transaction is None:
             self.begin()
-        return Cursor(self._transaction)
+        return factory(self._transaction)
 
     def begin(self):
         DEBUG_OUTPUT("Connection::begin()")
