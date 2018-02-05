@@ -38,6 +38,7 @@ setup(
     name='firebirdsql',
     version=firebirdsql.__version__,
     description='Firebird RDBMS bindings for python.',
+    long_description=open('README.rst').read(),
     url='http://github.com/nakagami/pyfirebirdsql/',
     classifiers=classifiers,
     keywords=['Firebird'],
