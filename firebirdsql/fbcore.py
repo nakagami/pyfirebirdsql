@@ -283,11 +283,8 @@ class Cursor(object):
             stmt = query.stmt
         else:
             if self.stmt:
-                stmt = self.stmt
-                if stmt.is_opened:
-                    stmt.close()
-            else:
-                self.stmt = stmt = Statement(self.transaction)
+                self.stmt.drop()
+            stmt = self.stmt = Statement(self.transaction)
             stmt.prepare(query)
         return stmt
 
