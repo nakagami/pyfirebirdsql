@@ -158,7 +158,8 @@ class Statement(object):
             self.plan = self.trans.connection.bytes_to_str(buf[i+3:i+3+l])
             i += 3 + l
         self.stmt_type, self.xsqlda = parse_xsqlda(buf[i:], self.trans.connection, self.handle)
-        self._is_open = True
+        if self.stmt_type == isc_info_sql_stmt_select:
+            self._is_open = True
 
     def close(self):
         DEBUG_OUTPUT("Statement::close()", self.handle)
