@@ -825,7 +825,7 @@ class Transaction(object):
             tpb += bs([isc_tpb_autocommit])
         self.connection._op_transaction(tpb)
         (h, oid, buf) = self.connection._op_response()
-        self._trans_handle = h
+        self._trans_handle = None if h < 0 else h
         DEBUG_OUTPUT(
             "Transaction::_begin()", self._trans_handle, self.connection)
         self.is_dirty = False
