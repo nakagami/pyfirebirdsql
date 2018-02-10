@@ -158,9 +158,6 @@ class Statement(object):
             self.plan = self.trans.connection.bytes_to_str(buf[i+3:i+3+l])
             i += 3 + l
         self.stmt_type, self.xsqlda = parse_xsqlda(buf[i:], self.trans.connection, self.handle)
-
-    def open(self):
-        DEBUG_OUTPUT("Statement::open()")
         self._is_open = True
 
     def close(self):
@@ -174,7 +171,7 @@ class Statement(object):
         self._is_open = False
 
     def drop(self):
-        DEBUG_OUTPUT("Statement::drop()")
+        DEBUG_OUTPUT("Statement::drop()", self.handle)
         if self.handle != -1:
             self.trans.connection._op_free_statement(self.handle, DSQL_drop)
             if self.trans.connection.accept_type == ptype_lazy_send:
@@ -288,9 +285,9 @@ class Cursor(object):
         else:
             if self.stmt:
                 self.stmt.close()
+                stmt = self.stmt
             else:
-                self.stmt = Statement(self.transaction)
-            stmt = self.stmt
+                self.stmt = stmt = Statement(self.transaction)
             stmt.prepare(query)
         return stmt
 
@@ -324,7 +321,6 @@ class Cursor(object):
 
             if stmt.stmt_type == isc_info_sql_stmt_select:
                 self._fetch_records = _fetch_generator(stmt)
-                stmt.open()
             else:
                 self._fetch_records = None
             self._callproc_result = None
