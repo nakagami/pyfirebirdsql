@@ -283,8 +283,9 @@ class Cursor(object):
         if isinstance(query, PreparedStatement):
             stmt = query.stmt
         else:
-            if self.stmt and self.stmt.stmt_type == isc_info_sql_stmt_select:
-                self.stmt.close()
+            if self.stmt:
+                self.stmt.drop()
+                self.stmt = None
             if self.stmt is None:
                 self.stmt = Statement(self.transaction)
             stmt = self.stmt
