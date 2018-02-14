@@ -126,7 +126,10 @@ def _decimal128_to_sign_digits_exponent(b):
     sign = 1 if ord(b[0]) & 0x80 else 0
     combination_field = ((ord(b[0]) & 0x7f) << 10) + (ord(b[1]) << 2) + (ord(b[2]) >> 6)
     if (combination_field & 0b11111000000000000) == 0b11111000000000000:
-        return Decimal('NaN')
+        if sign:
+            return Decimal('-NaN')
+        else:
+            return Decimal('NaN')
     elif (combination_field & 0b11111000000000000) == 0b11110000000000000:
         if sign:
             return Decimal('-Infinity')
