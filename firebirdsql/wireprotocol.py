@@ -999,6 +999,8 @@ class WireProtocol(object):
         if bytes_to_bint(b) == self.op_exit or bytes_to_bint(b) == self.op_exit:
             raise DisconnectByPeer
         if bytes_to_bint(b) != self.op_event:
+            if bytes_to_bint(b) == self.op_response:
+                self._parse_op_response()
             raise InternalError
         return self._parse_op_event()
 
@@ -1008,6 +1010,8 @@ class WireProtocol(object):
         while bytes_to_bint(b) == self.op_dummy:
             b = self.recv_channel(4)
         if bytes_to_bint(b) != self.op_sql_response:
+            if bytes_to_bint(b) == self.op_response:
+                self._parse_op_response()
             raise InternalError
 
         b = self.recv_channel(4)
