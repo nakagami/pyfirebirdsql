@@ -554,7 +554,7 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_attach(self):
-        dpb = bs([1])
+        dpb = bs([isc_dpb_version1])
         s = self.str_to_bytes(self.charset)
         dpb += bs([isc_dpb_lc_ctype, len(s)]) + s
         s = self.str_to_bytes(self.user)
@@ -570,6 +570,9 @@ class WireProtocol(object):
         if self.role:
             s = self.str_to_bytes(self.role)
             dpb += bs([isc_dpb_sql_role_name, len(s)]) + s
+        dpb += bs([isc_dpb_process_id, 4]) + int_to_bytes(os.getpid(), 4)
+        s = self.str_to_bytes(sys.argv[0])
+        dpb += bs([isc_dpb_process_name, len(s)]) + s
         if self.auth_data:
             s = bytes_to_hex(self.auth_data)
             dpb += bs([isc_dpb_specific_auth_data, len(s)]) + s
