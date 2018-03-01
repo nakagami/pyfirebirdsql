@@ -187,3 +187,12 @@ Version 1.0.1
 ==============
 
    - IPv6 support
+
+Version 1.1.0
+==============
+
+   - Firebird4 DecFloat support
+   - Modify statement allocate, drop treatment
+   - Add factory parameter in cursor() method.
+   - Add client process pid and name to op_attach https://github.com/nakagami/firebirdsql/pull/60
+
