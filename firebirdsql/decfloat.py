@@ -163,7 +163,10 @@ def _decimal128_to_sign_digits_exponent(b):
 
 
 def decimal_fixed_to_decimal(b, scale):
-    sign, digits, _ = _decimal128_to_sign_digits_exponent(b)
+    v = _decimal128_to_sign_digits_exponent(b)
+    if isinstance(v, Decimal):
+        return v
+    sign, digits, _ = v
     return Decimal((sign, Decimal(digits).as_tuple()[1], scale))
 
 
@@ -208,5 +211,8 @@ def decimal64_to_decimal(b):
 
 def decimal128_to_decimal(b):
     "decimal128 bytes to Decimal"
-    sign, digits, exponent = _decimal128_to_sign_digits_exponent(b)
+    v = _decimal128_to_sign_digits_exponent(b)
+    if isinstance(v, Decimal):
+        return v
+    sign, digits, exponent = v
     return Decimal((sign, Decimal(digits).as_tuple()[1], exponent))

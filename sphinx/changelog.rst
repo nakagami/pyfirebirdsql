@@ -196,3 +196,7 @@ Version 1.1.0
    - Add factory parameter in cursor() method.
    - Add client process pid and name to op_attach https://github.com/nakagami/firebirdsql/pull/60
 
+Version 1.1.0
+==============
+
+   - fix parse decfloat value
