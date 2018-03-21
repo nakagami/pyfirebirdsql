@@ -820,17 +820,17 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_fetch_response(self, stmt_handle, xsqlda):
-        b = self.recv_channel(4)
-        while bytes_to_bint(b) == self.op_dummy:
-            b = self.recv_channel(4)
+        op_code = bytes_to_bint(self.recv_channel(4))
+        while op_code == self.op_dummy:
+            op_code = bytes_to_bint(self.recv_channel(4))
 
-        while bytes_to_bint(b) == self.op_response and self.lazy_response_count:
+        while op_code == self.op_response and self.lazy_response_count:
             self.lazy_response_count -= 1
             h, oid, buf = self._parse_op_response()
-            b = self.recv_channel(4)
+            op_code = bytes_to_bint(self.recv_channel(4))
 
-        if bytes_to_bint(b) != self.op_fetch_response:
-            if bytes_to_bint(b) == self.op_response:
+        if op_code != self.op_fetch_response:
+            if op_code == self.op_response:
                 self._parse_op_response()
             raise InternalError
         b = self.recv_channel(8)
@@ -871,7 +871,7 @@ class WireProtocol(object):
                     r[i] = x.value(raw_value)
             rows.append(r)
             b = self.recv_channel(12)
-            # op = bytes_to_bint(b[:4])
+            op_code = bytes_to_bint(b[:4])
             status = bytes_to_bint(b[4:8])
             count = bytes_to_bint(b[8:])
         return rows, status != 100
