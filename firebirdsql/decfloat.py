@@ -177,12 +177,13 @@ def decimal64_to_decimal(b):
     combination_field = ord(b[0] >> 2) & 0b11111
     exponent = ((ord(b[0]) & 0b11) << 6) + ((ord(b[1]) >> 2) & 0b111111)
     dpd_bits = bytes2long(b) & 0b11111111111111111111111111111111111111111111111111
+
     if combination_field == 0b11111:
         if sign:
             return Decimal('-NaN')
         else:
             return Decimal('NaN')
-    elif (combination_field & 0b1110) == 0b1110:
+    elif combination_field == 0b11110:
         if sign:
             return Decimal('-Infinity')
         else:
