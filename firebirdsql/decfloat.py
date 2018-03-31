@@ -174,7 +174,7 @@ def decimal64_to_decimal(b):
     "decimal64 bytes to Decimal"
     # https://en.wikipedia.org/wiki/Decimal64_floating-point_format
     sign = 1 if ord(b[0]) & 0x80 else 0
-    combination_field = ord(b[0] >> 2) & 0b11111
+    combination_field = (ord(b[0]) >> 2) & 0b11111
     exponent = ((ord(b[0]) & 0b11) << 6) + ((ord(b[1]) >> 2) & 0b111111)
     dpd_bits = bytes2long(b) & 0b11111111111111111111111111111111111111111111111111
 
