@@ -54,6 +54,9 @@ def bytes_to_hex(b):
     """
     convert bytes to hex string
     """
+    if isinstance(b, str):
+        b = bytes(b, 'utf-8')
+
     s = binascii.b2a_hex(b)
 
     return s
