@@ -66,14 +66,14 @@ def bytes_to_bint(b, u=False):           # Read as big endian
         fmtmap = {1: 'b', 2: '>h', 4: '>l', 8: '>q'}
     fmt = fmtmap.get(len(b))
     if fmt is None:
-        raise InternalError("Invalid data length")
+        raise InternalError
     return struct.unpack(fmt, b)[0]
 
 def bytes_to_int(b):        # Read as little endian.
     fmtmap = {1: 'b', 2: '<h', 4: '<l', 8: '<q'}
     fmt = fmtmap.get(len(b))
     if fmt is None:
-        raise InternalError("Invalid data length")
+        raise InternalError
     return struct.unpack(fmt, b)[0]
 
 def bint_to_bytes(val, nbytes):     # Convert int value to big endian bytes.

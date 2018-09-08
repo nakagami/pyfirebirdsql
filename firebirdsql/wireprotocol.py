@@ -34,6 +34,7 @@ import datetime
 import decimal
 import select
 import warnings
+import hashlib
 
 try:
     import crypt
@@ -391,7 +392,7 @@ class WireProtocol(object):
             b += bs([k, len(v)+1, i]) + v
             return b
 
-        auth_plugin_list = ('Srp', 'Legacy_Auth')
+        auth_plugin_list = ('Srp256', 'Srp', 'Legacy_Auth')
         # get and calculate CNCT_xxxx values
         if sys.platform == 'win32':
             user = os.environ['USERNAME']
@@ -400,7 +401,7 @@ class WireProtocol(object):
             user = os.environ.get('USER', '')
             hostname = socket.gethostname()
 
-        if auth_plugin_name == 'Srp':
+        if auth_plugin_name in ('Srp256', 'Srp'):
             self.client_public_key, self.client_private_key = srp.client_seed()
             specific_data = bytes_to_hex(srp.long2bytes(self.client_public_key))
         elif auth_plugin_name == 'Legacy_Auth':
@@ -511,7 +512,15 @@ class WireProtocol(object):
             self.recv_channel(ln, word_alignment=True)   # keys
 
             if is_authenticated == 0:
-                if self.accept_plugin_name == b'Srp':
+                if self.accept_plugin_name in (b'Srp256',  b'Srp'):
+                    if self.accept_plugin_name == b'Srp256':
+                        hash_algo = hashlib.sha256
+                    elif self.accept_plugin_name == b'Srp':
+                        hash_algo = hashlib.sha1
+                    else:
+                        raise OperationalError(
+                            'Unknown auth plugin %s' % (self.accept_plugin_name)
+                        )
                     ln = bytes_to_int(data[:2])
                     server_salt = data[2:ln+2]
                     server_public_key = srp.bytes2long(
@@ -522,7 +531,8 @@ class WireProtocol(object):
                         server_salt,
                         self.client_public_key,
                         server_public_key,
-                        self.client_private_key)
+                        self.client_private_key,
+                        hash_algo)
                 elif self.accept_plugin_name == b'Legacy_Auth':
                     auth_data = get_crypt(self.password)
                 else:

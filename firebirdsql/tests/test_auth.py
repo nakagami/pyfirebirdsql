@@ -1,4 +1,5 @@
 import unittest
+import hashlib
 from firebirdsql import srp
 from firebirdsql.tests.base import *
 
@@ -6,6 +7,7 @@ class TestAuth(TestBase):
     def test_srp_key_exchange(self):
         user = b'sysdba'
         password = b'masterkey'
+        hash_algo = hashlib.sha256
     
         # Client send A to Server
         A, a = srp.client_seed()
@@ -18,7 +20,7 @@ class TestAuth(TestBase):
         serverKey = srp.server_session(user, password, salt, A, B, b)
 
         # Client send M to Server
-        M, clientKey = srp.client_proof(user, password, salt, A, B, a)
+        M, clientKey = srp.client_proof(user, password, salt, A, B, a, hash_algo)
     
         # Client and Server has same key
         self.assertEqual(clientKey, serverKey)
