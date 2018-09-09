@@ -327,7 +327,6 @@ if __name__ == '__main__':
     # Both
     user = b'SYSDBA'
     password = b'masterkey'
-    hash_algo = hashlib.sha256
 
     # Client send A to Server
     A, a = client_seed()
@@ -340,7 +339,10 @@ if __name__ == '__main__':
     serverKey = server_session(user, password, salt, A, B, b)
 
     # Client send M to Server
-    M, clientKey = client_proof(user, password, salt, A, B, a, hash_algo)
-
+    M, clientKey = client_proof(user, password, salt, A, B, a, hashlib.sha1)
     # Client and Server has same key
+    assert clientKey == serverKey
+
+    # sha256
+    M, clientKey = client_proof(user, password, salt, A, B, a, hashlib.sha256)
     assert clientKey == serverKey
