@@ -996,7 +996,9 @@ class WireProtocol(object):
             self.lazy_response_count -= 1
             h, oid, buf = self._parse_op_response()
             b = self.recv_channel(4)
-        if bytes_to_bint(b) != self.op_response:
+        if bytes_to_bint(b) == self.op_cont_auth:
+            raise OperationalError('Unauthorized')
+        elif bytes_to_bint(b) != self.op_response:
             raise InternalError
         return self._parse_op_response()
 
