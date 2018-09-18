@@ -78,7 +78,7 @@ INFO_SQL_SELECT_DESCRIBE_VARS = bs([
 
 def get_crypt(plain):
     if crypt is None:
-        return None
+        return ''
     return crypt.crypt(plain, '9z')[2:]
 
 
@@ -534,7 +534,7 @@ class WireProtocol(object):
                         self.client_private_key,
                         hash_algo)
                 elif self.accept_plugin_name == b'Legacy_Auth':
-                    auth_data = get_crypt(self.password)
+                    auth_data = self.str_to_bytes(get_crypt(self.password))
                 else:
                     raise OperationalError('Unauthorized')
                 if self.wire_crypt:
