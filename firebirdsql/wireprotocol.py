@@ -415,7 +415,7 @@ class WireProtocol(object):
 
         # set CNCT_xxxx values
         r = b''
-        r += pack_cnct_param(CNCT_login, self.str_to_bytes(self.user.upper()))
+        r += pack_cnct_param(CNCT_login, self.str_to_bytes(self.user))
         r += pack_cnct_param(CNCT_plugin_name, self.str_to_bytes(self.plugin_name))
         r += pack_cnct_param(CNCT_plugin_list, self.plugin_list)
         r += pack_cnct_param(CNCT_specific_data, specific_data)
@@ -521,12 +521,21 @@ class WireProtocol(object):
                         raise OperationalError(
                             'Unknown auth plugin %s' % (self.accept_plugin_name)
                         )
+                    user = self.user
+                    if len(user) > 2 and user[0] == user[-1] == '"':
+                        user = user[1:-1]
+                    else:
+                        user = user.upper()
+
+                    if len(data) == 0:
+                        raise OperationalError('Unauthorized')
                     ln = bytes_to_int(data[:2])
                     server_salt = data[2:ln+2]
                     server_public_key = srp.bytes2long(
                         hex_to_bytes(data[4+ln:]))
+
                     auth_data, session_key = srp.client_proof(
-                        self.str_to_bytes(self.user.upper()),
+                        self.str_to_bytes(user),
                         self.str_to_bytes(self.password),
                         server_salt,
                         self.client_public_key,
