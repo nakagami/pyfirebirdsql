@@ -524,6 +524,7 @@ class WireProtocol(object):
                     user = self.user
                     if len(user) > 2 and user[0] == user[-1] == '"':
                         user = user[1:-1]
+                        user = user.replace('""','"')
                     else:
                         user = user.upper()
 
