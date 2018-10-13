@@ -932,13 +932,15 @@ class WireProtocol(object):
         self.sock.send(p.get_buffer())
 
     @wire_operation
-    def _op_put_segment(self, blob_handle, b):
+    def _op_put_segment(self, blob_handle, seg_data):
+        ln = len(seg_data)
         p = xdrlib.Packer()
         p.pack_int(self.op_put_segment)
         p.pack_int(blob_handle)
-        p.pack_int(len(b))
-        p.pack_int(len(b))
-        self.sock.send(p.get_buffer() + b)
+        p.pack_int(ln)
+        p.pack_int(ln)
+        pad_length = (4-ln) & 3
+        self.sock.send(p.get_buffer() + seg_data + bs([0])*pad_length)
 
     @wire_operation
     def _op_batch_segments(self, blob_handle, seg_data):

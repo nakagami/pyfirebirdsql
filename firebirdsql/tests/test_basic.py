@@ -297,6 +297,14 @@ class TestBasic(TestBase):
             "insert into foo(a, b) values (1, 'B')")
 
     def test_blob(self):
+        def _test_length(cur, ln):
+            cur.execute("update blob0_test set b = ?",  (b'x' * ln, ))
+            cur.execute("select * from blob0_test")
+            self.assertEqual(cur.fetchone()[0], b'x' * ln)
+            cur.execute("update blob1_test set b = ?",  ('x' * ln, ))
+            cur.execute("select * from blob1_test")
+            self.assertEqual(cur.fetchone()[0], 'x' * ln)
+
         cur = self.connection.cursor()
         cur.execute("CREATE TABLE blob0_test (b BLOB SUB_TYPE 0)") # BINARY
         cur.execute("CREATE TABLE blob1_test (b BLOB SUB_TYPE 1)") # TEXT
@@ -313,21 +321,13 @@ class TestBasic(TestBase):
         cur.execute("select * from blob1_test")
         self.assertEqual(cur.fetchone()[0], 'abc')
 
-        cur.execute("update blob0_test set b = ?",  (b'x' * MAX_CHAR_LENGTH, ))
-        cur.execute("select * from blob0_test")
-        self.assertEqual(cur.fetchone()[0], b'x' * MAX_CHAR_LENGTH)
-
-        cur.execute("update blob1_test set b = ?",  ('x' * MAX_CHAR_LENGTH, ))
-        cur.execute("select * from blob1_test")
-        self.assertEqual(cur.fetchone()[0], 'x' * MAX_CHAR_LENGTH) 
-
-        cur.execute("update blob0_test set b = ?",  (b'x' * (MAX_CHAR_LENGTH+1), ))
-        cur.execute("select * from blob0_test")
-        self.assertEqual(cur.fetchone()[0], b'x' * (MAX_CHAR_LENGTH+1))
-
-        cur.execute("update blob1_test set b = ?",  ('x' * (MAX_CHAR_LENGTH+1), ))
-        cur.execute("select * from blob1_test")
-        self.assertEqual(cur.fetchone()[0], 'x' * (MAX_CHAR_LENGTH+1))
+        _test_length(cur, 1)
+        _test_length(cur, 2)
+        _test_length(cur, 3)
+        _test_length(cur, MAX_CHAR_LENGTH)
+        _test_length(cur, MAX_CHAR_LENGTH+1)
+        _test_length(cur, MAX_CHAR_LENGTH+2)
+        _test_length(cur, MAX_CHAR_LENGTH+3)
 
         self.connection.close()
 
