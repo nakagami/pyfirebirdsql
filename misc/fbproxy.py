@@ -1636,8 +1636,8 @@ def op_connect(sock):
     i = 0
     specific_data = b''
     while i < len(uid):
-        name = CNCT_names[ord(uid[i])]
-        n = ord(uid[i+1])
+        name = CNCT_names[_ord(uid[i])]
+        n = _ord(uid[i+1])
         v = uid[i+2:i+2+n]
         if name == 'CNCT_specific_data':
             specific_data += v[1:]
