@@ -200,3 +200,11 @@ Version 1.1.0
 ==============
 
    - fix parse decfloat value
+
+Version 1.1.1
+==============
+
+   - fix parse decfloat value
+   - Srp256 support
+   - fix issue #74 #75 #76 #77
+
