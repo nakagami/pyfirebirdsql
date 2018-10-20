@@ -466,7 +466,7 @@ class WireProtocol(object):
             s = self.str_to_bytes(self.role)
             dpb += bs([isc_dpb_sql_role_name, len(s)]) + s
         if self.auth_data:
-            s = self.str_to_bytes(bytes_to_hex(self.auth_data))
+            s = bytes_to_hex(self.auth_data)
             dpb += bs([isc_dpb_specific_auth_data, len(s)]) + s
         dpb += bs([isc_dpb_sql_dialect, 4]) + int_to_bytes(3, 4)
         dpb += bs([isc_dpb_force_write, 4]) + int_to_bytes(1, 4)
