@@ -41,6 +41,10 @@ class Error(Exception):
         return self._message
 
 
+class InterfaceError(Error):
+    pass
+
+
 class DatabaseError(Error):
     pass
 
