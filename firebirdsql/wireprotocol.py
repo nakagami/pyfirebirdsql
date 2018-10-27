@@ -852,7 +852,7 @@ class WireProtocol(object):
         if op_code != self.op_fetch_response:
             if op_code == self.op_response:
                 self._parse_op_response()
-            raise InternalError
+            raise InternalError("op_fetch_response:op_code = %d" % (op_code,))
         b = self.recv_channel(8)
         status = bytes_to_bint(b[:4])
         count = bytes_to_bint(b[4:8])
@@ -1004,14 +1004,15 @@ class WireProtocol(object):
         b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
             b = self.recv_channel(4)
-        while bytes_to_bint(b) == self.op_response and self.lazy_response_count:
+        op_code = bytes_to_bint(b)
+        while op_code == self.op_response and self.lazy_response_count:
             self.lazy_response_count -= 1
             h, oid, buf = self._parse_op_response()
             b = self.recv_channel(4)
-        if bytes_to_bint(b) == self.op_cont_auth:
+        if op_code == self.op_cont_auth:
             raise OperationalError('Unauthorized')
-        elif bytes_to_bint(b) != self.op_response:
-            raise InternalError
+        elif op_code != self.op_response:
+            raise InternalError("_op_response:op_code = %d" % (op_code,))
         return self._parse_op_response()
 
     @wire_operation
@@ -1019,16 +1020,17 @@ class WireProtocol(object):
         b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
             b = self.recv_channel(4)
-        if bytes_to_bint(b) == self.op_response and self.lazy_response_count:
+        op_code = bytes_to_bint(b)
+        if op_code == self.op_response and self.lazy_response_count:
             self.lazy_response_count -= 1
             self._parse_op_response()
             b = self.recv_channel(4)
-        if bytes_to_bint(b) == self.op_exit or bytes_to_bint(b) == self.op_exit:
+        if op_code == self.op_exit or bytes_to_bint(b) == self.op_exit:
             raise DisconnectByPeer
-        if bytes_to_bint(b) != self.op_event:
-            if bytes_to_bint(b) == self.op_response:
+        if op_code != self.op_event:
+            if op_code == self.op_response:
                 self._parse_op_response()
-            raise InternalError
+            raise InternalError("_op_event:op_code = %d" % (op_code,))
         return self._parse_op_event()
 
     @wire_operation
@@ -1036,10 +1038,11 @@ class WireProtocol(object):
         b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
             b = self.recv_channel(4)
-        if bytes_to_bint(b) != self.op_sql_response:
-            if bytes_to_bint(b) == self.op_response:
+        op_code = bytes_to_bint(b)
+        if op_code != self.op_sql_response:
+            if op_code == self.op_response:
                 self._parse_op_response()
-            raise InternalError
+            raise InternalError("_op_sql_response:op_code = %d" % (op_code,))
 
         b = self.recv_channel(4)
         count = bytes_to_bint(b[:4])
@@ -1088,12 +1091,12 @@ class WireProtocol(object):
             b4 = self.recv_channel(4)
             if b4 is None:
                 return None
-            op = bytes_to_bint(b4)
-            if op == self.op_dummy:
+            op_code = bytes_to_bint(b4)
+            if op_code == self.op_dummy:
                 pass
-            elif op == self.op_exit or op == self.op_disconnect:
+            elif op_code == self.op_exit or op_code == self.op_disconnect:
                 break
-            elif op == self.op_event:
+            elif op_code == self.op_event:
                 bytes_to_int(self.recv_channel(4))  # db_handle
                 ln = bytes_to_bint(self.recv_channel(4))
                 b = self.recv_channel(ln, word_alignment=True)
@@ -1110,6 +1113,6 @@ class WireProtocol(object):
                 event_id = bytes_to_bint(self.recv_channel(4))
                 break
             else:
-                raise InternalError
+                raise InternalError("_wait_for_event:op_code = %d" % (op_code,))
 
         return (event_id, event_names)
