@@ -399,6 +399,4 @@ class TestBasic(TestBase):
             self.assertEqual(df128, val)
         cur.close()
 
-
         self.connection.close()
-

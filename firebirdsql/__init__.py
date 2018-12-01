@@ -26,6 +26,7 @@
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
 
+from firebirdsql.tz_utils import load_timezone_ids
 
 class Error(Exception):
     def __init__(self, message, gds_codes=set(), sql_code=0):
@@ -92,9 +93,11 @@ import firebirdsql.services
 
 
 def connect(**kwargs):
-    return Connection(**kwargs)
+    conn = Connection(**kwargs)
+    load_timezone_ids(conn)
+    return conn
 
 
 def create_database(**kwargs):
     kwargs['create_new'] = True
-    return Connection(**kwargs)
+    return connect(**kwargs)

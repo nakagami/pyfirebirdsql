@@ -161,6 +161,8 @@ SQL_TYPE_QUAD = 550
 SQL_TYPE_TIME = 560
 SQL_TYPE_DATE = 570
 SQL_TYPE_INT64 = 580
+SQL_TYPE_TIMESTAMP_TZ = 32754
+SQL_TYPE_TIME_TZ = 32756
 SQL_TYPE_DEC_FIXED = 32758
 SQL_TYPE_DEC64 = 32760
 SQL_TYPE_DEC128 = 32762
@@ -266,6 +268,9 @@ isc_dpb_auth_plugin_list = 85
 isc_dpb_auth_plugin_name = 86
 isc_dpb_config = 87
 isc_dpb_nolinger = 88
+isc_dpb_reset_icu = 89
+isc_dpb_map_attach = 90
+isc_dpb_session_time_zone = 91
 
 # Transaction Parameter Block parameter
 isc_tpb_version1 = 1

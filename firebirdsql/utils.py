@@ -76,6 +76,13 @@ def bytes_to_int(b):        # Read as little endian.
         raise InternalError("Invalid bytes length:%d" % (len(b), ))
     return struct.unpack(fmt, b)[0]
 
+def bytes_to_uint(b):        # Read as little endian unsigned int.
+    fmtmap = {1: 'B', 2: '<H', 4: '<L', 8: '<Q'}
+    fmt = fmtmap.get(len(b))
+    if fmt is None:
+        raise InternalError("Invalid bytes length:%d" % (len(b), ))
+    return struct.unpack(fmt, b)[0]
+
 def bint_to_bytes(val, nbytes):     # Convert int value to big endian bytes.
     v = abs(val)
     b = []

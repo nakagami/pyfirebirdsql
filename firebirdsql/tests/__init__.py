@@ -1,4 +1,5 @@
 from firebirdsql.tests.test_basic import *
+from firebirdsql.tests.test_time_zone import *
 from firebirdsql.tests.test_proc import *
 from firebirdsql.tests.test_issues import *
 from firebirdsql.tests.test_backup import *
