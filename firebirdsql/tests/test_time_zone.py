@@ -9,7 +9,7 @@ from firebirdsql.tests.base import *
 from firebirdsql.consts import *
 
 
-class TestBasic(TestBase):
+class TestTimeZone(TestBase):
     def setUp(self):
         self.database=tempfile.mktemp()
         self.connection = firebirdsql.create_database(
