@@ -23,7 +23,7 @@ class TestBasic(TestBase):
                 page_size=self.page_size,
                 tz_name='Asia/Tokyo')
 
-    #@unittest.skip("FB 4")
+    @unittest.skip("FB 4")
     def test_time_zone(self):
         """
         For FB4
