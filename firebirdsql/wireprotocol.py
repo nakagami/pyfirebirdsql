@@ -469,7 +469,8 @@ class WireProtocol(object):
             s = bytes_to_hex(self.auth_data)
             dpb += bs([isc_dpb_specific_auth_data, len(s)]) + s
         if self.tz_name:
-            dpb += bs([isc_dpb_session_time_zone, len(self.tz_name)]) + self.tz_name
+            s = self.str_to_bytes(self.tz_name)
+            dpb += bs([isc_dpb_session_time_zone, len(s)]) + s
         dpb += bs([isc_dpb_sql_dialect, 4]) + int_to_bytes(3, 4)
         dpb += bs([isc_dpb_force_write, 4]) + int_to_bytes(1, 4)
         dpb += bs([isc_dpb_overwrite, 4]) + int_to_bytes(1, 4)
