@@ -3,7 +3,8 @@ import sys
 import unittest
 import tempfile
 import datetime
-from decimal import Decimal
+import pytz
+
 import firebirdsql
 from firebirdsql.tests.base import *
 from firebirdsql.consts import *
@@ -23,7 +24,6 @@ class TestTimeZone(TestBase):
                 page_size=self.page_size,
                 tz_name='Asia/Tokyo')
 
-    @unittest.skip("FB 4")
     def test_time_zone(self):
         """
         For FB4
@@ -31,22 +31,29 @@ class TestTimeZone(TestBase):
         cur = self.connection.cursor()
         cur.execute('''
             CREATE TABLE tz_test (
-                a INTEGER NOT NULL,
-                b TIME WITH TIME ZONE DEFAULT '12:34:56',
-                c TIMESTAMP WITH TIME ZONE DEFAULT '1967-08-11 23:45:01',
-                PRIMARY KEY (a)
+                id INTEGER NOT NULL,
+                t TIME WITH TIME ZONE DEFAULT '12:34:56',
+                ts TIMESTAMP WITH TIME ZONE DEFAULT '1967-08-11 23:45:01',
+                PRIMARY KEY (id)
             )
         ''')
         cur.close()
         self.connection.commit()
 
         cur = self.connection.cursor()
-        cur.execute("insert into tz_test (a) values (1)")
+        cur.execute("insert into tz_test (id) values (1)")
+
+        tzinfo = pytz.timezone('Asia/Tokyo')
+        cur.execute(
+            "insert into tz_test (id, t, ts) values (2, ?, ?)", [
+                datetime.time(12, 34, 56, tzinfo=tzinfo),
+                datetime.datetime(1967, 8, 11, 23, 45, 1, tzinfo=tzinfo)
+            ]
+        )
 
         cur = self.connection.cursor()
-        cur.execute("select * from tz_test")
-        for a, b, c in cur.fetchall():
-            pass
-
+        cur.execute("select t, ts from tz_test order by id")
+        r1, r2 = cur.fetchall()
+        self.assertEqual(r1, r2)
         self.connection.close()
 

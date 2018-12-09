@@ -45,6 +45,7 @@ from firebirdsql import DisconnectByPeer, InternalError, OperationalError, Integ
 from firebirdsql.consts import *
 from firebirdsql.utils import *
 from firebirdsql import srp
+from firebirdsql import tz_utils
 try:
     from Crypto.Cipher import ARC4
 except ImportError:
@@ -99,6 +100,35 @@ def convert_time(v):  # Convert datetime.time to BLR format time
 
 def convert_timestamp(v):   # Convert datetime.datetime to BLR format timestamp
     return convert_date(v.date()) + convert_time(v.time())
+
+
+def convert_time_tz(v):  # Convert datetime.time to BLR format time_tz
+    import pytz
+    # TODO: fix timezone
+    t = datetime.date.today()
+    native = datetime.datetime(
+        t.year, t.month, t.day, v.hour, v.minute, v.second, v.microsecond
+    )
+    aware = v.tzinfo.localize(native)
+    v2 = aware.astimezone(pytz.utc)
+
+    t = (v2.hour*3600 + v2.minute*60 + v2.second) * 10000 + v2.microsecond // 100
+    r = bint_to_bytes(t, 4)
+    r += bint_to_bytes(tz_utils.get_timezone_id(v.tzinfo.zone), 4)
+    return r
+
+
+def convert_timestamp_tz(v):   # Convert datetime.datetime to BLR format timestamp_tz
+    import pytz
+    native = datetime.datetime(
+        v.year, v.month, v.day, v.hour, v.minute, v.second, v.microsecond
+    )
+    aware = v.tzinfo.localize(native)
+    v2 = aware.astimezone(pytz.utc)
+
+    r = convert_date(v2.date()) + convert_time(v2.time())
+    r += bint_to_bytes(tz_utils.get_timezone_id(v.tzinfo.zone), 4)
+    return r
 
 
 def wire_operation(fn):
@@ -354,11 +384,19 @@ class WireProtocol(object):
                 v = convert_date(p)
                 blr += bs([12])
             elif t == datetime.time:
-                v = convert_time(p)
-                blr += bs([13])
+                if p.tzinfo:
+                    v = convert_time_tz(p)
+                    blr += bs([28])
+                else:
+                    v = convert_time(p)
+                    blr += bs([13])
             elif t == datetime.datetime:
-                v = convert_timestamp(p)
-                blr += bs([35])
+                if p.tzinfo:
+                    v = convert_timestamp_tz(p)
+                    blr += bs([29])
+                else:
+                    v = convert_timestamp(p)
+                    blr += bs([35])
             elif t == bool:
                 v = bs([1, 0, 0, 0]) if p else bs([0, 0, 0, 0])
                 blr += bs([23])
