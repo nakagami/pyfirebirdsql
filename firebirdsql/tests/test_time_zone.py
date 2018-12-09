@@ -22,7 +22,7 @@ class TestTimeZone(TestBase):
                 user=self.user,
                 password=self.password,
                 page_size=self.page_size,
-                tz_name='Asia/Tokyo')
+                time_zone='Asia/Tokyo')
 
     def test_time_zone(self):
         """
@@ -43,7 +43,7 @@ class TestTimeZone(TestBase):
         cur = self.connection.cursor()
         cur.execute("insert into tz_test (id) values (1)")
 
-        tzinfo = pytz.timezone('Asia/Tokyo')
+        tzinfo = pytz.timezone('Asia/Seoul')
         cur.execute(
             "insert into tz_test (id, t, ts) values (2, ?, ?)", [
                 datetime.time(12, 34, 56, tzinfo=tzinfo),
