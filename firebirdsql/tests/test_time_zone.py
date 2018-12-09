@@ -51,9 +51,18 @@ class TestTimeZone(TestBase):
             ]
         )
 
+        tzinfo = pytz.timezone('UTC')
+        cur.execute(
+            "insert into tz_test (id, t, ts) values (3, ?, ?)", [
+                datetime.time(3, 34, 56, tzinfo=tzinfo),
+                datetime.datetime(1967, 8, 11, 14, 45, 1, tzinfo=tzinfo)
+            ]
+        )
+
         cur = self.connection.cursor()
         cur.execute("select t, ts from tz_test order by id")
-        r1, r2 = cur.fetchall()
+        r1, r2, r3 = cur.fetchall()
         self.assertEqual(r1, r2)
+        self.assertEqual(r2, r3)
         self.connection.close()
 
