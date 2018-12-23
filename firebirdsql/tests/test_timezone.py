@@ -22,9 +22,9 @@ class TestTimeZone(TestBase):
                 user=self.user,
                 password=self.password,
                 page_size=self.page_size,
-                time_zone='Asia/Tokyo')
+                timezone='Asia/Tokyo')
 
-    def test_time_zone(self):
+    def test_timezone(self):
         """
         For FB4
         """

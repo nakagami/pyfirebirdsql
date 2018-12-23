@@ -7,7 +7,7 @@ from firebirdsql.tests.test_event import *
 from firebirdsql.tests.test_arc4 import *
 from firebirdsql.tests.test_auth import *
 from firebirdsql.tests.test_utils import *
-# from firebirdsql.tests.test_time_zone import *
+# from firebirdsql.tests.test_timezone import *
 
 if __name__ == "__main__":
     import unittest
