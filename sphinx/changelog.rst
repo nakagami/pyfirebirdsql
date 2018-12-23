@@ -208,3 +208,8 @@ Version 1.1.1
    - Srp256 support
    - fix issue #74 #75 #76 #77
 
+Version 1.1.2
+==============
+
+   - refactoring
+   - Add experimental Firebird4 timezone support
