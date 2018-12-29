@@ -121,7 +121,7 @@ def calc_significand(prefix, dpd_bits, num_bits):
     return v
 
 
-def _decimal128_to_sign_digits_exponent(b):
+def decimal128_to_sign_digits_exponent(b):
     # https://en.wikipedia.org/wiki/Decimal128_floating-point_format
     sign = 1 if ord(b[0]) & 0x80 else 0
     combination_field = ((ord(b[0]) & 0x7f) << 10) + (ord(b[1]) << 2) + (ord(b[2]) >> 6)
@@ -163,7 +163,7 @@ def _decimal128_to_sign_digits_exponent(b):
 
 
 def decimal_fixed_to_decimal(b, scale):
-    v = _decimal128_to_sign_digits_exponent(b)
+    v = decimal128_to_sign_digits_exponent(b)
     if isinstance(v, Decimal):
         return v
     sign, digits, _ = v
@@ -215,7 +215,7 @@ def decimal64_to_decimal(b):
 
 def decimal128_to_decimal(b):
     "decimal128 bytes to Decimal"
-    v = _decimal128_to_sign_digits_exponent(b)
+    v = decimal128_to_sign_digits_exponent(b)
     if isinstance(v, Decimal):
         return v
     sign, digits, exponent = v
