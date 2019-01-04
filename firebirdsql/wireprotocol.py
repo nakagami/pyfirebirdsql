@@ -540,7 +540,6 @@ class WireProtocol(object):
         self.lazy_response_count = 0
 
         if op_code == self.op_cond_accept or op_code == self.op_accept_data:
-            read_length = 0
 
             ln = bytes_to_bint(self.recv_channel(4))
             data = self.recv_channel(ln, word_alignment=True)
@@ -549,7 +548,6 @@ class WireProtocol(object):
             self.accept_plugin_name = self.recv_channel(ln, word_alignment=True)
 
             is_authenticated = bytes_to_bint(self.recv_channel(4))
-            read_length += 4
             ln = bytes_to_bint(self.recv_channel(4))
             self.recv_channel(ln, word_alignment=True)   # keys
 
