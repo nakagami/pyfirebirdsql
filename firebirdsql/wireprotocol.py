@@ -521,7 +521,7 @@ class WireProtocol(object):
         self.sock.send(p.get_buffer())
 
     @wire_operation
-    def _op_accept(self):
+    def _parse_connect_response(self):
         # want and treat op_accept or op_cond_accept or op_accept_data
         b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:

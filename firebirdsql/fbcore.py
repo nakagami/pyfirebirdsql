@@ -614,7 +614,7 @@ class Connection(WireProtocol):
 
         self._op_connect(auth_plugin_name, wire_crypt)
         try:
-            self._op_accept()
+            self._parse_connect_response()
         except OperationalError as e:
             self.sock.close()
             self.sock = None
