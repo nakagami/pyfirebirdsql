@@ -522,6 +522,7 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_accept(self):
+        # want and treat op_accept or op_cond_accept or op_accept_data
         b = self.recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
             b = self.recv_channel(4)
