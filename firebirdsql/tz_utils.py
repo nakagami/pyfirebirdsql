@@ -1,10 +1,12 @@
-
+try_load_timezone_ids = False
 timezone_name_by_id = {}
 timezone_id_by_name = {}
 
 def load_timezone_ids(connection):
-    if timezone_name_by_id:
+    global try_load_timezone_ids
+    if try_load_timezone_ids:
         return
+    try_load_timezone_ids = True
     cur = connection.cursor()
     cur.execute("select count(*) from rdb$relations where rdb$relation_name='RDB$TIME_ZONES' and rdb$system_flag=1")
     if cur.fetchone()[0]:
