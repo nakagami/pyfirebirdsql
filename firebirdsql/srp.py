@@ -100,8 +100,8 @@ DEBUG = False
 DEBUG_PRINT = False
 
 
-if DEBUG:
-    DEBUG_PRIVATE_KEY = 0x60975527035CF2AD1989806F0407210BC81EDC04E2762A56AFD529DDDA2D4393
+DEBUG_PRIVATE_KEY = 0x60975527035CF2AD1989806F0407210BC81EDC04E2762A56AFD529DDDA2D4393
+DEBUG_SALT = binascii.unhexlify('02E268803000000079A478A700000002D1A6979000000026E1601C000000054F')
 
 PYTHON_MAJOR_VER = sys.version_info[0]
 
@@ -178,16 +178,14 @@ def getUserHash(salt, user, password):
     return rc
 
 
-def client_seed():
+def client_seed(a=random.randrange(0, 1 << SRP_KEY_SIZE)):
     """
         A: Client public key
         a: Client private key
     """
-    N, g, k = get_prime()
     if DEBUG:
         a = DEBUG_PRIVATE_KEY
-    else:
-        a = random.randrange(0, 1 << SRP_KEY_SIZE)
+    N, g, k = get_prime()
     A = pow(g, a, N)
     if DEBUG_PRINT:
         print('a=', binascii.b2a_hex(long2bytes(a)), end='\n')
@@ -195,7 +193,7 @@ def client_seed():
     return A, a
 
 
-def server_seed(v):
+def server_seed(v, b=random.randrange(0, 1 << SRP_KEY_SIZE)):
     """
         B: Server public key
         b: Server private key
@@ -203,8 +201,6 @@ def server_seed(v):
     N, g, k = get_prime()
     if DEBUG:
         b = DEBUG_PRIVATE_KEY
-    else:
-        b = random.randrange(0, 1 << SRP_KEY_SIZE)
     gb = pow(g, b, N)
     kv = (k * v) % N
     B = (kv + gb) % N
@@ -301,13 +297,14 @@ def client_proof(user, password, salt, A, B, a, hash_algo):
 
 
 def get_salt():
-    if DEBUG:
-        salt = binascii.unhexlify('02E268803000000079A478A700000002D1A6979000000026E1601C000000054F')
+    if PYTHON_MAJOR_VER == 3:
+        salt = bytes([random.randrange(0, 256) for x in range(SRP_SALT_SIZE)])
     else:
-        if PYTHON_MAJOR_VER == 3:
-            salt = bytes([random.randrange(0, 256) for x in range(SRP_SALT_SIZE)])
-        else:
-            salt = b''.join([chr(random.randrange(0, 256)) for x in range(SRP_SALT_SIZE)])
+        salt = b''.join([chr(random.randrange(0, 256)) for x in range(SRP_SALT_SIZE)])
+
+    if DEBUG:
+        salt = DEBUG_SALT
+
     if DEBUG_PRINT:
         print('salt=', binascii.b2a_hex(salt), end='\n')
     return salt
@@ -323,6 +320,7 @@ if __name__ == '__main__':
     """
     A, a, B, b are long.
     salt, M are bytes.
+    client_key, serverKey are bytes.
     """
     # Both
     user = b'SYSDBA'
@@ -338,9 +336,8 @@ if __name__ == '__main__':
 
     serverKey = server_session(user, password, salt, A, B, b)
 
-    # Client send M to Server
+    # sha1
     M, clientKey = client_proof(user, password, salt, A, B, a, hashlib.sha1)
-    # Client and Server has same key
     assert clientKey == serverKey
 
     # sha256

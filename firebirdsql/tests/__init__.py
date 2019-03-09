@@ -6,6 +6,7 @@ from firebirdsql.tests.test_services import *
 from firebirdsql.tests.test_event import *
 from firebirdsql.tests.test_arc4 import *
 from firebirdsql.tests.test_auth import *
+from firebirdsql.tests.test_srp import *
 from firebirdsql.tests.test_utils import *
 # from firebirdsql.tests.test_timezone import *
 
