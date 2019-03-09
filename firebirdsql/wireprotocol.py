@@ -521,6 +521,16 @@ class WireProtocol(object):
         self.sock.send(p.get_buffer())
 
     @wire_operation
+    def _op_cont_auth(self, auth_data, keys):
+        p = xdrlib.Packer()
+        p.pack_int(self.op_cont_auth)
+        p.pack_string(bytes_to_hex(auth_data))
+        p.pack_bytes(self.accept_plugin_name)
+        p.pack_bytes(self.plugin_list)
+        p.pack_bytes(keys)
+        self.sock.send(p.get_buffer())
+
+    @wire_operation
     def _parse_connect_response(self):
         # want and treat op_accept or op_cond_accept or op_accept_data
         b = self.recv_channel(4)
@@ -540,7 +550,6 @@ class WireProtocol(object):
         self.lazy_response_count = 0
 
         if op_code == self.op_cond_accept or op_code == self.op_accept_data:
-
             ln = bytes_to_bint(self.recv_channel(4))
             data = self.recv_channel(ln, word_alignment=True)
 
@@ -592,17 +601,11 @@ class WireProtocol(object):
                 auth_data = b''
                 session_key = b''
 
-            if self.wire_crypt and session_key:
-                # send op_cont_auth
-                p = xdrlib.Packer()
-                p.pack_int(self.op_cont_auth)
-                p.pack_string(bytes_to_hex(auth_data))
-                p.pack_bytes(self.accept_plugin_name)
-                p.pack_bytes(self.plugin_list)
-                p.pack_bytes(b'')
-                self.sock.send(p.get_buffer())
+            if op_code == self.op_cond_accept:
+                self._op_cont_auth(auth_data, b'')
                 (h, oid, buf) = self._op_response()
 
+            if self.wire_crypt and session_key:
                 # op_crypt: plugin[Arc4] key[Symmetric]
                 p = xdrlib.Packer()
                 p.pack_int(self.op_crypt)
