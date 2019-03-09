@@ -585,30 +585,35 @@ class WireProtocol(object):
                         hash_algo)
                 elif self.accept_plugin_name == b'Legacy_Auth':
                     auth_data = self.str_to_bytes(get_crypt(self.password))
+                    session_key = b''
                 else:
                     raise OperationalError('Unauthorized')
-                if self.wire_crypt:
-                    # send op_cont_auth
-                    p = xdrlib.Packer()
-                    p.pack_int(self.op_cont_auth)
-                    p.pack_string(bytes_to_hex(auth_data))
-                    p.pack_bytes(self.accept_plugin_name)
-                    p.pack_bytes(self.plugin_list)
-                    p.pack_bytes(b'')
-                    self.sock.send(p.get_buffer())
-                    (h, oid, buf) = self._op_response()
+            else:
+                auth_data = b''
+                session_key = b''
 
-                    # op_crypt: plugin[Arc4] key[Symmetric]
-                    p = xdrlib.Packer()
-                    p.pack_int(self.op_crypt)
-                    p.pack_string(b'Arc4')
-                    p.pack_string(b'Symmetric')
-                    self.sock.send(p.get_buffer())
-                    self.sock.set_translator(
-                        ARC4.new(session_key), ARC4.new(session_key))
-                    (h, oid, buf) = self._op_response()
-                else:   # use later _op_attach() and _op_create()
-                    self.auth_data = auth_data
+            if self.wire_crypt and session_key:
+                # send op_cont_auth
+                p = xdrlib.Packer()
+                p.pack_int(self.op_cont_auth)
+                p.pack_string(bytes_to_hex(auth_data))
+                p.pack_bytes(self.accept_plugin_name)
+                p.pack_bytes(self.plugin_list)
+                p.pack_bytes(b'')
+                self.sock.send(p.get_buffer())
+                (h, oid, buf) = self._op_response()
+
+                # op_crypt: plugin[Arc4] key[Symmetric]
+                p = xdrlib.Packer()
+                p.pack_int(self.op_crypt)
+                p.pack_string(b'Arc4')
+                p.pack_string(b'Symmetric')
+                self.sock.send(p.get_buffer())
+                self.sock.set_translator(
+                    ARC4.new(session_key), ARC4.new(session_key))
+                (h, oid, buf) = self._op_response()
+            else:   # use later _op_attach() and _op_create()
+                self.auth_data = auth_data
         else:
             assert op_code == self.op_accept
 
