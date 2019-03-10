@@ -521,12 +521,12 @@ class WireProtocol(object):
         self.sock.send(p.get_buffer())
 
     @wire_operation
-    def _op_cont_auth(self, auth_data, keys):
+    def _op_cont_auth(self, auth_data, auth_plugin_name, auth_plugin_list, keys):
         p = xdrlib.Packer()
         p.pack_int(self.op_cont_auth)
         p.pack_string(bytes_to_hex(auth_data))
-        p.pack_bytes(self.accept_plugin_name)
-        p.pack_bytes(self.plugin_list)
+        p.pack_bytes(auth_plugin_name)
+        p.pack_bytes(auth_plugin_list)
         p.pack_bytes(keys)
         self.sock.send(p.get_buffer())
 
@@ -602,7 +602,12 @@ class WireProtocol(object):
                 session_key = b''
 
             if op_code == self.op_cond_accept:
-                self._op_cont_auth(auth_data, b'')
+                self._op_cont_auth(
+                    auth_data,
+                    self.accept_plugin_name,
+                    self.plugin_list,
+                    b''
+                )
                 (h, oid, buf) = self._op_response()
 
             if self.wire_crypt and session_key:
