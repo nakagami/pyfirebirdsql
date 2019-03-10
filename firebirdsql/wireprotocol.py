@@ -575,7 +575,25 @@ class WireProtocol(object):
                         user = user.upper()
 
                     if len(data) == 0:
-                        raise OperationalError('Unauthorized')
+                        # send op_cont_auth
+                        self._op_cont_auth(
+                            srp.long2bytes(self.client_public_key),
+                            self.accept_plugin_name,
+                            self.plugin_list,
+                            b''
+                        )
+                        # parse op_cont_auth
+                        b = self.recv_channel(4)
+                        assert bytes_to_bint(b) == self.op_cont_auth
+                        ln = bytes_to_bint(self.recv_channel(4))
+                        data = self.recv_channel(ln, word_alignment=True)
+                        ln = bytes_to_bint(self.recv_channel(4))
+                        plugin_name = self.recv_channel(ln, word_alignment=True)
+                        ln = bytes_to_bint(self.recv_channel(4))
+                        plugin_list = self.recv_channel(ln, word_alignment=True)
+                        ln = bytes_to_bint(self.recv_channel(4))
+                        keys = self.recv_channel(ln, word_alignment=True)
+
                     ln = bytes_to_int(data[:2])
                     server_salt = data[2:ln+2]
                     server_public_key = srp.bytes2long(
