@@ -562,14 +562,11 @@ class WireProtocol(object):
 
             if is_authenticated == 0:
                 if self.accept_plugin_name in (b'Srp256',  b'Srp'):
-                    if self.accept_plugin_name == b'Srp256':
-                        hash_algo = hashlib.sha256
-                    elif self.accept_plugin_name == b'Srp':
-                        hash_algo = hashlib.sha1
-                    else:
-                        raise OperationalError(
-                            'Unknown auth plugin %s' % (self.accept_plugin_name)
-                        )
+                    hash_algo = {
+                        b'Srp256': hashlib.sha256,
+                        b'Srp': hashlib.sha1,
+                    }[self.accept_plugin_name]
+
                     user = self.user
                     if len(user) > 2 and user[0] == user[-1] == '"':
                         user = user[1:-1]
@@ -596,7 +593,9 @@ class WireProtocol(object):
                     auth_data = self.str_to_bytes(get_crypt(self.password))
                     session_key = b''
                 else:
-                    raise OperationalError('Unauthorized')
+                    raise OperationalError(
+                        'Unknown auth plugin %s' % (self.accept_plugin_name)
+                    )
             else:
                 auth_data = b''
                 session_key = b''
