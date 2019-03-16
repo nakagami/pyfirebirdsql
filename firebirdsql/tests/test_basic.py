@@ -339,11 +339,11 @@ class TestBasic(TestBase):
 
         self.connection.close()
 
-    @unittest.skip("FB 3")
     def test_boolean(self):
-        """
-        For FB3
-        """
+        if self.server_version[0] < 3:
+            self.connection.close()
+            return
+
         cur = self.connection.cursor()
         cur.execute("CREATE TABLE boolean_test (b BOOLEAN)")
         cur.close()
@@ -365,20 +365,16 @@ class TestBasic(TestBase):
         cur.close()
 
         cur = self.connection.cursor()
-        prep = cur.prep("select * from boolean_test where b = ?")
-        cur.execute(prep, (True, ))
+        cur.execute("select * from boolean_test where b = ?", (True,))
         self.assertEqual(cur.fetchone()[0], True)
-        cur.execute(prep, (False, ))
 
+        cur.execute("select * from boolean_test where b = ?", (False, ))
         self.assertEqual(cur.fetchone()[0], False)
         cur.close()
 
         self.connection.close()
 
     def test_decfloat(self):
-        """
-        For FB4
-        """
         if self.server_version[0] < 4:
             self.connection.close()
             return

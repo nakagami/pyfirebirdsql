@@ -163,7 +163,7 @@ class Statement(object):
 
     def close(self):
         DEBUG_OUTPUT("Statement::close()", self.handle)
-        if (self.stmt_type == isc_info_sql_stmt_select and self._is_open):
+        if self.stmt_type == isc_info_sql_stmt_select and self._is_open:
             self.trans.connection._op_free_statement(self.handle, DSQL_close)
             if self.trans.connection.accept_type == ptype_lazy_send:
                 self.trans.connection.lazy_response_count += 1
@@ -173,7 +173,7 @@ class Statement(object):
 
     def drop(self):
         DEBUG_OUTPUT("Statement::drop()", self.handle)
-        if self.handle != -1:
+        if self.handle != -1 and self._is_open:
             self.trans.connection._op_free_statement(self.handle, DSQL_drop)
             if self.trans.connection.accept_type == ptype_lazy_send:
                 self.trans.connection.lazy_response_count += 1
@@ -209,6 +209,9 @@ class PreparedStatement(object):
         elif attrname == 'n_output_params':
             return len(self.stmt.xsqlda)
         raise AttributeError
+
+    def close(self):
+        self.stmt.close()
 
 
 def _fetch_generator(stmt):
