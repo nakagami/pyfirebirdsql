@@ -570,7 +570,7 @@ class Connection(WireProtocol):
     ):
         DEBUG_OUTPUT("Connection::__init__()")
         if auth_plugin_name is None:
-            auth_plugin_name = 'Srp'
+            auth_plugin_name = 'Srp256'
         WireProtocol.__init__(self)
         self.sock = None
         self.db_handle = None
