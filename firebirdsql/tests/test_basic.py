@@ -13,6 +13,14 @@ class TestBasic(TestBase):
     def setUp(self):
         TestBase.setUp(self)
         cur = self.connection.cursor()
+
+        cur.execute(
+            "SELECT rdb$get_context('SYSTEM', 'ENGINE_VERSION') from rdb$database"
+        )
+        self.server_version = tuple(
+            [int(n) for n in cur.fetchone()[0].split('.')]
+        )
+
         cur.execute('''
             CREATE TABLE foo (
                 a INTEGER NOT NULL,
@@ -361,16 +369,20 @@ class TestBasic(TestBase):
         cur.execute(prep, (True, ))
         self.assertEqual(cur.fetchone()[0], True)
         cur.execute(prep, (False, ))
+
         self.assertEqual(cur.fetchone()[0], False)
         cur.close()
 
         self.connection.close()
 
-    @unittest.skip("FB 4")
     def test_decfloat(self):
         """
         For FB4
         """
+        if self.server_version[0] < 4:
+            self.connection.close()
+            return
+
         cur = self.connection.cursor()
         cur.execute('''
             CREATE TABLE dec_test (
