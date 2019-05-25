@@ -478,7 +478,7 @@ class WireProtocol(object):
         p.pack_int(self.op_attach)
         p.pack_int(3)   # CONNECT_VERSION
         p.pack_int(1)   # arch_generic
-        p.pack_string(self.str_to_bytes(self.filename if self.filename else ''))
+        p.pack_bytes(self.str_to_bytes(self.filename if self.filename else ''))
 
         p.pack_int(len(protocols))
         p.pack_bytes(self.uid(auth_plugin_name, wire_crypt))
@@ -516,7 +516,7 @@ class WireProtocol(object):
         p = xdrlib.Packer()
         p.pack_int(self.op_create)
         p.pack_int(0)                       # Database Object ID
-        p.pack_string(self.str_to_bytes(self.filename))
+        p.pack_bytes(self.str_to_bytes(self.filename))
         p.pack_bytes(dpb)
         self.sock.send(p.get_buffer())
 
@@ -524,7 +524,7 @@ class WireProtocol(object):
     def _op_cont_auth(self, auth_data, auth_plugin_name, auth_plugin_list, keys):
         p = xdrlib.Packer()
         p.pack_int(self.op_cont_auth)
-        p.pack_string(bytes_to_hex(auth_data))
+        p.pack_bytes(bytes_to_hex(auth_data))
         p.pack_bytes(auth_plugin_name)
         p.pack_bytes(auth_plugin_list)
         p.pack_bytes(keys)
@@ -631,8 +631,8 @@ class WireProtocol(object):
                 # op_crypt: plugin[Arc4] key[Symmetric]
                 p = xdrlib.Packer()
                 p.pack_int(self.op_crypt)
-                p.pack_string(b'Arc4')
-                p.pack_string(b'Symmetric')
+                p.pack_bytes(b'Arc4')
+                p.pack_bytes(b'Symmetric')
                 self.sock.send(p.get_buffer())
                 self.sock.set_translator(
                     ARC4.new(session_key), ARC4.new(session_key))
@@ -672,7 +672,7 @@ class WireProtocol(object):
         p = xdrlib.Packer()
         p.pack_int(self.op_attach)
         p.pack_int(0)                       # Database Object ID
-        p.pack_string(self.str_to_bytes(self.filename))
+        p.pack_bytes(self.str_to_bytes(self.filename))
         p.pack_bytes(dpb)
         self.sock.send(p.get_buffer())
 
@@ -705,7 +705,7 @@ class WireProtocol(object):
         p = xdrlib.Packer()
         p.pack_int(self.op_service_attach)
         p.pack_int(0)
-        p.pack_string(self.str_to_bytes('service_mgr'))
+        p.pack_bytes(b'service_mgr')
         p.pack_bytes(spb)
         self.sock.send(p.get_buffer())
 
@@ -829,7 +829,7 @@ class WireProtocol(object):
         p.pack_int(trans_handle)
         p.pack_int(stmt_handle)
         p.pack_int(3)   # dialect = 3
-        p.pack_string(self.str_to_bytes(query))
+        p.pack_bytes(self.str_to_bytes(query))
         p.pack_bytes(desc_items)
         p.pack_int(self.buffer_length)
         self.sock.send(p.get_buffer())
@@ -896,7 +896,7 @@ class WireProtocol(object):
         p.pack_int(trans_handle)
         p.pack_int(self.db_handle)
         p.pack_int(3)   # dialect = 3
-        p.pack_string(self.str_to_bytes(query))
+        p.pack_bytes(self.str_to_bytes(query))
         p.pack_bytes(desc_items)
         p.pack_int(self.buffer_length)
         self.sock.send(p.get_buffer())
