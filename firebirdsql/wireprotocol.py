@@ -29,7 +29,6 @@ from __future__ import print_function
 import sys
 import os
 import socket
-import xdrlib
 import datetime
 import decimal
 import select
@@ -46,6 +45,7 @@ from firebirdsql.consts import *
 from firebirdsql.utils import *
 from firebirdsql import srp
 from firebirdsql import tz_utils
+from firebirdsql import xdrlib
 try:
     from Crypto.Cipher import ARC4
 except ImportError:
