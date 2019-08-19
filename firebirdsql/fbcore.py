@@ -785,7 +785,8 @@ class Connection(WireProtocol):
         DEBUG_OUTPUT("Connection::close()")
         if self.sock is None:
             return
-        if self.db_handle:
+        if self.db_handle is not None:
+            self.rollback()
             if self.is_services:
                 self._op_service_detach()
             else:
@@ -868,8 +869,6 @@ class Transaction(object):
             self.connection._op_exec_immediate(
                 self._trans_handle, query='ROLLBACK TO '+savepoint)
             (h, oid, buf) = self.connection._op_response()
-            return
-        if not self.is_dirty:
             return
         if retaining:
             self.connection._op_rollback_retaining(self._trans_handle)
