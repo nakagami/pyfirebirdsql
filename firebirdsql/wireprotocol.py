@@ -32,7 +32,6 @@ import socket
 import datetime
 import decimal
 import select
-import warnings
 import hashlib
 
 try:
@@ -288,7 +287,7 @@ class WireProtocol(object):
         ]):
             raise IntegrityError(message, gds_codes, sql_code)
         elif gds_codes.intersection([335544321]):
-            warnings.warn(message)
+            raise DataError(message, gds_codes, sql_code)
         elif (sql_code or message) and not gds_codes.intersection([335544434]):
             raise OperationalError(message, gds_codes, sql_code)
         return (h, oid, buf)
