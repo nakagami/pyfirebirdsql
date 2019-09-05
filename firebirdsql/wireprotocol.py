@@ -39,7 +39,13 @@ try:
 except ImportError:     # Not posix
     crypt = None
 from firebirdsql.fberrmsgs import messages
-from firebirdsql import DisconnectByPeer, InternalError, OperationalError, IntegrityError
+from firebirdsql import (
+    DisconnectByPeer,
+    InternalError,
+    OperationalError,
+    IntegrityError,
+    DataError
+)
 from firebirdsql.consts import *
 from firebirdsql.utils import *
 from firebirdsql import srp
