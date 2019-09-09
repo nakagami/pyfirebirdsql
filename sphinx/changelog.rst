@@ -213,3 +213,13 @@ Version 1.1.2
 
    - refactoring
    - Add experimental Firebird4 timezone support
+
+Version 1.1.3
+==============
+
+   - refactoring
+   - Drop python 2.6 & 3.4 support
+   - fix parse decfloat value
+   - Srp256 is default authentication method
+   - Support timezone aware datatype
+   - Update error messages
