@@ -49,6 +49,7 @@ class XSQLVAR:
         SQL_TYPE_ARRAY: 8,
         SQL_TYPE_QUAD: 8,
         SQL_TYPE_INT64: 8,
+        SQL_TYPE_INT128: 16,
         SQL_TYPE_TIMESTAMP_TZ: 10,
         SQL_TYPE_TIME_TZ: 6,
         SQL_TYPE_DEC64 : 8,
@@ -70,6 +71,7 @@ class XSQLVAR:
         SQL_TYPE_ARRAY: -1,
         SQL_TYPE_QUAD: 20,
         SQL_TYPE_INT64: 20,
+        SQL_TYPE_INT128: 20,
         SQL_TYPE_TIMESTAMP_TZ: 28,
         SQL_TYPE_TIME_TZ: 17,
         SQL_TYPE_DEC64: 16,
@@ -155,7 +157,7 @@ class XSQLVAR:
             return self.bytes_to_str(raw_value).rstrip()
         elif self.sqltype == SQL_TYPE_VARYING:
             return self.bytes_to_str(raw_value)
-        elif self.sqltype in (SQL_TYPE_SHORT, SQL_TYPE_LONG, SQL_TYPE_INT64):
+        elif self.sqltype in (SQL_TYPE_SHORT, SQL_TYPE_LONG, SQL_TYPE_INT64, SQL_TYPE_INT128):
             n = bytes_to_bint(raw_value)
             if self.sqlscale:
                 return decimal.Decimal(str(n) + 'e' + str(self.sqlscale))
@@ -229,6 +231,8 @@ def calc_blr(xsqlda):
             blr += [7, x.sqlscale]
         elif sqltype == SQL_TYPE_INT64:
             blr += [16, x.sqlscale]
+        elif sqltype == SQL_TYPE_INT128:
+            blr += [26, x.sqlscale]
         elif sqltype == SQL_TYPE_QUAD:
             blr += [9, x.sqlscale]
         elif sqltype == SQL_TYPE_DEC_FIXED:
