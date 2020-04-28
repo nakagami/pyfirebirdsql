@@ -9,13 +9,17 @@
 #define	SLONG long
 #define SCHAR char
 
-/*https://raw.githubusercontent.com/FirebirdSQL/firebird/master/src/include/gen/msgs.h*/
+// wget https://raw.githubusercontent.com/FirebirdSQL/firebird/master/src/include/gen/msgs.h
+// cc errmsgs.c
+// ./a.out
+
+
 #include "msgs.h"   
 
 int main(int argc, char *argv[])
 {
     int i;
-    FILE *fp = fopen("fberrmsgs.py", "w");
+    FILE *fp = fopen("../firebirdsql/fberrmsgs.py", "w");
 
     fprintf(fp, "\
 #############################################################################\n\
@@ -30,7 +34,7 @@ int main(int argc, char *argv[])
 # rights and limitations under the License.\n\n");
     fprintf(fp, "messages = {\n");
     for (i = 0; messages[i].code_text; i++) {
-        fprintf(fp, "    %d: '''%s\\n''',\n", messages[i].code_number, messages[i].code_text);
+        fprintf(fp, "    %ld: '''%s\\n''',\n", messages[i].code_number, messages[i].code_text);
     }
     fprintf(fp, "}\n");
 
