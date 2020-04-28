@@ -9,7 +9,7 @@
 #define	SLONG long
 #define SCHAR char
 
-// wget https://raw.githubusercontent.com/FirebirdSQL/firebird/master/src/include/gen/msgs.h
+// curl -O https://raw.githubusercontent.com/FirebirdSQL/firebird/master/src/include/gen/msgs.h
 // cc errmsgs.c
 // ./a.out
 
