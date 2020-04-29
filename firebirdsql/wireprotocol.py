@@ -109,7 +109,6 @@ def convert_timestamp(v):   # Convert datetime.datetime to BLR format timestamp
 
 def convert_time_tz(v):  # Convert datetime.time to BLR format time_tz
     import pytz
-    # TODO: fix timezone
     t = datetime.date.today()
     native = datetime.datetime(
         t.year, t.month, t.day, v.hour, v.minute, v.second, v.microsecond
