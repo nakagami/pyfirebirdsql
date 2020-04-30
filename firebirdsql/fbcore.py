@@ -635,7 +635,11 @@ class Connection(WireProtocol):
         return self
 
     def __exit__(self, exc, value, traceback):
-        self.close()
+        "On successful exit, commit. On exception, rollback. "
+        if exc:
+            self.rollback()
+        else:
+            self.commit()
 
     def set_isolation_level(self, isolation_level):
         self.isolation_level = int(isolation_level)
