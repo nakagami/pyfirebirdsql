@@ -532,7 +532,7 @@ class Connection(WireProtocol):
     def begin(self):
         DEBUG_OUTPUT("Connection::begin()")
         if not self.sock:
-            raise InternalError
+            raise InternalError("Missing socket")
         if self._transaction is None:
             self._transaction = Transaction(self, self._autocommit)
         self._transaction.begin()
