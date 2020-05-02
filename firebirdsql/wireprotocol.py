@@ -265,7 +265,7 @@ class WireProtocol(object):
                 message = message.replace('@' + str(num_arg), str(num))
             elif n == isc_arg_string:
                 nbytes = bytes_to_bint(self.recv_channel(4))
-                s = str(self.recv_channel(nbytes, word_alignment=True))
+                s = self.bytes_to_str(self.recv_channel(nbytes, word_alignment=True))
                 num_arg += 1
                 message = message.replace('@' + str(num_arg), s)
             elif n == isc_arg_interpreted:
