@@ -632,6 +632,8 @@ timezone_id_by_name = {
     "W-SU": 64906,
     "WET": 64905,
     "Zulu": 64904,
+    "America/Nuuk": 64903,
+    "Asia/Qostanay": 64902,
 }
 
 timezone_name_by_id = {
@@ -1267,4 +1269,6 @@ timezone_name_by_id = {
     64906: "W-SU",
     64905: "WET",
     64904: "Zulu",
+    64903: "America/Nuuk",
+    64902: "Asia/Qostanay",
 }
