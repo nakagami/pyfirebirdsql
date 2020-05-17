@@ -552,7 +552,7 @@ charset_map = {
     'WIN1255':   'cp1255',
     'WIN1256':   'cp1256',
     'WIN1257':   'cp1257',
-    'KOI8-R':   'koi8_r',   # (Firebird 2.0+)
-    'KOI8-U':   'koi8_u',   # (Firebird 2.0+)
+    'KOI8R':   'koi8_r',   # (Firebird 2.0+)
+    'KOI8U':   'koi8_u',   # (Firebird 2.0+)
     'WIN1258':   'cp1258',  # (Firebird 2.0+)
 }
