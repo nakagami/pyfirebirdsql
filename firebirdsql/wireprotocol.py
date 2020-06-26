@@ -364,7 +364,7 @@ class WireProtocol(object):
                     pad_length = ((4-nbytes) & 3)
                     v += bs([0]) * pad_length
                     blr += bs([14, nbytes & 255, nbytes >> 8])
-            elif t == int:
+            elif t == int or (PYTHON_MAJOR_VER == 2 and t == long):
                 v = bint_to_bytes(p, 4)
                 blr += bs([8, 0])    # blr_long
             elif t == float and p == float("inf"):
