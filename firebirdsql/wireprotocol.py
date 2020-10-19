@@ -108,13 +108,17 @@ def convert_timestamp(v):   # Convert datetime.datetime to BLR format timestamp
 
 
 def convert_time_tz(v):  # Convert datetime.time to BLR format time_tz
-    import pytz
+    try:
+        utc = datetime.timezone.utc
+    except AttributeError:
+        import pytz
+        utc = pytz.utc
     t = datetime.date.today()
     native = datetime.datetime(
         t.year, t.month, t.day, v.hour, v.minute, v.second, v.microsecond
     )
     aware = v.tzinfo.localize(native)
-    v2 = aware.astimezone(pytz.utc)
+    v2 = aware.astimezone(utc)
 
     t = (v2.hour*3600 + v2.minute*60 + v2.second) * 10000 + v2.microsecond // 100
     r = bint_to_bytes(t, 4)
@@ -123,12 +127,16 @@ def convert_time_tz(v):  # Convert datetime.time to BLR format time_tz
 
 
 def convert_timestamp_tz(v):   # Convert datetime.datetime to BLR format timestamp_tz
-    import pytz
+    try:
+        utc = datetime.timezone.utc
+    except AttributeError:
+        import pytz
+        utc = pytz.utc
     native = datetime.datetime(
         v.year, v.month, v.day, v.hour, v.minute, v.second, v.microsecond
     )
     aware = v.tzinfo.localize(native)
-    v2 = aware.astimezone(pytz.utc)
+    v2 = aware.astimezone(utc)
 
     r = convert_date(v2.date()) + convert_time(v2.time())
     r += bint_to_bytes(tz_utils.get_timezone_id(v.tzinfo.zone), 4)

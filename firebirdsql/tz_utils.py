@@ -28,8 +28,12 @@
 from firebirdsql.tz_map import timezone_name_by_id, timezone_id_by_name
 
 def get_tzinfo(timezone_id):
-    import pytz
-    return pytz.timezone(timezone_name_by_id[timezone_id])
+    try:
+        import zoneinfo
+        return zoneinfo.ZoneInfo(timezone_name_by_id[timezone_id])
+    except ImportError:
+        import pytz
+        return pytz.timezone(timezone_name_by_id[timezone_id])
 
 
 def get_timezone_id(tz_name):
