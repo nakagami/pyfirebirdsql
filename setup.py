@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 import sys
-from distutils.core import setup, Command
+try:
+    from setuptools.core import setup, Command
+except ImportError:
+    from distutils.core import setup, Command
 import firebirdsql
 
 
@@ -20,6 +23,7 @@ class TestCommand(Command):
         from firebirdsql import tests
         import unittest
         unittest.main(tests, argv=sys.argv[:1])
+
 
 cmdclass = {'test': TestCommand}
 
