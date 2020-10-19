@@ -230,7 +230,7 @@ class WireProtocol(object):
 
     def str_to_bytes(self, s):
         "convert str to bytes"
-        if (PYTHON_MAJOR_VER == 3 or
+        if ((PYTHON_MAJOR_VER == 3  and isinstance(s,str)) or
                 (PYTHON_MAJOR_VER == 2 and type(s) == unicode)):
             return s.encode(charset_map.get(self.charset, self.charset))
         return s
@@ -410,7 +410,7 @@ class WireProtocol(object):
                 blr += bs([23])
             else:   # fallback, convert to string
                 p = p.__repr__()
-                if PYTHON_MAJOR_VER == 3 or (PYTHON_MAJOR_VER == 2 and type(p) == unicode):
+                if (PYTHON_MAJOR_VER == 3 and isinstance(p, str)) or (PYTHON_MAJOR_VER == 2 and type(p) == unicode):
                     p = self.str_to_bytes(p)
                 v = p
                 nbytes = len(v)
