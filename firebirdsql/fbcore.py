@@ -574,6 +574,8 @@ class Connection(WireProtocol):
         WireProtocol.__init__(self)
         self.sock = None
         self.db_handle = None
+        if '/' in host:
+            host = host[0:host.find('/')]
         if dsn:
             i = dsn.find(':')
             if i < 0:
