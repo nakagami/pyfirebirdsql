@@ -562,7 +562,7 @@ class Connection(WireProtocol):
 
     def __init__(
         self, dsn=None, user=None, password=None, role=None, host=None,
-        database=None, charset=DEFAULT_CHARSET, port=3050,
+        database=None, charset=DEFAULT_CHARSET, port=None,
         page_size=4096, is_services=False, cloexec=False,
         timeout=None, isolation_level=None, use_unicode=None,
         auth_plugin_name=None, wire_crypt=True, create_new=False,
@@ -574,28 +574,7 @@ class Connection(WireProtocol):
         WireProtocol.__init__(self)
         self.sock = None
         self.db_handle = None
-        if dsn:
-            i = dsn.find(':')
-            if i < 0:
-                self.hostname = host
-                self.filename = dsn
-            else:
-                hostport = dsn[:i]
-                self.filename = dsn[i+1:]
-                i = hostport.find('/')
-                if i < 0:
-                    self.hostname = hostport
-                else:
-                    self.hostname = hostport[:i]
-                    port = int(hostport[i+1:])
-        else:
-            self.hostname = host
-            self.filename = database
-        if self.hostname is None:
-            self.hostname = 'localhost'
-        self.port = port
-        self.user = user
-        self.password = password
+        (self.hostname, self.port, self.filename, self.user, self.password) = parse_dsn(dsn, host, port, database, user, password)
         self.role = role
         self.charset = charset
         self.timeout = float(timeout) if timeout is not None else None
