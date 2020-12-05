@@ -619,6 +619,7 @@ class Connection(WireProtocol):
             self.rollback()
         else:
             self.commit()
+        self.close()
 
     def set_isolation_level(self, isolation_level):
         self.isolation_level = int(isolation_level)
