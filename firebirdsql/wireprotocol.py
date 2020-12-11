@@ -52,7 +52,7 @@ from firebirdsql import srp
 from firebirdsql import tz_utils
 from firebirdsql import xdrlib
 try:
-    from Crypto.Cipher import ARC4
+    from Crypto.Cipher import ARC4, ChaCha20
 except ImportError:
     from firebirdsql.arc4 import ARC4
 
