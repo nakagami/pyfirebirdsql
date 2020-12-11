@@ -500,6 +500,10 @@ class WireProtocol(object):
         p.pack_bytes(self.uid(auth_plugin_name, wire_crypt))
         self.sock.send(p.get_buffer() + hex_to_bytes(''.join(protocols)))
 
+    def parse_crypt_algorithm(self, buf):
+        assert bytes_to_hex(buf[:11]) == b'000953796d6d6574726963'   # Symmetric
+        return buf[13:].split()
+
     @wire_operation
     def _op_create(self, page_size=4096):
         dpb = bs([1])
@@ -642,9 +646,12 @@ class WireProtocol(object):
                     b''
                 )
                 (h, oid, buf) = self._op_response()
+                crypt_algorithm = self.parse_crypt_algorithm(buf)
+            else:
+                crypt_algorithm = [b'Arc4']
 
             if self.wire_crypt and session_key:
-                # op_crypt: plugin[Arc4] key[Symmetric]
+                # wire encryption
                 p = xdrlib.Packer()
                 p.pack_int(self.op_crypt)
                 p.pack_bytes(b'Arc4')
