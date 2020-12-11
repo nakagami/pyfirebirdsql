@@ -223,3 +223,11 @@ Version 1.1.3
    - Srp256 is default authentication method
    - Support timezone aware datatype
    - Update error messages
+
+Version 1.1.4
+==============
+
+   - Add int128 datatype (Firebird4)
+   - timezone information hold as const values (Firebird4)
+   - fix dsn paramerter parsing
+   - Update error messages
