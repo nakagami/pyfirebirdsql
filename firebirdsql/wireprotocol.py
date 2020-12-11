@@ -55,6 +55,7 @@ try:
     from Crypto.Cipher import ARC4, ChaCha20
 except ImportError:
     from firebirdsql.arc4 import ARC4
+    ChaCha20 = None
 
 DEBUG = False
 
@@ -501,8 +502,11 @@ class WireProtocol(object):
         self.sock.send(p.get_buffer() + hex_to_bytes(''.join(protocols)))
 
     def parse_crypt_algorithm(self, buf):
-        assert bytes_to_hex(buf[:11]) == b'000953796d6d6574726963'   # Symmetric
-        return buf[13:].split()
+        assert buf[:11] == b'\x00\x09Symmetric'
+        available_list = buf[13:].split()
+        if ChaCha20 is None and b'Arc4' in available_list:
+            return b'Arc4'
+        return available_list[0]
 
     @wire_operation
     def _op_create(self, page_size=4096):
@@ -648,17 +652,28 @@ class WireProtocol(object):
                 (h, oid, buf) = self._op_response()
                 crypt_algorithm = self.parse_crypt_algorithm(buf)
             else:
-                crypt_algorithm = [b'Arc4']
+                crypt_algorithm = b'Arc4'
 
             if self.wire_crypt and session_key:
                 # wire encryption
                 p = xdrlib.Packer()
                 p.pack_int(self.op_crypt)
-                p.pack_bytes(b'Arc4')
+                p.pack_bytes(crypt_algorithm)
                 p.pack_bytes(b'Symmetric')
                 self.sock.send(p.get_buffer())
-                self.sock.set_translator(
-                    ARC4.new(session_key), ARC4.new(session_key))
+                if crypt_algorithm == b'ChaCha':
+                    h = hashlib.sha256()
+                    h.update(session_key)
+                    session_key = h.digest()
+                    self.sock.set_translator(
+                        ChaCha20.new(key=session_key), ChaCha20.new(key=session_key)
+                    )
+                elif crypt_algorithm == b'Arc4':
+                    self.sock.set_translator(
+                        ARC4.new(session_key), ARC4.new(session_key)
+                    )
+                else:
+                    raise InternalError("Authentication protocol error")
                 (h, oid, buf) = self._op_response()
             else:   # use later _op_attach() and _op_create()
                 self.auth_data = auth_data
