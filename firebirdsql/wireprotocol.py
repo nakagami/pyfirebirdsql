@@ -524,7 +524,8 @@ class WireProtocol(object):
         assert values[0] == b'Symmetric'
         available_list = values[1].split()
         if len(values) > 2:
-            k, v = values[2].split(b'\n')
+            i = values[2].find(b'\x00')
+            k, v = values[2][:i], values[2][i:]
             params[k] = v
         if ChaCha20 is None and b'Arc4' in available_list:
             return b'Arc4', None
