@@ -494,7 +494,7 @@ class WireProtocol(object):
             'ffff800d00000001000000000000000500000008',     # 13, 1, 0, 5, 8
             'ffff800e0000000100000000000000050000000a',     # 14, 1, 0, 5, 10
             'ffff800f0000000100000000000000050000000c',     # 15, 1, 0, 5, 12
-            'ffff80100000000100000000000000050000000e',     # 16, 1, 0, 5, 14
+#            'ffff80100000000100000000000000050000000e',     # 16, 1, 0, 5, 14
         ]
         p = xdrlib.Packer()
         p.pack_int(self.op_connect)
@@ -517,7 +517,7 @@ class WireProtocol(object):
 
         return values
 
-    def parse_crypt_algorithm(self, buf):
+    def guess_crypt_algorithm(self, buf):
         values = self._parse_response_buffer(buf)
         params = {}
 
@@ -527,10 +527,13 @@ class WireProtocol(object):
             i = values[2].find(b'\x00')
             k, v = values[2][:i], values[2][i+1:]
             params[k] = v
-        if ChaCha20 is None and b'Arc4' in available_list:
-            return b'Arc4', None
+        # Arc4 is fallback plugin
+        assert b'Arc4' in available_list
         plugin_name = available_list[0]
         plugin_param = params.get(plugin_name)
+
+        if ChaCha20 is None or (plugin_name == b'ChaCha' and plugin_param is None):
+            return b'Arc4', None
         return plugin_name, plugin_param
 
     @wire_operation
@@ -675,7 +678,7 @@ class WireProtocol(object):
                     b''
                 )
                 (h, oid, buf) = self._op_response()
-                crypt_algorithm = self.parse_crypt_algorithm(buf)
+                crypt_algorithm = self.guess_crypt_algorithm(buf)
             else:
                 crypt_algorithm = (b'Arc4', None)
 
