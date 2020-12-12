@@ -525,7 +525,7 @@ class WireProtocol(object):
         available_list = values[1].split()
         if len(values) > 2:
             i = values[2].find(b'\x00')
-            k, v = values[2][:i], values[2][i:]
+            k, v = values[2][:i], values[2][i+1:]
             params[k] = v
         if ChaCha20 is None and b'Arc4' in available_list:
             return b'Arc4', None
@@ -691,7 +691,8 @@ class WireProtocol(object):
                     h.update(session_key)
                     session_key = h.digest()
                     self.sock.set_translator(
-                        ChaCha20.new(key=session_key), ChaCha20.new(key=session_key)
+                        ChaCha20.new(key=session_key, nonce=crypt_algorithm[1][:12]),
+                        ChaCha20.new(key=session_key, nonce=crypt_algorithm[1][:12])
                     )
                 elif crypt_algorithm[0] == b'Arc4':
                     self.sock.set_translator(
