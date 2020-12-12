@@ -82,6 +82,9 @@ INFO_SQL_SELECT_DESCRIBE_VARS = bs([
     isc_info_sql_alias,
     isc_info_sql_describe_end])
 
+if PYTHON_MAJOR_VER == 3:
+    def ord(c):
+        return c
 
 def get_crypt(plain):
     if crypt is None:
@@ -501,12 +504,30 @@ class WireProtocol(object):
         p.pack_bytes(self.uid(auth_plugin_name, wire_crypt))
         self.sock.send(p.get_buffer() + hex_to_bytes(''.join(protocols)))
 
+    def _parse_response_buffer(self, buf):
+        values = []
+        while buf:
+            i = buf[0]
+            ln = ord(buf[1])
+            values.append(buf[2:2+ln])
+            buf = buf[2+ln:]
+
+        return values
+
     def parse_crypt_algorithm(self, buf):
-        assert buf[:11] == b'\x00\x09Symmetric'
-        available_list = buf[13:].split()
+        values = self._parse_response_buffer(buf)
+        params = {}
+
+        assert values[0] == b'Symmetric'
+        available_list = values[1].split()
+        if len(values) > 2:
+            k, v = values[2].split(b'\n')
+            params[k] = v
         if ChaCha20 is None and b'Arc4' in available_list:
-            return b'Arc4'
-        return available_list[0]
+            return b'Arc4', None
+        plugin_name = available_list[0]
+        plugin_param = params.get(plugin_name)
+        return plugin_name, plugin_param
 
     @wire_operation
     def _op_create(self, page_size=4096):
@@ -652,23 +673,23 @@ class WireProtocol(object):
                 (h, oid, buf) = self._op_response()
                 crypt_algorithm = self.parse_crypt_algorithm(buf)
             else:
-                crypt_algorithm = b'Arc4'
+                crypt_algorithm = (b'Arc4', None)
 
             if self.wire_crypt and session_key:
                 # wire encryption
                 p = xdrlib.Packer()
                 p.pack_int(self.op_crypt)
-                p.pack_bytes(crypt_algorithm)
+                p.pack_bytes(crypt_algorithm[0])
                 p.pack_bytes(b'Symmetric')
                 self.sock.send(p.get_buffer())
-                if crypt_algorithm == b'ChaCha':
+                if crypt_algorithm[0] == b'ChaCha':
                     h = hashlib.sha256()
                     h.update(session_key)
                     session_key = h.digest()
                     self.sock.set_translator(
                         ChaCha20.new(key=session_key), ChaCha20.new(key=session_key)
                     )
-                elif crypt_algorithm == b'Arc4':
+                elif crypt_algorithm[0] == b'Arc4':
                     self.sock.set_translator(
                         ARC4.new(session_key), ARC4.new(session_key)
                     )
