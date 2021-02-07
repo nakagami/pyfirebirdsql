@@ -25,7 +25,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 ##############################################################################
-"""
+r"""
 curl -O https://raw.githubusercontent.com/FirebirdSQL/firebird/master/src/common/TimeZones.h
 grep ^$'\t' TimeZones.h | sed 's/^.*"\(.*\)".*$/\1/' | ./make_tz_map.py > ../firebirdsql/tz_map.py
 """

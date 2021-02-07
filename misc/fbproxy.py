@@ -1078,7 +1078,7 @@ class XSQLVar(object):
             + str(self.sqlnullind) + ',' \
             + str(self.sqlname) + ',' + str(self.relname) + ',' \
             + str(self.ownname) + ',' + str(self.aliasname) + ']'
-        if not self.raw_value is None:
+        if self.raw_value is not None:
             if self.null_flag:
                 s += 'NULL'
             else:
@@ -1279,9 +1279,9 @@ def _parse_trunc_sql_info(start, bytes, statement):
     print('\n\t<-------- start byte index =', start)
     index = 0
     i = start
-    l = _bytes_to_int(bytes, i, 2)
-    col_len = _bytes_to_int(bytes, i + 2, l)
-    i += 2 + l
+    ln = _bytes_to_int(bytes, i, 2)
+    col_len = _bytes_to_int(bytes, i + 2, ln)
+    i += 2 + ln
     print('\tcol_len=', col_len)
     xsqlda = get_xsqlda_statement()[statement]
     if not xsqlda:
@@ -1290,57 +1290,57 @@ def _parse_trunc_sql_info(start, bytes, statement):
     item = isc_info_sql_names[_ord(bytes[i])]
     while item != 'isc_info_end':
         if item == 'isc_info_sql_sqlda_seq':
-            l = _bytes_to_int(bytes, i + 1, 2)
-            index = _bytes_to_int(bytes, i + 3, l)
+            ln = _bytes_to_int(bytes, i + 1, 2)
+            index = _bytes_to_int(bytes, i + 3, ln)
             xsqlda[index-1] = XSQLVar()
             print('\t', item, index)
-            i = i + 3 + l
+            i = i + 3 + ln
         elif item == 'isc_info_sql_type':
-            l = _bytes_to_int(bytes, i + 1, 2)
-            xsqlda[index-1].sqltype = _bytes_to_int(bytes, i + 3, l)
+            ln = _bytes_to_int(bytes, i + 1, 2)
+            xsqlda[index-1].sqltype = _bytes_to_int(bytes, i + 3, ln)
             print('\t', item, xsqlda[index-1].sqltype, end=' ')
             print('dtype=', xsqlda[index-1].sqltype & ~1)
-            i = i + 3 + l
+            i = i + 3 + ln
         elif item == 'isc_info_sql_sub_type':
-            l = _bytes_to_int(bytes, i + 1, 2)
-            xsqlda[index-1].sqlsubtype = _bytes_to_int(bytes, i + 3, l)
+            ln = _bytes_to_int(bytes, i + 1, 2)
+            xsqlda[index-1].sqlsubtype = _bytes_to_int(bytes, i + 3, ln)
             print('\t', item, xsqlda[index-1].sqlsubtype)
-            i = i + 3 + l
+            i = i + 3 + ln
         elif item == 'isc_info_sql_scale':
-            l = _bytes_to_int(bytes, i + 1, 2)
-            xsqlda[index-1].sqlscale = _bytes_to_int(bytes, i + 3, l)
+            ln = _bytes_to_int(bytes, i + 1, 2)
+            xsqlda[index-1].sqlscale = _bytes_to_int(bytes, i + 3, ln)
             print('\t', item, xsqlda[index-1].sqlscale)
-            i = i + 3 + l
+            i = i + 3 + ln
         elif item == 'isc_info_sql_length':
-            l = _bytes_to_int(bytes, i + 1, 2)
-            xsqlda[index-1].sqllen = _bytes_to_int(bytes, i + 3, l)
+            ln = _bytes_to_int(bytes, i + 1, 2)
+            xsqlda[index-1].sqllen = _bytes_to_int(bytes, i + 3, ln)
             print('\t', item, xsqlda[index-1].sqllen)
-            i = i + 3 + l
+            i = i + 3 + ln
         elif item == 'isc_info_sql_null_ind':
-            l = _bytes_to_int(bytes, i + 1, 2)
-            xsqlda[index-1].sqlnullind = _bytes_to_int(bytes, i + 3, l)
+            ln = _bytes_to_int(bytes, i + 1, 2)
+            xsqlda[index-1].sqlnullind = _bytes_to_int(bytes, i + 3, ln)
             print('\t', item, xsqlda[index-1].sqlnullind)
-            i = i + 3 + l
+            i = i + 3 + ln
         elif item == 'isc_info_sql_field':
-            l = _bytes_to_int(bytes, i + 1, 2)
-            xsqlda[index-1].sqlname = bytes[i + 3: i + 3 + l]
+            ln = _bytes_to_int(bytes, i + 1, 2)
+            xsqlda[index-1].sqlname = bytes[i + 3: i + 3 + ln]
             print('\t', item, xsqlda[index-1].sqlname)
-            i = i + 3 + l
+            i = i + 3 + ln
         elif item == 'isc_info_sql_relation':
-            l = _bytes_to_int(bytes, i + 1, 2)
-            xsqlda[index-1].relname = bytes[i + 3: i + 3 + l]
+            ln = _bytes_to_int(bytes, i + 1, 2)
+            xsqlda[index-1].relname = bytes[i + 3: i + 3 + ln]
             print('\t', item, xsqlda[index-1].relname)
-            i = i + 3 + l
+            i = i + 3 + ln
         elif item == 'isc_info_sql_owner':
-            l = _bytes_to_int(bytes, i + 1, 2)
-            xsqlda[index-1].ownname = bytes[i + 3: i + 3 + l]
+            ln = _bytes_to_int(bytes, i + 1, 2)
+            xsqlda[index-1].ownname = bytes[i + 3: i + 3 + ln]
             print('\t', item, xsqlda[index-1].ownname)
-            i = i + 3 + l
+            i = i + 3 + ln
         elif item == 'isc_info_sql_alias':
-            l = _bytes_to_int(bytes, i + 1, 2)
-            xsqlda[index-1].aliasname = bytes[i + 3: i + 3 + l]
+            ln = _bytes_to_int(bytes, i + 1, 2)
+            xsqlda[index-1].aliasname = bytes[i + 3: i + 3 + ln]
             print('\t', item, xsqlda[index-1].aliasname)
-            i = i + 3 + l
+            i = i + 3 + ln
         elif item == 'isc_info_truncated':
             print('\t', item)
             break
@@ -1348,15 +1348,15 @@ def _parse_trunc_sql_info(start, bytes, statement):
             print('\t', item)
             i = i + 1
         elif item == 'isc_info_sql_num_variables':
-            l = _bytes_to_int(bytes, i + 1, 2)
-            num_variables = _bytes_to_int(bytes, i + 3, l)
+            ln = _bytes_to_int(bytes, i + 1, 2)
+            num_variables = _bytes_to_int(bytes, i + 3, ln)
             print('\t', item, num_variables)
-            i = i + 3 + l
+            i = i + 3 + ln
         elif item == 'isc_info_sql_get_plan':
-            l = _bytes_to_int(bytes, i + 1, 2)
-            plan = bytes[i + 3: i + 3 + l]
+            ln = _bytes_to_int(bytes, i + 1, 2)
+            plan = bytes[i + 3: i + 3 + ln]
             print('\t', item, plan)
-            i = i + 3 + l
+            i = i + 3 + ln
         elif item == 'isc_info_sql_bind':
             i += 1
         else:
@@ -1391,18 +1391,18 @@ def _database_parameter_block(bytes):
             'isc_dpb_os_user', 'isc_dpb_auth_plugin_name',
             'isc_dpb_auth_plugin_list', 'isc_dpb_specific_auth_data',
         ):
-            l = _ord(bytes[i+1])
-            print('[', bytes[i+2:i+2+l], ']', end='')
-            i = i + 2 + l
+            ln = _ord(bytes[i+1])
+            print('[', bytes[i+2:i+2+ln], ']', end='')
+            i = i + 2 + ln
         elif s in (
             'isc_dpb_dummy_packet_interval', 'isc_dpb_sql_dialect',
             'isc_dpb_sweep', 'isc_dpb_connect_timeout', 'isc_dpb_page_size',
             'isc_dpb_force_write', 'isc_dpb_overwrite', 'isc_dpb_process_id',
             'isc_spb_process_id', 'isc_dpb_ext_call_depth',
         ):
-            l = _ord(bytes[i+1])
-            print('', _bytes_to_int(bytes, i+2, l), end='')
-            i = i + 2 + l
+            ln = _ord(bytes[i+1])
+            print('', _bytes_to_int(bytes, i+2, ln), end='')
+            i = i + 2 + ln
         else:
             i = i + 1
         print()
@@ -1425,18 +1425,18 @@ def parse_sql_info(b, statement):
             i += 3
             while isc_req_info_names[_ord(b[i])] != 'isc_info_end':
                 print(isc_req_info_names[_ord(b[i])], end=' ')
-                l = _bytes_to_int(b, i + 1, 2)
-                print(_bytes_to_int(b, i + 3, l), end=' ')
-                i += 3 + l
+                ln = _bytes_to_int(b, i + 1, 2)
+                print(_bytes_to_int(b, i + 3, ln), end=' ')
+                i += 3 + ln
             print()
             break
-        l = _bytes_to_int(b, i + 1, 2)
-        n = _bytes_to_int(b, i + 3, l)
+        ln = _bytes_to_int(b, i + 1, 2)
+        n = _bytes_to_int(b, i + 3, ln)
         if isc_info_sql_names[_ord(b[i])] == 'isc_info_sql_stmt_type':
             print(isc_info_sql_stmt_names[n])
         else:
             print(n)
-        i += 3 + l
+        i += 3 + ln
 
 
 def op_start_send_and_receive(sock):
@@ -1478,11 +1478,11 @@ def op_response(sock):
                 'isc_info_sweep_interval', 'isc_info_user_names',
                 'frb_info_att_charset',
             ):
-                l = _bytes_to_int(bs, i+1, 2)
-                print('[', binascii.b2a_hex(bs[i+3:i+3+l]), ']', end=' ')
+                ln = _bytes_to_int(bs, i+1, 2)
+                print('[', binascii.b2a_hex(bs[i+3:i+3+ln]), ']', end=' ')
                 if s == 'isc_info_firebird_version':
-                    print('', bs[i+5:i+3+l], end=' ')
-                i = i + 3 + l
+                    print('', bs[i+5:i+3+ln], end=' ')
+                i = i + 3 + ln
             else:
                 i = i + 1
             print()
@@ -1538,6 +1538,7 @@ def op_response(sock):
         asc_dump(sv[i:])
     return head + bs + sv
 
+
 op_response_piggyback = op_response
 
 
@@ -1584,13 +1585,13 @@ def op_fetch_response(sock):
             for x in xsqlda:
                 if x.io_length() < 0:
                     bytes = sock.recv(4)
-                    l = _bytes_to_bint32(bytes, 0)
+                    ln = _bytes_to_bint32(bytes, 0)
                     msg += bytes
                 else:
-                    l = x.io_length()
-                x.raw_value = sock.recv(l)
+                    ln = x.io_length()
+                x.raw_value = sock.recv(ln)
                 msg += x.raw_value
-                msg += sock.recv((4-l) & 3)    # padding
+                msg += sock.recv((4-ln) & 3)    # padding
                 bytes = sock.recv(4)
                 x.null_flag = False if bytes == '\0\0\0\0' else True
                 msg += bytes
@@ -1692,6 +1693,7 @@ def op_accept_data(sock):
     up.done()
     return msg
 
+
 op_cond_accept = op_accept_data
 
 
@@ -1773,6 +1775,7 @@ def op_commit(sock):
     print('\tTrans<%x>' % (up.unpack_uint()))
     up.done()
     return msg
+
 
 op_rollback = op_commit
 
@@ -1921,6 +1924,7 @@ def op_execute_immediate(sock):
 
     return msg
 
+
 op_execute_immediate2 = op_execute_immediate
 
 
@@ -1959,6 +1963,7 @@ def op_batch_segments(sock):
         segment_size -= len(b)
     print('\tlen=', len(buf))
     return msg + buf
+
 
 op_put_segment = op_batch_segments
 
@@ -2116,7 +2121,7 @@ def op_dummy(sock):
     return None
 
 
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # recive and dump bytes
 def recv_forever(server_name, server_port, listen_port):
     cs = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -2137,7 +2142,7 @@ def recv_forever(server_name, server_port, listen_port):
             thread.exit()
 
 
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # proxy tcp socket side by side
 def proxy_socket(client_socket, server_name, server_port):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -2170,7 +2175,7 @@ def proxy_socket_forever(server_name, server_port, listen_port):
         thread.start_new_thread(proxy_socket, (sock, server_name, server_port))
 
 
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # proxy wire protocol
 def process_wire(client_socket, server_name, server_port):
     # Socket to Firebird server.
