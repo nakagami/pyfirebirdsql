@@ -2,9 +2,6 @@
 PyfirebirdSQL
 ================
 
-.. image:: https://travis-ci.org/nakagami/pyfirebirdsql.svg?branch=master
-   :target: https://travis-ci.org/nakagami/pyfirebirdsql
-    
 .. image:: https://img.shields.io/pypi/v/firebirdsql.png
    :target: https://pypi.python.org/pypi/firebirdsql
 
