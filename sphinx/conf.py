@@ -168,8 +168,8 @@ htmlhelp_basename = 'pyFirebirdSQLdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
 latex_documents = [
-  ('index', 'pyfirebirdsql.tex', ur'pyfirebirdsql documentation',
-   ur'Hajime Nakagami', 'manual'),
+  ('index', 'pyfirebirdsql.tex', u'pyfirebirdsql documentation',
+   u'Hajime Nakagami', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
