@@ -22,16 +22,12 @@ jobs:
     
     - name: Set up Firebird
       run: |
-        sudo mkdir -p /etc/firebird/3.0
-        sudo cp misc/SYSDBA.password /etc/firebird/3.0
-        sudo chmod 0600 /etc/firebird/3.0/SYSDBA.password
         sudo apt install firebird3.0-server -y
-        sudo ls /etc/firebird/3.0/
-        sudo cat /etc/firebird/3.0/SYSDBA.password
         sudo cp misc/firebird.conf /etc/firebird/3.0
         sudo cat /etc/firebird/3.0/firebird.conf
         sudo systemctl restart firebird3.0
-
+        sudo chmod 0664 /etc/firebird/3.0/SYSDBA.password
+        cat /etc/firebird/3.0/SYSDBA.password
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -50,4 +46,5 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --ignore=F405
     - name: Test
       run: |
+        source /etc/firebird/3.0/SYSDBA.password
         python setup.py test
