@@ -1,6 +1,8 @@
-import firebirdsql
+import os
 import unittest
 import tempfile
+
+import firebirdsql
 
 # backwards compatibility:
 if not hasattr(unittest, "skip"):
@@ -15,8 +17,8 @@ class TestBase(unittest.TestCase):
     wire_crypt=True
     host='localhost'
     port=3050
-    user='sysdba'
-    password='masterkey'
+    user=os.environ.get("ISC_USER", "sysdba")
+    password=os.environ.get("ISC_PASSWORD", "masterkey")
     page_size=2<<13
 
     def setUp(self):
