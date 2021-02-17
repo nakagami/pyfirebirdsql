@@ -598,8 +598,10 @@ class WireProtocol(object):
                             self.plugin_list,
                             b''
                         )
-                        # parse op_cont_auth
                         b = self.recv_channel(4)
+                        if bytes_to_bint(b) == self.op_response:
+                            self._parse_op_response()   # error occured
+                        # parse op_cont_auth
                         assert bytes_to_bint(b) == self.op_cont_auth
                         ln = bytes_to_bint(self.recv_channel(4))
                         data = self.recv_channel(ln, word_alignment=True)
