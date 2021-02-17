@@ -455,8 +455,8 @@ class WireProtocol(object):
             user = os.environ.get('USER', '')
             hostname = socket.gethostname()
 
+        self.client_public_key, self.client_private_key = srp.client_seed()
         if auth_plugin_name in ('Srp256', 'Srp'):
-            self.client_public_key, self.client_private_key = srp.client_seed()
             specific_data = bytes_to_hex(srp.long2bytes(self.client_public_key))
         elif auth_plugin_name == 'Legacy_Auth':
             assert crypt, "Legacy_Auth needs crypt module"
