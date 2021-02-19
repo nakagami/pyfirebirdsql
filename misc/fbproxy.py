@@ -1667,7 +1667,9 @@ def op_accept(sock):
     protocol = msg[:4]
     archtecture = _bytes_to_bint32(msg, 4)
     accept_type = _bytes_to_bint32(msg, 8)
-    print('\taccept_version<%s>accept_architecture<%d>accept_type<%d>' % (binascii.b2a_hex(protocol), archtecture, accept_type))
+    print('\taccept_version<%s>accept_architecture<%d>accept_type<%d>' % (
+        binascii.b2a_hex(protocol), archtecture, accept_type)
+    )
     set_accept_type(accept_type)
 
     return msg
