@@ -46,5 +46,4 @@ jobs:
     - name: Test
       run: |
         source test_user.env
-        cat test_user.env
         python setup.py test
