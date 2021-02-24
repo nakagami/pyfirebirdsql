@@ -26,7 +26,7 @@ jobs:
         sudo cp misc/firebird.conf /etc/firebird/3.0
         sudo systemctl restart firebird3.0
         sudo chmod 0664 /etc/firebird/3.0/SYSDBA.password
-        grep '=' /etc/firebird/3.0/SYSDBA.password |sed 's/^/export /' >test_user.env
+        grep '=' /etc/firebird/3.0/SYSDBA.password |sed 's/^/export /' >> $GITHUB_ENV
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -45,5 +45,4 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --ignore=F405
     - name: Test
       run: |
-        source test_user.env
         python setup.py test
