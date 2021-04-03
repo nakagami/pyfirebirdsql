@@ -547,6 +547,14 @@ class WireProtocol(object):
         self.sock.send(p.get_buffer())
 
     @wire_operation
+    def _op_crypt(self):
+        p = xdrlib.Packer()
+        p.pack_int(self.op_crypt)
+        p.pack_bytes(b'Arc4')
+        p.pack_bytes(b'Symmetric')
+        self.sock.send(p.get_buffer())
+
+    @wire_operation
     def _parse_connect_response(self):
         # want and treat op_accept or op_cond_accept or op_accept_data
         b = self.recv_channel(4)
@@ -646,12 +654,7 @@ class WireProtocol(object):
                 (h, oid, buf) = self._op_response()
 
             if self.wire_crypt and session_key:
-                # op_crypt: plugin[Arc4] key[Symmetric]
-                p = xdrlib.Packer()
-                p.pack_int(self.op_crypt)
-                p.pack_bytes(b'Arc4')
-                p.pack_bytes(b'Symmetric')
-                self.sock.send(p.get_buffer())
+                self._op_crypt()
                 self.sock.set_translator(
                     ARC4.new(session_key), ARC4.new(session_key))
                 (h, oid, buf) = self._op_response()
