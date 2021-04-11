@@ -1,19 +1,17 @@
-import sys
-import os
 import time
-import unittest
 import tempfile
 import firebirdsql
-from firebirdsql.tests.base import *
+from firebirdsql.tests.base import TestBase
 from firebirdsql.consts import PYTHON_MAJOR_VER
 if PYTHON_MAJOR_VER == 3:
     import _thread as thread
 else:
     import thread
 
+
 class TestEvent(TestBase):
     def setUp(self):
-        self.database=tempfile.mktemp()
+        self.database = tempfile.mktemp()
         conn = firebirdsql.create_database(
                 auth_plugin_name=self.auth_plugin_name,
                 wire_crypt=self.wire_crypt,
@@ -91,7 +89,7 @@ class TestEvent(TestBase):
         result = conduit.wait()
         # 1 record is inserted
         self.assertEqual(result, {'event_b': 1, 'event_a': 2, 'event_d': 0})
-    
+
         self._insert()
         result = conduit.wait()
         # 1 more record is inserted
@@ -101,7 +99,7 @@ class TestEvent(TestBase):
         result = conduit.wait()
         # 2 records are deleted
         self.assertEqual(result,  {'event_b': 0, 'event_a': 0, 'event_d': 2})
-    
+
         conduit.close()
         conn.close()
 
