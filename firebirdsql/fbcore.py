@@ -154,9 +154,9 @@ class Statement(object):
 
         i = 0
         if byte_to_int(buf[i]) == isc_info_sql_get_plan:
-            l = bytes_to_int(buf[i+1:i+3])
-            self.plan = self.trans.connection.bytes_to_str(buf[i+3:i+3+l])
-            i += 3 + l
+            ln = bytes_to_int(buf[i+1:i+3])
+            self.plan = self.trans.connection.bytes_to_str(buf[i+3:i+3+ln])
+            i += 3 + ln
         self.stmt_type, self.xsqlda = parse_xsqlda(buf[i:], self.trans.connection, self.handle)
         if self.stmt_type == isc_info_sql_stmt_select:
             self._is_open = True
@@ -647,15 +647,15 @@ class Connection(WireProtocol):
             if req == isc_info_user_names:
                 user_names = []
                 while req == isc_info_user_names:
-                    l = bytes_to_int(buf[i+1:i+3])
-                    user_names.append(buf[i+3:i+3+l])
-                    i = i + 3 + l
+                    ln = bytes_to_int(buf[i+1:i+3])
+                    user_names.append(buf[i+3:i+3+ln])
+                    i = i + 3 + ln
                     req = byte_to_int(buf[i])
                 r.append((req, user_names))
             else:
-                l = bytes_to_int(buf[i+1:i+3])
-                r.append((req, buf[i+3:i+3+l]))
-                i = i + 3 + l
+                ln = bytes_to_int(buf[i+1:i+3])
+                r.append((req, buf[i+3:i+3+ln]))
+                i = i + 3 + ln
             i_request += 1
         return r
 
@@ -879,9 +879,9 @@ class Transaction(object):
             if req == isc_info_end:
                 break
             assert req == info_requests[i_request] or req == isc_info_error
-            l = bytes_to_int(buf[i+1:i+3])
-            r.append((req, buf[i+3:i+3+l]))
-            i = i + 3 + l
+            ln = bytes_to_int(buf[i+1:i+3])
+            r.append((req, buf[i+3:i+3+ln]))
+            i = i + 3 + ln
 
             i_request += 1
         return r
