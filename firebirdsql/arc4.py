@@ -56,7 +56,7 @@ class ARC4:
             self.x = (self.x + 1) % 256
             self.y = (self.y + state[self.x]) % 256
             (state[self.x], state[self.y]) = (state[self.y], state[self.x])
-            xorIndex = (state[self.x]+state[self.y]) % 256
+            xorIndex = (state[self.x] + state[self.y]) % 256
             if PYTHON_MAJOR_VER == 3:
                 enc += bytes([plain[i] ^ state[xorIndex]])
             else:
