@@ -1,13 +1,11 @@
 from __future__ import with_statement
-import sys
-import unittest
 import tempfile
 import datetime
 import pytz
 
 import firebirdsql
-from firebirdsql.tests.base import *
-from firebirdsql.consts import *
+from firebirdsql.tests.base import *    # noqa
+from firebirdsql.consts import *        # noqa
 
 
 class TestTimeZone(TestBase):
