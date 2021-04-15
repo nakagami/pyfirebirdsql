@@ -1,13 +1,13 @@
-from firebirdsql.tests.test_basic import *
-from firebirdsql.tests.test_proc import *
-from firebirdsql.tests.test_issues import *
-from firebirdsql.tests.test_backup import *
-from firebirdsql.tests.test_services import *
-from firebirdsql.tests.test_event import *
-from firebirdsql.tests.test_arc4 import *
-from firebirdsql.tests.test_auth import *
-from firebirdsql.tests.test_srp import *
-from firebirdsql.tests.test_utils import *
+from firebirdsql.tests.test_basic import *      # noqa
+from firebirdsql.tests.test_proc import *       # noqa
+from firebirdsql.tests.test_issues import *     # noqa
+from firebirdsql.tests.test_backup import *     # noqa
+from firebirdsql.tests.test_services import *   # noqa
+from firebirdsql.tests.test_event import *      # noqa
+from firebirdsql.tests.test_arc4 import *       # noqa
+from firebirdsql.tests.test_auth import *       # noqa
+from firebirdsql.tests.test_srp import *        # noqa
+from firebirdsql.tests.test_utils import *      # noqa
 # from firebirdsql.tests.test_timezone import *
 
 if __name__ == "__main__":

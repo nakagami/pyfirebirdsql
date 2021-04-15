@@ -1,6 +1,7 @@
 import unittest
 from firebirdsql import utils
-from firebirdsql.tests.base import *
+from firebirdsql.tests.base import *    # noqa
+
 
 class TestUtils(unittest.TestCase):
     def test_hex(self):

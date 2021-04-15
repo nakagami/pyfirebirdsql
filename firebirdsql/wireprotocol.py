@@ -614,11 +614,11 @@ class WireProtocol(object):
                         ln = bytes_to_bint(self.recv_channel(4))
                         data = self.recv_channel(ln, word_alignment=True)
                         ln = bytes_to_bint(self.recv_channel(4))
-                        plugin_name = self.recv_channel(ln, word_alignment=True)
+                        self.recv_channel(ln, word_alignment=True)  # plugin_nae
                         ln = bytes_to_bint(self.recv_channel(4))
-                        plugin_list = self.recv_channel(ln, word_alignment=True)
+                        self.recv_channel(ln, word_alignment=True)  # plugin_list
                         ln = bytes_to_bint(self.recv_channel(4))
-                        keys = self.recv_channel(ln, word_alignment=True)
+                        self.recv_channel(ln, word_alignment=True)  # keys
 
                     ln = bytes_to_int(data[:2])
                     server_salt = data[2:ln+2]

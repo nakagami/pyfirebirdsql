@@ -1,7 +1,7 @@
 import binascii
 import hashlib
 import unittest
-from firebirdsql.tests.base import *
+from firebirdsql.tests.base import *    # noqa
 from firebirdsql import srp, utils
 
 class TestSrp(unittest.TestCase):

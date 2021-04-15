@@ -1,6 +1,3 @@
-import unittest
-import tempfile
-import firebirdsql
 from firebirdsql.tests.base import *
 
 class TestIssues(TestBase):
