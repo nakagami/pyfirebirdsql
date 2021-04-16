@@ -614,7 +614,7 @@ class WireProtocol(object):
                         ln = bytes_to_bint(self.recv_channel(4))
                         data = self.recv_channel(ln, word_alignment=True)
                         ln = bytes_to_bint(self.recv_channel(4))
-                        self.recv_channel(ln, word_alignment=True)  # plugin_nae
+                        self.recv_channel(ln, word_alignment=True)  # plugin_name
                         ln = bytes_to_bint(self.recv_channel(4))
                         self.recv_channel(ln, word_alignment=True)  # plugin_list
                         ln = bytes_to_bint(self.recv_channel(4))
