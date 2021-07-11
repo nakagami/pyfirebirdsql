@@ -392,10 +392,10 @@ class TestBasic(TestBase):
 
         cur = self.connection.cursor()
         cur.execute("insert into dec_test(d, df64, df128, s) values (0.0, 0.0, 0.0, '0.0')")
-        cur.execute("insert into dec_test(d, df64, df128, s) values (1.0, 1.0, 1.0, '1.0')")
-        cur.execute("insert into dec_test(d, df64, df128, s) values (20.0, 20.0, 20.0, '20.0')")
-        cur.execute("insert into dec_test(d, df64, df128, s) values (-1.0, -1.0, -1.0, '-1.0')")
-        cur.execute("insert into dec_test(d, df64, df128, s) values (-20.0, -20.0, -20.0, '-20.0')")
+        cur.execute("insert into dec_test(d, df64, df128, s) values (1.1, 1.1, 1.1, '1.1')")
+        cur.execute("insert into dec_test(d, df64, df128, s) values (20.2, 20.2, 20.2, '20.2')")
+        cur.execute("insert into dec_test(d, df64, df128, s) values (-1.1, -1.1, -1.1, '-1.1')")
+        cur.execute("insert into dec_test(d, df64, df128, s) values (-20.2, -20.2, -20.2, '-20.2')")
         cur.close()
 
         cur = self.connection.cursor()
