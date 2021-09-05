@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2009-2018, Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2009-2021, Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -488,6 +488,10 @@ class WireProtocol(object):
             'ffff800b00000001000000000000000500000004',     # 11, 1, 0, 5, 4
             'ffff800c00000001000000000000000500000006',     # 12, 1, 0, 5, 6
             'ffff800d00000001000000000000000500000008',     # 13, 1, 0, 5, 8
+#            'ffff800e0000000100000000000000050000000a',     # 14, 1, 0, 5, 10
+#            'ffff800f0000000100000000000000050000000c',     # 16, 1, 0, 5, 12
+#            'ffff80100000000100000000000000050000000e',     # 18, 1, 0, 5, 14
+#            'ffff801100000001000000000000000500000010',     # 20, 1, 0, 5, 16
         ]
         p = xdrlib.Packer()
         p.pack_int(self.op_connect)
@@ -666,6 +670,8 @@ class WireProtocol(object):
     @wire_operation
     def _op_attach(self):
         dpb = bs([isc_dpb_version1])
+        #s = b"GMT"
+        #dpb += bs([isc_dpb_session_time_zone, len(s)]) + s
         s = self.str_to_bytes(self.charset)
         dpb += bs([isc_dpb_lc_ctype, len(s)]) + s
         s = self.str_to_bytes(self.user)

@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2011-2018, Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2011-2021, Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -120,6 +120,39 @@ isc_info_active_transactions = 109
 isc_info_active_tran_count = 110
 isc_info_creation_date = 111
 isc_info_db_file_size = 112
+fb_info_page_contents = 113
+fb_info_implementation = 114
+fb_info_page_warns = 115
+fb_info_record_warns = 116
+fb_info_bpage_warns = 117
+fb_info_dpage_warns = 118
+fb_info_ipage_warns = 119
+fb_info_ppage_warns = 120
+fb_info_tpage_warns = 121
+fb_info_pip_errors = 122
+fb_info_pip_warns = 123
+fb_info_pages_used = 124
+fb_info_pages_free = 125
+fb_info_ses_idle_timeout_db = 129
+fb_info_ses_idle_timeout_att = 130
+fb_info_ses_idle_timeout_run = 131
+fb_info_conn_flags = 132
+fb_info_crypt_key = 133
+fb_info_crypt_state = 134
+fb_info_statement_timeout_db = 135
+fb_info_statement_timeout_att = 136
+fb_info_protocol_version = 137
+fb_info_crypt_plugin = 138
+fb_info_creation_timestamp_tz = 139
+fb_info_wire_crypt = 140
+fb_info_features = 141
+fb_info_next_attachment = 142
+fb_info_next_statement = 143
+fb_info_db_guid = 144
+fb_info_db_file_id = 145
+fb_info_replica_mode = 146
+fb_info_username = 147
+fb_info_sqlrole = 148
 
 # isc_info_sql_records items
 isc_info_req_select_count = 13
@@ -272,6 +305,10 @@ isc_dpb_nolinger = 88
 isc_dpb_reset_icu = 89
 isc_dpb_map_attach = 90
 isc_dpb_session_time_zone = 91
+isc_dpb_set_db_replica = 92
+isc_dpb_set_bind =93
+isc_dpb_decfloat_round = 94
+isc_dpb_decfloat_traps = 95
 
 # Transaction Parameter Block parameter
 isc_tpb_version1 = 1
@@ -451,6 +488,14 @@ isc_info_sql_stmt_type = 21
 isc_info_sql_get_plan = 22
 isc_info_sql_records = 23
 isc_info_sql_batch_fetch = 24
+isc_info_sql_relation_alias = 25
+isc_info_sql_explain_plan = 26
+isc_info_sql_stmt_flags = 27
+isc_info_sql_stmt_timeout_user = 28
+isc_info_sql_stmt_timeout_run = 29
+isc_info_sql_stmt_blob_align = 30
+isc_info_sql_exec_path_blr_bytes = 31
+isc_info_sql_exec_path_blr_text = 32
 
 isc_info_sql_stmt_select = 1
 isc_info_sql_stmt_insert = 2
