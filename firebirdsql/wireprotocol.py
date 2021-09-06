@@ -46,11 +46,10 @@ from firebirdsql import (
     IntegrityError,
     DataError
 )
-from firebirdsql.consts import *
-from firebirdsql.utils import *
+from firebirdsql.consts import *    # noqa
+from firebirdsql.utils import *     # noqa
 from firebirdsql import srp
 from firebirdsql import tz_utils
-from firebirdsql import xdrlib
 try:
     from Crypto.Cipher import ARC4
 except ImportError:
@@ -65,6 +64,7 @@ def DEBUG_OUTPUT(*argv):
     for s in argv:
         print(s, end=' ', file=sys.stderr)
     print(file=sys.stderr)
+
 
 INFO_SQL_SELECT_DESCRIBE_VARS = bs([
     isc_info_sql_select,
@@ -133,6 +133,23 @@ def wire_operation(fn):
         r = fn(*args, **kwargs)
         return r
     return f
+
+
+class Packer(object):
+    def __init__(self):
+        self.buf = b''
+
+    def pack_int(self, v):
+        self.buf += bint_to_bytes(v, 4)
+
+    def pack_bytes(self, v):
+        n = len(v)
+        self.buf += bint_to_bytes(n, 4)
+        n = ((n+3)//4)*4
+        self.buf += v + (n - len(v)) * b'\0'
+
+    def get_buffer(self):
+        return self.buf
 
 
 class WireProtocol(object):
@@ -219,7 +236,7 @@ class WireProtocol(object):
 
     def str_to_bytes(self, s):
         "convert str to bytes"
-        if ((PYTHON_MAJOR_VER == 3  and isinstance(s,str)) or
+        if ((PYTHON_MAJOR_VER == 3 and isinstance(s, str)) or
                 (PYTHON_MAJOR_VER == 2 and type(s) == unicode)):
             return s.encode(charset_map.get(self.charset, self.charset))
         return s
@@ -409,7 +426,7 @@ class WireProtocol(object):
             blr += bs([7, 0])
             values += v
             if self.accept_version < PROTOCOL_VERSION13:
-                values += bs([0]) * 4 if not p is None else bs([0xff, 0xff, 0xff, 0xff])
+                values += bs([0]) * 4 if p is not None else bs([0xff, 0xff, 0xff, 0xff])
         blr += bs([255, 76])    # [blr_end, blr_eoc]
         return blr, values
 
@@ -469,12 +486,12 @@ class WireProtocol(object):
             'ffff800b00000001000000000000000500000004',     # 11, 1, 0, 5, 4
             'ffff800c00000001000000000000000500000006',     # 12, 1, 0, 5, 6
             'ffff800d00000001000000000000000500000008',     # 13, 1, 0, 5, 8
-#            'ffff800e0000000100000000000000050000000a',     # 14, 1, 0, 5, 10
-#            'ffff800f0000000100000000000000050000000c',     # 16, 1, 0, 5, 12
-#            'ffff80100000000100000000000000050000000e',     # 18, 1, 0, 5, 14
-#            'ffff801100000001000000000000000500000010',     # 20, 1, 0, 5, 16
+            # 'ffff800e0000000100000000000000050000000a',     # 14, 1, 0, 5, 10
+            # 'ffff800f0000000100000000000000050000000c',     # 16, 1, 0, 5, 12
+            # 'ffff80100000000100000000000000050000000e',     # 18, 1, 0, 5, 14
+            # 'ffff801100000001000000000000000500000010',     # 20, 1, 0, 5, 16
         ]
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_connect)
         p.pack_int(self.op_attach)
         p.pack_int(3)   # CONNECT_VERSION
@@ -514,7 +531,7 @@ class WireProtocol(object):
         dpb += bs([isc_dpb_force_write, 4]) + int_to_bytes(1, 4)
         dpb += bs([isc_dpb_overwrite, 4]) + int_to_bytes(1, 4)
         dpb += bs([isc_dpb_page_size, 4]) + int_to_bytes(page_size, 4)
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_create)
         p.pack_int(0)                       # Database Object ID
         p.pack_bytes(self.str_to_bytes(self.filename))
@@ -523,7 +540,7 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_cont_auth(self, auth_data, auth_plugin_name, auth_plugin_list, keys):
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_cont_auth)
         p.pack_bytes(bytes_to_hex(auth_data))
         p.pack_bytes(auth_plugin_name)
@@ -533,7 +550,7 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_crypt(self):
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_crypt)
         p.pack_bytes(b'Arc4')
         p.pack_bytes(b'Symmetric')
@@ -579,7 +596,7 @@ class WireProtocol(object):
                     user = self.user
                     if len(user) > 2 and user[0] == user[-1] == '"':
                         user = user[1:-1]
-                        user = user.replace('""','"')
+                        user = user.replace('""', '"')
                     else:
                         user = user.upper()
 
@@ -675,7 +692,7 @@ class WireProtocol(object):
         if timezone:
             s = self.str_to_bytes(self.timezone)
             dpb += bs([isc_dpb_session_time_zone, len(s)]) + s
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_attach)
         p.pack_int(0)                       # Database Object ID
         p.pack_bytes(self.str_to_bytes(self.filename))
@@ -686,7 +703,7 @@ class WireProtocol(object):
     def _op_drop_database(self):
         if self.db_handle is None:
             raise OperationalError('_op_drop_database() Invalid db handle')
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_drop_database)
         p.pack_int(self.db_handle)
         self.sock.send(p.get_buffer())
@@ -708,7 +725,7 @@ class WireProtocol(object):
             s = self.str_to_bytes(bytes_to_hex(self.auth_data))
             spb += bs([isc_dpb_specific_auth_data, len(s)]) + s
         spb += bs([isc_spb_dummy_packet_interval, 0x04, 0x78, 0x0a, 0x00, 0x00])
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_service_attach)
         p.pack_int(0)
         p.pack_bytes(b'service_mgr')
@@ -719,7 +736,7 @@ class WireProtocol(object):
     def _op_service_info(self, param, item, buffer_length=512):
         if self.db_handle is None:
             raise OperationalError('_op_service_info() Invalid db handle')
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_service_info)
         p.pack_int(self.db_handle)
         p.pack_int(0)
@@ -732,7 +749,7 @@ class WireProtocol(object):
     def _op_service_start(self, param):
         if self.db_handle is None:
             raise OperationalError('_op_service_start() Invalid db handle')
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_service_start)
         p.pack_int(self.db_handle)
         p.pack_int(0)
@@ -743,7 +760,7 @@ class WireProtocol(object):
     def _op_service_detach(self):
         if self.db_handle is None:
             raise OperationalError('_op_service_detach() Invalid db handle')
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_service_detach)
         p.pack_int(self.db_handle)
         self.sock.send(p.get_buffer())
@@ -752,7 +769,7 @@ class WireProtocol(object):
     def _op_info_database(self, b):
         if self.db_handle is None:
             raise OperationalError('_op_info_database() Invalid db handle')
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_info_database)
         p.pack_int(self.db_handle)
         p.pack_int(0)
@@ -764,7 +781,7 @@ class WireProtocol(object):
     def _op_transaction(self, tpb):
         if self.db_handle is None:
             raise OperationalError('_op_transaction() Invalid db handle')
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_transaction)
         p.pack_int(self.db_handle)
         p.pack_bytes(tpb)
@@ -772,28 +789,28 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_commit(self, trans_handle):
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_commit)
         p.pack_int(trans_handle)
         self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_commit_retaining(self, trans_handle):
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_commit_retaining)
         p.pack_int(trans_handle)
         self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_rollback(self, trans_handle):
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_rollback)
         p.pack_int(trans_handle)
         self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_rollback_retaining(self, trans_handle):
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_rollback_retaining)
         p.pack_int(trans_handle)
         self.sock.send(p.get_buffer())
@@ -802,14 +819,14 @@ class WireProtocol(object):
     def _op_allocate_statement(self):
         if self.db_handle is None:
             raise OperationalError('_op_allocate_statement() Invalid db handle')
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_allocate_statement)
         p.pack_int(self.db_handle)
         self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_info_transaction(self, trans_handle, b):
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_info_transaction)
         p.pack_int(trans_handle)
         p.pack_int(0)
@@ -819,7 +836,7 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_free_statement(self, stmt_handle, mode):
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_free_statement)
         p.pack_int(stmt_handle)
         p.pack_int(mode)
@@ -828,9 +845,9 @@ class WireProtocol(object):
     @wire_operation
     def _op_prepare_statement(self, stmt_handle, trans_handle, query, option_items=None):
         if option_items is None:
-            option_items=bs([])
+            option_items = bs([])
         desc_items = option_items + bs([isc_info_sql_stmt_type])+INFO_SQL_SELECT_DESCRIBE_VARS
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_prepare_statement)
         p.pack_int(trans_handle)
         p.pack_int(stmt_handle)
@@ -842,7 +859,7 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_info_sql(self, stmt_handle, vars):
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_info_sql)
         p.pack_int(stmt_handle)
         p.pack_int(0)
@@ -852,7 +869,7 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_execute(self, stmt_handle, trans_handle, params):
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_execute)
         p.pack_int(stmt_handle)
         p.pack_int(trans_handle)
@@ -871,7 +888,7 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_execute2(self, stmt_handle, trans_handle, params, output_blr):
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_execute2)
         p.pack_int(stmt_handle)
         p.pack_int(trans_handle)
@@ -887,7 +904,7 @@ class WireProtocol(object):
             p.pack_int(0)
             p.pack_int(1)
 
-        q = xdrlib.Packer()
+        q = Packer()
         q.pack_bytes(output_blr)
         q.pack_int(0)
         self.sock.send(p.get_buffer() + values + q.get_buffer())
@@ -897,7 +914,7 @@ class WireProtocol(object):
         if self.db_handle is None:
             raise OperationalError('_op_exec_immediate() Invalid db handle')
         desc_items = bs([])
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_exec_immediate)
         p.pack_int(trans_handle)
         p.pack_int(self.db_handle)
@@ -909,7 +926,7 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_fetch(self, stmt_handle, blr):
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_fetch)
         p.pack_int(stmt_handle)
         p.pack_bytes(blr)
@@ -979,21 +996,21 @@ class WireProtocol(object):
     def _op_detach(self):
         if self.db_handle is None:
             raise OperationalError('_op_detach() Invalid db handle')
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_detach)
         p.pack_int(self.db_handle)
         self.sock.send(p.get_buffer())
 
     @wire_operation
     def _op_open_blob(self, blob_id, trans_handle):
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_open_blob)
         p.pack_int(trans_handle)
         self.sock.send(p.get_buffer() + blob_id)
 
     @wire_operation
     def _op_create_blob2(self, trans_handle):
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_create_blob2)
         p.pack_int(0)
         p.pack_int(trans_handle)
@@ -1003,7 +1020,7 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_get_segment(self, blob_handle):
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_get_segment)
         p.pack_int(blob_handle)
         p.pack_int(self.buffer_length)
@@ -1013,7 +1030,7 @@ class WireProtocol(object):
     @wire_operation
     def _op_put_segment(self, blob_handle, seg_data):
         ln = len(seg_data)
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_put_segment)
         p.pack_int(blob_handle)
         p.pack_int(ln)
@@ -1024,7 +1041,7 @@ class WireProtocol(object):
     @wire_operation
     def _op_batch_segments(self, blob_handle, seg_data):
         ln = len(seg_data)
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_batch_segments)
         p.pack_int(blob_handle)
         p.pack_int(ln + 2)
@@ -1034,7 +1051,7 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_close_blob(self, blob_handle):
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_close_blob)
         p.pack_int(blob_handle)
         self.sock.send(p.get_buffer())
@@ -1048,7 +1065,7 @@ class WireProtocol(object):
             params += bs([len(name)])
             params += self.str_to_bytes(name)
             params += int_to_bytes(n, 4)
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_que_events)
         p.pack_int(self.db_handle)
         p.pack_bytes(params)
@@ -1061,7 +1078,7 @@ class WireProtocol(object):
     def _op_cancel_events(self, event_id):
         if self.db_handle is None:
             raise OperationalError('_op_cancel_events() Invalid db handle')
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_cancel_events)
         p.pack_int(self.db_handle)
         p.pack_int(event_id)
@@ -1071,7 +1088,7 @@ class WireProtocol(object):
     def _op_connect_request(self):
         if self.db_handle is None:
             raise OperationalError('_op_connect_request() Invalid db handle')
-        p = xdrlib.Packer()
+        p = Packer()
         p.pack_int(self.op_connect_request)
         p.pack_int(1)    # async
         p.pack_int(self.db_handle)

@@ -28,8 +28,8 @@
 import datetime
 import decimal
 
-from firebirdsql.consts import *
-from firebirdsql.utils import *
+from firebirdsql.consts import *    # noqa
+from firebirdsql.utils import *     # noqa
 from firebirdsql.wireprotocol import INFO_SQL_SELECT_DESCRIBE_VARS
 from firebirdsql.tz_utils import get_tzinfo_by_id
 from firebirdsql import decfloat
@@ -52,8 +52,8 @@ class XSQLVAR:
         SQL_TYPE_INT128: 16,
         SQL_TYPE_TIMESTAMP_TZ: 12,
         SQL_TYPE_TIME_TZ: 8,
-        SQL_TYPE_DEC64 : 8,
-        SQL_TYPE_DEC128 : 16,
+        SQL_TYPE_DEC64: 8,
+        SQL_TYPE_DEC128: 16,
         SQL_TYPE_DEC_FIXED: 16,
         SQL_TYPE_BOOLEAN: 1,
         }

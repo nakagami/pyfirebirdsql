@@ -32,9 +32,9 @@ import datetime
 import decimal
 import itertools
 from collections import Mapping
-from firebirdsql import InternalError, OperationalError, IntegrityError, NotSupportedError
-from firebirdsql.consts import *
-from firebirdsql.utils import *
+from firebirdsql import InternalError, OperationalError, NotSupportedError
+from firebirdsql.consts import *    # noqa
+from firebirdsql.utils import *     # noqa
 from firebirdsql.wireprotocol import WireProtocol
 from firebirdsql.socketstream import SocketStream
 from firebirdsql.xsqlvar import calc_blr, parse_xsqlda
@@ -574,7 +574,8 @@ class Connection(WireProtocol):
         WireProtocol.__init__(self)
         self.sock = None
         self.db_handle = None
-        (self.hostname, self.port, self.filename, self.user, self.password) = parse_dsn(dsn, host, port, database, user, password)
+        (self.hostname, self.port, self.filename, self.user, self.password) = \
+            parse_dsn(dsn, host, port, database, user, password)
         self.role = role
         self.charset = charset
         self.timeout = float(timeout) if timeout is not None else None

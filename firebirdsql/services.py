@@ -25,8 +25,8 @@
 #
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
-from firebirdsql.consts import *
-from firebirdsql.utils import *
+from firebirdsql.consts import *    # noqa
+from firebirdsql.utils import *     # noqa
 from firebirdsql.fbcore import Connection
 
 

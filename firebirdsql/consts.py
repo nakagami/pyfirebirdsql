@@ -306,7 +306,7 @@ isc_dpb_reset_icu = 89
 isc_dpb_map_attach = 90
 isc_dpb_session_time_zone = 91
 isc_dpb_set_db_replica = 92
-isc_dpb_set_bind =93
+isc_dpb_set_bind = 93
 isc_dpb_decfloat_round = 94
 isc_dpb_decfloat_traps = 95
 
