@@ -10,8 +10,7 @@ from firebirdsql.tests.test_auth import *       # noqa
 from firebirdsql.tests.test_srp import *        # noqa
 from firebirdsql.tests.test_utils import *      # noqa
 
-if (sys.version_info[0], sys.version_info[1]) > (3, 8):
-    from firebirdsql.tests.test_timezone import *
+from firebirdsql.tests.test_timezone import *
 
 if __name__ == "__main__":
     import unittest

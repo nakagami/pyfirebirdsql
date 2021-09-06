@@ -29,7 +29,11 @@ from firebirdsql.tz_map import timezone_name_by_id, timezone_id_by_name
 
 
 def get_tzinfo_by_name(name):
-    import zoneinfo
+    try:
+        import zoneinfo
+    except ImportError:
+        # https://pypi.org/project/backports.zoneinfo/
+        from backports import zoneinfo
     return zoneinfo.ZoneInfo(name)
 
 
