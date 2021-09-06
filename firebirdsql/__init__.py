@@ -25,17 +25,6 @@
 #
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
-from firebirdsql.fbcore import (
-    __version__, apilevel, threadsafety,
-    paramstyle, Transaction, Cursor, Connection,
-    ISOLATION_LEVEL_READ_COMMITED_LEGACY, ISOLATION_LEVEL_READ_COMMITED,
-    ISOLATION_LEVEL_REPEATABLE_READ, ISOLATION_LEVEL_SNAPSHOT,
-    ISOLATION_LEVEL_SERIALIZABLE, ISOLATION_LEVEL_READ_COMMITED_RO,
-    BINARY, Binary, DATE, Date,
-    Time, Timestamp, DateFromTicks, TimeFromTicks, TimestampFromTicks,
-)
-from firebirdsql.consts import *    # noqa
-import firebirdsql.services
 
 
 class Error(Exception):
@@ -87,6 +76,19 @@ class DataError(DatabaseError):
 class NotSupportedError(DatabaseError):
     def __init__(self):
         DatabaseError.__init__(self, 'NotSupportedError')
+
+
+from firebirdsql.fbcore import (
+    __version__, apilevel, threadsafety,
+    paramstyle, Transaction, Cursor, Connection,
+    ISOLATION_LEVEL_READ_COMMITED_LEGACY, ISOLATION_LEVEL_READ_COMMITED,
+    ISOLATION_LEVEL_REPEATABLE_READ, ISOLATION_LEVEL_SNAPSHOT,
+    ISOLATION_LEVEL_SERIALIZABLE, ISOLATION_LEVEL_READ_COMMITED_RO,
+    BINARY, Binary, DATE, Date,
+    Time, Timestamp, DateFromTicks, TimeFromTicks, TimestampFromTicks,
+)
+from firebirdsql.consts import *    # noqa
+import firebirdsql.services
 
 
 def connect(**kwargs):
