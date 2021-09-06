@@ -31,7 +31,7 @@ import decimal
 from firebirdsql.consts import *
 from firebirdsql.utils import *
 from firebirdsql.wireprotocol import INFO_SQL_SELECT_DESCRIBE_VARS
-from firebirdsql.tz_utils import get_tzinfo
+from firebirdsql.tz_utils import get_tzinfo_by_id
 from firebirdsql import decfloat
 
 
@@ -50,8 +50,8 @@ class XSQLVAR:
         SQL_TYPE_QUAD: 8,
         SQL_TYPE_INT64: 8,
         SQL_TYPE_INT128: 16,
-        SQL_TYPE_TIMESTAMP_TZ: 10,
-        SQL_TYPE_TIME_TZ: 6,
+        SQL_TYPE_TIMESTAMP_TZ: 12,
+        SQL_TYPE_TIME_TZ: 8,
         SQL_TYPE_DEC64 : 8,
         SQL_TYPE_DEC128 : 16,
         SQL_TYPE_DEC_FIXED: 16,
@@ -150,7 +150,7 @@ class XSQLVAR:
         return (h, m, s, (n % 10000) * 100)
 
     def _parse_time_zone(self, raw_value):
-        return get_tzinfo(bytes_to_uint(raw_value))
+        return get_tzinfo_by_id(bytes_to_bint(raw_value, u=True))
 
     def value(self, raw_value):
         if self.sqltype == SQL_TYPE_TEXT:
@@ -182,12 +182,18 @@ class XSQLVAR:
         elif self.sqltype == SQL_TYPE_TIMESTAMP_TZ:
             yyyy, mm, dd = self._parse_date(raw_value[:4])
             h, m, s, ms = self._parse_time(raw_value[4:8])
-            tz = self._parse_time_zone(raw_value[8:])
-            return datetime.datetime(yyyy, mm, dd, h, m, s, ms, tzinfo=tz)
+            tz = self._parse_time_zone(raw_value[8:10])
+            offset = self._parse_time_zone(raw_value[10:12])
+            dt = datetime.datetime(yyyy, mm, dd, h, m, s, ms, tzinfo=tz)
+            return dt.astimezone(offset)
         elif self.sqltype == SQL_TYPE_TIME_TZ:
             h, m, s, ms = self._parse_time(raw_value[:4])
-            tz = self._parse_time_zone(raw_value[4:])
-            return datetime.time(h, m, s, ms, tzinfo=tz)
+            tz = self._parse_time_zone(raw_value[4:6])
+            offset = self._parse_time_zone(raw_value[6:8])
+            t = datetime.time(h, m, s, ms, tzinfo=tz)
+            dt = datetime.datetime.combine(datetime.date.today(), t).astimezone(offset)
+            t = datetime.time(dt.hour, dt.minute, dt.second, dt.microsecond, tzinfo=offset)
+            return t
         elif self.sqltype == SQL_TYPE_DEC_FIXED:
             return decfloat.decimal_fixed_to_decimal(raw_value, self.sqlscale)
         elif self.sqltype == SQL_TYPE_DEC64:

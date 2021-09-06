@@ -27,14 +27,15 @@
 ##############################################################################
 from firebirdsql.tz_map import timezone_name_by_id, timezone_id_by_name
 
-def get_tzinfo(timezone_id):
-    try:
-        import zoneinfo
-        return zoneinfo.ZoneInfo(timezone_name_by_id[timezone_id])
-    except ImportError:
-        import pytz
-        return pytz.timezone(timezone_name_by_id[timezone_id])
+
+def get_tzinfo_by_name(name):
+    import zoneinfo
+    return zoneinfo.ZoneInfo(name)
 
 
-def get_timezone_id(tz_name):
+def get_tzinfo_by_id(timezone_id):
+    return get_tzinfo_by_name(timezone_name_by_id[timezone_id])
+
+
+def get_timezone_id_by_name(tz_name):
     return timezone_id_by_name[tz_name]

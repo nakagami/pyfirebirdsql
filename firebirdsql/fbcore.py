@@ -602,11 +602,11 @@ class Connection(WireProtocol):
             self.sock = None
             raise e
         if create_new:                      # create database
-            self._op_create(self.page_size)
+            self._op_create(self.timezone, self.page_size)
         elif self.is_services:                  # service api
             self._op_service_attach()
         else:                                   # connect
-            self._op_attach()
+            self._op_attach(self.timezone)
         (h, oid, buf) = self._op_response()
         self.db_handle = h
 

@@ -9,10 +9,11 @@ PyfirebirdSQL
 
 firebirdsql package is a set of Firebird RDBMS (https://firebirdsql.org/) bindings for Python (Written in pure Python : no C compiler needed or fbclient library)
 
-It works on Python 2.7+ and 3.5+.
 
 see https://pyfirebirdsql.readthedocs.io/en/latest/
 
+It works on Python 2.7+ and 3.5+.
+But if you want to use the timezone feature of Firebird 4.0, please use Python 3.9 or later.
 
 Example
 -----------

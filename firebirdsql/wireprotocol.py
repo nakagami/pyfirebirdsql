@@ -108,38 +108,19 @@ def convert_timestamp(v):   # Convert datetime.datetime to BLR format timestamp
 
 
 def convert_time_tz(v):  # Convert datetime.time to BLR format time_tz
-    try:
-        utc = datetime.timezone.utc
-    except AttributeError:
-        import pytz
-        utc = pytz.utc
-    t = datetime.date.today()
-    native = datetime.datetime(
-        t.year, t.month, t.day, v.hour, v.minute, v.second, v.microsecond
-    )
-    aware = v.tzinfo.localize(native)
-    v2 = aware.astimezone(utc)
+    v2 = datetime.datetime.combine(datetime.date.today(), v).astimezone(datetime.timezone.utc)
 
     t = (v2.hour*3600 + v2.minute*60 + v2.second) * 10000 + v2.microsecond // 100
     r = bint_to_bytes(t, 4)
-    r += bint_to_bytes(tz_utils.get_timezone_id(v.tzinfo.zone), 4)
+    r += bint_to_bytes(tz_utils.get_timezone_id_by_name(str(v.tzinfo)), 4)
     return r
 
 
 def convert_timestamp_tz(v):   # Convert datetime.datetime to BLR format timestamp_tz
-    try:
-        utc = datetime.timezone.utc
-    except AttributeError:
-        import pytz
-        utc = pytz.utc
-    native = datetime.datetime(
-        v.year, v.month, v.day, v.hour, v.minute, v.second, v.microsecond
-    )
-    aware = v.tzinfo.localize(native)
-    v2 = aware.astimezone(utc)
+    v2 = v.astimezone(datetime.timezone.utc)
 
     r = convert_date(v2.date()) + convert_time(v2.time())
-    r += bint_to_bytes(tz_utils.get_timezone_id(v.tzinfo.zone), 4)
+    r += bint_to_bytes(tz_utils.get_timezone_id_by_name(str(v.tzinfo)), 4)
     return r
 
 
@@ -505,7 +486,7 @@ class WireProtocol(object):
         self.sock.send(p.get_buffer() + hex_to_bytes(''.join(protocols)))
 
     @wire_operation
-    def _op_create(self, page_size=4096):
+    def _op_create(self, timezone, page_size=4096):
         dpb = bs([1])
         s = self.str_to_bytes(self.charset)
         dpb += bs([isc_dpb_set_db_charset, len(s)]) + s
@@ -526,8 +507,8 @@ class WireProtocol(object):
         if self.auth_data:
             s = bytes_to_hex(self.auth_data)
             dpb += bs([isc_dpb_specific_auth_data, len(s)]) + s
-        if self.timezone:
-            s = self.str_to_bytes(self.timezone)
+        if timezone:
+            s = self.str_to_bytes(timezone)
             dpb += bs([isc_dpb_session_time_zone, len(s)]) + s
         dpb += bs([isc_dpb_sql_dialect, 4]) + int_to_bytes(3, 4)
         dpb += bs([isc_dpb_force_write, 4]) + int_to_bytes(1, 4)
@@ -668,10 +649,8 @@ class WireProtocol(object):
             assert op_code == self.op_accept
 
     @wire_operation
-    def _op_attach(self):
+    def _op_attach(self, timezone):
         dpb = bs([isc_dpb_version1])
-        #s = b"GMT"
-        #dpb += bs([isc_dpb_session_time_zone, len(s)]) + s
         s = self.str_to_bytes(self.charset)
         dpb += bs([isc_dpb_lc_ctype, len(s)]) + s
         s = self.str_to_bytes(self.user)
@@ -693,7 +672,7 @@ class WireProtocol(object):
         if self.auth_data:
             s = bytes_to_hex(self.auth_data)
             dpb += bs([isc_dpb_specific_auth_data, len(s)]) + s
-        if self.timezone:
+        if timezone:
             s = self.str_to_bytes(self.timezone)
             dpb += bs([isc_dpb_session_time_zone, len(s)]) + s
         p = xdrlib.Packer()

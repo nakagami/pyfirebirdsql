@@ -1,7 +1,6 @@
 from __future__ import with_statement
 import tempfile
 import datetime
-import pytz
 
 import firebirdsql
 from firebirdsql.tests.base import *    # noqa
@@ -21,11 +20,25 @@ class TestTimeZone(TestBase):
                 password=self.password,
                 page_size=self.page_size,
                 timezone='Asia/Tokyo')
+        cur = self.connection.cursor()
+
+        cur.execute(
+            "SELECT rdb$get_context('SYSTEM', 'ENGINE_VERSION') from rdb$database"
+        )
+        self.server_version = tuple(
+            [int(n) for n in cur.fetchone()[0].split('.')]
+        )
+        cur.close()
+
 
     def test_timezone(self):
         """
         For FB4
         """
+        if self.server_version[0] < 4:
+            self.connection.close()
+            return
+
         cur = self.connection.cursor()
         cur.execute('''
             CREATE TABLE tz_test (
@@ -41,7 +54,7 @@ class TestTimeZone(TestBase):
         cur = self.connection.cursor()
         cur.execute("insert into tz_test (id) values (1)")
 
-        tzinfo = pytz.timezone('Asia/Seoul')
+        tzinfo = firebirdsql.tz_utils.get_tzinfo_by_name('Asia/Seoul')
         cur.execute(
             "insert into tz_test (id, t, ts) values (2, ?, ?)", [
                 datetime.time(12, 34, 56, tzinfo=tzinfo),
@@ -49,7 +62,7 @@ class TestTimeZone(TestBase):
             ]
         )
 
-        tzinfo = pytz.timezone('UTC')
+        tzinfo = firebirdsql.tz_utils.get_tzinfo_by_name('UTC')
         cur.execute(
             "insert into tz_test (id, t, ts) values (3, ?, ?)", [
                 datetime.time(3, 34, 56, tzinfo=tzinfo),
@@ -57,10 +70,26 @@ class TestTimeZone(TestBase):
             ]
         )
 
+        expected = [
+            (
+                1,
+                datetime.time(12, 34, 56, tzinfo=firebirdsql.tz_utils.get_tzinfo_by_name('Asia/Tokyo')),
+                datetime.datetime(1967, 8, 11, 23, 45, 1, tzinfo=firebirdsql.tz_utils.get_tzinfo_by_name('Asia/Tokyo')),
+            ),
+            (
+                2,
+                datetime.time(12, 34, 56, tzinfo=firebirdsql.tz_utils.get_tzinfo_by_name('Asia/Seoul')),
+                datetime.datetime(1967, 8, 11, 23, 45, 1, tzinfo=firebirdsql.tz_utils.get_tzinfo_by_name('Asia/Seoul')),
+            ),
+            (
+                3,
+                datetime.time(3, 34, 56, tzinfo=firebirdsql.tz_utils.get_tzinfo_by_name('UTC')),
+                datetime.datetime(1967, 8, 11, 14, 45, 1, tzinfo=firebirdsql.tz_utils.get_tzinfo_by_name('UTC')),
+            ),
+        ]
         cur = self.connection.cursor()
-        cur.execute("select t, ts from tz_test order by id")
-        r1, r2, r3 = cur.fetchall()
-        self.assertEqual(r1, r2)
-        self.assertEqual(r2, r3)
+        cur.execute("select id, t, ts from tz_test order by id")
+        self.assertEqual(cur.fetchall(), expected)
+
         self.connection.close()
 
