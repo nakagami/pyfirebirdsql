@@ -12,8 +12,12 @@ firebirdsql package is a set of Firebird RDBMS (https://firebirdsql.org/) bindin
 
 see https://pyfirebirdsql.readthedocs.io/en/latest/
 
-It works on Python 2.7+ and 3.5+.
-But if you want to use the timezone feature of Firebird 4.0, please use Python 3.9 or later.
+It works on Python 2.7 and 3.6+.
+
+But if you want to use the timezone feature of Firebird 4.0 ...
+
+- Not supported by python2.7
+- Python 3.6, 3.7, 3.8 requires backports.zoneinfo https://pypi.org/project/backports.zoneinfo/ install
 
 Example
 -----------
@@ -33,20 +37,3 @@ Example
    for c in cur.fetchall():
        print(c)
    conn.close()
-
-Test with Firebird3
-----------------------
-
-You can unit test with Firebird3.
-
-Set firebird.conf like this ::
-
-   AuthServer = Srp, Legacy_Auth
-   WireCrypt = Enabled
-
-and execute bellow command:
-
-   $ python setup.py test
-
-On the other hand, you can use it with Firebird3 wire protocol 13
-(Srp authentication and wire encryption) with default firebird.conf
