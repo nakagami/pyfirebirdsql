@@ -1,6 +1,7 @@
 import unittest
 from firebirdsql.arc4 import ARC4
 
+
 class TestArc4(unittest.TestCase):
     def test_arc4(self):
         a1 = ARC4.new(b'a key')
@@ -9,4 +10,3 @@ class TestArc4(unittest.TestCase):
         a2 = ARC4.new(b'a key')
         plain = a2.translate(enc)
         self.assertEqual(plain, b'plain text')
-

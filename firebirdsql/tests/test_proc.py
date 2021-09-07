@@ -1,12 +1,8 @@
 from __future__ import with_statement
-import sys
-import unittest
-import tempfile
 import datetime
-from decimal import Decimal
 import firebirdsql
-from firebirdsql.tests.base import *
-from firebirdsql.consts import *
+from firebirdsql.tests.base import *    # noqa
+from firebirdsql.consts import *        # noqa
 
 
 class TestProc(TestBase):
@@ -22,7 +18,7 @@ class TestProc(TestBase):
                 e DATE DEFAULT '1967-08-11',
                 f TIMESTAMP DEFAULT '1967-08-11 23:45:01',
                 g TIME DEFAULT '23:45:01',
-                h BLOB SUB_TYPE 1, 
+                h BLOB SUB_TYPE 1,
                 i DOUBLE PRECISION DEFAULT 0.0,
                 j FLOAT DEFAULT 0.0,
                 PRIMARY KEY (a),
@@ -65,10 +61,10 @@ class TestProc(TestBase):
             insert into foo_table(a, b, c,h)
                 values (1, 'a', 'b','This is a memo')""")
         cur.execute("""
-            insert into foo_table(a, b, c, e, g, i, j) 
+            insert into foo_table(a, b, c, e, g, i, j)
                 values (2, 'A', 'B', '1999-01-25', '00:00:01', 0.1, 0.1)""")
         cur.execute("""
-            insert into foo_table(a, b, c, e, g, i, j) 
+            insert into foo_table(a, b, c, e, g, i, j)
                 values (3, 'X', 'Y', '2001-07-05', '00:01:02', 0.2, 0.2)""")
         self.connection.commit()
 
@@ -99,7 +95,7 @@ class TestProc(TestBase):
         self.assertEqual(rs[0]['OUT1'], 1)
         self.assertEqual(rs[0]['OUT2'], 'ABC')
         cur.close()
-  
+
         cur = self.connection.cursor()
         cur.execute("select out1, out2 from baz_proc(?)", (1, ))
         rs = cur.fetchall()
@@ -120,4 +116,3 @@ class TestProc(TestBase):
         cur.execute(prep, (5, ))
         self.assertEqual(cur.fetchone()[0], datetime.date(1967, 8, 11))
         cur.close()
-

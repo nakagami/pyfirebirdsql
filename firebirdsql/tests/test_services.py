@@ -1,12 +1,12 @@
-import sys
 import unittest
 import tempfile
 import firebirdsql
-from firebirdsql.tests.base import *
+from firebirdsql.tests.base import *    # noqa
+
 
 class TestServices(TestBase):
     def setUp(self):
-        self.database=tempfile.mktemp()
+        self.database = tempfile.mktemp()
         conn = firebirdsql.create_database(
                 auth_plugin_name=self.auth_plugin_name,
                 wire_crypt=self.wire_crypt,
@@ -40,7 +40,7 @@ class TestServices(TestBase):
         self.assertNotEqual(None, svc.getAttachedDatabaseNames())
         self.assertNotEqual(None, svc.getLog())
         self.assertNotEqual(None, svc.getStatistics(self.database))
-    
+
         svc.close()
 
     @unittest.skip("Fail by OperationalError in Ubuntu12.04")
@@ -53,7 +53,7 @@ class TestServices(TestBase):
             password=self.password)
         svc.repair(self.database)
         svc.close()
-    
+
     def shutdown(self):
         svc = firebirdsql.services.connect(
             auth_plugin_name=self.auth_plugin_name,
@@ -73,5 +73,3 @@ class TestServices(TestBase):
             password=self.password)
         svc.bringOnline(self.database)
         svc.close()
-
-    

@@ -9,7 +9,7 @@ from firebirdsql.consts import *        # noqa
 
 class TestTimeZone(TestBase):
     def setUp(self):
-        self.database=tempfile.mktemp()
+        self.database = tempfile.mktemp()
         self.connection = firebirdsql.create_database(
                 auth_plugin_name=self.auth_plugin_name,
                 wire_crypt=self.wire_crypt,
@@ -29,7 +29,6 @@ class TestTimeZone(TestBase):
             [int(n) for n in cur.fetchone()[0].split('.')]
         )
         cur.close()
-
 
     def test_timezone(self):
         """
@@ -92,4 +91,3 @@ class TestTimeZone(TestBase):
         self.assertEqual(cur.fetchall(), expected)
 
         self.connection.close()
-

@@ -11,7 +11,7 @@ from firebirdsql.tests.test_srp import *        # noqa
 from firebirdsql.tests.test_utils import *      # noqa
 
 if sys.version_info >= (3, 6):
-    from firebirdsql.tests.test_timezone import *
+    from firebirdsql.tests.test_timezone import *   # noqa
 
 if __name__ == "__main__":
     import unittest

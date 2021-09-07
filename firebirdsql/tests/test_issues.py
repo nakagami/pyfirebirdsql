@@ -1,4 +1,5 @@
-from firebirdsql.tests.base import *
+from firebirdsql.tests.base import *    # noqa
+
 
 class TestIssues(TestBase):
     def test_issue_39(self):
@@ -33,11 +34,11 @@ class TestIssues(TestBase):
         cur.execute("INSERT INTO issue_41 (a, b) VALUES (32768, 'BAR')")
         cur.close()
         cur = self.connection.cursor()
-        cur.execute('''SELECT b FROM issue_41 WHERE a=?''',(32767, ))
+        cur.execute('''SELECT b FROM issue_41 WHERE a=?''', (32767, ))
         self.assertEqual(cur.fetchone()[0], 'FOO')
         cur.close()
         cur = self.connection.cursor()
-        cur.execute('''SELECT b from issue_41 WHERE a=?''',(32768, ))
+        cur.execute('''SELECT b from issue_41 WHERE a=?''', (32768, ))
         self.assertEqual(cur.fetchone()[0], 'BAR')
         cur.close()
 
@@ -154,4 +155,3 @@ WHERE doc.RFCEMPRESA = 'p2' and doc.NOSUCURSAL = 0 and doc.TIPO = 700 and doc.SE
         self.assertEqual(len(cur.fetchall()), 1)
 
         cur.close()
-

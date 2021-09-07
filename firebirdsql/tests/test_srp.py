@@ -2,7 +2,8 @@ import binascii
 import hashlib
 import unittest
 from firebirdsql.tests.base import *    # noqa
-from firebirdsql import srp, utils
+from firebirdsql import srp
+
 
 class TestSrp(unittest.TestCase):
     def test_sha1(self):
