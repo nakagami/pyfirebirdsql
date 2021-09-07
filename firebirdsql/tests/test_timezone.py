@@ -32,11 +32,18 @@ class TestTimeZone(TestBase):
 
     def test_timezone(self):
         """
-        For FB4
+        TimeZone data tests
         """
+        # Firebird4 only
         if self.server_version[0] < 4:
             self.connection.close()
             return
+        try:
+            firebirdsql.tz_utils.get_tzinfo_by_name('GMT')
+        except:
+            self.connection.close()
+            return
+
 
         cur = self.connection.cursor()
         cur.execute('''
