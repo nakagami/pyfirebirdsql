@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2009-2018, Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2009-2021, Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@ from firebirdsql.utils import *     # noqa
 from firebirdsql.wireprotocol import WireProtocol
 from firebirdsql.socketstream import SocketStream
 from firebirdsql.xsqlvar import calc_blr, parse_xsqlda
-__version__ = '1.1.4'
+__version__ = '1.2.0'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'

@@ -231,3 +231,11 @@ Version 1.1.4
    - timezone information hold as const values (Firebird4)
    - fix dsn paramerter parsing
    - Update error messages
+
+Version 1.2.0
+==============
+
+   - refactoring
+   - Drop python 3.5 support
+   - Firebird4 timezone support
+
