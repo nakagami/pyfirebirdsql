@@ -31,7 +31,10 @@ import time
 import datetime
 import decimal
 import itertools
-from collections import Mapping
+try:
+    from collections.abc import Mapping
+except ImportError:
+    from collections import Mapping
 from firebirdsql import InternalError, OperationalError, NotSupportedError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
