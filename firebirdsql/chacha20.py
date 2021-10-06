@@ -150,5 +150,9 @@ class ChaCha20:
 
         return enc
 
+    # PyCrypto compatible method
+    @staticmethod
+    def new(key, nonce):
+        return ChaCha20(key, nonce)
     encrypt = translate
     decrypt = translate

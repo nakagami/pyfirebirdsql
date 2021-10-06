@@ -2490,6 +2490,9 @@ def process_wire(client_socket, server_name, server_port):
             elif op_res_name == 'op_accept_data':
                 server_msg = op_accept_data(server_socket)
                 client_socket.send(server_msg)
+            elif op_res_name == 'op_cond_accept':
+                server_msg = op_accept_data(server_socket)
+                client_socket.send(server_msg)
             else:
                 server_msg = server_socket.recv(bufsize)
                 print('\t UNKNOWN response ->', binascii.b2a_hex(server_msg))

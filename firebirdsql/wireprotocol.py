@@ -51,9 +51,11 @@ from firebirdsql.utils import *     # noqa
 from firebirdsql import srp
 from firebirdsql import tz_utils
 try:
-    from Crypto.Cipher import ARC4
+    from Crypto.Cipher import ARC4, ChaCha20
 except ImportError:
     from firebirdsql.arc4 import ARC4
+    from firebirdsql.chacha20 import ChaCha20
+
 
 DEBUG = False
 
@@ -486,10 +488,10 @@ class WireProtocol(object):
             'ffff800b00000001000000000000000500000004',     # 11, 1, 0, 5, 4
             'ffff800c00000001000000000000000500000006',     # 12, 1, 0, 5, 6
             'ffff800d00000001000000000000000500000008',     # 13, 1, 0, 5, 8
-            # 'ffff800e0000000100000000000000050000000a',     # 14, 1, 0, 5, 10
-            # 'ffff800f0000000100000000000000050000000c',     # 16, 1, 0, 5, 12
-            # 'ffff80100000000100000000000000050000000e',     # 18, 1, 0, 5, 14
-            # 'ffff801100000001000000000000000500000010',     # 20, 1, 0, 5, 16
+            'ffff800e0000000100000000000000050000000a',     # 14, 1, 0, 5, 10
+            'ffff800f0000000100000000000000050000000c',     # 15, 1, 0, 5, 12
+            # 'ffff80100000000100000000000000050000000e',     # 16, 1, 0, 5, 14
+            # 'ffff801100000001000000000000000500000010',     # 17, 1, 0, 5, 16
         ]
         p = Packer()
         p.pack_int(self.op_connect)
@@ -549,12 +551,30 @@ class WireProtocol(object):
         self.sock.send(p.get_buffer())
 
     @wire_operation
-    def _op_crypt(self):
+    def _op_crypt(self, algo):
         p = Packer()
         p.pack_int(self.op_crypt)
-        p.pack_bytes(b'Arc4')
+        p.pack_bytes(algo)
         p.pack_bytes(b'Symmetric')
         self.sock.send(p.get_buffer())
+
+    def _guess_wire_crypt(self, b):
+        params = {}
+        i = 0
+        while i < len(b):
+            k = b[i] if PYTHON_MAJOR_VER == 3 else ord(b[i])
+            i += 1
+            ln = b[i] if PYTHON_MAJOR_VER == 3 else ord(b[i])
+            i += 1
+            v = b[i:i+ln]
+            i += ln
+            params[k] = v
+        if params.get(3) and params[3][:7] == b"ChaCha\x00":
+            return (b'ChaCha', params[3][7:-4])
+        if b'Arc4' in params[1]:
+            return (b'Arc4', )
+
+        return None
 
     @wire_operation
     def _parse_connect_response(self):
@@ -654,11 +674,25 @@ class WireProtocol(object):
                     b''
                 )
                 (h, oid, buf) = self._op_response()
+                guessed_wire_crypt = self._guess_wire_crypt(buf)
+            else:
+                guessed_wire_crypt = None
 
-            if self.wire_crypt and session_key:
-                self._op_crypt()
-                self.sock.set_translator(
-                    ARC4.new(session_key), ARC4.new(session_key))
+            if guessed_wire_crypt and self.wire_crypt and session_key:
+                self._op_crypt(guessed_wire_crypt[0])
+                if guessed_wire_crypt[0] == b'Arc4':
+                    self.sock.set_translator(
+                        ARC4.new(session_key), ARC4.new(session_key))
+                elif guessed_wire_crypt[0] == b'ChaCha':
+                    k = hashlib.sha256(session_key).digest()
+                    self.sock.set_translator(
+                        ChaCha20.new(k, guessed_wire_crypt[1]),
+                        ChaCha20.new(k, guessed_wire_crypt[1]),
+                    )
+                else:
+                    raise OperationalError(
+                        'Unknown wirecrypt plugin %s' % (guessed_wire_crypt)
+                    )
                 (h, oid, buf) = self._op_response()
             else:   # use later _op_attach() and _op_create()
                 self.auth_data = auth_data
