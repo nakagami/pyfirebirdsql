@@ -135,7 +135,6 @@ class ChaCha20:
         enc = b''
 
         for i in range(len(plain)):
-            ord(plain[i]) ^ ord(self.xor_table[self.xor_table_pos])
             if PYTHON_MAJOR_VER == 3:
                 enc += bytes([ord(plain[i]) ^ ord(self.xor_table[self.xor_table_pos])])
             else:
