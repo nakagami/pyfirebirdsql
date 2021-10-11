@@ -492,8 +492,8 @@ class WireProtocol(object):
             'ffff800d00000001000000000000000500000008',     # 13, 1, 0, 5, 8
             'ffff800e0000000100000000000000050000000a',     # 14, 1, 0, 5, 10
             'ffff800f0000000100000000000000050000000c',     # 15, 1, 0, 5, 12
-            # 'ffff80100000000100000000000000050000000e',     # 16, 1, 0, 5, 14
-            # 'ffff801100000001000000000000000500000010',     # 17, 1, 0, 5, 16
+            'ffff80100000000100000000000000050000000e',     # 16, 1, 0, 5, 14
+            'ffff801100000001000000000000000500000010',     # 17, 1, 0, 5, 16
         ]
         p = Packer()
         p.pack_int(self.op_connect)
@@ -914,13 +914,16 @@ class WireProtocol(object):
             p.pack_bytes(bs([]))
             p.pack_int(0)
             p.pack_int(0)
-            self.sock.send(p.get_buffer())
+            buf = p.get_buffer()
         else:
             (blr, values) = self.params_to_blr(trans_handle, params)
             p.pack_bytes(blr)
             p.pack_int(0)
             p.pack_int(1)
-            self.sock.send(p.get_buffer() + values)
+            buf = p.get_buffer() + values
+        if self.accept_version >= PROTOCOL_VERSION16:
+            buf += int_to_bytes(0, 4)
+        self.sock.send(buf)
 
     @wire_operation
     def _op_execute2(self, stmt_handle, trans_handle, params, output_blr):
@@ -943,7 +946,10 @@ class WireProtocol(object):
         q = Packer()
         q.pack_bytes(output_blr)
         q.pack_int(0)
-        self.sock.send(p.get_buffer() + values + q.get_buffer())
+        buf = p.get_buffer() + values + q.get_buffer()
+        if self.accept_version >= PROTOCOL_VERSION16:
+            buf += int_to_bytes(0, 4)
+        self.sock.send(buf)
 
     @wire_operation
     def _op_exec_immediate(self, trans_handle, query):
