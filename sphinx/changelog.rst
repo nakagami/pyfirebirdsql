@@ -239,3 +239,7 @@ Version 1.2.0
    - Drop python 3.5 support
    - Firebird4 timezone support
 
+Version 1.2.1
+==============
+
+   - accept protocol version 16
