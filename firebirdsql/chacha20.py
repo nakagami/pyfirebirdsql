@@ -103,16 +103,16 @@ class ChaCha20:
         block_bytes = sigma + key + pos_bytes + nonce
         assert len(block_bytes) == 64
 
-        block = []
+        state = []
         for i in range(0, len(block_bytes), 4):
-            block.append(bytes_to_int(block_bytes[i:i+4]))
-        self.block = block
-        self.xor_table = self.chacha20_round_bytes()
-        self.xor_table_pos = 0
+            state.append(bytes_to_int(block_bytes[i:i+4]))
+        self.state = state
+        self.block = self.chacha20_round_bytes()
+        self.block_pos = 0
         self.pos_len = pos_len
 
     def chacha20_round_bytes(self):
-        x = copy.copy(self.block)
+        x = copy.copy(self.state)
 
         for i in range(10):
             # column rounds
@@ -127,7 +127,7 @@ class ChaCha20:
             x[3], x[4], x[9], x[14] = quaterround(x[3], x[4], x[9], x[14])
 
         for i in range(16):
-            x[i] = add_u32(x[i], self.block[i])
+            x[i] = add_u32(x[i], self.state[i])
 
         return b''.join([int_to_bytes(i, 4) for i in x])
 
@@ -136,16 +136,16 @@ class ChaCha20:
 
         for i in range(len(plain)):
             if PYTHON_MAJOR_VER == 3:
-                enc += bytes([ord(plain[i]) ^ ord(self.xor_table[self.xor_table_pos])])
+                enc += bytes([ord(plain[i]) ^ ord(self.block[self.block_pos])])
             else:
-                enc += chr(ord(plain[i]) ^ ord(self.xor_table[self.xor_table_pos]))
-            self.xor_table_pos += 1
-            if len(self.xor_table) == self.xor_table_pos:
-                self.block[12] = add_u32(self.block[12], 1)
-                if self.pos_len == 8 and self.block[12] == 0:
-                    self.block[13] = add_u32(self.block[13], 1)
-                self.xor_table = self.chacha20_round_bytes()
-                self.xor_table_pos = 0
+                enc += chr(ord(plain[i]) ^ ord(self.block[self.block_pos]))
+            self.block_pos += 1
+            if len(self.block) == self.block_pos:
+                self.state[12] = add_u32(self.state[12], 1)
+                if self.pos_len == 8 and self.state[12] == 0:
+                    self.state[13] = add_u32(self.state[13], 1)
+                self.block = self.chacha20_round_bytes()
+                self.block_pos = 0
 
         return enc
 
