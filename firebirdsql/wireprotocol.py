@@ -307,14 +307,6 @@ class WireProtocol(object):
             raise OperationalError(message, gds_codes, sql_code)
         return (h, oid, buf)
 
-    def _parse_op_event(self):
-        b = self.recv_channel(4096)     # too large TODO: read step by step
-        # TODO: parse event name
-        db_handle = bytes_to_bint(b[0:4])
-        event_id = bytes_to_bint(b[-4:])
-
-        return (db_handle, event_id, {})
-
     def _create_blob(self, trans_handle, b):
         self._op_create_blob2(trans_handle)
         (blob_handle, blob_id, buf) = self._op_response()
@@ -1152,24 +1144,6 @@ class WireProtocol(object):
         elif op_code != self.op_response:
             raise InternalError("_op_response:op_code = %d" % (op_code,))
         return self._parse_op_response()
-
-    @wire_operation
-    def _op_event(self):
-        b = self.recv_channel(4)
-        while bytes_to_bint(b) == self.op_dummy:
-            b = self.recv_channel(4)
-        op_code = bytes_to_bint(b)
-        if op_code == self.op_response and self.lazy_response_count:
-            self.lazy_response_count -= 1
-            self._parse_op_response()
-            b = self.recv_channel(4)
-        if op_code == self.op_exit or bytes_to_bint(b) == self.op_exit:
-            raise DisconnectByPeer
-        if op_code != self.op_event:
-            if op_code == self.op_response:
-                self._parse_op_response()
-            raise InternalError("_op_event:op_code = %d" % (op_code,))
-        return self._parse_op_event()
 
     @wire_operation
     def _op_sql_response(self, xsqlda):
