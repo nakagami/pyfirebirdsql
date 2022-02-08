@@ -1222,7 +1222,7 @@ class WireProtocol(object):
                     r.append(x.value(raw_value))
         return r
 
-    def _wait_for_event(self, timeout):
+    def _wait_for_event(self):
         event_names = {}
         event_id = 0
         while True:

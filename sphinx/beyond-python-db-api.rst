@@ -2052,10 +2052,9 @@ method `Connection.event_conduit` and the class :class:`EventConduit`.
       by the Python programmer. Instead, use the `Connection.event_conduit`
       method to create `EventConduit` instances.
 
-   .. method:: wait(timeout=None)
+   .. method:: wait()
 
-      Blocks the calling thread until at least one of the events occurs, or
-      the specified `timeout` (if any) expires.
+      Blocks the calling thread until at least one of the events occurs.
 
       If one or more event notifications has arrived since the last call to
       `wait`, this method will retrieve a notification from the head of the
@@ -2070,14 +2069,6 @@ method `Connection.event_conduit` and the class :class:`EventConduit`.
 
          conduit = connection.event_conduit( ('event_a', 'event_b') )
          conduit.wait()
-
-
-      Arguments:
-
-      :timeout: *optional* number of seconds (use a `float` to
-                indicate fractions of seconds) If not even one of the relevant
-                events has occurred after `timeout` seconds, this method will
-                unblock and return `None`. The default `timeout` is infinite.
 
       Returns:
         `None` if the wait timed out, otherwise a dictionary that maps
