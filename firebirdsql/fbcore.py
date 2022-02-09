@@ -468,16 +468,62 @@ class Cursor(object):
         return count
 
 
-class EventConduit(WireProtocol):
+class EventConduit(object):
+
+    def _recv_channel(self, nbytes, word_alignment=False):
+        n = nbytes
+        if word_alignment and (n % 4):
+            n += 4 - nbytes % 4  # 4 bytes word alignment
+        r = bs([])
+        while n:
+            b = self.sock.recv(n)
+            if not b:
+                break
+            r += b
+            n -= len(b)
+        if len(r) < nbytes:
+            raise OperationalError('Can not recv() packets')
+        return r[:nbytes]
+
+    def _wait_for_event(self):
+        event_names = {}
+        event_id = 0
+        while True:
+            op_code = bytes_to_bint(self._recv_channel(4))
+            if op_code == WireProtocol.op_dummy:
+                pass
+            elif op_code == WireProtocol.op_exit or op_code == WireProtocol.op_disconnect:
+                break
+            elif op_code == WireProtocol.op_event:
+                _db_handle = bytes_to_int(self._recv_channel(4))
+                ln = bytes_to_bint(self._recv_channel(4))
+                b = self._recv_channel(ln, word_alignment=True)
+                assert byte_to_int(b[0]) == 1
+                i = 1
+                while i < len(b):
+                    ln = byte_to_int(b[i])
+                    s = self.connection.bytes_to_str(b[i+1:i+1+ln])
+                    n = bytes_to_int(b[i+1+ln:i+1+ln+4])
+                    event_names[s] = n
+                    i += ln + 5
+                self._recv_channel(8)  # ignore AST info
+
+                event_id = bytes_to_bint(self._recv_channel(4))
+                break
+            else:
+                raise InternalError("_wait_for_event:op_code = %d" % (op_code,))
+
+        return (event_id, event_names)
+
     def __init__(self, conn, names, timeout):
-        self.sock = None
         self.connection = conn
         self.event_names = {}
         for name in names:
             self.event_names[name] = 0
-        self.timeout = timeout
+
         self.connection._op_connect_request()
-        (h, oid, buf) = self.connection._op_response()
+        (_, _, buf) = self.connection._op_response()
+
         family = buf[:2]
         port = bytes_to_bint(buf[2:4], u=True)
         if family == b'\x02\x00':     # IPv4
@@ -489,12 +535,13 @@ class EventConduit(WireProtocol):
             ip_address = ':'.join(
                 [address[i: i+4] for i in range(0, len(address), 4)]
             )
+
         self.sock = SocketStream(ip_address, port, timeout)
         self.connection.last_event_id += 1
         self.event_id = self.connection.last_event_id
 
         self.connection._op_que_events(self.event_names, self.event_id)
-        (h, oid, buf) = self.connection._op_response()
+        self.connection._op_response()
 
         (event_id, event_names) = self._wait_for_event()
         assert event_id == self.event_id   # treat only one event_id

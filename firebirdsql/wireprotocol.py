@@ -1195,36 +1195,3 @@ class WireProtocol(object):
                     raw_value = self.recv_channel(ln, word_alignment=True)
                     r.append(x.value(raw_value))
         return r
-
-    def _wait_for_event(self):
-        event_names = {}
-        event_id = 0
-        while True:
-            b4 = self.recv_channel(4)
-            if b4 is None:
-                return None
-            op_code = bytes_to_bint(b4)
-            if op_code == self.op_dummy:
-                pass
-            elif op_code == self.op_exit or op_code == self.op_disconnect:
-                break
-            elif op_code == self.op_event:
-                bytes_to_int(self.recv_channel(4))  # db_handle
-                ln = bytes_to_bint(self.recv_channel(4))
-                b = self.recv_channel(ln, word_alignment=True)
-                assert byte_to_int(b[0]) == 1
-                i = 1
-                while i < len(b):
-                    ln = byte_to_int(b[i])
-                    s = self.connection.bytes_to_str(b[i+1:i+1+ln])
-                    n = bytes_to_int(b[i+1+ln:i+1+ln+4])
-                    event_names[s] = n
-                    i += ln + 5
-                self.recv_channel(8)  # ignore AST info
-
-                event_id = bytes_to_bint(self.recv_channel(4))
-                break
-            else:
-                raise InternalError("_wait_for_event:op_code = %d" % (op_code,))
-
-        return (event_id, event_names)
