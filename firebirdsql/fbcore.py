@@ -470,12 +470,14 @@ class Cursor(object):
 
 class EventConduit(object):
 
-    def _recv_channel(self, nbytes, word_alignment=False):
+    def _recv_channel(self, nbytes, timeout, word_alignment=False):
         n = nbytes
         if word_alignment and (n % 4):
             n += 4 - nbytes % 4  # 4 bytes word alignment
         r = bs([])
         while n:
+            if (timeout is not None and select.select([self.sock._sock], [], [], timeout)[0] == []):
+                break
             b = self.sock.recv(n)
             if not b:
                 break
@@ -485,19 +487,19 @@ class EventConduit(object):
             raise OperationalError('Can not recv() packets')
         return r[:nbytes]
 
-    def _wait_for_event(self):
+    def _wait_for_event(self, timeout):
         event_names = {}
         event_id = 0
         while True:
-            op_code = bytes_to_bint(self._recv_channel(4))
+            op_code = bytes_to_bint(self._recv_channel(4, timeout))
             if op_code == WireProtocol.op_dummy:
                 pass
             elif op_code == WireProtocol.op_exit or op_code == WireProtocol.op_disconnect:
                 break
             elif op_code == WireProtocol.op_event:
-                _db_handle = bytes_to_int(self._recv_channel(4))
-                ln = bytes_to_bint(self._recv_channel(4))
-                b = self._recv_channel(ln, word_alignment=True)
+                _db_handle = bytes_to_int(self._recv_channel(4, timeout))
+                ln = bytes_to_bint(self._recv_channel(4, timeout))
+                b = self._recv_channel(ln, timeout, word_alignment=True)
                 assert byte_to_int(b[0]) == 1
                 i = 1
                 while i < len(b):
@@ -506,9 +508,9 @@ class EventConduit(object):
                     n = bytes_to_int(b[i+1+ln:i+1+ln+4])
                     event_names[s] = n
                     i += ln + 5
-                self._recv_channel(8)  # ignore AST info
+                self._recv_channel(8, timeout)  # ignore AST info
 
-                event_id = bytes_to_bint(self._recv_channel(4))
+                event_id = bytes_to_bint(self._recv_channel(4, timeout))
                 break
             else:
                 raise InternalError("_wait_for_event:op_code = %d" % (op_code,))
@@ -543,15 +545,15 @@ class EventConduit(object):
         self.connection._op_que_events(self.event_names, self.event_id)
         self.connection._op_response()
 
-        (event_id, event_names) = self._wait_for_event()
+        (event_id, event_names) = self._wait_for_event(timeout)
         assert event_id == self.event_id   # treat only one event_id
         self.event_names.update(event_names)
 
-    def wait(self):
+    def wait(self, timeout=None):
         self.connection._op_que_events(self.event_names, self.event_id)
         (h, oid, buf) = self.connection._op_response()
 
-        r = self._wait_for_event()
+        r = self._wait_for_event(timeout)
         if r:
             (event_id, event_names) = r
             assert event_id == self.event_id   # treat only one event_id
