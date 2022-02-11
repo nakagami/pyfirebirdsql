@@ -488,7 +488,7 @@ class EventConduit(object):
         return r[:nbytes]
 
     def _wait_for_event(self, timeout):
-        event_names = {}
+        event_count = {}
         event_id = 0
         while True:
             op_code = bytes_to_bint(self._recv_channel(4, timeout))
@@ -506,7 +506,7 @@ class EventConduit(object):
                     ln = byte_to_int(b[i])
                     s = self.connection.bytes_to_str(b[i+1:i+1+ln])
                     n = bytes_to_int(b[i+1+ln:i+1+ln+4])
-                    event_names[s] = n
+                    event_count[s] = n
                     i += ln + 5
                 self._recv_channel(8, timeout)  # ignore AST info
 
@@ -517,16 +517,16 @@ class EventConduit(object):
 
         assert event_id == self.event_id   # treat only one event_id
         r = {}
-        for k, v in event_names.items():
-            r[k] = v - self.event_names[k]
-            self.event_names[k] = v
+        for k, v in event_count.items():
+            r[k] = v - self.event_count[k]
+            self.event_count[k] = v
         return r
 
     def __init__(self, conn, names, timeout):
         self.connection = conn
-        self.event_names = {}
+        self.event_count = {}
         for name in names:
-            self.event_names[name] = 0
+            self.event_count[name] = 0
 
         self.connection._op_connect_request()
         (_, _, buf) = self.connection._op_response()
@@ -547,13 +547,13 @@ class EventConduit(object):
         self.connection.last_event_id += 1
         self.event_id = self.connection.last_event_id
 
-        self.connection._op_que_events(self.event_names, self.event_id)
+        self.connection._op_que_events(self.event_count, self.event_id)
         self.connection._op_response()
 
         self._wait_for_event(timeout)
 
     def wait(self, timeout=None):
-        self.connection._op_que_events(self.event_names, self.event_id)
+        self.connection._op_que_events(self.event_count, self.event_id)
         (h, oid, buf) = self.connection._op_response()
 
         return self._wait_for_event(timeout)
@@ -831,8 +831,8 @@ class Connection(WireProtocol):
         self.sock = None
         self.db_handle = None
 
-    def event_conduit(self, event_names):
-        return EventConduit(self, event_names, self.timeout)
+    def event_conduit(self, event_count):
+        return EventConduit(self, event_count, self.timeout)
 
     def __del__(self):
         if self.sock:

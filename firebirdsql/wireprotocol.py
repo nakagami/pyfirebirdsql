@@ -1091,11 +1091,11 @@ class WireProtocol(object):
         self.sock.send(p.get_buffer())
 
     @wire_operation
-    def _op_que_events(self, event_names, event_id):
+    def _op_que_events(self, event_count, event_id):
         if self.db_handle is None:
             raise OperationalError('_op_que_events() Invalid db handle')
         params = bs([1])
-        for name, n in event_names.items():
+        for name, n in event_count.items():
             params += bs([len(name)])
             params += self.str_to_bytes(name)
             params += int_to_bytes(n, 4)
