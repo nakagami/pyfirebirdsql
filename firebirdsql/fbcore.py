@@ -497,7 +497,7 @@ class EventConduit(object):
             elif op_code == WireProtocol.op_exit or op_code == WireProtocol.op_disconnect:
                 break
             elif op_code == WireProtocol.op_event:
-                _db_handle = bytes_to_int(self._recv_channel(4, timeout))
+                bytes_to_int(self._recv_channel(4, timeout))    # db_handle
                 ln = bytes_to_bint(self._recv_channel(4, timeout))
                 b = self._recv_channel(ln, timeout, word_alignment=True)
                 assert byte_to_int(b[0]) == 1
@@ -515,7 +515,12 @@ class EventConduit(object):
             else:
                 raise InternalError("_wait_for_event:op_code = %d" % (op_code,))
 
-        return (event_id, event_names)
+        assert event_id == self.event_id   # treat only one event_id
+        r = {}
+        for k, v in event_names.items():
+            r[k] = v - self.event_names[k]
+            self.event_names[k] = v
+        return r
 
     def __init__(self, conn, names, timeout):
         self.connection = conn
@@ -545,27 +550,13 @@ class EventConduit(object):
         self.connection._op_que_events(self.event_names, self.event_id)
         self.connection._op_response()
 
-        (event_id, event_names) = self._wait_for_event(timeout)
-        assert event_id == self.event_id   # treat only one event_id
-        self.event_names.update(event_names)
+        self._wait_for_event(timeout)
 
     def wait(self, timeout=None):
         self.connection._op_que_events(self.event_names, self.event_id)
         (h, oid, buf) = self.connection._op_response()
 
-        r = self._wait_for_event(timeout)
-        if r:
-            (event_id, event_names) = r
-            assert event_id == self.event_id   # treat only one event_id
-            r = {}
-            for k in event_names:
-                r[k] = event_names[k]-self.event_names[k]
-                self.event_names[k] = event_names[k]
-        else:
-            r = {}
-            for k in self.event_names:
-                r[k] = 0
-        return r
+        return self._wait_for_event(timeout)
 
     def close(self):
         self.connection._op_cancel_events(self.event_id)
