@@ -522,7 +522,7 @@ class EventConduit(object):
             self.event_count[k] = v
         return r
 
-    def __init__(self, conn, names, timeout):
+    def __init__(self, conn, names, event_id, timeout):
         self.connection = conn
         self.event_count = {}
         for name in names:
@@ -544,8 +544,11 @@ class EventConduit(object):
             )
 
         self.sock = SocketStream(ip_address, port, timeout)
-        self.connection.last_event_id += 1
-        self.event_id = self.connection.last_event_id
+        if event_id:
+            self.event_id = event_id
+        else:
+            self.connection.last_event_id += 1
+            self.event_id = self.connection.last_event_id
 
         self.connection._op_que_events(self.event_count, self.event_id)
         self.connection._op_response()
@@ -831,8 +834,8 @@ class Connection(WireProtocol):
         self.sock = None
         self.db_handle = None
 
-    def event_conduit(self, event_count):
-        return EventConduit(self, event_count, self.timeout)
+    def event_conduit(self, event_count, event_id=None):
+        return EventConduit(self, event_count, event_id, self.timeout)
 
     def __del__(self):
         if self.sock:
