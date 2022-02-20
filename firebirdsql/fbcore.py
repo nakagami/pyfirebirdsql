@@ -469,10 +469,9 @@ class Cursor(object):
 
 
 class EventConduit(object):
-
-    def _recv_channel(self, nbytes, timeout, word_alignment=False):
+    def _recv_channel(self, nbytes, timeout):
         n = nbytes
-        if word_alignment and (n % 4):
+        if n % 4:
             n += 4 - nbytes % 4  # 4 bytes word alignment
         r = bs([])
         while n:
@@ -499,7 +498,7 @@ class EventConduit(object):
             elif op_code == WireProtocol.op_event:
                 bytes_to_int(self._recv_channel(4, timeout))    # db_handle
                 ln = bytes_to_bint(self._recv_channel(4, timeout))
-                b = self._recv_channel(ln, timeout, word_alignment=True)
+                b = self._recv_channel(ln, timeout)
                 assert byte_to_int(b[0]) == 1
                 i = 1
                 while i < len(b):
