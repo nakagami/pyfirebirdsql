@@ -581,7 +581,7 @@ class WireProtocol(object):
 
         op_code = bytes_to_bint(b)
         if op_code == self.op_response:
-            return self._parse_op_response()    # error occured
+            return self._parse_op_response()    # error occurred
 
         b = self.recv_channel(12)
         self.accept_version = byte_to_int(b[3])
@@ -624,7 +624,7 @@ class WireProtocol(object):
                         )
                         b = self.recv_channel(4)
                         if bytes_to_bint(b) == self.op_response:
-                            self._parse_op_response()   # error occured
+                            self._parse_op_response()   # error occurred
                         # parse op_cont_auth
                         assert bytes_to_bint(b) == self.op_cont_auth
                         ln = bytes_to_bint(self.recv_channel(4))

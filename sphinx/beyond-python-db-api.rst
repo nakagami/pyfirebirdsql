@@ -257,10 +257,10 @@ to add to various custom built parameter blocks), you can use class
 
    .. method:: render()
 
-      Returns propely formatted table reservation part of `transaction parameter
+      Returns properly formatted table reservation part of `transaction parameter
       block` according to current values.
 
-Conenction object also exposes two methods that return infromation about
+Connection object also exposes two methods that return information about
 current transaction:
 
 .. class:: Connection
@@ -420,7 +420,7 @@ can support only one transactions per single connection. However,
 Firebird can support multiple independent transactions that can run
 simultaneously within single connection / attachment to the database.
 This feature is very important, as applications may require multiple
-transaction openned simultaneously to perform various tasks, which
+transaction opened simultaneously to perform various tasks, which
 would require to open multiple connections and thus consume more
 resources than necessary.
 
@@ -2274,7 +2274,7 @@ Pitfalls and Limitations
 The `database_info` API
 =======================
 
-Firebird provides various informations about server and connected database
+Firebird provides various information about server and connected database
 via `database_info` API call. pyfirebirdsql surfaces this API through next
 methods on Connection object:
 
@@ -2853,7 +2853,7 @@ Database Statistics
    and five optional boolean parameters for controlling the domain of the
    statistics.
 
-   **Map of gstat paremeters to getStatistics options**
+   **Map of gstat parameters to getStatistics options**
 
    =========================== ====================================
    `gstat` command-line option `getStatistics` boolean parameter
@@ -3128,47 +3128,47 @@ Database Operating Modes, Sweeps, and Repair
 
    Not yet documented.
 
-.. method:: Conenction.setDefaultPageBuffers(database, n)
+.. method:: Connection.setDefaultPageBuffers(database, n)
 
    Not yet documented.
 
-.. method:: Conenction.setShouldReservePageSpace(database, shouldReserve)
+.. method:: Connection.setShouldReservePageSpace(database, shouldReserve)
 
    Not yet documented.
 
-.. method:: Conenction.setWriteMode(database, mode)
+.. method:: Connection.setWriteMode(database, mode)
 
    Not yet documented.
 
-.. method:: Conenction.setAccessMode(database, mode)
+.. method:: Connection.setAccessMode(database, mode)
 
    Not yet documented.
 
-.. method:: Conenction.activateShadowFile(database)
+.. method:: Connection.activateShadowFile(database)
 
    Not yet documented.
 
-.. method:: Conenction.shutdown(database, shutdownMethod, timeout)
+.. method:: Connection.shutdown(database, shutdownMethod, timeout)
 
    Not yet documented.
 
-.. method:: Conenction.bringOnline(database)
+.. method:: Connection.bringOnline(database)
 
    Not yet documented.
 
-.. method:: Conenction.getLimboTransactionIDs(database)
+.. method:: Connection.getLimboTransactionIDs(database)
 
    Not yet documented.
 
-.. method:: Conenction.commitLimboTransaction(database, transactionID)
+.. method:: Connection.commitLimboTransaction(database, transactionID)
 
    Not yet documented.
 
-.. method:: Conenction.rollbackLimboTransaction(database, transactionID)
+.. method:: Connection.rollbackLimboTransaction(database, transactionID)
 
    Not yet documented.
 
-.. method:: Conenction.repair(database, <options>)
+.. method:: Connection.repair(database, <options>)
 
    Not yet documented.
 
@@ -3177,28 +3177,28 @@ Database Operating Modes, Sweeps, and Repair
 User Maintenance
 ----------------
 
-.. method:: Conenction.getUsers(username=None)
+.. method:: Connection.getUsers(username=None)
 
    By default, lists all users.
 
-.. method:: Conenction.addUser(user)
+.. method:: Connection.addUser(user)
 
    :user:  An instance of :class:`User` with *at least* its username
            and password attributes specified as non-empty values.
 
-.. method:: Conenction.modifyUser(user)
+.. method:: Connection.modifyUser(user)
 
    Changes user data.
 
    :user:  An instance of :class:`User` with *at least* its username
            and password attributes specified as non-empty values.
 
-.. method:: Conenction.removeUser(user)
+.. method:: Connection.removeUser(user)
 
    Accepts either an instance of services.User or a string username,
    and deletes the specified user.
 
-.. method:: Conenction.userExists(user)
+.. method:: Connection.userExists(user)
 
    Returns a boolean that indicates whether the specified user exists.
 
