@@ -248,7 +248,7 @@ def calc_blr(xsqlda):
         blr += [7, 0]   # [blr_short, 0]
     blr += [255, 76]    # [blr_end, blr_eoc]
 
-    # x.sqlscale value shoud be negative, so b convert to range(0, 256)
+    # x.sqlscale value should be negative, so b convert to range(0, 256)
     return bs(256 + b if b < 0 else b for b in blr)
 
 

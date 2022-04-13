@@ -634,7 +634,7 @@ Footnotes
    will only move the associated cursor forward by one row.
 .. [#f7] The `rowcount` attribute may be coded in a way that updates its
    value dynamically. This can be useful for databases that return
-   useable rowcount values only after the first call to a `.fetchXXX()`
+   usable rowcount values only after the first call to a `.fetchXXX()`
    method.
 
 

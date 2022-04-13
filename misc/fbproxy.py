@@ -1440,7 +1440,7 @@ def _parse_describe_vars(bs, i):
 
 
 def parse_xsqlda(bs):
-    if len(bs) == 0:     # Error occured.
+    if len(bs) == 0:     # Error occurred.
         return [], 0
 
     xsqlda = []
@@ -1601,7 +1601,7 @@ def _database_parameter_block(bs):
 
 def parse_sql_info(b):
     xsqlda = None
-    if len(b) == 0:     # Error occured.
+    if len(b) == 0:     # Error occurred.
         return xsqlda
     i = 0
     while isc_info_sql_names[_ord(b[i])] != 'isc_info_end':
@@ -1870,10 +1870,10 @@ def op_accept(sock):
     msg = sock.recv(12)
     msg_dump(msg)
     protocol = msg[:4]
-    archtecture = _bytes_to_bint32(msg, 4)
+    architecture = _bytes_to_bint32(msg, 4)
     accept_type = _bytes_to_bint32(msg, 8)
     print('\taccept_version<%s>accept_architecture<%d>accept_type<%d>' % (
-        binascii.b2a_hex(protocol), archtecture, accept_type)
+        binascii.b2a_hex(protocol), architecture, accept_type)
     )
     return msg, None
 
@@ -1882,10 +1882,10 @@ def op_accept_data(sock):
     msg = sock.recv(bufsize)
     msg_dump(msg)
     protocol = msg[:4]
-    archtecture = _bytes_to_bint32(msg, 4)
+    architecture = _bytes_to_bint32(msg, 4)
     accept_type = _bytes_to_bint32(msg, 8)
     print('\taccept_version<%s>accept_architecture<%d>accept_type<%d>' % (
-        binascii.b2a_hex(protocol), archtecture, accept_type)
+        binascii.b2a_hex(protocol), architecture, accept_type)
     )
 
     up = xdrlib.Unpacker(msg)
@@ -2335,7 +2335,7 @@ def op_dummy(sock):
 
 
 # -----------------------------------------------------------------------------
-# recive and dump bytes
+# receive and dump bytes
 def recv_forever(server_name, server_port, listen_port):
     cs = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     cs.bind(('', listen_port))
