@@ -243,3 +243,11 @@ Version 1.2.1
 ==============
 
    - accept protocol version 16
+
+Version 1.2.2
+==============
+
+   - refactoring
+   - update error messages
+   - fix typo
+   - fix MANIFEST.in
