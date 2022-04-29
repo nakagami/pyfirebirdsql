@@ -41,7 +41,7 @@ from firebirdsql.utils import *     # noqa
 from firebirdsql.wireprotocol import WireProtocol
 from firebirdsql.socketstream import SocketStream
 from firebirdsql.xsqlvar import calc_blr, parse_xsqlda
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
