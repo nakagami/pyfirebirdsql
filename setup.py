@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import sys
 try:
-    from setuptools.core import setup, Command
-except ImportError:
+    from setuptools import setup, Command
+except ImportError as e:
     from distutils.core import setup, Command
 import firebirdsql
 
