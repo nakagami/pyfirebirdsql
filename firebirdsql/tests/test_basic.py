@@ -386,6 +386,11 @@ class TestBasic(TestBase):
 
         self.connection.close()
 
+    def test_ping(self):
+        if self.server_version[0] >= 3:
+            self.assertEqual(self.connection.ping(), True)
+        self.connection.close()
+
     def test_decfloat(self):
         if self.server_version[0] < 4:
             self.connection.close()

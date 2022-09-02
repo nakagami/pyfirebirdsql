@@ -605,6 +605,11 @@ class Connection(WireProtocol):
         (h, oid, buf) = self._op_response()
         self._transaction.is_dirty = True
 
+    def ping(self):
+        self._op_ping()
+        (h, oid, buf) = self._op_response()
+        return h == 0
+
     def __init__(
         self, dsn=None, user=None, password=None, role=None, host=None,
         database=None, charset=DEFAULT_CHARSET, port=None,
