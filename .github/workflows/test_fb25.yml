@@ -19,7 +19,7 @@ jobs:
         firebird-version: ['2.5-ss']
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Setup FirebirdSQL container
       uses: juarezr/firebirdsql-github-action@v1.0.0
@@ -28,7 +28,7 @@ jobs:
         isc_password: "masterkey"
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies

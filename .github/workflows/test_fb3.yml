@@ -18,7 +18,7 @@ jobs:
         python-version: ['2.7', '3.6', '3.7', '3.8', '3.9', '3.10', '3.11']
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Set up Firebird
       run: |
@@ -29,7 +29,7 @@ jobs:
         grep '=' /etc/firebird/3.0/SYSDBA.password |sed 's/^/export /' >test_user.env
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
