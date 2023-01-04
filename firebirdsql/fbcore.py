@@ -571,16 +571,17 @@ class Connection(WireProtocol):
     def cursor(self, factory=Cursor):
         DEBUG_OUTPUT("Connection::cursor()")
         if self._transaction is None:
-            self.begin()
+            self.begin(self._tpb)
         return factory(self._transaction)
 
-    def begin(self):
+    def begin(self, tpb=None):
         DEBUG_OUTPUT("Connection::begin()")
+        self._tpb = tpb
         if not self.sock:
             raise InternalError("Missing socket")
         if self._transaction is None:
             self._transaction = Transaction(self, self._autocommit)
-        self._transaction.begin()
+        self._transaction.begin(self._tpb)
 
     def commit(self, retaining=False):
         DEBUG_OUTPUT("Connection::commit()")
@@ -598,7 +599,7 @@ class Connection(WireProtocol):
     def execute_immediate(self, query):
         if self._transaction is None:
             self._transaction = Transaction(self, self._autocommit)
-            self._transaction.begin()
+            self._transaction.begin(None)
         self._transaction.check_trans_handle()
         self._op_exec_immediate(
             self._transaction.trans_handle, query=query)
@@ -643,6 +644,7 @@ class Connection(WireProtocol):
 
         self._autocommit = False
         self._transaction = None
+        self._tpb = None
         self.sock = SocketStream(self.hostname, self.port, self.timeout, cloexec)
 
         self._op_connect(auth_plugin_name, wire_crypt)
@@ -854,12 +856,19 @@ class Transaction(object):
         DEBUG_OUTPUT("Transaction::__init__()")
         self._connection = connection
         self._trans_handle = None
+        self._tpb = None
         self._autocommit = is_autocommit
 
     def _begin(self):
-        tpb = transaction_parameter_block[self.connection.isolation_level]
-        if self._autocommit:
-            tpb += bs([isc_tpb_autocommit])
+        if self._tpb is None:
+            tpb = transaction_parameter_block[self.connection.isolation_level]
+            if self._autocommit:
+                tpb += bs([isc_tpb_autocommit])
+        else:
+            tpb = self._tpb
+            if tpb[0] != isc_tpb_version3:
+                tpb.insert(0, isc_tpb_version3)
+            tpb = bs(tpb)
         self.connection._op_transaction(tpb)
         (h, oid, buf) = self.connection._op_response()
         self._trans_handle = None if h < 0 else h
@@ -867,8 +876,9 @@ class Transaction(object):
             "Transaction::_begin()", self._trans_handle, self.connection)
         self.is_dirty = False
 
-    def begin(self):
+    def begin(self, tpb):
         DEBUG_OUTPUT("Transaction::begin()")
+        self._tpb = tpb
         self._begin()
 
     def savepoint(self, name):

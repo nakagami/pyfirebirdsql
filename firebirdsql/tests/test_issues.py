@@ -155,3 +155,23 @@ WHERE doc.RFCEMPRESA = 'p2' and doc.NOSUCURSAL = 0 and doc.TIPO = 700 and doc.SE
         self.assertEqual(len(cur.fetchall()), 1)
 
         cur.close()
+
+    def test_issue_94(self):
+        self.connection.cursor().execute('''
+              CREATE TABLE issue_94
+              (
+                  a       INTEGER,
+                  b       VARCHAR(20)
+              )
+        ''')
+        self.connection.commit()
+        self.connection.begin([
+            firebirdsql.isc_tpb_read,
+            firebirdsql.isc_tpb_wait,
+            firebirdsql.isc_tpb_read_committed,
+            firebirdsql.isc_tpb_no_rec_version,
+        ])
+        cur = self.connection.cursor()
+        with self.assertRaises(firebirdsql.OperationalError, msg='attempted update during read-only transaction'):
+            cur.execute("INSERT INTO issue_94 (a, b) VALUES (32767, 'FOO')")
+        cur.close()
