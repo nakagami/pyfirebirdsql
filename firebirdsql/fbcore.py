@@ -260,9 +260,10 @@ def _fetch_generator(stmt):
 
 
 class Cursor(object):
-    def __init__(self, trans):
+    def __init__(self, connection):
         DEBUG_OUTPUT("Cursor::__init__()")
-        self._transaction = trans
+        self._transaction = connection._transaction
+        connection._cursors[self._transaction].append(self)
         self.stmt = None
         self.arraysize = 1
 
@@ -572,7 +573,7 @@ class Connection(WireProtocol):
         DEBUG_OUTPUT("Connection::cursor()")
         if self._transaction is None:
             self.begin()
-        return factory(self._transaction)
+        return factory(self)
 
     def begin(self):
         DEBUG_OUTPUT("Connection::begin()")
@@ -580,6 +581,7 @@ class Connection(WireProtocol):
             raise InternalError("Missing socket")
         if self._transaction is None:
             self._transaction = Transaction(self, self._autocommit)
+        self._cursors[self._transaction] = []
         self._transaction.begin()
 
     def commit(self, retaining=False):
@@ -643,6 +645,7 @@ class Connection(WireProtocol):
 
         self._autocommit = False
         self._transaction = None
+        self._cursors = {}
         self.sock = SocketStream(self.hostname, self.port, self.timeout, cloexec)
 
         self._op_connect(auth_plugin_name, wire_crypt)
@@ -820,7 +823,10 @@ class Connection(WireProtocol):
         DEBUG_OUTPUT("Connection::close()")
         if self.sock is None:
             return
-        if self.db_handle:
+        if self.db_handle is not None:
+            # cleanup transaction
+            for trans in self._cursors.keys():
+                trans.rollback()
             if self.is_services:
                 self._op_service_detach()
             else:
