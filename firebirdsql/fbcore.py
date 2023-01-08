@@ -304,7 +304,7 @@ class Cursor(object):
         prepared_statement = PreparedStatement(self, query, explain_plan=explain_plan)
         return prepared_statement
 
-    def execute(self, query, params=None):
+    def _execute(self, query, params):
         if params is None:
             params = []
         DEBUG_OUTPUT("Cursor::execute()", query, params)
@@ -332,9 +332,14 @@ class Cursor(object):
             else:
                 self._fetch_records = None
             self._callproc_result = None
-        self.transaction.is_dirty = True
 
         return self
+
+    def execute(self, query, params=None):
+        try:
+            return self._execute(query, params)
+        finally:
+            self.transaction.is_dirty = True
 
     def callproc(self, procname, params=None):
         if params is None:
@@ -572,7 +577,8 @@ class Connection(WireProtocol):
     def cursor(self, factory=Cursor):
         DEBUG_OUTPUT("Connection::cursor()")
         if self._transaction is None:
-            self.begin()
+            self._transaction = Transaction(self, self._autocommit)
+        self._cursors[self._transaction] = []
         return factory(self)
 
     def begin(self):
