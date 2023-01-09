@@ -260,9 +260,10 @@ def _fetch_generator(stmt):
 
 
 class Cursor(object):
-    def __init__(self, trans):
+    def __init__(self, connection):
         DEBUG_OUTPUT("Cursor::__init__()")
-        self._transaction = trans
+        self._transaction = connection._transaction
+        connection._cursors[self._transaction].append(self)
         self.stmt = None
         self.arraysize = 1
 
@@ -303,7 +304,7 @@ class Cursor(object):
         prepared_statement = PreparedStatement(self, query, explain_plan=explain_plan)
         return prepared_statement
 
-    def execute(self, query, params=None):
+    def _execute(self, query, params):
         if params is None:
             params = []
         DEBUG_OUTPUT("Cursor::execute()", query, params)
@@ -331,9 +332,14 @@ class Cursor(object):
             else:
                 self._fetch_records = None
             self._callproc_result = None
-        self.transaction.is_dirty = True
 
         return self
+
+    def execute(self, query, params=None):
+        try:
+            return self._execute(query, params)
+        finally:
+            self.transaction.is_dirty = True
 
     def callproc(self, procname, params=None):
         if params is None:
@@ -571,8 +577,9 @@ class Connection(WireProtocol):
     def cursor(self, factory=Cursor):
         DEBUG_OUTPUT("Connection::cursor()")
         if self._transaction is None:
-            self.begin(self._tpb)
-        return factory(self._transaction)
+            self._transaction = Transaction(self, self._autocommit)
+        self._cursors[self._transaction] = []
+        return factory(self)
 
     def begin(self, tpb=None):
         DEBUG_OUTPUT("Connection::begin()")
@@ -581,6 +588,7 @@ class Connection(WireProtocol):
             raise InternalError("Missing socket")
         if self._transaction is None:
             self._transaction = Transaction(self, self._autocommit)
+        self._cursors[self._transaction] = []
         self._transaction.begin(self._tpb)
 
     def commit(self, retaining=False):
@@ -645,6 +653,7 @@ class Connection(WireProtocol):
         self._autocommit = False
         self._transaction = None
         self._tpb = None
+        self._cursors = {}
         self.sock = SocketStream(self.hostname, self.port, self.timeout, cloexec)
 
         self._op_connect(auth_plugin_name, wire_crypt)
@@ -822,7 +831,10 @@ class Connection(WireProtocol):
         DEBUG_OUTPUT("Connection::close()")
         if self.sock is None:
             return
-        if self.db_handle:
+        if self.db_handle is not None:
+            # cleanup transaction
+            for trans in self._cursors.keys():
+                trans.rollback()
             if self.is_services:
                 self._op_service_detach()
             else:
