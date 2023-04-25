@@ -258,6 +258,7 @@ class WireProtocol(object):
     def _parse_status_vector(self):
         sql_code = 0
         gds_codes = set()
+        num_arg = 0
         message = ''
         n = bytes_to_bint(self.recv_channel(4))
         while n != isc_arg_end:
