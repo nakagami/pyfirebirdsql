@@ -260,10 +260,17 @@ def _fetch_generator(stmt):
 
 
 class Cursor(object):
-    def __init__(self, connection):
+    def __init__(self, obj):
         DEBUG_OUTPUT("Cursor::__init__()")
-        self._transaction = connection._transaction
-        connection._cursors[self._transaction].append(self)
+        if isinstance(obj, Connection):
+            self._transaction = obj._transaction
+            conn = obj
+        elif isinstance(obj, Transaction):
+            self._transaction = obj
+            conn = obj.connection
+        else:
+            raise NotSupportedError()
+        conn._cursors[self._transaction].append(self)
         self.stmt = None
         self.arraysize = 1
 
