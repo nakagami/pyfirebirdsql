@@ -869,14 +869,15 @@ class Connection(WireProtocol):
 
 
 class Transaction(object):
-    def __init__(self, connection, is_autocommit=False):
+    def __init__(self, connection, is_autocommit=False, isolation_level=None):
         DEBUG_OUTPUT("Transaction::__init__()")
         self._connection = connection
         self._trans_handle = None
         self._autocommit = is_autocommit
+        self._isolation_level = isolation_level
 
     def _begin(self):
-        tpb = transaction_parameter_block[self.connection.isolation_level]
+        tpb = transaction_parameter_block[self._isolation_level if self._isolation_level is not None else self.connection.isolation_level]
         if self._autocommit:
             tpb += bs([isc_tpb_autocommit])
         self.connection._op_transaction(tpb)
