@@ -270,6 +270,8 @@ class Cursor(object):
             conn = obj.connection
         else:
             raise NotSupportedError()
+        if self._transaction not in conn._cursors:
+            conn._cursors[self._transaction] = []
         conn._cursors[self._transaction].append(self)
         self.stmt = None
         self.arraysize = 1
