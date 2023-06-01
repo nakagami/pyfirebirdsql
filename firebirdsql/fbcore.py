@@ -260,10 +260,19 @@ def _fetch_generator(stmt):
 
 
 class Cursor(object):
-    def __init__(self, connection):
+    def __init__(self, obj):
         DEBUG_OUTPUT("Cursor::__init__()")
-        self._transaction = connection._transaction
-        connection._cursors[self._transaction].append(self)
+        if isinstance(obj, Connection):
+            self._transaction = obj._transaction
+            conn = obj
+        elif isinstance(obj, Transaction):
+            self._transaction = obj
+            conn = obj.connection
+        else:
+            raise NotSupportedError()
+        if self._transaction not in conn._cursors:
+            conn._cursors[self._transaction] = []
+        conn._cursors[self._transaction].append(self)
         self.stmt = None
         self.arraysize = 1
 
@@ -862,14 +871,15 @@ class Connection(WireProtocol):
 
 
 class Transaction(object):
-    def __init__(self, connection, is_autocommit=False):
+    def __init__(self, connection, is_autocommit=False, isolation_level=None):
         DEBUG_OUTPUT("Transaction::__init__()")
         self._connection = connection
         self._trans_handle = None
         self._autocommit = is_autocommit
+        self._isolation_level = isolation_level
 
     def _begin(self):
-        tpb = transaction_parameter_block[self.connection.isolation_level]
+        tpb = transaction_parameter_block[self._isolation_level if self._isolation_level is not None else self.connection.isolation_level]
         if self._autocommit:
             tpb += bs([isc_tpb_autocommit])
         self.connection._op_transaction(tpb)
