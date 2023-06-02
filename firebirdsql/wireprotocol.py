@@ -34,10 +34,6 @@ import decimal
 import select
 import hashlib
 
-try:
-    import crypt
-except ImportError:     # Not posix
-    crypt = None
 from firebirdsql.fberrmsgs import messages
 from firebirdsql import (
     DisconnectByPeer,
@@ -87,9 +83,16 @@ INFO_SQL_SELECT_DESCRIBE_VARS = bs([
 
 
 def get_crypt(plain):
-    if crypt is None:
+    try:
+        import crypt
+        return crypt.crypt(plain, '9z')[2:]
+    except ImportError:
+        pass
+    try:
+        import passlib
+        return passlib.hash.des_crypt.hash("secret", salt='9z')
+    except ImportError:
         return ''
-    return crypt.crypt(plain, '9z')[2:]
 
 
 def convert_date(v):  # Convert datetime.date to BLR format data
@@ -454,8 +457,9 @@ class WireProtocol(object):
         if auth_plugin_name in ('Srp256', 'Srp'):
             specific_data = bytes_to_hex(srp.long2bytes(self.client_public_key))
         elif auth_plugin_name == 'Legacy_Auth':
-            assert crypt, "Legacy_Auth needs crypt module"
-            specific_data = self.str_to_bytes(get_crypt(self.password))
+            enc_password = get_crypt(self.password)
+            assert enc_password, "Legacy_Auth needs passlib."
+            specific_data = self.str_to_bytes(enc_password)
         else:
             raise OperationalError("Unknown auth plugin name '%s'" % (auth_plugin_name,))
         self.plugin_name = auth_plugin_name
