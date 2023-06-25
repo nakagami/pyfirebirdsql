@@ -476,8 +476,10 @@ class Cursor(object):
         assert buf[:3] == bs([0x17, 0x1d, 0x00])    # isc_info_sql_records
         if self.stmt.stmt_type == isc_info_sql_stmt_select:
             assert buf[17:20] == bs([0x0d, 0x04, 0x00])     # isc_info_req_select_count
+            # select count
             count = bytes_to_int(buf[20:24])
         else:
+            # insert count + update count + delete count
             count = bytes_to_int(buf[27:31]) + bytes_to_int(buf[6:10]) + bytes_to_int(buf[13:17])
         DEBUG_OUTPUT("Cursor::rowcount()", self.stmt.stmt_type, count)
         return count
