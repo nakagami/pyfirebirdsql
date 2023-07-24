@@ -584,7 +584,7 @@ class EventConduit(object):
         self.sock = None
 
 
-class Connection(WireProtocol):
+class ConnectionBase(WireProtocol):
     def cursor(self, factory=Cursor):
         DEBUG_OUTPUT("Connection::cursor()")
         if self._transaction is None:
@@ -870,6 +870,130 @@ class Connection(WireProtocol):
 
     def is_disconnect(self):
         return self.sock is None
+
+
+class Connection(ConnectionBase):
+    def _op_response(self):
+        b = self.recv_channel(4)
+        while bytes_to_bint(b) == self.op_dummy:
+            b = self.recv_channel(4)
+        op_code = bytes_to_bint(b)
+        while op_code == self.op_response and self.lazy_response_count:
+            self.lazy_response_count -= 1
+            h, oid, buf = self._parse_op_response()
+            b = self.recv_channel(4)
+        if op_code == self.op_cont_auth:
+            raise OperationalError('Unauthorized')
+        elif op_code != self.op_response:
+            raise InternalError("_op_response:op_code = %d" % (op_code,))
+        return self._parse_op_response()
+
+    def _op_sql_response(self, xsqlda):
+        b = self.recv_channel(4)
+        while bytes_to_bint(b) == self.op_dummy:
+            b = self.recv_channel(4)
+        op_code = bytes_to_bint(b)
+        if op_code != self.op_sql_response:
+            if op_code == self.op_response:
+                self._parse_op_response()
+            raise InternalError("_op_sql_response:op_code = %d" % (op_code,))
+
+        b = self.recv_channel(4)
+        count = bytes_to_bint(b[:4])
+        r = []
+        if count == 0:
+            return []
+        if self.accept_version < PROTOCOL_VERSION13:
+            for i in range(len(xsqlda)):
+                x = xsqlda[i]
+                if x.io_length() < 0:
+                    b = self.recv_channel(4)
+                    ln = bytes_to_bint(b)
+                else:
+                    ln = x.io_length()
+                raw_value = self.recv_channel(ln, word_alignment=True)
+                if self.recv_channel(4) == bs([0]) * 4:     # Not NULL
+                    r.append(x.value(raw_value))
+                else:
+                    r.append(None)
+        else:
+            n = len(xsqlda) // 8
+            if len(xsqlda) % 8 != 0:
+                n += 1
+            null_indicator = 0
+            for c in reversed(self.recv_channel(n, word_alignment=True)):
+                null_indicator <<= 8
+                null_indicator += c if PYTHON_MAJOR_VER == 3 else ord(c)
+            for i in range(len(xsqlda)):
+                x = xsqlda[i]
+                if null_indicator & (1 << i):
+                    r.append(None)
+                else:
+                    if x.io_length() < 0:
+                        b = self.recv_channel(4)
+                        ln = bytes_to_bint(b)
+                    else:
+                        ln = x.io_length()
+                    raw_value = self.recv_channel(ln, word_alignment=True)
+                    r.append(x.value(raw_value))
+        return r
+
+    def _op_fetch_response(self, stmt_handle, xsqlda):
+        op_code = bytes_to_bint(self.recv_channel(4))
+        while op_code == self.op_dummy:
+            op_code = bytes_to_bint(self.recv_channel(4))
+
+        while op_code == self.op_response and self.lazy_response_count:
+            self.lazy_response_count -= 1
+            h, oid, buf = self._parse_op_response()
+            op_code = bytes_to_bint(self.recv_channel(4))
+
+        if op_code != self.op_fetch_response:
+            if op_code == self.op_response:
+                self._parse_op_response()
+            raise InternalError("op_fetch_response:op_code = %d" % (op_code,))
+        b = self.recv_channel(8)
+        status = bytes_to_bint(b[:4])
+        count = bytes_to_bint(b[4:8])
+        rows = []
+        while count:
+            r = [None] * len(xsqlda)
+            if self.accept_version < PROTOCOL_VERSION13:
+                for i in range(len(xsqlda)):
+                    x = xsqlda[i]
+                    if x.io_length() < 0:
+                        b = self.recv_channel(4)
+                        ln = bytes_to_bint(b)
+                    else:
+                        ln = x.io_length()
+                    raw_value = self.recv_channel(ln, word_alignment=True)
+                    if self.recv_channel(4) == bs([0]) * 4:     # Not NULL
+                        r[i] = x.value(raw_value)
+            else:   # PROTOCOL_VERSION13
+                n = len(xsqlda) // 8
+                if len(xsqlda) % 8 != 0:
+                    n += 1
+                null_indicator = 0
+                for c in reversed(self.recv_channel(n, word_alignment=True)):
+                    null_indicator <<= 8
+                    null_indicator += c if PYTHON_MAJOR_VER == 3 else ord(c)
+                for i in range(len(xsqlda)):
+                    x = xsqlda[i]
+                    if null_indicator & (1 << i):
+                        continue
+                    if x.io_length() < 0:
+                        b = self.recv_channel(4)
+                        ln = bytes_to_bint(b)
+                    else:
+                        ln = x.io_length()
+                    raw_value = self.recv_channel(ln, word_alignment=True)
+                    r[i] = x.value(raw_value)
+            rows.append(r)
+            b = self.recv_channel(12)
+            op_code = bytes_to_bint(b[:4])
+            status = bytes_to_bint(b[4:8])
+            count = bytes_to_bint(b[8:])
+        return rows, status != 100
 
 
 class Transaction(object):
