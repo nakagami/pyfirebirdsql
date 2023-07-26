@@ -492,6 +492,126 @@ class Cursor(object):
         return count
 
 
+class Transaction(object):
+    def __init__(self, connection, is_autocommit=False, isolation_level=None):
+        DEBUG_OUTPUT("Transaction::__init__()")
+        self._connection = connection
+        self._trans_handle = None
+        self._autocommit = is_autocommit
+        self._isolation_level = isolation_level
+
+    def _begin(self):
+        tpb = transaction_parameter_block[self._isolation_level if self._isolation_level is not None else self.connection.isolation_level]
+        if self._autocommit:
+            tpb += bs([isc_tpb_autocommit])
+        self.connection._op_transaction(tpb)
+        (h, oid, buf) = self.connection._op_response()
+        self._trans_handle = None if h < 0 else h
+        DEBUG_OUTPUT(
+            "Transaction::_begin()", self._trans_handle, self.connection)
+        self.is_dirty = False
+
+    def begin(self):
+        DEBUG_OUTPUT("Transaction::begin()")
+        self._begin()
+
+    def savepoint(self, name):
+        if self._trans_handle is None:
+            return
+        self.connection._op_exec_immediate(self._trans_handle, query='SAVEPOINT '+name)
+        (h, oid, buf) = self.connection._op_response()
+
+    def commit(self, retaining=False):
+        DEBUG_OUTPUT(
+            "Transaction::commit()", self._trans_handle, self, self.connection, retaining)
+        if self._trans_handle is None:
+            return
+        if not self.is_dirty:
+            return
+        if retaining:
+            self.connection._op_commit_retaining(self._trans_handle)
+            (h, oid, buf) = self.connection._op_response()
+        else:
+            self.connection._op_commit(self._trans_handle)
+            (h, oid, buf) = self.connection._op_response()
+            self._trans_handle = None
+        self.is_dirty = False
+
+    def rollback(self, retaining=False, savepoint=None):
+        DEBUG_OUTPUT(
+            "Transaction::rollback()", self._trans_handle, self,
+            self.connection, retaining, savepoint)
+        if self._trans_handle is None:
+            return
+        if savepoint:
+            self.connection._op_exec_immediate(
+                self._trans_handle, query='ROLLBACK TO '+savepoint)
+            (h, oid, buf) = self.connection._op_response()
+            return
+        if not self.is_dirty:
+            return
+        if retaining:
+            self.connection._op_rollback_retaining(self._trans_handle)
+            (h, oid, buf) = self.connection._op_response()
+        else:
+            self.connection._op_rollback(self._trans_handle)
+            (h, oid, buf) = self.connection._op_response()
+            self._trans_handle = None
+        self.is_dirty = False
+
+    def _trans_info(self, info_requests):
+        if info_requests[-1] == isc_info_end:
+            self.connection._op_info_transaction(self.trans_handle, bs(info_requests))
+        else:
+            self.connection._op_info_transaction(
+                self.trans_handle, bs(info_requests+type(info_requests)([isc_info_end])))
+        (h, oid, buf) = self.connection._op_response()
+        i = 0
+        i_request = 0
+        r = []
+        while i < len(buf):
+            req = byte_to_int(buf[i])
+            if req == isc_info_end:
+                break
+            assert req == info_requests[i_request] or req == isc_info_error
+            ln = bytes_to_int(buf[i+1:i+3])
+            r.append((req, buf[i+3:i+3+ln]))
+            i = i + 3 + ln
+
+            i_request += 1
+        return r
+
+    def trans_info(self, info_requests):
+        if type(info_requests) == int:  # singleton
+            r = self._trans_info([info_requests])
+            return {info_requests: r[1][0]}
+        else:
+            results = {}
+            rs = self._trans_info(info_requests)
+            for i in range(len(info_requests)):
+                if rs[i][0] == isc_info_tra_isolation:
+                    v = (byte_to_int(rs[i][1][0]), byte_to_int(rs[i][1][1]))
+                elif rs[i][0] == isc_info_error:
+                    v = None
+                else:
+                    v = bytes_to_int(rs[i][1])
+                results[info_requests[i]] = v
+            return results
+
+    def check_trans_handle(self):
+        if self._trans_handle is None:
+            self._begin()
+
+    @property
+    def connection(self):
+        return self._connection
+
+    @property
+    def trans_handle(self):
+        assert(self._trans_handle is not None)
+        return self._trans_handle
+
+
 class ConnectionResponse:
     def _recv_channel(self, nbytes, word_alignment=False):
         n = nbytes
@@ -1095,125 +1215,3 @@ class Connection(WireProtocol, ConnectionResponse):
 
     def is_disconnect(self):
         return self.sock is None
-
-
-class Transaction(object):
-    def __init__(self, connection, is_autocommit=False, isolation_level=None):
-        DEBUG_OUTPUT("Transaction::__init__()")
-        self._connection = connection
-        self._trans_handle = None
-        self._autocommit = is_autocommit
-        self._isolation_level = isolation_level
-
-    def _begin(self):
-        tpb = transaction_parameter_block[self._isolation_level if self._isolation_level is not None else self.connection.isolation_level]
-        if self._autocommit:
-            tpb += bs([isc_tpb_autocommit])
-        self.connection._op_transaction(tpb)
-        (h, oid, buf) = self.connection._op_response()
-        self._trans_handle = None if h < 0 else h
-        DEBUG_OUTPUT(
-            "Transaction::_begin()", self._trans_handle, self.connection)
-        self.is_dirty = False
-
-    def begin(self):
-        DEBUG_OUTPUT("Transaction::begin()")
-        self._begin()
-
-    def savepoint(self, name):
-        if self._trans_handle is None:
-            return
-        self.connection._op_exec_immediate(self._trans_handle, query='SAVEPOINT '+name)
-        (h, oid, buf) = self.connection._op_response()
-
-    def commit(self, retaining=False):
-        DEBUG_OUTPUT(
-            "Transaction::commit()", self._trans_handle, self, self.connection, retaining)
-        if self._trans_handle is None:
-            return
-        if not self.is_dirty:
-            return
-        if retaining:
-            self.connection._op_commit_retaining(self._trans_handle)
-            (h, oid, buf) = self.connection._op_response()
-        else:
-            self.connection._op_commit(self._trans_handle)
-            (h, oid, buf) = self.connection._op_response()
-            self._trans_handle = None
-        self.is_dirty = False
-
-    def rollback(self, retaining=False, savepoint=None):
-        DEBUG_OUTPUT(
-            "Transaction::rollback()", self._trans_handle, self,
-            self.connection, retaining, savepoint)
-        if self._trans_handle is None:
-            return
-        if savepoint:
-            self.connection._op_exec_immediate(
-                self._trans_handle, query='ROLLBACK TO '+savepoint)
-            (h, oid, buf) = self.connection._op_response()
-            return
-        if not self.is_dirty:
-            return
-        if retaining:
-            self.connection._op_rollback_retaining(self._trans_handle)
-            (h, oid, buf) = self.connection._op_response()
-        else:
-            self.connection._op_rollback(self._trans_handle)
-            (h, oid, buf) = self.connection._op_response()
-            self._trans_handle = None
-        self.is_dirty = False
-
-    def _trans_info(self, info_requests):
-        if info_requests[-1] == isc_info_end:
-            self.connection._op_info_transaction(self.trans_handle, bs(info_requests))
-        else:
-            self.connection._op_info_transaction(
-                self.trans_handle, bs(info_requests+type(info_requests)([isc_info_end])))
-        (h, oid, buf) = self.connection._op_response()
-        i = 0
-        i_request = 0
-        r = []
-        while i < len(buf):
-            req = byte_to_int(buf[i])
-            if req == isc_info_end:
-                break
-            assert req == info_requests[i_request] or req == isc_info_error
-            ln = bytes_to_int(buf[i+1:i+3])
-            r.append((req, buf[i+3:i+3+ln]))
-            i = i + 3 + ln
-
-            i_request += 1
-        return r
-
-    def trans_info(self, info_requests):
-        if type(info_requests) == int:  # singleton
-            r = self._trans_info([info_requests])
-            return {info_requests: r[1][0]}
-        else:
-            results = {}
-            rs = self._trans_info(info_requests)
-            for i in range(len(info_requests)):
-                if rs[i][0] == isc_info_tra_isolation:
-                    v = (byte_to_int(rs[i][1][0]), byte_to_int(rs[i][1][1]))
-                elif rs[i][0] == isc_info_error:
-                    v = None
-                else:
-                    v = bytes_to_int(rs[i][1])
-                results[info_requests[i]] = v
-            return results
-
-    def check_trans_handle(self):
-        if self._trans_handle is None:
-            self._begin()
-
-    @property
-    def connection(self):
-        return self._connection
-
-    @property
-    def trans_handle(self):
-        assert(self._trans_handle is not None)
-        return self._trans_handle
-
-
