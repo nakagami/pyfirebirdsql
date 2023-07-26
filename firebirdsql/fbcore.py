@@ -783,7 +783,7 @@ class ConnectionBase(WireProtocol):
 
 
 class Connection(ConnectionBase):
-    def recv_channel(self, nbytes, word_alignment=False):
+    def _recv_channel(self, nbytes, word_alignment=False):
         n = nbytes
         if word_alignment and (n % 4):
             n += 4 - nbytes % 4  # 4 bytes word alignment
@@ -805,42 +805,42 @@ class Connection(ConnectionBase):
         gds_codes = set()
         num_arg = 0
         message = ''
-        n = bytes_to_bint(self.recv_channel(4))
+        n = bytes_to_bint(self._recv_channel(4))
         while n != isc_arg_end:
             if n == isc_arg_gds:
-                gds_code = bytes_to_bint(self.recv_channel(4))
+                gds_code = bytes_to_bint(self._recv_channel(4))
                 if gds_code:
                     gds_codes.add(gds_code)
                     message += messages.get(gds_code, '@1')
                     num_arg = 0
             elif n == isc_arg_number:
-                num = bytes_to_bint(self.recv_channel(4))
+                num = bytes_to_bint(self._recv_channel(4))
                 if gds_code == 335544436:
                     sql_code = num
                 num_arg += 1
                 message = message.replace('@' + str(num_arg), str(num))
             elif n == isc_arg_string:
-                nbytes = bytes_to_bint(self.recv_channel(4))
-                s = self.bytes_to_str(self.recv_channel(nbytes, word_alignment=True))
+                nbytes = bytes_to_bint(self._recv_channel(4))
+                s = self.bytes_to_str(self._recv_channel(nbytes, word_alignment=True))
                 num_arg += 1
                 message = message.replace('@' + str(num_arg), s)
             elif n == isc_arg_interpreted:
-                nbytes = bytes_to_bint(self.recv_channel(4))
-                s = str(self.recv_channel(nbytes, word_alignment=True))
+                nbytes = bytes_to_bint(self._recv_channel(4))
+                s = str(self._recv_channel(nbytes, word_alignment=True))
                 message += s
             elif n == isc_arg_sql_state:
-                nbytes = bytes_to_bint(self.recv_channel(4))
-                s = str(self.recv_channel(nbytes, word_alignment=True))
-            n = bytes_to_bint(self.recv_channel(4))
+                nbytes = bytes_to_bint(self._recv_channel(4))
+                s = str(self._recv_channel(nbytes, word_alignment=True))
+            n = bytes_to_bint(self._recv_channel(4))
 
         return (gds_codes, sql_code, message)
 
     def _parse_op_response(self):
-        b = self.recv_channel(16)
+        b = self._recv_channel(16)
         h = bytes_to_bint(b[0:4])         # Object handle
         oid = b[4:12]                       # Object ID
         buf_len = bytes_to_bint(b[12:])   # buffer length
-        buf = self.recv_channel(buf_len, word_alignment=True)
+        buf = self._recv_channel(buf_len, word_alignment=True)
 
         (gds_codes, sql_code, message) = self._parse_status_vector()
         if gds_codes.intersection([
@@ -855,14 +855,14 @@ class Connection(ConnectionBase):
 
 
     def _op_response(self):
-        b = self.recv_channel(4)
+        b = self._recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
-            b = self.recv_channel(4)
+            b = self._recv_channel(4)
         op_code = bytes_to_bint(b)
         while op_code == self.op_response and self.lazy_response_count:
             self.lazy_response_count -= 1
             h, oid, buf = self._parse_op_response()
-            b = self.recv_channel(4)
+            b = self._recv_channel(4)
         if op_code == self.op_cont_auth:
             raise OperationalError('Unauthorized')
         elif op_code != self.op_response:
@@ -871,9 +871,9 @@ class Connection(ConnectionBase):
 
     def _parse_connect_response(self):
         # want and treat op_accept or op_cond_accept or op_accept_data
-        b = self.recv_channel(4)
+        b = self._recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
-            b = self.recv_channel(4)
+            b = self._recv_channel(4)
         if bytes_to_bint(b) == self.op_reject:
             raise OperationalError('Connection is rejected')
 
@@ -881,22 +881,22 @@ class Connection(ConnectionBase):
         if op_code == self.op_response:
             return self._parse_op_response()    # error occurred
 
-        b = self.recv_channel(12)
+        b = self._recv_channel(12)
         self.accept_version = byte_to_int(b[3])
         self.accept_architecture = bytes_to_bint(b[4:8])
         self.accept_type = bytes_to_bint(b[8:])
         self.lazy_response_count = 0
 
         if op_code == self.op_cond_accept or op_code == self.op_accept_data:
-            ln = bytes_to_bint(self.recv_channel(4))
-            data = self.recv_channel(ln, word_alignment=True)
+            ln = bytes_to_bint(self._recv_channel(4))
+            data = self._recv_channel(ln, word_alignment=True)
 
-            ln = bytes_to_bint(self.recv_channel(4))
-            self.accept_plugin_name = self.recv_channel(ln, word_alignment=True)
+            ln = bytes_to_bint(self._recv_channel(4))
+            self.accept_plugin_name = self._recv_channel(ln, word_alignment=True)
 
-            is_authenticated = bytes_to_bint(self.recv_channel(4))
-            ln = bytes_to_bint(self.recv_channel(4))
-            self.recv_channel(ln, word_alignment=True)   # keys
+            is_authenticated = bytes_to_bint(self._recv_channel(4))
+            ln = bytes_to_bint(self._recv_channel(4))
+            self._recv_channel(ln, word_alignment=True)   # keys
 
             if is_authenticated == 0:
                 if self.accept_plugin_name in (b'Srp256',  b'Srp'):
@@ -920,19 +920,19 @@ class Connection(ConnectionBase):
                             self.plugin_list,
                             b''
                         )
-                        b = self.recv_channel(4)
+                        b = self._recv_channel(4)
                         if bytes_to_bint(b) == self.op_response:
                             self._parse_op_response()   # error occurred
                         # parse op_cont_auth
                         assert bytes_to_bint(b) == self.op_cont_auth
-                        ln = bytes_to_bint(self.recv_channel(4))
-                        data = self.recv_channel(ln, word_alignment=True)
-                        ln = bytes_to_bint(self.recv_channel(4))
-                        self.recv_channel(ln, word_alignment=True)  # plugin_name
-                        ln = bytes_to_bint(self.recv_channel(4))
-                        self.recv_channel(ln, word_alignment=True)  # plugin_list
-                        ln = bytes_to_bint(self.recv_channel(4))
-                        self.recv_channel(ln, word_alignment=True)  # keys
+                        ln = bytes_to_bint(self._recv_channel(4))
+                        data = self._recv_channel(ln, word_alignment=True)
+                        ln = bytes_to_bint(self._recv_channel(4))
+                        self._recv_channel(ln, word_alignment=True)  # plugin_name
+                        ln = bytes_to_bint(self._recv_channel(4))
+                        self._recv_channel(ln, word_alignment=True)  # plugin_list
+                        ln = bytes_to_bint(self._recv_channel(4))
+                        self._recv_channel(ln, word_alignment=True)  # keys
 
                     ln = bytes_to_int(data[:2])
                     server_salt = data[2:ln+2]
@@ -992,16 +992,16 @@ class Connection(ConnectionBase):
             assert op_code == self.op_accept
 
     def _op_sql_response(self, xsqlda):
-        b = self.recv_channel(4)
+        b = self._recv_channel(4)
         while bytes_to_bint(b) == self.op_dummy:
-            b = self.recv_channel(4)
+            b = self._recv_channel(4)
         op_code = bytes_to_bint(b)
         if op_code != self.op_sql_response:
             if op_code == self.op_response:
                 self._parse_op_response()
             raise InternalError("_op_sql_response:op_code = %d" % (op_code,))
 
-        b = self.recv_channel(4)
+        b = self._recv_channel(4)
         count = bytes_to_bint(b[:4])
         r = []
         if count == 0:
@@ -1010,12 +1010,12 @@ class Connection(ConnectionBase):
             for i in range(len(xsqlda)):
                 x = xsqlda[i]
                 if x.io_length() < 0:
-                    b = self.recv_channel(4)
+                    b = self._recv_channel(4)
                     ln = bytes_to_bint(b)
                 else:
                     ln = x.io_length()
-                raw_value = self.recv_channel(ln, word_alignment=True)
-                if self.recv_channel(4) == bs([0]) * 4:     # Not NULL
+                raw_value = self._recv_channel(ln, word_alignment=True)
+                if self._recv_channel(4) == bs([0]) * 4:     # Not NULL
                     r.append(x.value(raw_value))
                 else:
                     r.append(None)
@@ -1024,7 +1024,7 @@ class Connection(ConnectionBase):
             if len(xsqlda) % 8 != 0:
                 n += 1
             null_indicator = 0
-            for c in reversed(self.recv_channel(n, word_alignment=True)):
+            for c in reversed(self._recv_channel(n, word_alignment=True)):
                 null_indicator <<= 8
                 null_indicator += c if PYTHON_MAJOR_VER == 3 else ord(c)
             for i in range(len(xsqlda)):
@@ -1033,29 +1033,29 @@ class Connection(ConnectionBase):
                     r.append(None)
                 else:
                     if x.io_length() < 0:
-                        b = self.recv_channel(4)
+                        b = self._recv_channel(4)
                         ln = bytes_to_bint(b)
                     else:
                         ln = x.io_length()
-                    raw_value = self.recv_channel(ln, word_alignment=True)
+                    raw_value = self._recv_channel(ln, word_alignment=True)
                     r.append(x.value(raw_value))
         return r
 
     def _op_fetch_response(self, stmt_handle, xsqlda):
-        op_code = bytes_to_bint(self.recv_channel(4))
+        op_code = bytes_to_bint(self._recv_channel(4))
         while op_code == self.op_dummy:
-            op_code = bytes_to_bint(self.recv_channel(4))
+            op_code = bytes_to_bint(self._recv_channel(4))
 
         while op_code == self.op_response and self.lazy_response_count:
             self.lazy_response_count -= 1
             h, oid, buf = self._parse_op_response()
-            op_code = bytes_to_bint(self.recv_channel(4))
+            op_code = bytes_to_bint(self._recv_channel(4))
 
         if op_code != self.op_fetch_response:
             if op_code == self.op_response:
                 self._parse_op_response()
             raise InternalError("op_fetch_response:op_code = %d" % (op_code,))
-        b = self.recv_channel(8)
+        b = self._recv_channel(8)
         status = bytes_to_bint(b[:4])
         count = bytes_to_bint(b[4:8])
         rows = []
@@ -1065,19 +1065,19 @@ class Connection(ConnectionBase):
                 for i in range(len(xsqlda)):
                     x = xsqlda[i]
                     if x.io_length() < 0:
-                        b = self.recv_channel(4)
+                        b = self._recv_channel(4)
                         ln = bytes_to_bint(b)
                     else:
                         ln = x.io_length()
-                    raw_value = self.recv_channel(ln, word_alignment=True)
-                    if self.recv_channel(4) == bs([0]) * 4:     # Not NULL
+                    raw_value = self._recv_channel(ln, word_alignment=True)
+                    if self._recv_channel(4) == bs([0]) * 4:     # Not NULL
                         r[i] = x.value(raw_value)
             else:   # PROTOCOL_VERSION13
                 n = len(xsqlda) // 8
                 if len(xsqlda) % 8 != 0:
                     n += 1
                 null_indicator = 0
-                for c in reversed(self.recv_channel(n, word_alignment=True)):
+                for c in reversed(self._recv_channel(n, word_alignment=True)):
                     null_indicator <<= 8
                     null_indicator += c if PYTHON_MAJOR_VER == 3 else ord(c)
                 for i in range(len(xsqlda)):
@@ -1085,14 +1085,14 @@ class Connection(ConnectionBase):
                     if null_indicator & (1 << i):
                         continue
                     if x.io_length() < 0:
-                        b = self.recv_channel(4)
+                        b = self._recv_channel(4)
                         ln = bytes_to_bint(b)
                     else:
                         ln = x.io_length()
-                    raw_value = self.recv_channel(ln, word_alignment=True)
+                    raw_value = self._recv_channel(ln, word_alignment=True)
                     r[i] = x.value(raw_value)
             rows.append(r)
-            b = self.recv_channel(12)
+            b = self._recv_channel(12)
             op_code = bytes_to_bint(b[:4])
             status = bytes_to_bint(b[4:8])
             count = bytes_to_bint(b[8:])
