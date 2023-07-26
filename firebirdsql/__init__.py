@@ -25,7 +25,8 @@
 #
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
-
+import datetime
+import decimal
 
 class Error(Exception):
     def __init__(self, message, gds_codes=set(), sql_code=0):
@@ -78,19 +79,62 @@ class NotSupportedError(DatabaseError):
         DatabaseError.__init__(self, 'NotSupportedError')
 
 
-from firebirdsql.fbcore import (
-    Connection,
-    BINARY, Binary, DATE, Date,
-    Time, Timestamp, DateFromTicks, TimeFromTicks, TimestampFromTicks,
-)
+from firebirdsql.consts import *    # noqa
+from firebirdsql.fbcore import Connection
+import firebirdsql.services
+
+Date = datetime.date
+Time = datetime.time
+TimeDelta = datetime.timedelta
+Timestamp = datetime.datetime
+
+
+def DateFromTicks(ticks):
+    return apply(Date, time.localtime(ticks)[:3])
+
+
+def TimeFromTicks(ticks):
+    return apply(Time, time.localtime(ticks)[3:6])
+
+
+def TimestampFromTicks(ticks):
+    return apply(Timestamp, time.localtime(ticks)[:6])
+
+
+def Binary(b):
+    return bytes(b)
+
+
+class DBAPITypeObject:
+    def __init__(self, *values):
+        self.values = values
+
+    def __cmp__(self, other):
+        if other in self.values:
+            return 0
+        if other < self.values:
+            return 1
+        else:
+            return -1
+
+
+STRING = DBAPITypeObject(str)
+if PYTHON_MAJOR_VER == 3:
+    BINARY = DBAPITypeObject(bytes)
+else:
+    BINARY = DBAPITypeObject(str)
+NUMBER = DBAPITypeObject(int, decimal.Decimal)
+DATETIME = DBAPITypeObject(datetime.datetime, datetime.date, datetime.time)
+DATE = DBAPITypeObject(datetime.date)
+TIME = DBAPITypeObject(datetime.time)
+ROWID = DBAPITypeObject()
+
 
 __version__ = '1.2.2'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
 
-from firebirdsql.consts import *    # noqa
-import firebirdsql.services
 
 
 def connect(**kwargs):

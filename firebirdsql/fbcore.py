@@ -74,52 +74,6 @@ transaction_parameter_block = (
     bs([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
 )
 
-Date = datetime.date
-Time = datetime.time
-TimeDelta = datetime.timedelta
-Timestamp = datetime.datetime
-
-
-def DateFromTicks(ticks):
-    return apply(Date, time.localtime(ticks)[:3])
-
-
-def TimeFromTicks(ticks):
-    return apply(Time, time.localtime(ticks)[3:6])
-
-
-def TimestampFromTicks(ticks):
-    return apply(Timestamp, time.localtime(ticks)[:6])
-
-
-def Binary(b):
-    return bytes(b)
-
-
-class DBAPITypeObject:
-    def __init__(self, *values):
-        self.values = values
-
-    def __cmp__(self, other):
-        if other in self.values:
-            return 0
-        if other < self.values:
-            return 1
-        else:
-            return -1
-
-
-STRING = DBAPITypeObject(str)
-if PYTHON_MAJOR_VER == 3:
-    BINARY = DBAPITypeObject(bytes)
-else:
-    BINARY = DBAPITypeObject(str)
-NUMBER = DBAPITypeObject(int, decimal.Decimal)
-DATETIME = DBAPITypeObject(datetime.datetime, datetime.date, datetime.time)
-DATE = DBAPITypeObject(datetime.date)
-TIME = DBAPITypeObject(datetime.time)
-ROWID = DBAPITypeObject()
-
 
 class Statement(object):
     """
