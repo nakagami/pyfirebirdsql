@@ -49,10 +49,6 @@ try:
     from Crypto.Cipher import ChaCha20
 except ImportError:
     from firebirdsql.chacha20 import ChaCha20
-__version__ = '1.2.2'
-apilevel = '2.0'
-threadsafety = 1
-paramstyle = 'qmark'
 
 DEBUG = False
 

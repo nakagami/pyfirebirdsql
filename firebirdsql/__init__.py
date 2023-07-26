@@ -79,14 +79,16 @@ class NotSupportedError(DatabaseError):
 
 
 from firebirdsql.fbcore import (
-    __version__, apilevel, threadsafety,
-    paramstyle, Transaction, Cursor, Connection,
-    ISOLATION_LEVEL_READ_COMMITED_LEGACY, ISOLATION_LEVEL_READ_COMMITED,
-    ISOLATION_LEVEL_REPEATABLE_READ, ISOLATION_LEVEL_SNAPSHOT,
-    ISOLATION_LEVEL_SERIALIZABLE, ISOLATION_LEVEL_READ_COMMITED_RO,
+    Connection,
     BINARY, Binary, DATE, Date,
     Time, Timestamp, DateFromTicks, TimeFromTicks, TimestampFromTicks,
 )
+
+__version__ = '1.2.2'
+apilevel = '2.0'
+threadsafety = 1
+paramstyle = 'qmark'
+
 from firebirdsql.consts import *    # noqa
 import firebirdsql.services
 
