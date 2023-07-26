@@ -31,14 +31,8 @@ import os
 import socket
 import datetime
 import decimal
-import select
 
-from firebirdsql import (
-    DisconnectByPeer,
-    InternalError,
-    OperationalError,
-    DataError
-)
+from firebirdsql import OperationalError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
 from firebirdsql import srp

@@ -37,7 +37,7 @@ try:
     from collections.abc import Mapping
 except ImportError:
     from collections import Mapping
-from firebirdsql import InternalError, OperationalError, NotSupportedError, IntegrityError
+from firebirdsql import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
 from firebirdsql.wireprotocol import WireProtocol
@@ -268,8 +268,6 @@ class PreparedStatement(object):
 
     def close(self):
         self.stmt.close()
-
-
 
 
 class Cursor(object):
