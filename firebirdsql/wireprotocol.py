@@ -32,14 +32,11 @@ import socket
 import datetime
 import decimal
 import select
-import hashlib
 
-from firebirdsql.fberrmsgs import messages
 from firebirdsql import (
     DisconnectByPeer,
     InternalError,
     OperationalError,
-    IntegrityError,
     DataError
 )
 from firebirdsql.consts import *    # noqa
@@ -50,10 +47,6 @@ try:
     from Crypto.Cipher import ARC4
 except ImportError:
     from firebirdsql.arc4 import ARC4
-try:
-    from Crypto.Cipher import ChaCha20
-except ImportError:
-    from firebirdsql.chacha20 import ChaCha20
 
 DEBUG = False
 
@@ -224,23 +217,6 @@ class WireProtocol(object):
         self.accept_plugin_name = ''
         self.auth_data = b''
 
-    def recv_channel(self, nbytes, word_alignment=False):
-        n = nbytes
-        if word_alignment and (n % 4):
-            n += 4 - nbytes % 4  # 4 bytes word alignment
-        r = bs([])
-        while n:
-            if (self.timeout is not None and select.select([self.sock._sock], [], [], self.timeout)[0] == []):
-                break
-            b = self.sock.recv(n)
-            if not b:
-                break
-            r += b
-            n -= len(b)
-        if len(r) < nbytes:
-            raise OperationalError('Can not recv() packets')
-        return r[:nbytes]
-
     def str_to_bytes(self, s):
         "convert str to bytes"
         if ((PYTHON_MAJOR_VER == 3 and isinstance(s, str)) or
@@ -257,59 +233,6 @@ class WireProtocol(object):
     def bytes_to_ustr(self, b):
         "convert bytes array to unicode string"
         return b.decode(charset_map.get(self.charset, self.charset))
-
-    def _parse_status_vector(self):
-        sql_code = 0
-        gds_codes = set()
-        num_arg = 0
-        message = ''
-        n = bytes_to_bint(self.recv_channel(4))
-        while n != isc_arg_end:
-            if n == isc_arg_gds:
-                gds_code = bytes_to_bint(self.recv_channel(4))
-                if gds_code:
-                    gds_codes.add(gds_code)
-                    message += messages.get(gds_code, '@1')
-                    num_arg = 0
-            elif n == isc_arg_number:
-                num = bytes_to_bint(self.recv_channel(4))
-                if gds_code == 335544436:
-                    sql_code = num
-                num_arg += 1
-                message = message.replace('@' + str(num_arg), str(num))
-            elif n == isc_arg_string:
-                nbytes = bytes_to_bint(self.recv_channel(4))
-                s = self.bytes_to_str(self.recv_channel(nbytes, word_alignment=True))
-                num_arg += 1
-                message = message.replace('@' + str(num_arg), s)
-            elif n == isc_arg_interpreted:
-                nbytes = bytes_to_bint(self.recv_channel(4))
-                s = str(self.recv_channel(nbytes, word_alignment=True))
-                message += s
-            elif n == isc_arg_sql_state:
-                nbytes = bytes_to_bint(self.recv_channel(4))
-                s = str(self.recv_channel(nbytes, word_alignment=True))
-            n = bytes_to_bint(self.recv_channel(4))
-
-        return (gds_codes, sql_code, message)
-
-    def _parse_op_response(self):
-        b = self.recv_channel(16)
-        h = bytes_to_bint(b[0:4])         # Object handle
-        oid = b[4:12]                       # Object ID
-        buf_len = bytes_to_bint(b[12:])   # buffer length
-        buf = self.recv_channel(buf_len, word_alignment=True)
-
-        (gds_codes, sql_code, message) = self._parse_status_vector()
-        if gds_codes.intersection([
-            335544838, 335544879, 335544880, 335544466, 335544665, 335544347, 335544558
-        ]):
-            raise IntegrityError(message, gds_codes, sql_code)
-        elif gds_codes.intersection([335544321]):
-            raise DataError(message, gds_codes, sql_code)
-        elif (sql_code or message) and not gds_codes.intersection([335544434]):
-            raise OperationalError(message, gds_codes, sql_code)
-        return (h, oid, buf)
 
     def _create_blob(self, trans_handle, b):
         self._op_create_blob2(trans_handle)
@@ -574,129 +497,6 @@ class WireProtocol(object):
             return (b'Arc4', )
 
         return None
-
-    @wire_operation
-    def _parse_connect_response(self):
-        # want and treat op_accept or op_cond_accept or op_accept_data
-        b = self.recv_channel(4)
-        while bytes_to_bint(b) == self.op_dummy:
-            b = self.recv_channel(4)
-        if bytes_to_bint(b) == self.op_reject:
-            raise OperationalError('Connection is rejected')
-
-        op_code = bytes_to_bint(b)
-        if op_code == self.op_response:
-            return self._parse_op_response()    # error occurred
-
-        b = self.recv_channel(12)
-        self.accept_version = byte_to_int(b[3])
-        self.accept_architecture = bytes_to_bint(b[4:8])
-        self.accept_type = bytes_to_bint(b[8:])
-        self.lazy_response_count = 0
-
-        if op_code == self.op_cond_accept or op_code == self.op_accept_data:
-            ln = bytes_to_bint(self.recv_channel(4))
-            data = self.recv_channel(ln, word_alignment=True)
-
-            ln = bytes_to_bint(self.recv_channel(4))
-            self.accept_plugin_name = self.recv_channel(ln, word_alignment=True)
-
-            is_authenticated = bytes_to_bint(self.recv_channel(4))
-            ln = bytes_to_bint(self.recv_channel(4))
-            self.recv_channel(ln, word_alignment=True)   # keys
-
-            if is_authenticated == 0:
-                if self.accept_plugin_name in (b'Srp256',  b'Srp'):
-                    hash_algo = {
-                        b'Srp256': hashlib.sha256,
-                        b'Srp': hashlib.sha1,
-                    }[self.accept_plugin_name]
-
-                    user = self.user
-                    if len(user) > 2 and user[0] == user[-1] == '"':
-                        user = user[1:-1]
-                        user = user.replace('""', '"')
-                    else:
-                        user = user.upper()
-
-                    if len(data) == 0:
-                        # send op_cont_auth
-                        self._op_cont_auth(
-                            srp.long2bytes(self.client_public_key),
-                            self.accept_plugin_name,
-                            self.plugin_list,
-                            b''
-                        )
-                        b = self.recv_channel(4)
-                        if bytes_to_bint(b) == self.op_response:
-                            self._parse_op_response()   # error occurred
-                        # parse op_cont_auth
-                        assert bytes_to_bint(b) == self.op_cont_auth
-                        ln = bytes_to_bint(self.recv_channel(4))
-                        data = self.recv_channel(ln, word_alignment=True)
-                        ln = bytes_to_bint(self.recv_channel(4))
-                        self.recv_channel(ln, word_alignment=True)  # plugin_name
-                        ln = bytes_to_bint(self.recv_channel(4))
-                        self.recv_channel(ln, word_alignment=True)  # plugin_list
-                        ln = bytes_to_bint(self.recv_channel(4))
-                        self.recv_channel(ln, word_alignment=True)  # keys
-
-                    ln = bytes_to_int(data[:2])
-                    server_salt = data[2:ln+2]
-                    server_public_key = srp.bytes2long(
-                        hex_to_bytes(data[4+ln:]))
-
-                    auth_data, session_key = srp.client_proof(
-                        self.str_to_bytes(user),
-                        self.str_to_bytes(self.password),
-                        server_salt,
-                        self.client_public_key,
-                        server_public_key,
-                        self.client_private_key,
-                        hash_algo)
-                elif self.accept_plugin_name == b'Legacy_Auth':
-                    auth_data = self.str_to_bytes(get_crypt(self.password))
-                    session_key = b''
-                else:
-                    raise OperationalError(
-                        'Unknown auth plugin %s' % (self.accept_plugin_name)
-                    )
-            else:
-                auth_data = b''
-                session_key = b''
-
-            if op_code == self.op_cond_accept:
-                self._op_cont_auth(
-                    auth_data,
-                    self.accept_plugin_name,
-                    self.plugin_list,
-                    b''
-                )
-                (h, oid, buf) = self._op_response()
-                guessed_wire_crypt = self._guess_wire_crypt(buf)
-            else:
-                guessed_wire_crypt = None
-
-            if guessed_wire_crypt and self.wire_crypt and session_key:
-                self._op_crypt(guessed_wire_crypt[0])
-                if guessed_wire_crypt[0] == b'Arc4':
-                    self.sock.set_translator(
-                        ARC4.new(session_key), ARC4.new(session_key))
-                elif guessed_wire_crypt[0] == b'ChaCha':
-                    k = hashlib.sha256(session_key).digest()
-                    self.sock.set_translator(
-                        ChaCha20.new(k, guessed_wire_crypt[1]),
-                        ChaCha20.new(k, guessed_wire_crypt[1]),
-                    )
-                else:
-                    raise OperationalError(
-                        'Unknown wirecrypt plugin %s' % (guessed_wire_crypt)
-                    )
-                (h, oid, buf) = self._op_response()
-            else:   # use later _op_attach() and _op_create()
-                self.auth_data = auth_data
-        else:
-            assert op_code == self.op_accept
 
     @wire_operation
     def _op_attach(self, timezone):
