@@ -30,7 +30,7 @@ from firebirdsql import InternalError, OperationalError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
 from firebirdsql.wireprotocol import WireProtocol
-from firebirdsql.socketstream import SocketStream
+from firebirdsql.stream import SocketStream
 
 
 class EventConduit(object):

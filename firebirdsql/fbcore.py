@@ -39,7 +39,7 @@ from firebirdsql import InternalError, OperationalError, NotSupportedError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
 from firebirdsql.wireprotocol import WireProtocol
-from firebirdsql.socketstream import SocketStream
+from firebirdsql.stream import SocketStream
 from firebirdsql.xsqlvar import calc_blr, parse_xsqlda
 from firebirdsql.event_conduit import EventConduit
 __version__ = '1.2.2'
