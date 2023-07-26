@@ -41,6 +41,7 @@ from firebirdsql.utils import *     # noqa
 from firebirdsql.wireprotocol import WireProtocol
 from firebirdsql.socketstream import SocketStream
 from firebirdsql.xsqlvar import calc_blr, parse_xsqlda
+from firebirdsql.event_conduit import EventConduit
 __version__ = '1.2.2'
 apilevel = '2.0'
 threadsafety = 1
@@ -483,105 +484,6 @@ class Cursor(object):
             count = bytes_to_int(buf[27:31]) + bytes_to_int(buf[6:10]) + bytes_to_int(buf[13:17])
         DEBUG_OUTPUT("Cursor::rowcount()", self.stmt.stmt_type, count)
         return count
-
-
-class EventConduit(object):
-    def _recv_channel(self, nbytes, timeout):
-        n = nbytes
-        if n % 4:
-            n += 4 - nbytes % 4  # 4 bytes word alignment
-        r = bs([])
-        while n:
-            if (timeout is not None and select.select([self.sock._sock], [], [], timeout)[0] == []):
-                break
-            b = self.sock.recv(n)
-            if not b:
-                break
-            r += b
-            n -= len(b)
-        if len(r) < nbytes:
-            raise OperationalError('Can not recv() packets')
-        return r[:nbytes]
-
-    def _wait_for_event(self, timeout):
-        event_count = {}
-        event_id = 0
-        while True:
-            op_code = bytes_to_bint(self._recv_channel(4, timeout))
-            if op_code == WireProtocol.op_dummy:
-                pass
-            elif op_code == WireProtocol.op_exit or op_code == WireProtocol.op_disconnect:
-                break
-            elif op_code == WireProtocol.op_event:
-                bytes_to_int(self._recv_channel(4, timeout))    # db_handle
-                ln = bytes_to_bint(self._recv_channel(4, timeout))
-                b = self._recv_channel(ln, timeout)
-                assert byte_to_int(b[0]) == 1
-                i = 1
-                while i < len(b):
-                    ln = byte_to_int(b[i])
-                    s = self.connection.bytes_to_str(b[i+1:i+1+ln])
-                    n = bytes_to_int(b[i+1+ln:i+1+ln+4])
-                    event_count[s] = n
-                    i += ln + 5
-                self._recv_channel(8, timeout)  # ignore AST info
-
-                event_id = bytes_to_bint(self._recv_channel(4, timeout))
-                break
-            else:
-                raise InternalError("_wait_for_event:op_code = %d" % (op_code,))
-
-        assert event_id == self.event_id   # treat only one event_id
-        r = {}
-        for k, v in event_count.items():
-            r[k] = v - self.event_count[k]
-            self.event_count[k] = v
-        return r
-
-    def __init__(self, conn, names, event_id, timeout):
-        self.connection = conn
-        self.event_count = {}
-        for name in names:
-            self.event_count[name] = 0
-
-        self.connection._op_connect_request()
-        (_, _, buf) = self.connection._op_response()
-
-        family = buf[:2]
-        port = bytes_to_bint(buf[2:4], u=True)
-        if family == b'\x02\x00':     # IPv4
-            ip_address = '.'.join([str(byte_to_int(c)) for c in buf[4:8]])
-        elif family == b'\x0a\x00':  # IPv6
-            address = bytes_to_hex(buf[8:24])
-            if not isinstance(address, str):    # Py3
-                address = address.decode('ascii')
-            ip_address = ':'.join(
-                [address[i: i+4] for i in range(0, len(address), 4)]
-            )
-
-        self.sock = SocketStream(ip_address, port, timeout)
-        if event_id:
-            self.event_id = event_id
-        else:
-            self.connection.last_event_id += 1
-            self.event_id = self.connection.last_event_id
-
-        self.connection._op_que_events(self.event_count, self.event_id)
-        self.connection._op_response()
-
-        self._wait_for_event(timeout)
-
-    def wait(self, timeout=None):
-        self.connection._op_que_events(self.event_count, self.event_id)
-        (h, oid, buf) = self.connection._op_response()
-
-        return self._wait_for_event(timeout)
-
-    def close(self):
-        self.connection._op_cancel_events(self.event_id)
-        (h, oid, buf) = self.connection._op_response()
-        self.sock.close()
-        self.sock = None
 
 
 class ConnectionBase(WireProtocol):
