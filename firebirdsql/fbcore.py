@@ -27,9 +27,7 @@
 ##############################################################################
 from __future__ import print_function
 import sys
-import time
 import datetime
-import decimal
 import itertools
 import hashlib
 from firebirdsql.fberrmsgs import messages
@@ -59,8 +57,6 @@ def DEBUG_OUTPUT(*argv):
     for s in argv:
         print(s, end=' ', file=sys.stderr)
     print(file=sys.stderr)
-
-
 
 
 class Statement(object):
