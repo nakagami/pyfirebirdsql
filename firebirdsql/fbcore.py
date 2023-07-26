@@ -61,18 +61,6 @@ def DEBUG_OUTPUT(*argv):
     print(file=sys.stderr)
 
 
-transaction_parameter_block = (
-    # ISOLATION_LEVEL_READ_COMMITED_LEGACY
-    bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_no_rec_version]),
-    # ISOLATION_LEVEL_READ_COMMITED
-    bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
-    # ISOLATION_LEVEL_REPEATABLE_READ
-    bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_concurrency]),
-    # ISOLATION_LEVEL_SERIALIZABLE
-    bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_consistency]),
-    # ISOLATION_LEVEL_READ_COMMITED_RO
-    bs([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
-)
 
 
 class Statement(object):
@@ -443,6 +431,19 @@ class Cursor(object):
 
 
 class Transaction(object):
+    transaction_parameter_block = (
+        # ISOLATION_LEVEL_READ_COMMITED_LEGACY
+        bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_no_rec_version]),
+        # ISOLATION_LEVEL_READ_COMMITED
+        bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
+        # ISOLATION_LEVEL_REPEATABLE_READ
+        bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_concurrency]),
+        # ISOLATION_LEVEL_SERIALIZABLE
+        bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_consistency]),
+        # ISOLATION_LEVEL_READ_COMMITED_RO
+        bs([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
+    )
+
     def __init__(self, connection, is_autocommit=False, isolation_level=None):
         DEBUG_OUTPUT("Transaction::__init__()")
         self._connection = connection
@@ -451,7 +452,7 @@ class Transaction(object):
         self._isolation_level = isolation_level
 
     def _begin(self):
-        tpb = transaction_parameter_block[self._isolation_level if self._isolation_level is not None else self.connection.isolation_level]
+        tpb = self.transaction_parameter_block[self._isolation_level if self._isolation_level is not None else self.connection.isolation_level]
         if self._autocommit:
             tpb += bs([isc_tpb_autocommit])
         self.connection._op_transaction(tpb)
