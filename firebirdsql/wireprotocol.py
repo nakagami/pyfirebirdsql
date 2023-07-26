@@ -43,10 +43,6 @@ from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
 from firebirdsql import srp
 from firebirdsql import tz_utils
-try:
-    from Crypto.Cipher import ARC4
-except ImportError:
-    from firebirdsql.arc4 import ARC4
 
 DEBUG = False
 
