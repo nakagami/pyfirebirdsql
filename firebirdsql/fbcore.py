@@ -33,10 +33,6 @@ import decimal
 import itertools
 import hashlib
 from firebirdsql.fberrmsgs import messages
-try:
-    from collections.abc import Mapping
-except ImportError:
-    from collections import Mapping
 from firebirdsql import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
@@ -1221,51 +1217,3 @@ class Transaction(object):
         return self._trans_handle
 
 
-class RowMapping(Mapping):
-    """dict like interface to result rows
-    """
-    __slots__ = ("_description", "_fields")
-
-    def __init__(self, row, description):
-        self._fields = fields = {}
-        # result may contain multiple fields with the same name. The
-        # RowMapping API ignores these additional fields.
-        for i, descr in enumerate(description):
-            fields.setdefault(descr[0], row[i])
-        self._description = description
-
-    def __getitem__(self, key):
-        fields = self._fields
-        # try unnormalized key first
-        try:
-            return fields[key]
-        except KeyError:
-            pass
-
-        # normalize field name
-        if key[0] == '"' and key[-1] == '"':
-            # field names in quotes are case sensitive
-            normkey = key[1:-1]
-        else:
-            # default is all upper case fields
-            normkey = key.upper()
-
-        try:
-            return fields[normkey]
-        except KeyError:
-            raise KeyError("RowMapping has no field names '%s'. Available "
-                           "field names are: %s" %
-                           (key, ", ".join(self.keys())))
-
-    def __iter__(self):
-        return iter(self._fields)
-
-    def __len__(self):
-        return len(self._fields)
-
-    def __repr__(self):
-        fields = self._fields
-        values = ["%s=%r" % (desc[0], fields[desc[0]])
-                  for desc in self._description]
-        return ("<RowMapping at 0x%08x with fields: %s>" %
-                (id(self), ", ".join(values)))
