@@ -46,4 +46,5 @@ jobs:
     - name: Test
       run: |
         source test_user.env
+        python -m pip install setuptools
         python setup.py test
