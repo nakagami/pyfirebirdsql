@@ -25,9 +25,7 @@
 // 1. Get copy of Firebird 5 sources or at least src/include from Firebird 5 sources
 // 2. cc -I/path/to/firebird/src/include errmsgs.c
 // 3. ./a.out
-// 4. perl -pi -e 's/: "/: """/g' ../firebirdsql/fberrmsgs.py
-// 5. perl -pi -e 's/",/\\n""",/g' ../firebirdsql/fberrmsgs.py
-// 6. perl -pi -e "s/\"\"\"/'''/g" ../firebirdsql/fberrmsgs.py
+// 5. perl -pi -e 's/",/\\n",/g' ../firebirdsql/fberrmsgs.py
 
 #include <stdio.h>
 #include <stdint.h>
