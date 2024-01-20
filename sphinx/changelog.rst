@@ -251,3 +251,10 @@ Version 1.2.2
    - update error messages
    - fix typo
    - fix MANIFEST.in
+
+Version 1.2.3
+==============
+
+   - refactoring
+   - Drop python 3.6 support
+   - update error messages
