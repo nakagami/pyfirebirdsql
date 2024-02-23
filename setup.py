@@ -48,4 +48,9 @@ setup(
     author_email='nakagami@gmail.com',
     packages=['firebirdsql'],
     cmdclass=cmdclass,
+    extras_require={
+        ':sys_platform == "win32"': [
+            'passlib',
+        ],
+    },
 )
