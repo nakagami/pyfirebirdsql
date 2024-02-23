@@ -69,7 +69,7 @@ def get_crypt(plain):
     try:
         import crypt
         return crypt.crypt(plain, '9z')[2:]
-    except AttributeError:
+    except (ImportError, AttributeError):
         pass
     try:
         from passlib.hash import des_crypt
