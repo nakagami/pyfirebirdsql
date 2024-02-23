@@ -263,3 +263,8 @@ Version 1.2.4
 ==============
 
    - fix windows and LegacyAuth problem #99 #104
+
+Version 1.2.5
+==============
+
+   - fix crypt with passlib
