@@ -73,7 +73,7 @@ def get_crypt(plain):
         pass
     try:
         from passlib.hash import des_crypt
-        return des_crypt.using(salt='9z').hash("secret")
+        return des_crypt.using(salt='9z').hash(plain)
     except ImportError:
         return ''
 
