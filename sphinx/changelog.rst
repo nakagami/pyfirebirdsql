@@ -258,3 +258,8 @@ Version 1.2.3
    - refactoring
    - Drop python 3.6 support
    - update error messages
+
+Version 1.2.4
+==============
+
+   - fix windows and LegacyAuth problem #99 #104
