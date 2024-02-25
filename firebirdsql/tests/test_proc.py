@@ -54,6 +54,18 @@ class TestProc(TestBase):
                 SUSPEND;
               END
         ''')
+        cur.execute('''
+            CREATE EXCEPTION ex1 'message';
+        ''')
+        cur.execute('''
+            CREATE PROCEDURE error_during_fetch
+              RETURNS (out VARCHAR(30))
+              AS
+              BEGIN
+                SUSPEND;
+                EXCEPTION ex1;
+              END
+        ''')
         self.connection.commit()
 
         # 3 records insert
@@ -116,3 +128,8 @@ class TestProc(TestBase):
         cur.execute(prep, (5, ))
         self.assertEqual(cur.fetchone()[0], datetime.date(1967, 8, 11))
         cur.close()
+
+    def test_errro_proc(self):
+        cur = self.connection.cursor()
+        for r in cur.execute("select out from error_during_fetch"):
+            pass
