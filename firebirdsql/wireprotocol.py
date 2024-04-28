@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2009-2023, Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2009-2024, Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@ import socket
 import datetime
 import decimal
 
-from firebirdsql import OperationalError
+from firebirdsql.err import OperationalError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
 from firebirdsql import srp

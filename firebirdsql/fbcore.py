@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2009-2023, Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2009-2024, Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@ import datetime
 import itertools
 import hashlib
 from firebirdsql.fberrmsgs import messages
-from firebirdsql import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError
+from firebirdsql.err import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
 from firebirdsql.wireprotocol import WireProtocol

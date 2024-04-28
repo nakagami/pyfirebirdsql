@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2014-2023, Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2014-2024, Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@ try:
     from collections.abc import Mapping
 except ImportError:
     from collections import Mapping
-from firebirdsql import InternalError
+from firebirdsql.err import InternalError
 
 PYTHON_MAJOR_VER = sys.version_info[0]
 

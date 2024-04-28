@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2009-2023, Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2009-2024, Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,7 +26,7 @@
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
 import select
-from firebirdsql import InternalError, OperationalError
+from firebirdsql.err import InternalError, OperationalError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
 from firebirdsql.wireprotocol import WireProtocol

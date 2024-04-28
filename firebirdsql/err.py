@@ -25,75 +25,52 @@
 #
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
-import datetime
-import decimal
-from firebirdsql.consts import *    # noqa
-from firebirdsql.fbcore import Connection
-import firebirdsql.services
-from firebirdsql.err import (
-    Error, InterfaceError, DatabaseError, DisconnectByPeer, InternalError,
-    OperationalError, ProgrammingError, IntegrityError, DataError, NotSupportedError
-)
+class Error(Exception):
+    def __init__(self, message, gds_codes=set(), sql_code=0):
+        self._message = message
+        self.gds_codes = gds_codes
+        self.sql_code = sql_code
+        self.args = [message, sql_code]
 
-Date = datetime.date
-Time = datetime.time
-TimeDelta = datetime.timedelta
-Timestamp = datetime.datetime
+    def __repr__(self):
+        return "%d:%s" % (self.sql_code, self._message)
+
+    def __str__(self):
+        return self._message
 
 
-def DateFromTicks(ticks):
-    return apply(Date, time.localtime(ticks)[:3])
+class InterfaceError(Error):
+    pass
 
 
-def TimeFromTicks(ticks):
-    return apply(Time, time.localtime(ticks)[3:6])
+class DatabaseError(Error):
+    pass
 
 
-def TimestampFromTicks(ticks):
-    return apply(Timestamp, time.localtime(ticks)[:6])
+class DisconnectByPeer(Warning):
+    pass
 
 
-def Binary(b):
-    return bytes(b)
+class InternalError(DatabaseError):
+    pass
 
 
-class DBAPITypeObject:
-    def __init__(self, *values):
-        self.values = values
-
-    def __cmp__(self, other):
-        if other in self.values:
-            return 0
-        if other < self.values:
-            return 1
-        else:
-            return -1
+class OperationalError(DatabaseError):
+    pass
 
 
-STRING = DBAPITypeObject(str)
-if PYTHON_MAJOR_VER == 3:
-    BINARY = DBAPITypeObject(bytes)
-else:
-    BINARY = DBAPITypeObject(str)
-NUMBER = DBAPITypeObject(int, decimal.Decimal)
-DATETIME = DBAPITypeObject(datetime.datetime, datetime.date, datetime.time)
-DATE = DBAPITypeObject(datetime.date)
-TIME = DBAPITypeObject(datetime.time)
-ROWID = DBAPITypeObject()
+class ProgrammingError(DatabaseError):
+    pass
 
 
-__version__ = '1.2.5'
-apilevel = '2.0'
-threadsafety = 1
-paramstyle = 'qmark'
+class IntegrityError(DatabaseError):
+    pass
 
 
-
-def connect(**kwargs):
-    conn = Connection(**kwargs)
-    return conn
+class DataError(DatabaseError):
+    pass
 
 
-def create_database(**kwargs):
-    kwargs['create_new'] = True
-    return connect(**kwargs)
+class NotSupportedError(DatabaseError):
+    def __init__(self):
+        DatabaseError.__init__(self, 'NotSupportedError')
