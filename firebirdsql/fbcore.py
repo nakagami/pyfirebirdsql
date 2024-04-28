@@ -944,8 +944,10 @@ class Connection(WireProtocol, ConnectionResponse):
         self.timeout = float(timeout) if timeout is not None else None
         self.auth_plugin_name = auth_plugin_name
         self.wire_crypt = wire_crypt
+        self.create_new = create_new
         self.page_size = page_size
         self.is_services = is_services
+        self.cloexec = cloexec
         if isolation_level is None:
             self.isolation_level = ISOLATION_LEVEL_READ_COMMITED
         else:
@@ -957,16 +959,20 @@ class Connection(WireProtocol, ConnectionResponse):
         self._autocommit = False
         self._transaction = None
         self._cursors = {}
-        self.sock = SocketStream(self.hostname, self.port, self.timeout, cloexec)
 
-        self._op_connect(auth_plugin_name, wire_crypt)
+        self._initialize_socket()
+
+    def _initialize_socket(self):
+        self.sock = SocketStream(self.hostname, self.port, self.timeout, self.cloexec)
+
+        self._op_connect(self.auth_plugin_name, self.wire_crypt)
         try:
             self._parse_connect_response()
         except OperationalError as e:
             self.sock.close()
             self.sock = None
             raise e
-        if create_new:                      # create database
+        if self.create_new:                      # create database
             self._op_create(self.timezone, self.page_size)
         elif self.is_services:                  # service api
             self._op_service_attach()
