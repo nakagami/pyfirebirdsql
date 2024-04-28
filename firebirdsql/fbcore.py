@@ -930,9 +930,11 @@ class Connection(WireProtocol, ConnectionResponse):
         timezone=None
     ):
         DEBUG_OUTPUT("Connection::__init__()")
+        self.accept_plugin_name = ''
+        self.auth_data = b''
         if auth_plugin_name is None:
             auth_plugin_name = 'Srp256'
-        WireProtocol.__init__(self)
+
         self.sock = None
         self.db_handle = None
         (self.hostname, self.port, self.filename, self.user, self.password) = \

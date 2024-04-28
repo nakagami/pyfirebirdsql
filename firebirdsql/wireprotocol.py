@@ -203,10 +203,6 @@ class WireProtocol(object):
     op_crypt_key_callback = 97
     op_cond_accept = 98
 
-    def __init__(self):
-        self.accept_plugin_name = ''
-        self.auth_data = b''
-
     def str_to_bytes(self, s):
         "convert str to bytes"
         if ((PYTHON_MAJOR_VER == 3 and isinstance(s, str)) or
