@@ -559,7 +559,7 @@ class Transaction(object):
         return self._trans_handle
 
 
-class ConnectionResponse:
+class ConnectionResponseMixin:
     def _recv_channel(self, nbytes, word_alignment=False):
         n = nbytes
         if word_alignment and (n % 4):
@@ -876,7 +876,7 @@ class ConnectionResponse:
         return rows, status != 100
 
 
-class ConnectionBase(WireProtocol, ConnectionResponse):
+class ConnectionBase:
     def cursor(self, factory=Cursor):
         DEBUG_OUTPUT("Connection::cursor()")
         if self._transaction is None:
@@ -1171,5 +1171,5 @@ class ConnectionBase(WireProtocol, ConnectionResponse):
         return self.sock is None
 
 
-class Connection(ConnectionBase, WireProtocol, ConnectionResponse):
+class Connection(ConnectionBase, WireProtocol, ConnectionResponseMixin):
     pass
