@@ -876,7 +876,7 @@ class ConnectionResponse:
         return rows, status != 100
 
 
-class Connection(WireProtocol, ConnectionResponse):
+class ConnectionBase(WireProtocol, ConnectionResponse):
     def cursor(self, factory=Cursor):
         DEBUG_OUTPUT("Connection::cursor()")
         if self._transaction is None:
@@ -1169,3 +1169,7 @@ class Connection(WireProtocol, ConnectionResponse):
 
     def is_disconnect(self):
         return self.sock is None
+
+
+class Connection(ConnectionBase, WireProtocol, ConnectionResponse):
+    pass
