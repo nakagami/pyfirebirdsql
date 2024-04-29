@@ -412,4 +412,6 @@ class Services(Connection):
 
 def connect(**kwargs):
     kwargs['is_services'] = True
-    return Services(**kwargs)
+    services = Services(**kwargs)
+    services._initialize_socket()
+    return services

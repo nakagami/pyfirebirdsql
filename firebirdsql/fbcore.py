@@ -960,7 +960,6 @@ class Connection(WireProtocol, ConnectionResponse):
         self._transaction = None
         self._cursors = {}
 
-        self._initialize_socket()
 
     def _initialize_socket(self):
         self.sock = SocketStream(self.hostname, self.port, self.timeout, self.cloexec)
