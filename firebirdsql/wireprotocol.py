@@ -142,7 +142,7 @@ class Packer(object):
         return self.buf
 
 
-class WireProtocol(object):
+class WireProtocolMixin(object):
     buffer_length = 1024
 
     op_connect = 1

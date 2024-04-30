@@ -29,11 +29,11 @@ import select
 from firebirdsql.err import InternalError, OperationalError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
-from firebirdsql.wireprotocol import WireProtocol
+from firebirdsql.wireprotocol import WireProtocolMixin
 from firebirdsql.stream import SocketStream
 
 
-class EventConduit(object):
+class EventConduit(WireProtocolMixin):
     def _recv_channel(self, nbytes, timeout):
         n = nbytes
         if n % 4:
@@ -56,11 +56,11 @@ class EventConduit(object):
         event_id = 0
         while True:
             op_code = bytes_to_bint(self._recv_channel(4, timeout))
-            if op_code == WireProtocol.op_dummy:
+            if op_code == self.op_dummy:
                 pass
-            elif op_code == WireProtocol.op_exit or op_code == WireProtocol.op_disconnect:
+            elif op_code == self.op_exit or op_code == self.op_disconnect:
                 break
-            elif op_code == WireProtocol.op_event:
+            elif op_code == self.op_event:
                 bytes_to_int(self._recv_channel(4, timeout))    # db_handle
                 ln = bytes_to_bint(self._recv_channel(4, timeout))
                 b = self._recv_channel(ln, timeout)
