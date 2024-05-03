@@ -458,6 +458,16 @@ class Transaction(object):
             "Transaction::_begin()", self._trans_handle, self.connection)
         self.is_dirty = False
 
+    def _cleanup(self):
+        if self._trans_handle is None:
+            return
+        if not self.is_dirty:
+            return
+        self.connection._op_rollback(self._trans_handle)
+        (h, oid, buf) = self.connection._op_response()
+        self._trans_handle = None
+        self.is_dirty = False
+
     def begin(self):
         DEBUG_OUTPUT("Transaction::begin()")
         self._begin()
@@ -1142,7 +1152,7 @@ class ConnectionBase:
         if self.db_handle is not None:
             # cleanup transaction
             for trans in self._cursors.keys():
-                trans.rollback()
+                trans._cleanup()
             if self.is_services:
                 self._op_service_detach()
             else:
