@@ -31,6 +31,7 @@ class TestBasic(TestBase):
                 h BLOB SUB_TYPE 1,
                 i DOUBLE PRECISION DEFAULT 0.0,
                 j FLOAT DEFAULT 0.0,
+                k BIGINT DEFAULT 123456789999999999,
                 PRIMARY KEY (a),
                 CONSTRAINT CHECK_A CHECK (a <> 0)
             )
@@ -60,8 +61,8 @@ class TestBasic(TestBase):
         conn.cursor().execute("insert into foo(a, b, c,h) values (1, 'a', 'b','This is a memo')")
         conn.cursor().execute("""insert into foo(a, b, c, e, g, i, j)
             values (2, 'A', 'B', '1999-01-25', '00:00:01', 0.1, 0.1)""")
-        conn.cursor().execute("""insert into foo(a, b, c, e, g, i, j)
-            values (3, 'X', 'Y', '2001-07-05', '00:01:02', 0.2, 0.2)""")
+        conn.cursor().execute("""insert into foo(a, b, c, e, g, i, j, k)
+            values (3, 'X', 'Y', '2001-07-05', '00:01:02', 0.2, 0.2, 123456789000000000)""")
 
         # 1 record insert and rollback to savepoint
         cur = conn.cursor()
@@ -139,7 +140,7 @@ class TestBasic(TestBase):
         cur = conn.cursor()
         cur.execute("select * from foo")
         self.assertEqual(
-            ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'],
+            ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'],
             [d[0] for d in cur.description]
         )
         self.assertEqual(['a', 'A', 'X', 'c', 'd'], [r[1] for r in cur.fetchall()])
@@ -162,7 +163,8 @@ class TestBasic(TestBase):
             'G': datetime.time(23, 45, 1),
             'H': 'This is a memo',
             'I': 0.0,
-            'J': 0.0},
+            'J': 0.0,
+            'K': 123456789999999999},
             dict(cur.fetchonemap())
         )
 
@@ -172,6 +174,10 @@ class TestBasic(TestBase):
             ['a', 'A', 'X', 'c', 'd'],
             [r['B'] for r in cur.itermap()]
         )
+
+        cur = conn.cursor()
+        cur.execute("select a from foo where k=?", [123456789000000000])
+        self.assertEqual(cur.fetchone()[0], 3)
 
         cur = conn.cursor()
         cur.execute("select * from bar_empty")
@@ -241,7 +247,7 @@ class TestBasic(TestBase):
         cur = conn.cursor()
         cur.execute("select * from foo")
         self.assertEqual(
-            ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'],
+            ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'],
             [d[0] for d in cur.description]
         )
         self.assertEqual(
@@ -291,7 +297,7 @@ class TestBasic(TestBase):
         prep = cur.prep("select * from foo where c=?", explain_plan=True)
         self.assertEqual(prep.sql, 'select * from foo where c=?')
         self.assertEqual(prep.stmt.stmt_type, 1)
-        self.assertEqual(prep.n_output_params, 10)
+        self.assertEqual(prep.n_output_params, 11)
 
         cur.execute(prep, ('C parameter', ))
         self.assertEqual(0, len(cur.fetchall()))
