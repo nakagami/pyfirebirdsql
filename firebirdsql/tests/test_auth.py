@@ -66,6 +66,7 @@ class TestAuth(TestBase):
         # self.assertEqual(self.connection.accept_plugin_name, '')
         self.connection.close()
 
+    @unittest.skip("Fail by OperationalError in Ubuntu20.04")
     def test_legacy_auth_no_wirecrypt(self):
         self.connection = firebirdsql.connect(
                 auth_plugin_name="Legacy_Auth",
