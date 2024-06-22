@@ -34,7 +34,7 @@ from firebirdsql.fberrmsgs import messages
 from firebirdsql.err import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
-from firebirdsql.wireprotocol import WireProtocolMixin
+from firebirdsql.wireprotocol import WireProtocolMixin, get_crypt
 from firebirdsql.stream import SocketStream
 from firebirdsql.xsqlvar import calc_blr, parse_xsqlda
 from firebirdsql.event_conduit import EventConduit
