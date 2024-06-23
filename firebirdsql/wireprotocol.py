@@ -71,11 +71,9 @@ def get_crypt(plain):
         return crypt.crypt(plain, '9z')[2:]
     except (ImportError, AttributeError):
         pass
-    try:
-        from passlib.hash import des_crypt
-        return des_crypt.using(salt='9z').hash(plain)[2:]
-    except ImportError:
-        return ''
+
+    from passlib.hash import des_crypt
+    return des_crypt.using(salt='9z').hash(plain)[2:]
 
 
 def convert_date(v):  # Convert datetime.date to BLR format data
