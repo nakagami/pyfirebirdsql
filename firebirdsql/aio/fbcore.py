@@ -165,7 +165,7 @@ class AsyncCursor(Cursor):
         return self
 
     async def __aexit__(self, exc, value, traceback):
-        self.close()
+        await self.close()
 
     @property
     def transaction(self):
