@@ -11,6 +11,9 @@ from firebirdsql.tests.test_auth import *       # noqa
 from firebirdsql.tests.test_srp import *        # noqa
 from firebirdsql.tests.test_utils import *      # noqa
 
+if sys.version_info[0] > 2:
+    from firebirdsql.tests.test_async import *  # noqa
+
 if sys.version_info >= (3, 6):
     from firebirdsql.tests.test_timezone import *   # noqa
 
