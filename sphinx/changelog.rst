@@ -268,3 +268,9 @@ Version 1.2.5
 ==============
 
    - fix crypt with passlib
+
+Version 1.2.6
+==============
+
+   - refactoring
+   - fix LegacyAuth authentication
