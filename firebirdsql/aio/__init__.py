@@ -1,4 +1,3 @@
-import asyncio
 from .fbcore import AsyncConnection, AsyncCursor
 from .pool import create_pool
 

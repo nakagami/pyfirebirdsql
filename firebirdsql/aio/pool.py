@@ -5,8 +5,11 @@ import asyncio
 import collections
 import warnings
 from firebirdsql.aio.fbcore import AsyncConnection
-from .context import (_PoolContextManager, _PoolConnectionContextManager,
-                    _PoolAcquireContextManager)
+from .context import (
+    _PoolContextManager,
+    _PoolConnectionContextManager,
+    _PoolAcquireContextManager,
+)
 
 
 def create_pool(minsize=1, maxsize=10, pool_recycle=-1,
@@ -149,8 +152,10 @@ class Pool(asyncio.AbstractServer):
         n = 0
         while n < free_size:
             conn = self._free[-1]
-            if (self._recycle > -1 and
-                  self._loop.time() - conn.last_usage > self._recycle):
+            if (
+                self._recycle > -1 and
+                self._loop.time() - conn.last_usage > self._recycle
+            ):
                 self._free.pop()
                 conn.close()
             else:

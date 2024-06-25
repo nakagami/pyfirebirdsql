@@ -40,7 +40,7 @@ class TestTimeZone(TestBase):
             return
         try:
             firebirdsql.tz_utils.get_tzinfo_by_name('GMT')
-        except:
+        except Exception:
             self.connection.close()
             return
 

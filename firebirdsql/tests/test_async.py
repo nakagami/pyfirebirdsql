@@ -1,9 +1,9 @@
-import os
 import tempfile
 import asyncio
 import unittest
 import firebirdsql
 from firebirdsql.tests import base
+
 
 class AsyncTestCase(base.TestBase):
 
@@ -60,7 +60,7 @@ class AsyncTestCase(base.TestBase):
             cur = conn.cursor()
             await cur.execute("SELECT 42 FROM rdb$database")
             result = await cur.fetchall()
-            self.assertEqual(result, [(42,),])
+            self.assertEqual(result, [(42, ), ])
             await cur.close()
             conn.close()
         loop.run_until_complete(_test_select())
@@ -95,6 +95,6 @@ class AsyncTestCase(base.TestBase):
         loop.run_until_complete(_test_select(loop))
         loop.close()
 
+
 if __name__ == "__main__":
-    import unittest
     unittest.main()
