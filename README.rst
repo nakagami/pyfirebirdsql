@@ -12,12 +12,12 @@ firebirdsql package is a set of Firebird RDBMS (https://firebirdsql.org/) bindin
 
 see https://pyfirebirdsql.readthedocs.io/en/latest/
 
-It works on Python 2.7 and 3.7+.
+It works on Python 2.7 and 3.8+.
 
 But if you want to use the timezone feature of Firebird 4.0 ...
 
 - Not supported by python2.7
-- Python 3.7, 3.8 requires backports.zoneinfo https://pypi.org/project/backports.zoneinfo/ install
+- Python 3.8 requires backports.zoneinfo https://pypi.org/project/backports.zoneinfo/ install
 
 Example
 -----------
