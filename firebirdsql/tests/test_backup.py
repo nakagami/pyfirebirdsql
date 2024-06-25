@@ -13,7 +13,6 @@ def test_callback(s):
 
 
 class TestBackup(TestBase):
-    @unittest.skip("no longer works on github actions")
     def test_backup(self):
         """
         backup & restore
