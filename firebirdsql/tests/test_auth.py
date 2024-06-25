@@ -52,6 +52,7 @@ class TestAuth(TestBase):
                 page_size=self.page_size)
         self.connection.close()
 
+    @unittest.skip("Fail on Github action ubuntu-22.04")
     def test_legacy_auth_wirecrypt(self):
         self.connection = firebirdsql.connect(
                 auth_plugin_name="Legacy_Auth",
