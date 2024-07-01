@@ -5,6 +5,17 @@ from firebirdsql.tests.base import *    # noqa
 
 
 class TestAuth(TestBase):
+    def setUp(self):
+        TestBase.setUp(self)
+        cur = self.connection.cursor()
+
+        cur.execute(
+            "SELECT rdb$get_context('SYSTEM', 'ENGINE_VERSION') from rdb$database"
+        )
+        self.server_version = tuple(
+            [int(n) for n in cur.fetchone()[0].split('.')]
+        )
+
     def test_srp_key_exchange(self):
         user = b'sysdba'
         password = b'masterkey'
@@ -36,8 +47,8 @@ class TestAuth(TestBase):
                 user=self.user,
                 password=self.password,
                 page_size=self.page_size)
-        # FB3
-        # self.assertEqual(self.connection.accept_plugin_name, 'Srp')
+        if self.server_version[0] >= 3:
+            self.assertEqual(self.connection.accept_plugin_name, b'Srp')
         self.connection.close()
 
     def test_srp_no_wirecrypt(self):
@@ -62,8 +73,8 @@ class TestAuth(TestBase):
                 user=self.user,
                 password=self.password,
                 page_size=self.page_size)
-        # FB3
-        # self.assertEqual(self.connection.accept_plugin_name, '')
+        if self.server_version[0] >= 3:
+            self.assertEqual(self.connection.accept_plugin_name, b'')
         self.connection.close()
 
     @unittest.skip("Fail on Github action ubuntu-22.04")
