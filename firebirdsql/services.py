@@ -100,45 +100,6 @@ class Services(Connection):
                 ln = bytes_to_int(buf[1:3])
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def repair(
-        self, database_name,
-        readOnlyValidation=True, ignoreChecksums=False,
-        killUnavailableShadows=False, mendDatabase=False,
-        validateDatabase=False, validateRecordFragments=False, callback=None
-    ):
-        spb = bs([isc_action_svc_repair])
-
-        s = self.str_to_bytes(database_name)
-        spb += bs([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
-
-        optionMask = 0
-
-        if readOnlyValidation:
-            optionMask |= isc_spb_rpr_check_db
-        if ignoreChecksums:
-            optionMask |= isc_spb_rpr_ignore_checksum
-        if killUnavailableShadows:
-            optionMask |= isc_spb_rpr_kill_shadows
-        if mendDatabase:
-            optionMask |= isc_spb_rpr_mend_db
-        if validateDatabase:
-            optionMask |= isc_spb_rpr_validate_db
-        if validateRecordFragments:
-            optionMask |= isc_spb_rpr_full
-
-        spb += bs([isc_spb_options]) + int_to_bytes(optionMask, 4)
-        self._op_service_start(spb)
-        (h, oid, buf) = self._op_response()
-        self.svc_handle = h
-        while True:
-            self._op_service_info(bs([0x02]), bs([0x3e]))
-            (h, oid, buf) = self._op_response()
-            if buf[:4] == bs([0x3e, 0x00, 0x00, 0x01]):
-                break
-            if callback:
-                ln = bytes_to_int(buf[1:3])
-                callback(self.bytes_to_str(buf[3:3+ln]))
-
     def backup_database(
         self, database_name, backup_filename,
         transportable=True, metadataOnly=False, garbageCollect=True,
