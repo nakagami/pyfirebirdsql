@@ -13,6 +13,17 @@ def test_callback(s):
 
 
 class TestBackup(TestBase):
+    def setUp(self):
+        TestBase.setUp(self)
+        cur = self.connection.cursor()
+
+        cur.execute(
+            "SELECT rdb$get_context('SYSTEM', 'ENGINE_VERSION') from rdb$database"
+        )
+        self.server_version = tuple(
+            [int(n) for n in cur.fetchone()[0].split('.')]
+        )
+
     def test_backup(self):
         """
         backup & restore
