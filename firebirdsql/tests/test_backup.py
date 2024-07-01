@@ -17,7 +17,7 @@ class TestBackup(TestBase):
         """
         backup & restore
         """
-        if self.self.server_version[0] < 3:
+        if self.server_version[0] < 3:
             return
 
         BACKUP_FILE = self.database + '.fbk'
