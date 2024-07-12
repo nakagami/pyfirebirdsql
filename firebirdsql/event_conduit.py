@@ -99,7 +99,7 @@ class EventConduit(WireProtocolMixin):
         port = bytes_to_bint(buf[2:4], u=True)
         if family == b'\x02\x00':     # IPv4
             ip_address = '.'.join([str(byte_to_int(c)) for c in buf[4:8]])
-        elif family == b'\x0a\x00':  # IPv6
+        elif family in (b'\x0a\x00', b'\x17\00'):  # IPv6
             if bytes_to_hex(buf[4:20]) == b"0000000000000000000000000000ffff":
                 # ipv4 mapped ipv6 address
                 ip_address = '.'.join([str(byte_to_int(c)) for c in buf[20:24]])
