@@ -100,13 +100,16 @@ class EventConduit(WireProtocolMixin):
         if family == b'\x02\x00':     # IPv4
             ip_address = '.'.join([str(byte_to_int(c)) for c in buf[4:8]])
         elif family == b'\x0a\x00':  # IPv6
-            address = bytes_to_hex(buf[8:24])
-            if not isinstance(address, str):    # Py3
-                address = address.decode('ascii')
-            ip_address = ':'.join(
-                [address[i: i+4] for i in range(0, len(address), 4)]
-            )
-
+            if bytes_to_hex(buf[4:20]) == b"0000000000000000000000000000ffff":
+                # ipv4 mapped ipv6 address
+                ip_address = '.'.join([str(byte_to_int(c)) for c in buf[20:24]])
+            else:
+                address = bytes_to_hex(buf[4:20])
+                if not isinstance(address, str):    # Py3
+                    address = address.decode('ascii')
+                ip_address = ':'.join(
+                    [address[i: i+4] for i in range(0, len(address), 4)]
+                )
         self.sock = SocketStream(ip_address, port, timeout)
         if event_id:
             self.event_id = event_id
