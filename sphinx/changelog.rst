@@ -274,3 +274,13 @@ Version 1.2.6
 
    - refactoring
    - fix LegacyAuth authentication
+
+Version 1.3.0
+==============
+
+   - experimental asyncio API
+   - refactoring
+   - Drop python 3.7 support
+   - fix event host IP address #108
+   - fix Legacy Auth
+   - remove Services.repair()
