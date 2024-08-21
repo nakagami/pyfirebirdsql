@@ -284,3 +284,8 @@ Version 1.3.0
    - fix event host IP address #108
    - fix Legacy Auth
    - remove Services.repair()
+
+Version 1.3.1
+==============
+
+   - fix install problem #109
