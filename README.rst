@@ -56,9 +56,10 @@ Use connect
 
    import asyncio
    import firebirdsql
+   from firebirdsql import aio
 
    async def conn_example():
-       conn = await firebirdsql.aio.connect(
+       conn = await aio.connect(
            host='localhost',
            database='/foo/bar.fdb',
            port=3050,
@@ -75,9 +76,10 @@ Use pool
 
    import asyncio
    import firebirdsql
+   from firebirdsql import aio
 
    async def pool_example(loop):
-       pool = await firebirdsql.aio.create_pool(
+       pool = await aio.create_pool(
            host='localhost',
            database='/foo/bar.fdb',
            port=3050,

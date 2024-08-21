@@ -36,8 +36,8 @@ from firebirdsql.err import (
     OperationalError, ProgrammingError, IntegrityError, DataError, NotSupportedError
 )
 
-if sys.version_info[0] > 2:
-    from firebirdsql import aio
+#if sys.version_info[0] > 2:
+#    from firebirdsql import aio
 
 Date = datetime.date
 Time = datetime.time
@@ -86,7 +86,7 @@ TIME = DBAPITypeObject(datetime.time)
 ROWID = DBAPITypeObject()
 
 
-__version__ = '1.3.0'
+__version__ = '1.3.1'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'

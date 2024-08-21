@@ -2,6 +2,7 @@ import tempfile
 import asyncio
 import unittest
 import firebirdsql
+from firebirdsql import aio
 from firebirdsql.tests import base
 
 
@@ -25,7 +26,7 @@ class AsyncTestCase(base.TestBase):
 
     def test_aio_connect(self):
         async def _test_select():
-            conn = firebirdsql.aio.connect(
+            conn = aio.connect(
                 auth_plugin_name=self.auth_plugin_name,
                 wire_crypt=self.wire_crypt,
                 host=self.host,
@@ -46,7 +47,7 @@ class AsyncTestCase(base.TestBase):
         loop = asyncio.new_event_loop()
 
         async def _test_select():
-            conn = firebirdsql.aio.connect(
+            conn = aio.connect(
                 auth_plugin_name=self.auth_plugin_name,
                 wire_crypt=self.wire_crypt,
                 host=self.host,
@@ -68,7 +69,7 @@ class AsyncTestCase(base.TestBase):
 
     def test_create_pool(self):
         async def _test_select(loop):
-            pool = await firebirdsql.aio.create_pool(
+            pool = await aio.create_pool(
                 auth_plugin_name=self.auth_plugin_name,
                 wire_crypt=self.wire_crypt,
                 host=self.host,
