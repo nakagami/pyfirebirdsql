@@ -36,8 +36,8 @@ from firebirdsql.err import (
     OperationalError, ProgrammingError, IntegrityError, DataError, NotSupportedError
 )
 
-#if sys.version_info[0] > 2:
-#    from firebirdsql import aio
+if sys.version_info[0] > 2:
+    from firebirdsql import aio
 
 Date = datetime.date
 Time = datetime.time

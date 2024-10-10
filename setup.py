@@ -46,6 +46,6 @@ setup(
     license='BSD',
     author='Hajime Nakagami',
     author_email='nakagami@gmail.com',
-    packages=['firebirdsql'],
+    packages=['firebirdsql', 'firebirdsql.aio'],
     cmdclass=cmdclass,
 )
