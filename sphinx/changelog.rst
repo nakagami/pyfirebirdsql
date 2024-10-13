@@ -289,3 +289,9 @@ Version 1.3.1
 ==============
 
    - fix install problem #109
+
+Version 1.3.2
+==============
+
+   - fix aio package #112
+
