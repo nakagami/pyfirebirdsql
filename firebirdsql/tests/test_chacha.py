@@ -1,9 +1,9 @@
 import unittest
 from firebirdsql import utils
-from firebirdsql.chacha20 import ChaCha20
+from firebirdsql.chacha import ChaCha20
 
 
-class TestChaCha20(unittest.TestCase):
+class TestChaCha(unittest.TestCase):
     def test_chacha20(self):
         key = utils.hex_to_bytes("23AD52B15FA7EBDC4672D72289253D95DC9A4324FC369F593FDCC7733AD77617")
         nonce = utils.hex_to_bytes("5A5F6C13C1F12653")

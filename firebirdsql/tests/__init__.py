@@ -6,7 +6,7 @@ from firebirdsql.tests.test_backup import *     # noqa
 from firebirdsql.tests.test_services import *   # noqa
 from firebirdsql.tests.test_event import *      # noqa
 from firebirdsql.tests.test_arc4 import *       # noqa
-from firebirdsql.tests.test_chacha20 import *   # noqa
+from firebirdsql.tests.test_chacha import *     # noqa
 from firebirdsql.tests.test_auth import *       # noqa
 from firebirdsql.tests.test_srp import *        # noqa
 from firebirdsql.tests.test_utils import *      # noqa
