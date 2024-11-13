@@ -46,7 +46,7 @@ except ImportError:
 try:
     from Crypto.Cipher import ChaCha20
 except ImportError:
-    from firebirdsql.chacha20 import ChaCha20
+    from firebirdsql.chacha import ChaCha20
 
 DEBUG = False
 
