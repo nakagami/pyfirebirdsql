@@ -46,7 +46,7 @@ except ImportError:
 try:
     from Crypto.Cipher import ChaCha20
 except ImportError:
-    from firebirdsql.chacha20 import ChaCha20
+    from firebirdsql.chacha import ChaCha20
 
 DEBUG = False
 
@@ -757,12 +757,14 @@ class ConnectionResponseMixin:
                 guessed_wire_crypt = None
 
             if guessed_wire_crypt and self.wire_crypt and session_key:
+                print(guessed_wire_crypt[0])
                 self._op_crypt(guessed_wire_crypt[0])
                 if guessed_wire_crypt[0] == b'Arc4':
                     self.sock.set_translator(
                         ARC4.new(session_key), ARC4.new(session_key))
                 elif guessed_wire_crypt[0] == b'ChaCha':
                     k = hashlib.sha256(session_key).digest()
+                    print(len(guessed_wire_crypt[1]))
                     self.sock.set_translator(
                         ChaCha20.new(k, guessed_wire_crypt[1]),
                         ChaCha20.new(k, guessed_wire_crypt[1]),
