@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2021-2023 Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2021-2024 Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -74,7 +74,7 @@ def rotate_u32(x, n):
     return (y | z) & 0xffffffff
 
 
-def quaterround(a, b, c, d):
+def quaterround_u32(a, b, c, d):
     a = add_u32(a, b)
     d ^= a
     d = rotate_u32(d, 16)
@@ -116,15 +116,15 @@ class ChaCha20:
 
         for i in range(10):
             # column rounds
-            x[0], x[4], x[8], x[12] = quaterround(x[0], x[4], x[8], x[12])
-            x[1], x[5], x[9], x[13] = quaterround(x[1], x[5], x[9], x[13])
-            x[2], x[6], x[10], x[14] = quaterround(x[2], x[6], x[10], x[14])
-            x[3], x[7], x[11], x[15] = quaterround(x[3], x[7], x[11], x[15])
+            x[0], x[4], x[8], x[12] = quaterround_u32(x[0], x[4], x[8], x[12])
+            x[1], x[5], x[9], x[13] = quaterround_u32(x[1], x[5], x[9], x[13])
+            x[2], x[6], x[10], x[14] = quaterround_u32(x[2], x[6], x[10], x[14])
+            x[3], x[7], x[11], x[15] = quaterround_u32(x[3], x[7], x[11], x[15])
             # diagonal rounds
-            x[0], x[5], x[10], x[15] = quaterround(x[0], x[5], x[10], x[15])
-            x[1], x[6], x[11], x[12] = quaterround(x[1], x[6], x[11], x[12])
-            x[2], x[7], x[8], x[13] = quaterround(x[2], x[7], x[8], x[13])
-            x[3], x[4], x[9], x[14] = quaterround(x[3], x[4], x[9], x[14])
+            x[0], x[5], x[10], x[15] = quaterround_u32(x[0], x[5], x[10], x[15])
+            x[1], x[6], x[11], x[12] = quaterround_u32(x[1], x[6], x[11], x[12])
+            x[2], x[7], x[8], x[13] = quaterround_u32(x[2], x[7], x[8], x[13])
+            x[3], x[4], x[9], x[14] = quaterround_u32(x[3], x[4], x[9], x[14])
 
         for i in range(16):
             x[i] = add_u32(x[i], self.state[i])
