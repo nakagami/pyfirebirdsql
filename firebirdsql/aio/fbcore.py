@@ -617,6 +617,8 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
                         await self._async_recv_channel(ln, word_alignment=True)  # plugin_list
                         ln = bytes_to_bint(await self._async_recv_channel(4))
                         await self._async_recv_channel(ln, word_alignment=True)  # keys
+                    if len(data) == 0:
+                        raise OperationalError('Unauthorized')
 
                     ln = bytes_to_int(data[:2])
                     server_salt = data[2:ln+2]

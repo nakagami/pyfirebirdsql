@@ -720,6 +720,9 @@ class ConnectionResponseMixin:
                         ln = bytes_to_bint(self._recv_channel(4))
                         self._recv_channel(ln, word_alignment=True)  # keys
 
+                    if len(data) == 0:
+                        raise OperationalError('Unauthorized')
+
                     ln = bytes_to_int(data[:2])
                     server_salt = data[2:ln+2]
                     server_public_key = srp.bytes2long(

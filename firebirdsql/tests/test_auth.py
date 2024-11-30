@@ -90,3 +90,13 @@ class TestAuth(TestBase):
                 password=self.password,
                 page_size=self.page_size)
         self.connection.close()
+
+    def test_unauthorized(self):
+        with self.assertRaises(firebirdsql.OperationalError):
+            self.connection = firebirdsql.connect(
+                    host=self.host,
+                    port=self.port,
+                    database=self.database,
+                    user="notexisting",
+                    password="wrongpassword",
+                    page_size=self.page_size)
