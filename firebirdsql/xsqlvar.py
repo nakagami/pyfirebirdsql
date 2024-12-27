@@ -182,12 +182,16 @@ class XSQLVAR:
         elif self.sqltype == SQL_TYPE_TIMESTAMP_TZ:
             yyyy, mm, dd = self._parse_date(raw_value[:4])
             h, m, s, ms = self._parse_time(raw_value[4:8])
+            if raw_value[8:10] == b'\x00\x00':
+                return datetime.datetime(yyyy, mm, dd, h, m, s, ms, tzinfo=datetime.timezone.utc)
             tz = self._parse_time_zone(raw_value[8:10])
             offset = self._parse_time_zone(raw_value[10:12])
             dt = datetime.datetime(yyyy, mm, dd, h, m, s, ms, tzinfo=tz)
             return dt.astimezone(offset)
         elif self.sqltype == SQL_TYPE_TIME_TZ:
             h, m, s, ms = self._parse_time(raw_value[:4])
+            if raw_value[4:6] == b'\x00\x00':
+                return datetime.time(h, m, s, ms, tzinfo=datetime.timezone.utc)
             tz = self._parse_time_zone(raw_value[4:6])
             offset = self._parse_time_zone(raw_value[6:8])
             t = datetime.time(h, m, s, ms, tzinfo=tz)
