@@ -96,6 +96,7 @@ def quaterround_u32(a, b, c, d):
 
 class ChaCha20:
     def __init__(self, key, nonce, counter=0):
+        self.counter = counter
         self.counter_len = 16 - len(nonce)
         assert len(key) == 32
         assert self.counter_len in (4, 8)
