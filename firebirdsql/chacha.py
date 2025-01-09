@@ -39,7 +39,7 @@ if PYTHON_MAJOR_VER == 3:
         return c
 
 
-def bytes_to_int(b):        # Read as little endian.
+def bytes_to_uint(b):        # Read as little endian.
     fmt = {1: 'B', 2: '<H', 4: '<L', 8: '<Q'}[len(b)]
     return struct.unpack(fmt, b)[0]
 
@@ -99,12 +99,13 @@ class ChaCha20:
         self.counter_len = 16 - len(nonce)
         assert len(key) == 32
         assert self.counter_len in (4, 8)
-        block_bytes = sigma + key + int_to_bytes(counter, self.counter_len) + nonce
+        counter_bytes = int_to_bytes(counter, self.counter_len)
+        block_bytes = sigma + key + counter_bytes + nonce
         assert len(block_bytes) == 64
 
         state = []
         for i in range(0, len(block_bytes), 4):
-            state.append(bytes_to_int(block_bytes[i:i+4]))
+            state.append(bytes_to_uint(block_bytes[i:i+4]))
         self.state = state
         self.block = self.chacha20_round_bytes()
         self.block_pos = 0
@@ -139,10 +140,12 @@ class ChaCha20:
                 enc += chr(ord(plain[i]) ^ ord(self.block[self.block_pos]))
             self.block_pos += 1
             if len(self.block) == self.block_pos:
-                # inclement counter
-                self.state[12] = add_u32(self.state[12], 1)
-                if self.counter_len == 8 and self.state[12] == 0:
-                    self.state[13] = add_u32(self.state[13], 1)
+                # increment counter
+                self.counter += 1
+                counter_bytes = int_to_bytes(self.counter, self.counter_len)
+                self.state[12] = bytes_to_uint(counter_bytes[:4])
+                if self.counter_len == 8:
+                    self.state[13] = add_u32(self.state[13] & 0xffff0000, bytes_to_uint(counter_bytes[4:]))
 
                 self.block = self.chacha20_round_bytes()
                 self.block_pos = 0
