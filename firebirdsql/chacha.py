@@ -146,8 +146,8 @@ class ChaCha20:
                 counter_bytes = int_to_bytes(self.counter, 16 - len(self.nonce))
                 self.state[12] = bytes_to_uint(counter_bytes[:4])
                 if len(self.nonce) == 8:
-                    self.state[13] = add_u32(self.state[13] & 0xffff0000, bytes_to_uint(counter_bytes[4:]))
-
+                    # ChaCha64: 64 bit nonce, 64 bit counter
+                    self.state[13] = bytes_to_uint(counter_bytes[4:])
                 self.block = self.chacha20_round_bytes()
                 self.block_pos = 0
 
