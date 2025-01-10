@@ -96,12 +96,12 @@ def quaterround_u32(a, b, c, d):
 
 class ChaCha20:
     def __init__(self, key, nonce, counter=0):
-        self.counter = counter
-        self.counter_len = 16 - len(nonce)
         assert len(key) == 32
-        assert self.counter_len in (4, 8)
-        counter_bytes = int_to_bytes(counter, self.counter_len)
-        block_bytes = sigma + key + counter_bytes + nonce
+        assert len(nonce) in (8, 12)
+        self.nonce = nonce
+        self.counter = counter
+        counter_bytes = int_to_bytes(self.counter, 16 - len(self.nonce))
+        block_bytes = sigma + key + counter_bytes + self.nonce
         assert len(block_bytes) == 64
 
         state = []
@@ -143,9 +143,9 @@ class ChaCha20:
             if len(self.block) == self.block_pos:
                 # increment counter
                 self.counter += 1
-                counter_bytes = int_to_bytes(self.counter, self.counter_len)
+                counter_bytes = int_to_bytes(self.counter, 16 - len(self.nonce))
                 self.state[12] = bytes_to_uint(counter_bytes[:4])
-                if self.counter_len == 8:
+                if len(self.nonce) == 8:
                     self.state[13] = add_u32(self.state[13] & 0xffff0000, bytes_to_uint(counter_bytes[4:]))
 
                 self.block = self.chacha20_round_bytes()
