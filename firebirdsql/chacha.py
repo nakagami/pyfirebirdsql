@@ -108,10 +108,9 @@ class ChaCha20:
         for i in range(0, len(block_bytes), 4):
             state.append(bytes_to_uint(block_bytes[i:i+4]))
         self.state = state
-        self.block = self.chacha20_round_bytes()
-        self.block_pos = 0
+        self.chacha20_round_block()
 
-    def chacha20_round_bytes(self):
+    def chacha20_round_block(self):
         x = copy.copy(self.state)
 
         for i in range(10):
@@ -129,7 +128,8 @@ class ChaCha20:
         for i in range(16):
             x[i] = add_u32(x[i], self.state[i])
 
-        return b''.join([int_to_bytes(i, 4) for i in x])
+        self.block =  b''.join([int_to_bytes(i, 4) for i in x])
+        self.block_pos = 0
 
     def translate(self, plain):
         enc = b''
@@ -148,8 +148,7 @@ class ChaCha20:
                 if len(self.nonce) == 8:
                     # ChaCha64: 64 bit nonce, 64 bit counter
                     self.state[13] = bytes_to_uint(counter_bytes[4:])
-                self.block = self.chacha20_round_bytes()
-                self.block_pos = 0
+                self.chacha20_round_block()
 
         return enc
 
