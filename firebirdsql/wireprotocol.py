@@ -479,9 +479,9 @@ class WireProtocolMixin(object):
         if params.get(3) and params[3][:7] == b"ChaCha\x00":
             return (b'ChaCha', params[3][7:-4])
         if b'Arc4' in params[1]:
-            return (b'Arc4', )
+            return (b'Arc4', None)
 
-        return None
+        return None, None
 
     @wire_operation
     def _op_attach(self, timezone):
