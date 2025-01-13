@@ -490,7 +490,7 @@ class WireProtocolMixin(object):
         if b'ChaCha' in available_plugins:
             for s in plugin_nonce:
                 if s[:7] == b"ChaCha\x00":
-                    return (b'ChaCha', s[7:-4])
+                    return (b'ChaCha', s[7:7 + 12])
         elif b'Arc4' in available_plugins:
             return (b'Arc4', None)
         return None, None
