@@ -755,7 +755,7 @@ class ConnectionResponseMixin:
                     b''
                 )
                 (h, oid, buf) = self._op_response()
-                enc_plugin, nonce = self._guess_wire_crypt(buf)
+                enc_plugin, nonce = guess_wire_crypt(buf)
             else:
                 enc_plugin = nonce = None
 

@@ -167,6 +167,37 @@ def parse_dsn(dsn, host=None, port=None, database=None, user=None, password=None
     return host, port, database, user, password
 
 
+def guess_wire_crypt(b):
+    available_plugins = []
+    plugin_nonce = []
+    i = 0
+    while i < len(b):
+        t = b[i] if PYTHON_MAJOR_VER == 3 else ord(b[i])
+        i += 1
+        ln = b[i] if PYTHON_MAJOR_VER == 3 else ord(b[i])
+        i += 1
+        v = b[i:i+ln]
+        i += ln
+        if t == 0:
+            assert v == b"Symmetric"
+        elif t == 1:
+            available_plugins = v.split()
+        elif t == 3:
+            plugin_nonce.append(v)
+
+#    if b'ChaCha64' in available_plugins:
+#        for s in plugin_nonce:
+#            if s[:9] == b"ChaCha64\x00":
+#                return (b'ChaCha64', s[9:])
+    if b'ChaCha' in available_plugins:
+        for s in plugin_nonce:
+            if s[:7] == b"ChaCha\x00":
+                return (b'ChaCha', s[7:7 + 12])
+    elif b'Arc4' in available_plugins:
+        return (b'Arc4', None)
+    return None, None
+
+
 class RowMapping(Mapping):
     """dict like interface to result rows
     """

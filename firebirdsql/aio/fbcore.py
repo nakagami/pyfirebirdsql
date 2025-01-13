@@ -652,27 +652,29 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
                     b''
                 )
                 (h, oid, buf) = await self._async_op_response()
-                guessed_wire_crypt = self._guess_wire_crypt(buf)
+                enc_plugin, nonce = guess_wire_crypt(buf)
             else:
-                guessed_wire_crypt = None
+                enc_plugin = nonce = None
 
-            if guessed_wire_crypt and self.wire_crypt and session_key:
-                self._op_crypt(guessed_wire_crypt[0])
-                if guessed_wire_crypt[0] == b'Arc4':
+            if enc_plugin and self.wire_crypt and session_key:
+                self._op_crypt(enc_plugin)
+                if enc_plugin == b'Arc4':
                     self.sock.set_translator(
                         ARC4.new(session_key), ARC4.new(session_key))
-                elif guessed_wire_crypt[0] == b'ChaCha':
+                elif enc_plugin == b'ChaCha':
                     k = hashlib.sha256(session_key).digest()
                     self.sock.set_translator(
-                        ChaCha20.new(k, guessed_wire_crypt[1]),
-                        ChaCha20.new(k, guessed_wire_crypt[1]),
+                        ChaCha20.new(k, nonce),
+                        ChaCha20.new(k, nonce),
                     )
                 else:
                     raise OperationalError(
-                        'Unknown wirecrypt plugin %s' % (guessed_wire_crypt)
+                        'Unknown wirecrypt plugin %s' % (enc_plugin)
                     )
-                (h, oid, buf) = await self._async_op_response()
-            else:   # use later _op_attach() and _op_create()
+                (h, oid, buf) = self._op_response()
+            else:
+                # no matched wire encription plugin
+                # self.auth_data use _op_attach() and _op_create()
                 self.auth_data = auth_data
         else:
             assert op_code == self.op_accept
