@@ -185,10 +185,10 @@ def guess_wire_crypt(b):
         elif t == 3:
             plugin_nonce.append(v)
 
-#    if b'ChaCha64' in available_plugins:
-#        for s in plugin_nonce:
-#            if s[:9] == b"ChaCha64\x00":
-#                return (b'ChaCha64', s[9:])
+    if b'ChaCha64' in available_plugins:
+        for s in plugin_nonce:
+            if s[:9] == b"ChaCha64\x00":
+                return (b'ChaCha64', s[9:])
     if b'ChaCha' in available_plugins:
         for s in plugin_nonce:
             if s[:7] == b"ChaCha\x00":

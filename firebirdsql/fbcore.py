@@ -761,15 +761,15 @@ class ConnectionResponseMixin:
 
             if enc_plugin and self.wire_crypt and session_key:
                 self._op_crypt(enc_plugin)
-                if enc_plugin == b'Arc4':
-                    self.sock.set_translator(
-                        ARC4.new(session_key), ARC4.new(session_key))
-                elif enc_plugin == b'ChaCha':
+                if enc_plugin in (b'ChaCha64', b'ChaCha'):
                     k = hashlib.sha256(session_key).digest()
                     self.sock.set_translator(
                         ChaCha20.new(k, nonce),
                         ChaCha20.new(k, nonce),
                     )
+                elif enc_plugin == b'Arc4':
+                    self.sock.set_translator(
+                        ARC4.new(session_key), ARC4.new(session_key))
                 else:
                     raise OperationalError(
                         'Unknown wirecrypt plugin %s' % (enc_plugin)
