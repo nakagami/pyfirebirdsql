@@ -790,6 +790,7 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
 class AsyncConnection(ConnectionBase, WireProtocolMixin, AsyncConnectionResponseMixin):
     def cursor(self, factory=AsyncCursor):
         DEBUG_OUTPUT("AsyncConnection::cursor()")
+        self.last_usage = self.loop.time()
         if self._transaction is None:
             self._transaction = AsyncTransaction(self, self._autocommit)
         self._cursors[self._transaction] = []
@@ -839,6 +840,7 @@ class AsyncConnection(ConnectionBase, WireProtocolMixin, AsyncConnectionResponse
         else:
             self.loop = asyncio.get_event_loop()
         super().__init__(*args, **kwargs)
+        self.last_usage = self.loop.time()
 
     def _initialize_socket(self):
         self.sock = AsyncSocketStream(self.hostname, self.port, self.loop, self.timeout, self.cloexec)
