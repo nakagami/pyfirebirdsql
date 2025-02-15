@@ -47,6 +47,7 @@ class SocketStream(object):
         if cloexec:
             setcloexec(self._sock)
         self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         self.read_translator = None
         self.write_translator = None
 
