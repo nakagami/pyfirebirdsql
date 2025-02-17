@@ -295,3 +295,7 @@ Version 1.3.2
 
    - fix aio package #112
 
+Version 1.3.3
+==============
+
+   - fix wire encryption negotiation and support ChaCha64
