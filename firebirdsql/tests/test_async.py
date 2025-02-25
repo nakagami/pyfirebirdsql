@@ -95,6 +95,34 @@ class AsyncTestCase(base.TestBase):
         loop.run_until_complete(_test_select(loop))
         loop.close()
 
+    def test_insert_returning(self):
+        async def _test_insert_returning(loop):
+            pool = await firebirdsql.aio.create_pool(
+                auth_plugin_name=self.auth_plugin_name,
+                wire_crypt=self.wire_crypt,
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                user=self.user,
+                password=self.password,
+                page_size=self.page_size,
+                loop=loop,
+            )
+            async with pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("CREATE TABLE foo (a INTEGER)")
+                    await conn.commit()
+                    await cur.execute("INSERT INTO foo (a) VALUES(?) returning a", [1])
+                    res = await cur.fetchall()
+                    self.assertEqual(res, [(1,)])
+                    await conn.commit()
+            pool.close()
+            await pool.wait_closed()
+
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(_test_insert_returning(loop))
+        loop.close()
+
 
 if __name__ == "__main__":
     unittest.main()

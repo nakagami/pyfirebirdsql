@@ -202,7 +202,7 @@ class AsyncCursor(Cursor):
                 stmt.handle,
                 self.transaction.trans_handle, cooked_params,
                 calc_blr(stmt.xsqlda))
-            self._callproc_result = self.transaction.connection._async_op_sql_response(stmt.xsqlda)
+            self._callproc_result = await self.transaction.connection._async_op_sql_response(stmt.xsqlda)
             await self.transaction.connection._async_op_response()
             self._fetch_records = None
         else:
