@@ -299,3 +299,8 @@ Version 1.3.3
 ==============
 
    - fix wire encryption negotiation and support ChaCha64
+
+Version 1.3.4
+==============
+
+   - fix AsyncCursor #116

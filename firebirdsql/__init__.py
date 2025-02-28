@@ -86,7 +86,7 @@ TIME = DBAPITypeObject(datetime.time)
 ROWID = DBAPITypeObject()
 
 
-__version__ = '1.3.3'
+__version__ = '1.3.4'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
