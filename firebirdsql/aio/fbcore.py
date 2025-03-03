@@ -856,29 +856,29 @@ class AsyncConnection(ConnectionBase, WireProtocolMixin, AsyncConnectionResponse
         (h, oid, buf) = self._op_response()
         self.db_handle = h
 
-    def __enter__(self):
+    async def __aenter__(self):
         return self
 
-    def __exit__(self, exc, value, traceback):
+    async def __aexit__(self, exc, value, traceback):
         "On successful exit, commit. On exception, rollback. "
         if exc:
-            self.rollback()
+            await self.rollback()
         else:
-            self.commit()
-        self.close()
+            await self.commit()
+        await self.close()
 
-    def set_autocommit(self, is_autocommit):
+    async def set_autocommit(self, is_autocommit):
         if self._autocommit != is_autocommit and self._transaction is not None:
-            self.rollback()
+            await self.rollback()
             self._transaction = None
         self._autocommit = is_autocommit
 
-    def _db_info(self, info_requests):
+    async def _db_info(self, info_requests):
         if info_requests[-1] == isc_info_end:
             self._op_info_database(bs(info_requests))
         else:
             self._op_info_database(bs(info_requests+type(info_requests)([isc_info_end])))
-        (h, oid, buf) = self._async_op_response()
+        (h, oid, buf) = await self._async_op_response()
         i = 0
         i_request = 0
         r = []
@@ -901,6 +901,21 @@ class AsyncConnection(ConnectionBase, WireProtocolMixin, AsyncConnectionResponse
                 i = i + 3 + ln
             i_request += 1
         return r
+
+    async def db_info(self, info_requests):
+        DEBUG_OUTPUT("AsyncConnection::db_info()")
+        if type(info_requests) == int:  # singleton
+            r = self._db_info([info_requests])
+            return self._db_info_convert_type(info_requests, r[0][1])
+        else:
+            results = {}
+            rs = await self._db_info(info_requests)
+            for i in range(len(info_requests)):
+                if rs[i][0] == isc_info_error:
+                    results[info_requests[i]] = None
+                else:
+                    results[info_requests[i]] = self._db_info_convert_type(info_requests[i], rs[i][1])
+            return results
 
     async def drop_database(self):
         DEBUG_OUTPUT("AsyncConnection::drop_database()")
