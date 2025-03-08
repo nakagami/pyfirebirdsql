@@ -534,6 +534,9 @@ isc_arg_sql_state = 19
 ptype_batch_send = 3    # Batch sends, no asynchrony
 ptype_out_of_band = 4   # Batch sends w/ out of band notification
 ptype_lazy_send = 5     # Deferred packets delivery
+ptype_MASK = 0xFF
+pflag_compress = 0x100
+pflag_win_sspi_nego = 0x200
 
 PROTOCOL_VERSION10 = 10
 PROTOCOL_VERSION11 = 11
