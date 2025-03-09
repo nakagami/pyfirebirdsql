@@ -304,3 +304,9 @@ Version 1.3.4
 ==============
 
    - fix AsyncCursor #116
+
+Version 1.3.5
+==============
+
+   - fix asyncio
+   - fix block with Firebird 5.0.2 for windows #118
