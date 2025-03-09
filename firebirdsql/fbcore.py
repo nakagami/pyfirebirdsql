@@ -72,7 +72,7 @@ class Statement(object):
 
     def _allocate_stmt(self):
         self.trans.connection._op_allocate_statement()
-        if self.trans.connection.accept_type == ptype_lazy_send:
+        if (self.trans.connection.accept_type & ptype_MASK) == ptype_lazy_send:
             self.trans.connection.lazy_response_count += 1
             self.handle = -1
         else:
@@ -107,7 +107,7 @@ class Statement(object):
                                 v += buf[2:ln+2]
                                 buf = buf[ln+2:]
                         connection._op_close_blob(h)
-                        if connection.accept_type == ptype_lazy_send:
+                        if (connection.accept_type & ptype_MASK)== ptype_lazy_send:
                             connection.lazy_response_count += 1
                         else:
                             (h, oid, buf) = connection._op_response()
@@ -151,7 +151,7 @@ class Statement(object):
         DEBUG_OUTPUT("Statement::close()", self.handle)
         if self.stmt_type == isc_info_sql_stmt_select and self._is_open:
             self.trans.connection._op_free_statement(self.handle, DSQL_close)
-            if self.trans.connection.accept_type == ptype_lazy_send:
+            if (self.trans.connection.accept_type & ptype_MASK)== ptype_lazy_send:
                 self.trans.connection.lazy_response_count += 1
             else:
                 (h, oid, buf) = self.trans.connection._op_response()
@@ -161,7 +161,7 @@ class Statement(object):
         DEBUG_OUTPUT("Statement::drop()", self.handle)
         if self.handle != -1 and self._is_open:
             self.trans.connection._op_free_statement(self.handle, DSQL_drop)
-            if self.trans.connection.accept_type == ptype_lazy_send:
+            if (self.trans.connection.accept_type & ptype_MASK) == ptype_lazy_send:
                 self.trans.connection.lazy_response_count += 1
             else:
                 (h, oid, buf) = self.trans.connection._op_response()
