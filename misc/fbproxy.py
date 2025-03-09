@@ -2427,7 +2427,7 @@ def process_wire(client_socket, server_name, server_port):
             continue
         # ptype_lazy_send
         if (
-            accept_type == 5 and op_req_name in (
+            (accept_type & 0xFF) == 5 and op_req_name in (
                 'op_allocate_statement', 'op_free_statement',
                 'op_close_blob', 'op_cancel_blob', 'op_release')
         ):

@@ -72,7 +72,7 @@ class AsyncStatement(Statement):
 
     def _allocate_stmt(self):
         self.trans.connection._op_allocate_statement()
-        if self.trans.connection.accept_type == ptype_lazy_send:
+        if (self.trans.connection.accept_type & ptype_MASK) == ptype_lazy_send:
             self.trans.connection.lazy_response_count += 1
             self.handle = -1
         else:
@@ -114,7 +114,7 @@ class AsyncStatement(Statement):
         DEBUG_OUTPUT("AsyncStatement::close()", self.handle)
         if self.stmt_type == isc_info_sql_stmt_select and self._is_open:
             self.trans.connection._op_free_statement(self.handle, DSQL_close)
-            if self.trans.connection.accept_type == ptype_lazy_send:
+            if (self.trans.connection.accept_type & ptype_MASK) == ptype_lazy_send:
                 self.trans.connection.lazy_response_count += 1
             else:
                 (h, oid, buf) = await self.trans.connection._async_op_response()
@@ -124,7 +124,7 @@ class AsyncStatement(Statement):
         DEBUG_OUTPUT("AsyncStatement::drop()", self.handle)
         if self.handle != -1 and self._is_open:
             self.trans.connection._op_free_statement(self.handle, DSQL_drop)
-            if self.trans.connection.accept_type == ptype_lazy_send:
+            if (self.trans.connection.accept_type & ptype_MASK) == ptype_lazy_send:
                 self.trans.connection.lazy_response_count += 1
             else:
                 (h, oid, buf) = await self.trans.connection._async_op_response()
