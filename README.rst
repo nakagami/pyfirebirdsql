@@ -12,12 +12,11 @@ firebirdsql package is a set of Firebird RDBMS (https://firebirdsql.org/) bindin
 
 see https://pyfirebirdsql.readthedocs.io/en/latest/
 
-It works on Python 2.7 and 3.8+.
+It works on Python 2.7 and 3.9+.
+But Python 2.7 is not suported following features.
 
-But if you want to use the timezone feature of Firebird 4.0 ...
-
-- Not supported by python2.7
-- Python 3.8 requires backports.zoneinfo https://pypi.org/project/backports.zoneinfo/ install
+- TimeZone feature in Firebird 4.0+
+- asyncio API
 
 Example
 -----------
@@ -46,12 +45,6 @@ https://peps.python.org/pep-0249/
 asyncio
 ++++++++++++++++++++++++++++++++++++++
 
-In Python3, you can use asyncio to write the following.
-
-This API is experimental.
-If there are any mistakes, please correct them in the pull request and send.
-
-Use connect
 ::
 
    import asyncio

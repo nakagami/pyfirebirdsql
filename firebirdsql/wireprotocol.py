@@ -70,11 +70,11 @@ def get_crypt(plain):
         from passlib.hash import des_crypt
         return des_crypt.using(salt='9z').hash(plain)[2:]
     except ImportError as e:
-        try:
+        if PYTHON_MAJOR_VER == 3:
+            raise e
+        else:
             import crypt
             return crypt.crypt(plain, '9z')[2:]
-        except ImportError:
-            raise e
 
 
 def convert_date(v):  # Convert datetime.date to BLR format data
