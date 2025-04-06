@@ -95,8 +95,12 @@ class Statement(object):
                     if x.sqltype == SQL_TYPE_BLOB:
                         if not r[i]:
                             continue
-                        connection._op_open_blob(r[i], self.trans.trans_handle)
-                        (h, oid, buf) = connection._op_response()
+                        connection._op_open_blob2(r[i], self.trans.trans_handle)
+                        if (connection.accept_type & ptype_MASK)== ptype_lazy_send:
+                            connection.lazy_response_count += 1
+                            h = -1
+                        else:
+                            (h, oid, buf) = connection._op_response()
                         v = bs([])
                         n = 1   # 0,1:mora data 2:no more data
                         while n != 2:
