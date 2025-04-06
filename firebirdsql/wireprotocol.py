@@ -757,6 +757,14 @@ class WireProtocolMixin(object):
         self.sock.send(p.get_buffer() + blob_id)
 
     @wire_operation
+    def _op_open_blob2(self, blob_id, trans_handle):
+        p = Packer()
+        p.pack_int(self.op_open_blob2)
+        p.pack_int(0)
+        p.pack_int(trans_handle)
+        self.sock.send(p.get_buffer() + blob_id)
+
+    @wire_operation
     def _op_create_blob2(self, trans_handle):
         p = Packer()
         p.pack_int(self.op_create_blob2)
