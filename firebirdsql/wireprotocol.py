@@ -169,7 +169,7 @@ class WireProtocolMixin(object):
     op_commit_retaining = 50
     op_event = 52
     op_connect_request = 53
-    op_aux_connect = 53
+    op_open_blob2 = 56
     op_create_blob2 = 57
     op_allocate_statement = 62
     op_execute = 63
