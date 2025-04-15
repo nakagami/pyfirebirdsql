@@ -43,10 +43,7 @@ try:
     from Crypto.Cipher import ARC4
 except ImportError:
     from firebirdsql.arc4 import ARC4
-try:
-    from Crypto.Cipher import ChaCha20
-except ImportError:
-    from firebirdsql.chacha import ChaCha20
+from firebirdsql.chacha import ChaCha20
 
 DEBUG = False
 
