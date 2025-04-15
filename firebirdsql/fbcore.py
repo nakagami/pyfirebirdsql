@@ -39,10 +39,7 @@ from firebirdsql.stream import SocketStream
 from firebirdsql.xsqlvar import calc_blr, parse_xsqlda
 from firebirdsql.event_conduit import EventConduit
 from firebirdsql import srp
-try:
-    from Crypto.Cipher import ARC4
-except ImportError:
-    from firebirdsql.arc4 import ARC4
+from firebirdsql.arc4 import ARC4
 from firebirdsql.chacha import ChaCha20
 
 DEBUG = False
