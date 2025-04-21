@@ -118,7 +118,10 @@ def wire_operation(fn):
         return fn
 
     def f(*args, **kwargs):
-        DEBUG_OUTPUT('<--', fn, '-->')
+        if kwargs:
+            DEBUG_OUTPUT(fn.__name__, args[1:], kwargs)
+        else:
+            DEBUG_OUTPUT(fn.__name__, args[1:])
         r = fn(*args, **kwargs)
         return r
     return f
