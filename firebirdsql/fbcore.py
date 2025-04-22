@@ -60,11 +60,7 @@ class Statement(object):
     def __init__(self, trans):
         DEBUG_OUTPUT("Statement::__init__()")
         self.trans = trans
-        self._allocate_stmt()
-        self._is_open = False
-        self.stmt_type = None
 
-    def _allocate_stmt(self):
         self.trans.connection._op_allocate_statement()
         if (self.trans.connection.accept_type & ptype_MASK) == ptype_lazy_send:
             self.trans.connection.lazy_response_count += 1
@@ -72,6 +68,9 @@ class Statement(object):
         else:
             (h, oid, buf) = self.trans.connection._op_response()
             self.handle = h
+
+        self._is_open = False
+        self.stmt_type = None
 
     def fetch_generator(self):
         DEBUG_OUTPUT("Statement::_fetch_generator()", self.handle, self.trans._trans_handle)
@@ -195,6 +194,7 @@ class PreparedStatement(object):
         raise AttributeError
 
     def close(self):
+        DEBUG_OUTPUT("PreparedStatement::close()")
         self.stmt.close()
 
 
@@ -255,7 +255,6 @@ class Cursor(object):
     def _execute(self, query, params):
         if params is None:
             params = []
-        DEBUG_OUTPUT("Cursor::execute()", query, params)
         self.transaction.check_trans_handle()
         stmt = self._get_stmt(query)
         cooked_params = self._convert_params(params)
@@ -268,9 +267,6 @@ class Cursor(object):
             self.transaction.connection._op_response()
             self._fetch_records = None
         else:
-            DEBUG_OUTPUT(
-                "Cursor::execute() _op_execute()",
-                stmt.handle, self.transaction.trans_handle)
             self.transaction.connection._op_execute(
                 stmt.handle, self.transaction.trans_handle, cooked_params)
             (h, oid, buf) = self.transaction.connection._op_response()
@@ -284,6 +280,7 @@ class Cursor(object):
         return self
 
     def execute(self, query, params=None):
+        DEBUG_OUTPUT("Cursor::execute()", query, params)
         try:
             return self._execute(query, params)
         finally:
@@ -471,6 +468,7 @@ class Transaction(object):
         self._begin()
 
     def savepoint(self, name):
+        DEBUG_OUTPUT("Transaction::savepoint()", name)
         if self._trans_handle is None:
             return
         self.connection._op_exec_immediate(self._trans_handle, query='SAVEPOINT '+name)
@@ -911,6 +909,7 @@ class ConnectionBase:
             self._transaction.commit(retaining=retaining)
 
     def savepoint(self, name):
+        DEBUG_OUTPUT("Connection::savepoint()", name)
         return self._transaction.savepoint(name)
 
     def rollback(self, retaining=False, savepoint=None):

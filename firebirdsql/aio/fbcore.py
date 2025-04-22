@@ -66,11 +66,7 @@ class AsyncStatement(Statement):
     def __init__(self, trans):
         DEBUG_OUTPUT("AsyncStatement::__init__()")
         self.trans = trans
-        self._allocate_stmt()
-        self._is_open = False
-        self.stmt_type = None
 
-    def _allocate_stmt(self):
         self.trans.connection._op_allocate_statement()
         if (self.trans.connection.accept_type & ptype_MASK) == ptype_lazy_send:
             self.trans.connection.lazy_response_count += 1
@@ -78,6 +74,9 @@ class AsyncStatement(Statement):
         else:
             (h, oid, buf) = self.trans.connection._op_response()
             self.handle = h
+
+        self._is_open = False
+        self.stmt_type = None
 
     def fetch_generator(self):
         # TODO: async method ?
@@ -141,6 +140,7 @@ class AsyncPreparedStatement(PreparedStatement):
         self.sql = sql
 
     async def close(self):
+        DEBUG_OUTPUT("PreparedStatement::close()")
         await self.stmt.close()
 
 
@@ -186,14 +186,13 @@ class AsyncCursor(Cursor):
         return stmt
 
     async def prep(self, query, explain_plan=False):
-        DEBUG_OUTPUT("Cursor::prep()")
+        DEBUG_OUTPUT("AcyncCursor::prep()")
         prepared_statement = await AsyncPreparedStatement(self, query, explain_plan=explain_plan)
         return prepared_statement
 
     async def _execute(self, query, params):
         if params is None:
             params = []
-        DEBUG_OUTPUT("Cursor::execute()", query, params)
         await self.transaction.check_trans_handle()
         stmt = await self._get_stmt(query)
         cooked_params = self._convert_params(params)
@@ -222,6 +221,7 @@ class AsyncCursor(Cursor):
         return self
 
     async def execute(self, query, params=None):
+        DEBUG_OUTPUT("AsyncCursor::execute()", query, params)
         try:
             return await self._execute(query, params)
         finally:
@@ -230,7 +230,7 @@ class AsyncCursor(Cursor):
     async def callproc(self, procname, params=None):
         if params is None:
             params = []
-        DEBUG_OUTPUT("Cursor::callproc()")
+        DEBUG_OUTPUT("AsyncCursor::callproc()")
         query = 'EXECUTE PROCEDURE ' + procname + ' ' + ','.join('?'*len(params))
         await self.execute(query, params)
         return self._callproc_result
@@ -338,7 +338,7 @@ class AsyncCursor(Cursor):
 
     @property
     async def rowcount(self):
-        DEBUG_OUTPUT("Cursor::rowcount()")
+        DEBUG_OUTPUT("AsyncCursor::rowcount()")
         if self.stmt.handle == -1:
             return -1
 
@@ -352,7 +352,7 @@ class AsyncCursor(Cursor):
         else:
             # insert count + update count + delete count
             count = bytes_to_int(buf[27:31]) + bytes_to_int(buf[6:10]) + bytes_to_int(buf[13:17])
-        DEBUG_OUTPUT("Cursor::rowcount()", self.stmt.stmt_type, count)
+        DEBUG_OUTPUT("AsyncCursor::rowcount()", self.stmt.stmt_type, count)
         return count
 
 
@@ -380,6 +380,7 @@ class AsyncTransaction(Transaction):
         await self._begin()
 
     async def savepoint(self, name):
+        DEBUG_OUTPUT("AsyncTransaction::savepoint()", name)
         if self._trans_handle is None:
             return
         self.connection._op_exec_immediate(self._trans_handle, query='SAVEPOINT '+name)
@@ -811,6 +812,7 @@ class AsyncConnection(ConnectionBase, WireProtocolMixin, AsyncConnectionResponse
             await self._transaction.commit(retaining=retaining)
 
     async def savepoint(self, name):
+        DEBUG_OUTPUT("AsyncConnection::savepoint()", name)
         return await self._transaction.savepoint(name)
 
     async def rollback(self, retaining=False, savepoint=None):
