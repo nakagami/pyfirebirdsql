@@ -1183,4 +1183,4 @@ class ConnectionBase(WireProtocol):
 
 class Connection(ConnectionBase, ConnectionResponseMixin):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        ConnectionBase.__init__(self, *args, **kwargs)
