@@ -35,7 +35,7 @@ from firebirdsql.fberrmsgs import messages
 from firebirdsql.err import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
-from firebirdsql.wireprotocol import WireProtocolMixin, get_crypt
+from firebirdsql.wireprotocol import WireProtocol, get_crypt
 from firebirdsql.aio.stream import AsyncSocketStream
 from firebirdsql.xsqlvar import calc_blr, parse_xsqlda
 from firebirdsql import srp
@@ -788,7 +788,7 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
         return rows, status != 100
 
 
-class AsyncConnection(ConnectionBase, WireProtocolMixin, AsyncConnectionResponseMixin):
+class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
     def cursor(self, factory=AsyncCursor):
         DEBUG_OUTPUT("AsyncConnection::cursor()")
         self.last_usage = self.loop.time()

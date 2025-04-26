@@ -93,12 +93,12 @@ paramstyle = 'qmark'
 
 
 
-def connect(**kwargs):
-    conn = Connection(**kwargs)
+def connect(*args, **kwargs):
+    conn = Connection(*args, **kwargs)
     conn._initialize_socket()
     return conn
 
 
-def create_database(**kwargs):
+def create_database(*args, **kwargs):
     kwargs['create_new'] = True
-    return connect(**kwargs)
+    return connect(*args, **kwargs)

@@ -34,7 +34,7 @@ from firebirdsql.fberrmsgs import messages
 from firebirdsql.err import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
-from firebirdsql.wireprotocol import WireProtocolMixin, get_crypt
+from firebirdsql.wireprotocol import WireProtocol, get_crypt
 from firebirdsql.stream import SocketStream
 from firebirdsql.xsqlvar import calc_blr, parse_xsqlda
 from firebirdsql.event_conduit import EventConduit
@@ -886,7 +886,7 @@ class ConnectionResponseMixin:
         return rows, status != 100
 
 
-class ConnectionBase:
+class ConnectionBase(WireProtocol):
     def cursor(self, factory=Cursor):
         DEBUG_OUTPUT("Connection::cursor()")
         if self._transaction is None:
@@ -1181,5 +1181,5 @@ class ConnectionBase:
         return self.sock is None
 
 
-class Connection(ConnectionBase, WireProtocolMixin, ConnectionResponseMixin):
+class Connection(ConnectionBase, ConnectionResponseMixin):
     pass
