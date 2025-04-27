@@ -80,8 +80,9 @@ if PYTHON_MAJOR_VER == 3:
 else:
     BINARY = DBAPITypeObject(str)
 NUMBER = DBAPITypeObject(int, decimal.Decimal)
-DATETIME = DBAPITypeObject(datetime.datetime, datetime.date, datetime.time)
 DATE = DBAPITypeObject(datetime.date)
+DATETIME = DBAPITypeObject(datetime.datetime, datetime.date, datetime.time)
+TIMESTAMP = DBAPITypeObject(datetime.datetime)
 TIME = DBAPITypeObject(datetime.time)
 ROWID = DBAPITypeObject()
 
