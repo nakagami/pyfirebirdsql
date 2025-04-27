@@ -634,6 +634,10 @@ timezone_id_by_name = {
     "Zulu": 64904,
     "America/Nuuk": 64903,
     "Asia/Qostanay": 64902,
+    "Pacific/Kanton": 64901,
+    "Europe/Kyiv": 64900,
+    "America/Ciudad_Juarez": 64899,
+    "America/Coyhaique": 64898,
 }
 
 timezone_name_by_id = {
@@ -1271,4 +1275,8 @@ timezone_name_by_id = {
     64904: "Zulu",
     64903: "America/Nuuk",
     64902: "Asia/Qostanay",
+    64901: "Pacific/Kanton",
+    64900: "Europe/Kyiv",
+    64899: "America/Ciudad_Juarez",
+    64898: "America/Coyhaique",
 }
