@@ -25,6 +25,10 @@
 #
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
+class Warning(Exception):
+    pass
+
+
 class Error(Exception):
     def __init__(self, message, gds_codes=set(), sql_code=0):
         self._message = message

@@ -32,7 +32,7 @@ from firebirdsql.consts import *    # noqa
 from firebirdsql.fbcore import Connection
 import firebirdsql.services
 from firebirdsql.err import (
-    Error, InterfaceError, DatabaseError, DisconnectByPeer, InternalError,
+    Warning, Error, InterfaceError, DatabaseError, DisconnectByPeer, InternalError,
     OperationalError, ProgrammingError, IntegrityError, DataError, NotSupportedError
 )
 
