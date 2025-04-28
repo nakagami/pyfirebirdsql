@@ -36,6 +36,7 @@ from firebirdsql.err import (
     OperationalError, ProgrammingError, IntegrityError, DataError, NotSupportedError
 )
 
+
 if sys.version_info[0] > 2:
     from firebirdsql import aio
 
@@ -91,7 +92,6 @@ __version__ = '1.3.5'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
-
 
 
 def connect(*args, **kwargs):

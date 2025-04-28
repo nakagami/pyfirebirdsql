@@ -97,7 +97,6 @@ import random
 import binascii
 
 DEBUG = False
-DEBUG_PRINT = False
 
 
 DEBUG_PRIVATE_KEY = 0x60975527035CF2AD1989806F0407210BC81EDC04E2762A56AFD529DDDA2D4393
@@ -187,9 +186,6 @@ def client_seed(a=random.randrange(0, 1 << SRP_KEY_SIZE)):
         a = DEBUG_PRIVATE_KEY
     N, g, k = get_prime()
     A = pow(g, a, N)
-    if DEBUG_PRINT:
-        print('a=', binascii.b2a_hex(long2bytes(a)), end='\n')
-        print('A=', binascii.b2a_hex(long2bytes(A)), end='\n')
     return A, a
 
 
@@ -204,14 +200,6 @@ def server_seed(v, b=random.randrange(0, 1 << SRP_KEY_SIZE)):
     gb = pow(g, b, N)
     kv = (k * v) % N
     B = (kv + gb) % N
-    if DEBUG_PRINT:
-        print("v", binascii.b2a_hex(long2bytes(v)), end='\n')
-        print('b=', binascii.b2a_hex(long2bytes(b)), end='\n')
-        print("gb", binascii.b2a_hex(long2bytes(gb)), end='\n')
-        print("k", binascii.b2a_hex(long2bytes(k)), end='\n')
-        print("v", binascii.b2a_hex(long2bytes(v)), end='\n')
-        print("kv", binascii.b2a_hex(long2bytes(kv)), end='\n')
-        print('B=', binascii.b2a_hex(long2bytes(B)), end='\n')
     return B, b
 
 
@@ -234,18 +222,6 @@ def client_session(user, password, salt, A, B, a):
     aux = (a + ux) % N
     session_secret = pow(diff, aux, N)      # (B - kg^x) ^ (a + ux)
     K = hash_digest(hashlib.sha1, session_secret)
-    if DEBUG_PRINT:
-        print('B=', binascii.b2a_hex(long2bytes(B)), end='\n')
-        print('u=', binascii.b2a_hex(long2bytes(u)), end='\n')
-        print('x=', binascii.b2a_hex(long2bytes(x)), end='\n')
-        print('gx=', binascii.b2a_hex(long2bytes(gx)), end='\n')
-        print('kgx=', binascii.b2a_hex(long2bytes(kgx)), end='\n')
-        print('diff=', binascii.b2a_hex(long2bytes(diff)), end='\n')
-        print('ux=', binascii.b2a_hex(long2bytes(ux)), end='\n')
-        print('aux=', binascii.b2a_hex(long2bytes(aux)), end='\n')
-        print('session_secret=', binascii.b2a_hex(long2bytes(session_secret)), end='\n')
-        print('session_key:K=', binascii.b2a_hex(K))
-
     return K
 
 
@@ -264,10 +240,6 @@ def server_session(user, password, salt, A, B, b):
     Avu = (A * vu) % N                      # Av^u
     session_secret = pow(Avu, b, N)         # (Av^u) ^ b
     K = hash_digest(hashlib.sha1, session_secret)
-    if DEBUG_PRINT:
-        print('server session_secret=', binascii.b2a_hex(long2bytes(session_secret)), end='\n')
-        print('server session hash K=', binascii.b2a_hex(K))
-
     return K
 
 
@@ -280,19 +252,10 @@ def client_proof(user, password, salt, A, B, a, hash_algo):
 
     n1 = bytes2long(hash_digest(hashlib.sha1, N))
     n2 = bytes2long(hash_digest(hashlib.sha1, g))
-    if DEBUG_PRINT:
-        print('n1-1=', binascii.b2a_hex(long2bytes(n1)), end='\n')
-        print('n2-1=', binascii.b2a_hex(long2bytes(n2)), end='\n')
-
     n1 = pow(n1, n2, N)
     n2 = bytes2long(hash_digest(hashlib.sha1, user))
 
     M = hash_digest(hash_algo, n1, n2, salt, A, B, K)
-    if DEBUG_PRINT:
-        print('n1-2=', binascii.b2a_hex(long2bytes(n1)), end='\n')
-        print('n2-2=', binascii.b2a_hex(long2bytes(n2)), end='\n')
-        print('client_proof:M=', binascii.b2a_hex(M), end='\n')
-
     return M, K
 
 
@@ -305,8 +268,6 @@ def get_salt():
     if DEBUG:
         salt = DEBUG_SALT
 
-    if DEBUG_PRINT:
-        print('salt=', binascii.b2a_hex(salt), end='\n')
     return salt
 
 

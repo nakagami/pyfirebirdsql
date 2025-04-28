@@ -28,6 +28,7 @@
 import sys
 
 PYTHON_MAJOR_VER = sys.version_info[0]
+DEBUG = False
 
 DEFAULT_CHARSET = 'UTF8'
 

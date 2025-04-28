@@ -38,8 +38,6 @@ from firebirdsql.utils import *     # noqa
 from firebirdsql import srp
 from firebirdsql import tz_utils
 
-DEBUG = False
-
 
 def DEBUG_OUTPUT(*argv):
     if not DEBUG:

@@ -48,8 +48,6 @@ try:
 except ImportError:
     from firebirdsql.chacha import ChaCha20
 
-DEBUG = False
-
 
 def DEBUG_OUTPUT(*argv):
     if not DEBUG:
