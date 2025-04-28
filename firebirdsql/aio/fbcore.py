@@ -133,14 +133,14 @@ class AsyncStatement(Statement):
 
 class AsyncPreparedStatement(PreparedStatement):
     async def __init__(self, cur, sql, explain_plan=False):
-        DEBUG_OUTPUT("PreparedStatement::__init__()")
+        DEBUG_OUTPUT("AsyncPreparedStatement::__init__()")
         await cur.transaction.check_trans_handle()
         self.stmt = await AsyncStatement(cur.transaction)
         await self.stmt.prepare(sql, explain_plan)
         self.sql = sql
 
     async def close(self):
-        DEBUG_OUTPUT("PreparedStatement::close()")
+        DEBUG_OUTPUT("AsyncPreparedStatement::close()")
         await self.stmt.close()
 
 
@@ -206,7 +206,7 @@ class AsyncCursor(Cursor):
             self._fetch_records = None
         else:
             DEBUG_OUTPUT(
-                "Cursor::execute() _op_execute()",
+                "AsyncCursor::execute() _op_execute()",
                 stmt.handle, self.transaction.trans_handle)
             self.transaction.connection._op_execute(
                 stmt.handle, self.transaction.trans_handle, cooked_params)
@@ -312,7 +312,7 @@ class AsyncCursor(Cursor):
             r = await self.fetchonemap()
 
     async def close(self):
-        DEBUG_OUTPUT("Cursor::close()")
+        DEBUG_OUTPUT("AsyncCursor::close()")
         if not self.stmt:
             return
         await self.stmt.drop()
