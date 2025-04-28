@@ -69,15 +69,10 @@ class Statement(object):
         self._is_open = False
         self.stmt_type = None
 
-    def fetch_generator(self):
+    def fetch_generator(self, rows, more_data):
         DEBUG_OUTPUT("Statement::_fetch_generator()", self.handle, self.trans._trans_handle)
         connection = self.trans.connection
-        more_data = True
-        while more_data:
-            if not self.is_opened:
-                return
-            connection._op_fetch(self.handle, calc_blr(self.xsqlda))
-            (rows, more_data) = connection._op_fetch_response(self.handle, self.xsqlda)
+        while rows:
             for r in rows:
                 # Convert BLOB handle to data
                 for i in range(len(self.xsqlda)):
@@ -112,6 +107,12 @@ class Statement(object):
                             else:
                                 r[i] = connection.bytes_to_str(r[i])
                 yield tuple(r)
+            if more_data:
+                connection._op_fetch(self.handle, calc_blr(self.xsqlda))
+                (rows, more_data) = connection._op_fetch_response(self.handle, self.xsqlda)
+            else:
+                break
+
         return
 
     def prepare(self, sql, explain_plan=False):
@@ -269,7 +270,9 @@ class Cursor(object):
             (h, oid, buf) = self.transaction.connection._op_response()
 
             if stmt.stmt_type == isc_info_sql_stmt_select:
-                self._fetch_records = stmt.fetch_generator()
+                self.transaction.connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda))
+                (rows, more_data) = self.transaction.connection._op_fetch_response(stmt.handle, stmt.xsqlda)
+                self._fetch_records = stmt.fetch_generator(rows, more_data)
             else:
                 self._fetch_records = None
             self._callproc_result = None
@@ -422,7 +425,6 @@ class Cursor(object):
         else:
             # insert count + update count + delete count
             count = bytes_to_int(buf[27:31]) + bytes_to_int(buf[6:10]) + bytes_to_int(buf[13:17])
-        DEBUG_OUTPUT("Cursor::rowcount()", self.stmt.stmt_type, count)
         return count
 
 
