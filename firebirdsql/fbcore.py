@@ -297,22 +297,26 @@ class Cursor(object):
 
     def fetchone(self):
         if not self.transaction.is_dirty:
+            DEBUG_OUTPUT("Cursor::fetchone() not dirty")
             return None
         # callproc or not select statement
         if not self._fetch_records:
             if self._callproc_result:
                 r = self._callproc_result
                 self._callproc_result = None
+                DEBUG_OUTPUT("Cursor::fetchone()", r)
                 return r
             return None
         # select statement
         try:
             if PYTHON_MAJOR_VER == 3:
-                return tuple(next(self._fetch_records))
+                result = tuple(next(self._fetch_records))
             else:
-                return tuple(self._fetch_records.next())
+                result = tuple(self._fetch_records.next())
         except StopIteration:
-            return None
+            result = None
+        DEBUG_OUTPUT("Cursor::fetchone()", result)
+        return result
 
     def __iter__(self):
         return self
@@ -337,7 +341,9 @@ class Cursor(object):
                 return proc_r
             return []
         # select statement
-        return [tuple(r) for r in self._fetch_records]
+        results = [tuple(r) for r in self._fetch_records]
+        DEBUG_OUTPUT("Cursor::fetchall()", results)
+        return results
 
     def fetchmany(self, size=None):
         if not size:
@@ -350,7 +356,9 @@ class Cursor(object):
                 return r
             return []
         # select statement
-        return list(itertools.islice(self._fetch_records, size))
+        results_list = list(itertools.islice(self._fetch_records, size))
+        DEBUG_OUTPUT("Cursor::fetchmany()", results_list)
+        return results_list
 
     # kinterbasdb extended API
     def fetchonemap(self):
