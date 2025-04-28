@@ -38,7 +38,6 @@ class AsyncTestCase(base.TestBase):
             cur = conn.cursor()
 
             await cur.execute("SELECT 42 FROM rdb$database")
-            print(cur.rowcount)
             result = await cur.fetchall()
             self.assertEqual(result, [(42,)])
         asyncio.run(_test_select())
