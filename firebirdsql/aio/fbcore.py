@@ -844,18 +844,18 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
         super().__init__(*args, **kwargs)
         self.last_usage = self.loop.time()
 
-    def _initialize_socket(self):
+    async def _initialize_socket(self):
         self.sock = AsyncSocketStream(self.hostname, self.port, self.loop, self.timeout, self.cloexec)
 
         self._op_connect(self.auth_plugin_name, self.wire_crypt)
         try:
-            self._parse_connect_response()
+            await self._async_parse_connect_response()
         except OperationalError as e:
             self.sock.close()
             self.sock = None
             raise e
         self._op_attach(self.timezone)
-        (h, oid, buf) = self._op_response()
+        (h, oid, buf) = await self._op_response()
         self.db_handle = h
 
     async def __aenter__(self):

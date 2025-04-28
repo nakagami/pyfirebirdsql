@@ -25,7 +25,7 @@ class AsyncTestCase(base.TestBase):
 
     def test_aio_connect(self):
         async def _test_select():
-            conn = firebirdsql.aio.connect(
+            conn = await firebirdsql.aio.connect(
                 auth_plugin_name=self.auth_plugin_name,
                 wire_crypt=self.wire_crypt,
                 host=self.host,
@@ -46,7 +46,7 @@ class AsyncTestCase(base.TestBase):
         loop = asyncio.new_event_loop()
 
         async def _test_select():
-            conn = firebirdsql.aio.connect(
+            conn = await firebirdsql.aio.connect(
                 auth_plugin_name=self.auth_plugin_name,
                 wire_crypt=self.wire_crypt,
                 host=self.host,

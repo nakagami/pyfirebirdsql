@@ -1,8 +1,7 @@
-from .fbcore import AsyncConnection, AsyncCursor
-from .pool import create_pool
+from .fbcore import AsyncConnection
 
 
-def connect(**kwargs):
+async def connect(**kwargs):
     conn = AsyncConnection(**kwargs)
-    conn._initialize_socket()
+    await conn._initialize_socket()
     return conn

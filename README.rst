@@ -50,7 +50,7 @@ asyncio
    import firebirdsql
 
    async def conn_example():
-       conn = firebirdsql.aio.connect(
+       conn = await firebirdsql.aio.connect(
            host='localhost',
            database='/foo/bar.fdb',
            port=3050,
