@@ -1,4 +1,5 @@
-from .fbcore import AsyncConnection
+from .fbcore import AsyncConnection, AsyncCursor
+from .pool import create_pool
 
 
 async def connect(**kwargs):

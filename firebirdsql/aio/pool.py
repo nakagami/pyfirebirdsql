@@ -166,7 +166,7 @@ class Pool(asyncio.AbstractServer):
             self._acquiring += 1
             try:
                 conn = AsyncConnection(loop=self._loop, **self._conn_kwargs)
-                conn._initialize_socket()
+                await conn._initialize_socket()
                 # raise exception if pool is closing
                 self._free.append(conn)
                 self._cond.notify()
@@ -179,7 +179,7 @@ class Pool(asyncio.AbstractServer):
             self._acquiring += 1
             try:
                 conn = AsyncConnection(loop=self._loop, **self._conn_kwargs)
-                conn._initialize_socket()
+                await conn._initialize_socket()
                 # raise exception if pool is closing
                 self._free.append(conn)
                 self._cond.notify()
