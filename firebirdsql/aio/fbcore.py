@@ -77,7 +77,7 @@ class AsyncStatement(Statement):
         self.stmt_type = None
 
     async def fetch_generator(self):
-        DEBUG_OUTPUT("Statement::_fetch_generator()", self.handle, self.trans._trans_handle)
+        DEBUG_OUTPUT("AsyncStatement::_fetch_generator()", self.handle, self.trans._trans_handle)
         connection = self.trans.connection
         more_data = True
         while more_data:
@@ -297,7 +297,7 @@ class AsyncCursor(Cursor):
         except StopIteration:
             return None
 
-    async def __next__(self):
+    async def __anext__(self):
         r = await self.fetchone()
         if not r:
             raise StopIteration()
