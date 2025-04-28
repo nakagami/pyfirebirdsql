@@ -659,18 +659,18 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
 
             if enc_plugin and self.wire_crypt and session_key:
                 self._op_crypt(enc_plugin)
-                if enc_plugin == b'Arc4':
-                    self.sock.set_translator(
-                        ARC4.new(session_key), ARC4.new(session_key))
-                elif enc_plugin == b'ChaCha':
+                if enc_plugin in (b'ChaCha64', b'ChaCha'):
                     k = hashlib.sha256(session_key).digest()
                     self.sock.set_translator(
                         ChaCha20.new(k, nonce),
                         ChaCha20.new(k, nonce),
                     )
+                elif enc_plugin == b'Arc4':
+                    self.sock.set_translator(
+                        ARC4.new(session_key), ARC4.new(session_key))
                 else:
                     raise OperationalError(
-                        'Unknown wirecrypt plugin %s' % (enc_plugin)
+                        'Unknown wirecrypt plugin %s' % (enc_plugin.encode("utf-8"))
                     )
                 (h, oid, buf) = self._op_response()
             else:
@@ -855,7 +855,7 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
             self.sock = None
             raise e
         self._op_attach(self.timezone)
-        (h, oid, buf) = await self._op_response()
+        (h, oid, buf) = await self._async_op_response()
         self.db_handle = h
 
     async def __aenter__(self):
