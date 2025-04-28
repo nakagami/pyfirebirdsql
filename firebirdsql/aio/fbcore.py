@@ -376,13 +376,13 @@ class AsyncCursor(Cursor):
         ) for x in self.stmt.xsqlda]
 
     @property
-    async def rowcount(self):
+    def rowcount(self):
         DEBUG_OUTPUT("AsyncCursor::rowcount()")
         if self.stmt.handle == -1:
             return -1
 
         self.transaction.connection._op_info_sql(self.stmt.handle, bs([isc_info_sql_records]))
-        (h, oid, buf) = await self.transaction.connection._async_op_response()
+        (h, oid, buf) = self.transaction.connection._op_response()
         assert buf[:3] == bs([0x17, 0x1d, 0x00])    # isc_info_sql_records
         if self.stmt.stmt_type == isc_info_sql_stmt_select:
             assert buf[17:20] == bs([0x0d, 0x04, 0x00])     # isc_info_req_select_count
