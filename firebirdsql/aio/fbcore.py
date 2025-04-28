@@ -76,9 +76,50 @@ class AsyncStatement(Statement):
         self._is_open = False
         self.stmt_type = None
 
-    def fetch_generator(self):
-        # TODO: async method ?
-        return super().fetch_generator()
+    async def fetch_generator(self):
+        DEBUG_OUTPUT("Statement::_fetch_generator()", self.handle, self.trans._trans_handle)
+        connection = self.trans.connection
+        more_data = True
+        while more_data:
+            if not self.is_opened:
+                return
+            connection._op_fetch(self.handle, calc_blr(self.xsqlda))
+            (rows, more_data) = await connection._async_op_fetch_response(self.handle, self.xsqlda)
+            for r in rows:
+                # Convert BLOB handle to data
+                for i in range(len(self.xsqlda)):
+                    x = self.xsqlda[i]
+                    if x.sqltype == SQL_TYPE_BLOB:
+                        if not r[i]:
+                            continue
+                        connection._op_open_blob2(r[i], self.trans.trans_handle)
+                        if (connection.accept_type & ptype_MASK)== ptype_lazy_send:
+                            connection.lazy_response_count += 1
+                            h = -1
+                        else:
+                            (h, oid, buf) = await connection._async_op_response()
+                        v = bs([])
+                        n = 1   # 0,1:mora data 2:no more data
+                        while n != 2:
+                            connection._op_get_segment(h)
+                            (n, oid, buf) = await connection._async_op_response()
+                            while buf:
+                                ln = bytes_to_int(buf[:2])
+                                v += buf[2:ln+2]
+                                buf = buf[ln+2:]
+                        connection._op_close_blob(h)
+                        if (connection.accept_type & ptype_MASK)== ptype_lazy_send:
+                            connection.lazy_response_count += 1
+                        else:
+                            (h, oid, buf) = await connection._async_op_response()
+                        r[i] = v
+                        if x.sqlsubtype == 1:    # TEXT
+                            if connection.use_unicode:
+                                r[i] = connection.bytes_to_ustr(r[i])
+                            else:
+                                r[i] = connection.bytes_to_str(r[i])
+                yield tuple(r)
+        return
 
     async def prepare(self, sql, explain_plan=False):
         DEBUG_OUTPUT("AsyncStatement::prepare()", self.handle)
@@ -250,9 +291,9 @@ class AsyncCursor(Cursor):
         # select statement
         try:
             if PYTHON_MAJOR_VER == 3:
-                return tuple(next(self._fetch_records))
+                return tuple(await self._fetch_records.__anext__())
             else:
-                return tuple(self._fetch_records.next())
+                return tuple(await self._fetch_records.__anext__())
         except StopIteration:
             return None
 
@@ -273,7 +314,7 @@ class AsyncCursor(Cursor):
                 return proc_r
             return []
         # select statement
-        return [tuple(r) for r in self._fetch_records]
+        return [tuple(r) async for r in self._fetch_records]
 
     async def fetchmany(self, size=None):
         if not size:
