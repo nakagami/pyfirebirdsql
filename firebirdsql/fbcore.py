@@ -645,20 +645,23 @@ class ConnectionResponseMixin:
             raise OperationalError(message, gds_codes, sql_code)
         return (h, oid, buf)
 
-    def _op_response(self):
-        b = self._recv_channel(4)
-        while bytes_to_bint(b) == self.op_dummy:
+    def _op_response(self, count=1):
+        response = None
+        for _ in range(count):
             b = self._recv_channel(4)
-        op_code = bytes_to_bint(b)
-        while op_code == self.op_response and self.lazy_response_count:
-            self.lazy_response_count -= 1
-            h, oid, buf = self._parse_op_response()
-            b = self._recv_channel(4)
-        if op_code == self.op_cont_auth:
-            raise OperationalError('Unauthorized')
-        elif op_code != self.op_response:
-            raise InternalError("_op_response:op_code = %d" % (op_code,))
-        return self._parse_op_response()
+            while bytes_to_bint(b) == self.op_dummy:
+                b = self._recv_channel(4)
+            op_code = bytes_to_bint(b)
+            while op_code == self.op_response and self.lazy_response_count:
+                self.lazy_response_count -= 1
+                h, oid, buf = self._parse_op_response()
+                b = self._recv_channel(4)
+            if op_code == self.op_cont_auth:
+                raise OperationalError('Unauthorized')
+            elif op_code != self.op_response:
+                raise InternalError("_op_response:op_code = %d" % (op_code,))
+            response = self._parse_op_response()
+        return response
 
     def _parse_connect_response(self):
         # want and treat op_accept or op_cond_accept or op_accept_data

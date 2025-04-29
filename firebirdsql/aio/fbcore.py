@@ -579,20 +579,23 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
             raise OperationalError(message, gds_codes, sql_code)
         return (h, oid, buf)
 
-    async def _async_op_response(self):
-        b = await self._async_recv_channel(4)
-        while bytes_to_bint(b) == self.op_dummy:
+    async def _async_op_response(self, count=1):
+        response = None
+        for _ in range(count):
             b = await self._async_recv_channel(4)
-        op_code = bytes_to_bint(b)
-        while op_code == self.op_response and self.lazy_response_count:
-            self.lazy_response_count -= 1
-            h, oid, buf = await self._async_parse_op_response()
-            b = await self._async_recv_channel(4)
-        if op_code == self.op_cont_auth:
-            raise OperationalError('Unauthorized')
-        elif op_code != self.op_response:
-            raise InternalError("_async_op_response:op_code = %d" % (op_code,))
-        return await self._async_parse_op_response()
+            while bytes_to_bint(b) == self.op_dummy:
+                b = await self._async_recv_channel(4)
+            op_code = bytes_to_bint(b)
+            while op_code == self.op_response and self.lazy_response_count:
+                self.lazy_response_count -= 1
+                h, oid, buf = await self._async_parse_op_response()
+                b = await self._async_recv_channel(4)
+            if op_code == self.op_cont_auth:
+                raise OperationalError('Unauthorized')
+            elif op_code != self.op_response:
+                raise InternalError("_async_op_response:op_code = %d" % (op_code,))
+            response = await self._async_parse_op_response()
+        return response
 
     async def _async_parse_connect_response(self):
         # want and treat op_accept or op_cond_accept or op_accept_data
