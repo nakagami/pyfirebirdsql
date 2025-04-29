@@ -154,7 +154,7 @@ class Statement(object):
 
     def drop(self):
         DEBUG_OUTPUT("Statement::drop()", self.handle)
-        if self.handle != -1 and self._is_open:
+        if self.handle != -1:
             self.trans.connection._op_free_statement(self.handle, DSQL_drop)
             if (self.trans.connection.accept_type & ptype_MASK) == ptype_lazy_send:
                 self.trans.connection.lazy_response_count += 1
