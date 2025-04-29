@@ -77,7 +77,7 @@ class AsyncStatement(Statement):
         self.stmt_type = None
 
     async def fetch_generator(self, rows, more_data):
-        DEBUG_OUTPUT("AsyncStatement::_fetch_generator()", self.handle, self.trans._trans_handle)
+        DEBUG_OUTPUT("AsyncStatement::_fetch_generator()", self.handle, self.trans._trans_handle, self.trans.connection.db_handle)
         connection = self.trans.connection
         while rows:
             for r in rows:
@@ -412,7 +412,7 @@ class AsyncTransaction(Transaction):
         (h, oid, buf) = await self.connection._async_op_response()
         self._trans_handle = None if h < 0 else h
         DEBUG_OUTPUT(
-            "AsyncTransaction::_begin()", self._trans_handle, self.connection)
+            "AsyncTransaction::_begin()", self._trans_handle, self.connection.db_handle)
         self.is_dirty = False
 
     async def begin(self):
@@ -428,7 +428,7 @@ class AsyncTransaction(Transaction):
 
     async def commit(self, retaining=False):
         DEBUG_OUTPUT(
-            "AsyncTransaction::commit()", self._trans_handle, self, self.connection, retaining)
+            "AsyncTransaction::commit()", self._trans_handle, self.connection.db_handle, retaining)
         if self._trans_handle is None:
             return
         if not self.is_dirty:
@@ -444,8 +444,8 @@ class AsyncTransaction(Transaction):
 
     async def rollback(self, retaining=False, savepoint=None):
         DEBUG_OUTPUT(
-            "AsyncTransaction::rollback()", self._trans_handle, self,
-            self.connection, retaining, savepoint)
+            "AsyncTransaction::rollback()", self._trans_handle,
+            self.connection.db_handle, retaining, savepoint)
         if self._trans_handle is None:
             return
         if savepoint:
@@ -897,6 +897,7 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
         self._op_attach(self.timezone)
         (h, oid, buf) = await self._async_op_response()
         self.db_handle = h
+        DEBUG_OUTPUT("AsyncConnection::_initialize_socket()", self.db_handle)
 
     async def __aenter__(self):
         return self

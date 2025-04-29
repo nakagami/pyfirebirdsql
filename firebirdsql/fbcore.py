@@ -70,7 +70,7 @@ class Statement(object):
         self.stmt_type = None
 
     def fetch_generator(self, rows, more_data):
-        DEBUG_OUTPUT("Statement::_fetch_generator()", self.handle, self.trans._trans_handle)
+        DEBUG_OUTPUT("Statement::_fetch_generator()", self.handle, self.trans._trans_handle, self.trans.connection.db_handle)
         connection = self.trans.connection
         while rows:
             for r in rows:
@@ -457,7 +457,7 @@ class Transaction(object):
         (h, oid, buf) = self.connection._op_response()
         self._trans_handle = None if h < 0 else h
         DEBUG_OUTPUT(
-            "Transaction::_begin()", self._trans_handle, self.connection)
+            "Transaction::_begin()", self._trans_handle, self.connection.db_handle)
         self.is_dirty = False
 
     def _cleanup(self):
@@ -465,6 +465,7 @@ class Transaction(object):
             return
         if not self.is_dirty:
             return
+        DEBUG_OUTPUT("Transaction::_cleanup()", self._trans_handle, self.connection.db_handle)
         self.connection._op_rollback(self._trans_handle)
         (h, oid, buf) = self.connection._op_response()
         self._trans_handle = None
@@ -483,7 +484,7 @@ class Transaction(object):
 
     def commit(self, retaining=False):
         DEBUG_OUTPUT(
-            "Transaction::commit()", self._trans_handle, self, self.connection, retaining)
+            "Transaction::commit()", self._trans_handle, self.connection.db_handle, retaining)
         if self._trans_handle is None:
             return
         if not self.is_dirty:
@@ -499,8 +500,8 @@ class Transaction(object):
 
     def rollback(self, retaining=False, savepoint=None):
         DEBUG_OUTPUT(
-            "Transaction::rollback()", self._trans_handle, self,
-            self.connection, retaining, savepoint)
+            "Transaction::rollback()", self._trans_handle,
+            self.connection.db_handle, retaining, savepoint)
         if self._trans_handle is None:
             return
         if savepoint:
@@ -996,6 +997,7 @@ class ConnectionBase(WireProtocol):
             self._op_attach(self.timezone)
         (h, oid, buf) = self._op_response()
         self.db_handle = h
+        DEBUG_OUTPUT("Connection::_initialize_socket()", self.db_handle)
 
     def __enter__(self):
         return self
