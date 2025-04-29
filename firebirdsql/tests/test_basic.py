@@ -78,13 +78,13 @@ class TestBasic(TestBase):
         # select rowcount
         cur = conn.cursor()
         cur.execute("select * from foo where c=?", ('Nakagami', ))
-        self.assertEqual(len(cur.fetchall()), 1)
         self.assertEqual(cur.rowcount, 1)
+        self.assertEqual(len(cur.fetchall()), 1)
         cur.close()
         cur = conn.cursor()
         cur.execute("select * from foo")
-        self.assertEqual(len(cur.fetchall()), 3)
         self.assertEqual(cur.rowcount, 3)
+        self.assertEqual(len(cur.fetchall()), 3)
         cur.close()
 
         # update rowcount
