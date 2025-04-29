@@ -460,12 +460,12 @@ class Transaction(object):
             "Transaction::_begin()", self._trans_handle, self.connection.db_handle)
         self.is_dirty = False
 
-    def _cleanup(self):
+    def close(self):
         if self._trans_handle is None:
             return
         if not self.is_dirty:
             return
-        DEBUG_OUTPUT("Transaction::_cleanup()", self._trans_handle, self.connection.db_handle)
+        DEBUG_OUTPUT("Transaction::close()", self._trans_handle, self.connection.db_handle)
         self.connection._op_rollback(self._trans_handle)
         (h, oid, buf) = self.connection._op_response()
         self._trans_handle = None
@@ -1161,7 +1161,7 @@ class ConnectionBase(WireProtocol):
         if self.db_handle is not None:
             # cleanup transaction
             for trans in self._cursors.keys():
-                trans._cleanup()
+                trans.close()
             if self.is_services:
                 self._op_service_detach()
             else:
