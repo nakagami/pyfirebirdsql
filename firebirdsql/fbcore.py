@@ -126,7 +126,7 @@ class Statement(object):
                 self.handle, self.trans.trans_handle, sql)
             self.plan = None
 
-        if self.trans.connection.lazy_response_count:
+        while self.trans.connection.lazy_response_count:
             self.trans.connection.lazy_response_count -= 1
             (h, oid, buf) = self.trans.connection._op_response()
             self.handle = h
