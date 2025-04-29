@@ -4,5 +4,5 @@ from .pool import create_pool
 
 async def connect(**kwargs):
     conn = AsyncConnection(**kwargs)
-    await conn._initialize_socket()
+    await conn._initialize()
     return conn

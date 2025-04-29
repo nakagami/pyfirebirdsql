@@ -96,7 +96,7 @@ paramstyle = 'qmark'
 
 def connect(*args, **kwargs):
     conn = Connection(*args, **kwargs)
-    conn._initialize_socket()
+    conn._initialize()
     return conn
 
 

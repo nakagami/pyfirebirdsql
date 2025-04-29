@@ -974,13 +974,14 @@ class ConnectionBase(WireProtocol):
             self.isolation_level = int(isolation_level)
         self.use_unicode = use_unicode
         self.timezone = timezone
-        self.last_event_id = 0
 
+
+    def _initialize(self):
+        self.last_event_id = 0
         self._autocommit = False
         self._transaction = None
         self._cursors = {}
 
-    def _initialize_socket(self):
         self.sock = SocketStream(self.hostname, self.port, self.timeout, self.cloexec)
 
         self._op_connect(self.auth_plugin_name, self.wire_crypt)
@@ -998,7 +999,7 @@ class ConnectionBase(WireProtocol):
             self._op_attach(self.timezone)
         (h, oid, buf) = self._op_response()
         self.db_handle = h
-        DEBUG_OUTPUT("Connection::_initialize_socket()", self.db_handle)
+        DEBUG_OUTPUT("Connection::_initialize()", self.db_handle)
 
     def __enter__(self):
         return self
@@ -1010,6 +1011,10 @@ class ConnectionBase(WireProtocol):
         else:
             self.commit()
         self.close()
+
+    def reconnect(self):
+        self.close()
+        self._initalize()
 
     def set_isolation_level(self, isolation_level):
         self.isolation_level = int(isolation_level)

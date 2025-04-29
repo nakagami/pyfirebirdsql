@@ -884,7 +884,12 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
         super().__init__(*args, **kwargs)
         self.last_usage = self.loop.time()
 
-    async def _initialize_socket(self):
+    async def _initialize(self):
+        self.last_event_id = 0
+        self._autocommit = False
+        self._transaction = None
+        self._cursors = {}
+
         self.sock = AsyncSocketStream(self.hostname, self.port, self.loop, self.timeout, self.cloexec)
 
         self._op_connect(self.auth_plugin_name, self.wire_crypt)
@@ -897,7 +902,7 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
         self._op_attach(self.timezone)
         (h, oid, buf) = await self._async_op_response()
         self.db_handle = h
-        DEBUG_OUTPUT("AsyncConnection::_initialize_socket()", self.db_handle)
+        DEBUG_OUTPUT("AsyncConnection::_initialize()", self.db_handle)
 
     async def __aenter__(self):
         return self
@@ -909,6 +914,10 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
         else:
             await self.commit()
         await self.close()
+
+    async def reconnect(self):
+        self.close()
+        await self._initialize()
 
     async def set_autocommit(self, is_autocommit):
         if self._autocommit != is_autocommit and self._transaction is not None:
