@@ -450,14 +450,15 @@ class Transaction(object):
         self._isolation_level = isolation_level
 
     def _begin(self):
-        tpb = self.transaction_parameter_block[self._isolation_level if self._isolation_level is not None else self.connection.isolation_level]
+        isolation_level = self._isolation_level if self._isolation_level is not None else self.connection.isolation_level
+        tpb = self.transaction_parameter_block[isolation_level]
         if self._autocommit:
             tpb += bs([isc_tpb_autocommit])
         self.connection._op_transaction(tpb)
         (h, oid, buf) = self.connection._op_response()
         self._trans_handle = None if h < 0 else h
         DEBUG_OUTPUT(
-            "Transaction::_begin()", self._trans_handle, self.connection.db_handle)
+            "Transaction::_begin()", self.connection.db_handle, isolation_level, self._autocommit, self._trans_handle)
         self.is_dirty = False
 
     def close(self):
