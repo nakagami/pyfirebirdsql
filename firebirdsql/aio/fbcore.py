@@ -870,10 +870,16 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
         (h, oid, buf) = await self._async_op_response()
         self._transaction.is_dirty = True
 
-    async def ping(self):
-        self._op_ping()
-        (h, oid, buf) = await self._async_op_response()
-        return h == 0
+    async def ping(self, reconnect=True):
+        try:
+            self._op_ping()
+            (h, oid, buf) = await self._async_op_response()
+            return h == 0
+        except:
+            if reconnect:
+                await self.reconnect()
+                return self.db_handle is not None
+        return False
 
     def __init__(self, *args, **kwargs):
         if kwargs.get("loop"):

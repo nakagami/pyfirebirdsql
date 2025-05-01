@@ -936,10 +936,16 @@ class ConnectionBase(WireProtocol):
         (h, oid, buf) = self._op_response()
         self._transaction.is_dirty = True
 
-    def ping(self):
-        self._op_ping()
-        (h, oid, buf) = self._op_response()
-        return h == 0
+    def ping(self, reconnect=True):
+        try:
+            self._op_ping()
+            (h, oid, buf) = self._op_response()
+            return h == 0
+        except:
+            if reconnect:
+                self.reconnect()
+                return self.db_handle is not None
+        return False
 
     def __init__(
         self, dsn=None, user=None, password=None, role=None, host=None,
