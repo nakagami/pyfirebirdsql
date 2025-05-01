@@ -40,7 +40,7 @@ from firebirdsql import tz_utils
 
 
 def DEBUG_OUTPUT(*argv):
-    if not DEBUG:
+    if not is_debug_print():
         return
     for s in argv:
         print(s, end=' ', file=sys.stderr)
@@ -112,7 +112,7 @@ def convert_timestamp_tz(v):   # Convert datetime.datetime to BLR format timesta
 
 
 def wire_operation(fn):
-    if not DEBUG:
+    if not is_debug_print():
         return fn
 
     def f(*args, **kwargs):

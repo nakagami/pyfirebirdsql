@@ -50,7 +50,7 @@ except ImportError:
 
 
 def DEBUG_OUTPUT(*argv):
-    if not DEBUG:
+    if not is_debug_print():
         return
     for s in argv:
         print(s, end=' ', file=sys.stderr)
