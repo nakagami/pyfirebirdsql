@@ -878,8 +878,7 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
         except:
             if reconnect:
                 await self.reconnect()
-                return self.db_handle is not None
-        return False
+                return await self.reconnect(False)
 
     def __init__(self, *args, **kwargs):
         if kwargs.get("loop"):

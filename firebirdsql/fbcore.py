@@ -944,8 +944,7 @@ class ConnectionBase(WireProtocol):
         except:
             if reconnect:
                 self.reconnect()
-                return self.db_handle is not None
-        return False
+                return self.ping(False)
 
     def __init__(
         self, dsn=None, user=None, password=None, role=None, host=None,
