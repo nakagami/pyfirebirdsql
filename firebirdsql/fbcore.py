@@ -1014,7 +1014,7 @@ class ConnectionBase(WireProtocol):
 
     def reconnect(self):
         self.close()
-        self._initalize()
+        self._initialize()
 
     def set_isolation_level(self, isolation_level):
         self.isolation_level = int(isolation_level)
