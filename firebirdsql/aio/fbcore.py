@@ -282,22 +282,26 @@ class AsyncCursor(Cursor):
 
     async def fetchone(self):
         if not self.transaction.is_dirty:
+            DEBUG_OUTPUT("AsyncCursor::fetchone() not dirty")
             return None
         # callproc or not select statement
         if not self._fetch_records:
             if self._callproc_result:
                 r = self._callproc_result
                 self._callproc_result = None
+                DEBUG_OUTPUT("AsyncCursor::fetchone()", r)
                 return r
             return None
         # select statement
         try:
             if PYTHON_MAJOR_VER == 3:
-                return tuple(await self._fetch_records.__anext__())
+                result = tuple(await self._fetch_records.__anext__())
             else:
-                return tuple(await self._fetch_records.__anext__())
+                result = tuple(await self._fetch_records.__anext__())
         except StopIteration:
-            return None
+            result = None
+        DEBUG_OUTPUT("AsyncCursor::fetchone()", result)
+        return result
 
     async def __anext__(self):
         r = await self.fetchone()
@@ -316,7 +320,9 @@ class AsyncCursor(Cursor):
                 return proc_r
             return []
         # select statement
-        return [tuple(r) async for r in self._fetch_records]
+        results = [tuple(r) async for r in self._fetch_records]
+        DEBUG_OUTPUT("AsyncCursor::fetchall()", results)
+        return results
 
     async def fetchmany(self, size=None):
         if not size:
