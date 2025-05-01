@@ -112,9 +112,6 @@ def convert_timestamp_tz(v):   # Convert datetime.datetime to BLR format timesta
 
 
 def wire_operation(fn):
-    if not is_debug_print():
-        return fn
-
     def f(*args, **kwargs):
         if kwargs:
             DEBUG_OUTPUT(fn.__name__, args[1:], kwargs)
