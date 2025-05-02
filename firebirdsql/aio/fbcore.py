@@ -913,7 +913,7 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
         self._op_attach(self.timezone)
         (h, oid, buf) = await self._async_op_response()
         self.db_handle = h
-        DEBUG_OUTPUT("AsyncConnection::_initialize()", self.db_handle)
+        DEBUG_OUTPUT("AsyncConnection::_initialize()", id(self), self.db_handle)
 
     async def __aenter__(self):
         return self

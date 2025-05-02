@@ -40,7 +40,7 @@ from firebirdsql.err import InternalError
 
 PYTHON_MAJOR_VER = sys.version_info[0]
 
-DEBUG = False
+DEBUG = True
 
 
 def enable_debug_print():

@@ -954,7 +954,7 @@ class ConnectionBase(WireProtocol):
         auth_plugin_name=None, wire_crypt=True, create_new=False,
         timezone=None
     ):
-        DEBUG_OUTPUT("Connection::__init__()")
+        DEBUG_OUTPUT("Connection::__init__()", id(self))
         self.accept_plugin_name = ''
         self.auth_data = b''
         if auth_plugin_name is None:
@@ -1004,7 +1004,7 @@ class ConnectionBase(WireProtocol):
             self._op_attach(self.timezone)
         (h, oid, buf) = self._op_response()
         self.db_handle = h
-        DEBUG_OUTPUT("Connection::_initialize()", self.db_handle)
+        DEBUG_OUTPUT("Connection::_initialize()", id(self), self.db_handle)
 
     def __enter__(self):
         return self
@@ -1166,7 +1166,7 @@ class ConnectionBase(WireProtocol):
         return {}
 
     def close(self):
-        DEBUG_OUTPUT("Connection::close()")
+        DEBUG_OUTPUT("Connection::close()", id(self), self.db_handle)
         if self.sock is None:
             return
         if self.db_handle is not None:
