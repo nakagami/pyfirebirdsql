@@ -1018,7 +1018,7 @@ class ConnectionBase(WireProtocol):
         self.close()
 
     def reconnect(self):
-        self.close()
+        self._close()
         self._initialize()
 
     def set_isolation_level(self, isolation_level):
@@ -1165,8 +1165,7 @@ class ConnectionBase(WireProtocol):
             return self._transaction.trans_info(info_requests)
         return {}
 
-    def close(self):
-        DEBUG_OUTPUT("Connection::close()", id(self), self.db_handle)
+    def _close(self):
         if self.sock is None:
             return
         if self.db_handle is not None:
@@ -1181,6 +1180,10 @@ class ConnectionBase(WireProtocol):
         self.sock.close()
         self.sock = None
         self.db_handle = None
+
+    def close(self):
+        DEBUG_OUTPUT("Connection::close()", id(self), self.db_handle)
+        self._close()
 
     def drop_database(self):
         DEBUG_OUTPUT("Connection::drop_database()")

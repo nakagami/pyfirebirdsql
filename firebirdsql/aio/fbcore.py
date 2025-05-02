@@ -927,7 +927,7 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
         await self.close()
 
     async def reconnect(self):
-        self.close()
+        self._close()
         await self._initialize()
 
     async def set_autocommit(self, is_autocommit):
