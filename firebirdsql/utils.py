@@ -40,21 +40,21 @@ from firebirdsql.err import InternalError
 
 PYTHON_MAJOR_VER = sys.version_info[0]
 
-DEBUG = False
+DEBUG_LEVEL = 0
 
 
-def enable_debug_print():
-    global DEBUG
-    DEBUG = True
+def enable_debug_print(verbose=False):
+    global DEBUG_LEVEL
+    DEBUG_LEVEL = 2 if verbose else 1
 
 
 def disable_debug_print():
     global DEBUG
-    DEBUG = False
+    DEBUG_LEVEL = 0
 
 
-def is_debug_print():
-    return DEBUG
+def debug_level():
+    return DEBUG_LEVEL
 
 
 def bs(byte_array):

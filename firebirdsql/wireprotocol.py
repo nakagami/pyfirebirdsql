@@ -40,7 +40,7 @@ from firebirdsql import tz_utils
 
 
 def DEBUG_OUTPUT(*argv):
-    if not is_debug_print():
+    if debug_level() < 2:
         return
     for s in argv:
         print(s, end=' ', file=sys.stderr)

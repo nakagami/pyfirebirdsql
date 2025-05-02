@@ -43,7 +43,7 @@ from firebirdsql.arc4 import ARC4
 from firebirdsql.chacha import ChaCha20
 
 def DEBUG_OUTPUT(*argv):
-    if not is_debug_print():
+    if debug_level() == 0:
         return
     for s in argv:
         print(s, end=' ', file=sys.stderr)
