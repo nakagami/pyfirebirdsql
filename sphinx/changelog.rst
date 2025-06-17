@@ -310,3 +310,12 @@ Version 1.3.5
 
    - fix asyncio
    - fix block with Firebird 5.0.2 for windows #118
+
+Version 1.4.0
+==============
+
+   - change class inheritance relationship
+   - modify debug print for driver developper
+   - remove too much debug print
+   - aio.connect() change to async method
+   - refactoring many async methods
