@@ -76,10 +76,7 @@ class DBAPITypeObject:
 
 
 STRING = DBAPITypeObject(str)
-if PYTHON_MAJOR_VER == 3:
-    BINARY = DBAPITypeObject(bytes)
-else:
-    BINARY = DBAPITypeObject(str)
+BINARY = DBAPITypeObject(bytes)
 NUMBER = DBAPITypeObject(int, decimal.Decimal)
 DATE = DBAPITypeObject(datetime.date)
 DATETIME = DBAPITypeObject(datetime.datetime, datetime.date, datetime.time)
