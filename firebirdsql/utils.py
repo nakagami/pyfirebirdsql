@@ -28,17 +28,9 @@
 import sys
 import binascii
 import struct
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
-try:
-    from collections.abc import Mapping
-except ImportError:
-    from collections import Mapping
+from urllib.parse import urlparse
+from collections.abc import Mapping
 from firebirdsql.err import InternalError
-
-PYTHON_MAJOR_VER = sys.version_info[0]
 
 DEBUG_LEVEL = 0
 
@@ -58,10 +50,7 @@ def debug_level():
 
 
 def bs(byte_array):
-    if PYTHON_MAJOR_VER == 2:
-        return ''.join([chr(c) for c in byte_array])
-    else:
-        return bytes(byte_array)
+    return bytes(byte_array)
 
 
 def hex_to_bytes(s):
@@ -71,7 +60,7 @@ def hex_to_bytes(s):
     if len(s) % 2:
         s = b'0' + s
     ia = [int(s[i:i+2], 16) for i in range(0, len(s), 2)]   # int array
-    return bs(ia) if PYTHON_MAJOR_VER == 3 else b''.join([chr(c) for c in ia])
+    return bs(ia)
 
 
 def bytes_to_hex(b):
@@ -151,10 +140,7 @@ def int_to_bytes(val, nbytes):  # Convert int value to little endian bytes.
 
 def byte_to_int(b):
     "byte to int"
-    if PYTHON_MAJOR_VER == 3:
-        return b
-    else:
-        return ord(b)
+    return b
 
 
 def parse_dsn(dsn, host=None, port=None, database=None, user=None, password=None):
@@ -188,9 +174,9 @@ def guess_wire_crypt(b):
     plugin_nonce = []
     i = 0
     while i < len(b):
-        t = b[i] if PYTHON_MAJOR_VER == 3 else ord(b[i])
+        t = b[i]
         i += 1
-        ln = b[i] if PYTHON_MAJOR_VER == 3 else ord(b[i])
+        ln = b[i]
         i += 1
         v = b[i:i+ln]
         i += ln
