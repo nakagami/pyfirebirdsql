@@ -223,7 +223,7 @@ class Cursor(object):
     def _convert_params(self, params):
         cooked_params = []
         for param in params:
-            if type(param) == str or (PYTHON_MAJOR_VER == 2 and type(param) == unicode):
+            if isinstance(param, str):
                 param = self.transaction.connection.str_to_bytes(param)
             cooked_params.append(param)
         return cooked_params
@@ -309,10 +309,7 @@ class Cursor(object):
             return None
         # select statement
         try:
-            if PYTHON_MAJOR_VER == 3:
-                result = tuple(next(self._fetch_records))
-            else:
-                result = tuple(self._fetch_records.next())
+            result = tuple(next(self._fetch_records))
         except StopIteration:
             result = None
         DEBUG_OUTPUT("Cursor::fetchone()", result)
@@ -819,7 +816,7 @@ class ConnectionResponseMixin:
             null_indicator = 0
             for c in reversed(self._recv_channel(n, word_alignment=True)):
                 null_indicator <<= 8
-                null_indicator += c if PYTHON_MAJOR_VER == 3 else ord(c)
+                null_indicator += c
             for i in range(len(xsqlda)):
                 x = xsqlda[i]
                 if null_indicator & (1 << i):
@@ -872,7 +869,7 @@ class ConnectionResponseMixin:
                 null_indicator = 0
                 for c in reversed(self._recv_channel(n, word_alignment=True)):
                     null_indicator <<= 8
-                    null_indicator += c if PYTHON_MAJOR_VER == 3 else ord(c)
+                    null_indicator += c
                 for i in range(len(xsqlda)):
                     x = xsqlda[i]
                     if null_indicator & (1 << i):
