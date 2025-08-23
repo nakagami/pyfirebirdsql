@@ -11,8 +11,7 @@ firebirdsql package is a set of Firebird RDBMS (https://firebirdsql.org/) bindin
 
 Sorry, it support Firebird 2.5+.
 
-It works on Python 2.7 and 3.9+.
-But Python 2.7 is not suported following features.
+It works on Python 3.10+.
 
 - TimeZone feature in Firebird 4.0+
 - asyncio API
