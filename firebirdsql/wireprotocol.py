@@ -208,13 +208,6 @@ class WireProtocol(object):
         return s
 
     def bytes_to_str(self, b):
-        "convert bytes array to raw string"
-        if PYTHON_MAJOR_VER == 3:
-            return b.decode(charset_map.get(self.charset, self.charset))
-        return b
-
-    def bytes_to_ustr(self, b):
-        "convert bytes array to unicode string"
         return b.decode(charset_map.get(self.charset, self.charset))
 
     def _create_blob(self, trans_handle, b):

@@ -102,10 +102,7 @@ class Statement(object):
                             (h, oid, buf) = connection._op_response()
                         r[i] = v
                         if x.sqlsubtype == 1:    # TEXT
-                            if connection.use_unicode:
-                                r[i] = connection.bytes_to_ustr(r[i])
-                            else:
-                                r[i] = connection.bytes_to_str(r[i])
+                            r[i] = connection.bytes_to_str(r[i])
                 yield tuple(r)
             if more_data:
                 connection._op_fetch(self.handle, calc_blr(self.xsqlda))
@@ -950,7 +947,7 @@ class ConnectionBase(WireProtocol):
         self, dsn=None, user=None, password=None, role=None, host=None,
         database=None, charset=DEFAULT_CHARSET, port=None,
         page_size=4096, is_services=False, cloexec=False,
-        timeout=None, isolation_level=None, use_unicode=None,
+        timeout=None, isolation_level=None,
         auth_plugin_name=None, wire_crypt=True, create_new=False,
         timezone=None
     ):
@@ -977,7 +974,6 @@ class ConnectionBase(WireProtocol):
             self.isolation_level = ISOLATION_LEVEL_READ_COMMITED
         else:
             self.isolation_level = int(isolation_level)
-        self.use_unicode = use_unicode
         self.timezone = timezone
 
 

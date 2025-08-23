@@ -264,7 +264,7 @@ def parse_select_items(buf, xsqlda, connection):
         if item == isc_info_sql_sqlda_seq:
             ln = bytes_to_int(buf[i+1:i+3])
             index = bytes_to_int(buf[i+3:i+3+ln])
-            xsqlda[index-1] = XSQLVAR(connection.bytes_to_ustr if connection.use_unicode else connection.bytes_to_str)
+            xsqlda[index-1] = XSQLVAR(connection.bytes_to_str)
             i = i + 3 + ln
         elif item == isc_info_sql_type:
             ln = bytes_to_int(buf[i+1:i+3])

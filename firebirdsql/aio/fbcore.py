@@ -109,10 +109,7 @@ class AsyncStatement(Statement):
                             (h, oid, buf) = await connection._async_op_response()
                         r[i] = v
                         if x.sqlsubtype == 1:    # TEXT
-                            if connection.use_unicode:
-                                r[i] = connection.bytes_to_ustr(r[i])
-                            else:
-                                r[i] = connection.bytes_to_str(r[i])
+                            r[i] = connection.bytes_to_str(r[i])
                 yield tuple(r)
             if more_data:
                 connection._op_fetch(self.handle, calc_blr(self.xsqlda))
@@ -294,10 +291,7 @@ class AsyncCursor(Cursor):
             return None
         # select statement
         try:
-            if PYTHON_MAJOR_VER == 3:
-                result = tuple(await self._fetch_records.__anext__())
-            else:
-                result = tuple(await self._fetch_records.__anext__())
+            result = tuple(await self._fetch_records.__anext__())
         except StopIteration:
             result = None
         DEBUG_OUTPUT("AsyncCursor::fetchone()", result)
@@ -761,7 +755,7 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
             null_indicator = 0
             for c in reversed(await self._async_recv_channel(n, word_alignment=True)):
                 null_indicator <<= 8
-                null_indicator += c if PYTHON_MAJOR_VER == 3 else ord(c)
+                null_indicator += c
             for i in range(len(xsqlda)):
                 x = xsqlda[i]
                 if null_indicator & (1 << i):
@@ -814,7 +808,7 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
                 null_indicator = 0
                 for c in reversed(await self._async_recv_channel(n, word_alignment=True)):
                     null_indicator <<= 8
-                    null_indicator += c if PYTHON_MAJOR_VER == 3 else ord(c)
+                    null_indicator += c
                 for i in range(len(xsqlda)):
                     x = xsqlda[i]
                     if null_indicator & (1 << i):
