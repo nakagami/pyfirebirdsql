@@ -2,11 +2,7 @@ import time
 import tempfile
 import firebirdsql
 from firebirdsql.tests.base import TestBase
-from firebirdsql.consts import PYTHON_MAJOR_VER
-if PYTHON_MAJOR_VER == 3:
-    import _thread as thread
-else:
-    import thread
+import _thread as thread
 
 
 class TestEvent(TestBase):
