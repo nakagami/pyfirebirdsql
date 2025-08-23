@@ -25,7 +25,6 @@
 #
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
-import sys
 import binascii
 import struct
 from urllib.parse import urlparse

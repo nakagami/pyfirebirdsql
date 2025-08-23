@@ -25,7 +25,6 @@
 #
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
-import sys
 import struct
 import copy
 

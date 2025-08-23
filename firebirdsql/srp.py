@@ -91,7 +91,6 @@ The two parties also employ the following safeguards:
 See http://srp.stanford.edu/ for more information.
 '''
 from __future__ import print_function
-import sys
 import hashlib
 import random
 import binascii

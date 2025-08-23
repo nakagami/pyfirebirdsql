@@ -25,8 +25,6 @@
 #
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
-import sys
-
 DEFAULT_CHARSET = 'UTF8'
 
 ISC_TIME_SECONDS_PRECISION = 10000

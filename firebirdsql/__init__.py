@@ -25,7 +25,6 @@
 #
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
-import sys
 import datetime
 import decimal
 from firebirdsql.consts import *    # noqa
@@ -37,8 +36,7 @@ from firebirdsql.err import (
 )
 
 
-if sys.version_info[0] > 2:
-    from firebirdsql import aio
+from firebirdsql import aio
 
 Date = datetime.date
 Time = datetime.time
