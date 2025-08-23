@@ -41,5 +41,4 @@ jobs:
     - name: Test
       run: |
         source test_user.env
-        python -m pip install --upgrade pip
         pytest
