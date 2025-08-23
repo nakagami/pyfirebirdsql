@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2009-2024, Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2009-2025, Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,7 @@ def DEBUG_OUTPUT(*argv):
     print(file=sys.stderr)
 
 
-INFO_SQL_SELECT_DESCRIBE_VARS = bs([
+INFO_SQL_SELECT_DESCRIBE_VARS = bytes([
     isc_info_sql_select,
     isc_info_sql_describe_vars,
     isc_info_sql_sqlda_seq,
@@ -64,15 +64,8 @@ INFO_SQL_SELECT_DESCRIBE_VARS = bs([
 
 
 def get_crypt(plain):
-    try:
-        from passlib.hash import des_crypt
-        return des_crypt.using(salt='9z').hash(plain)[2:]
-    except ImportError as e:
-        if PYTHON_MAJOR_VER == 3:
-            raise e
-        else:
-            import crypt
-            return crypt.crypt(plain, '9z')[2:]
+    from passlib.hash import des_crypt
+    return des_crypt.using(salt='9z').hash(plain)[2:]
 
 
 def convert_date(v):  # Convert datetime.date to BLR format data
@@ -202,19 +195,11 @@ class WireProtocol(object):
 
     def str_to_bytes(self, s):
         "convert str to bytes"
-        if ((PYTHON_MAJOR_VER == 3 and isinstance(s, str)) or
-                (PYTHON_MAJOR_VER == 2 and type(s) == unicode)):
+        if isinstance(s, str):
             return s.encode(charset_map.get(self.charset, self.charset))
         return s
 
     def bytes_to_str(self, b):
-        "convert bytes array to raw string"
-        if PYTHON_MAJOR_VER == 3:
-            return b.decode(charset_map.get(self.charset, self.charset))
-        return b
-
-    def bytes_to_ustr(self, b):
-        "convert bytes array to unicode string"
         return b.decode(charset_map.get(self.charset, self.charset))
 
     def _create_blob(self, trans_handle, b):
@@ -234,9 +219,9 @@ class WireProtocol(object):
     def params_to_blr(self, trans_handle, params):
         "Convert parameter array to BLR and values format."
         ln = len(params) * 2
-        blr = bs([5, 2, 4, 0, ln & 255, ln >> 8])
+        blr = bytes([5, 2, 4, 0, ln & 255, ln >> 8])
         if self.accept_version < PROTOCOL_VERSION13:
-            values = bs([])
+            values = bytes([])
         else:
             # start with null indicator bitmap
             null_indicator = 0
@@ -252,42 +237,39 @@ class WireProtocol(object):
             for i in range(n):
                 null_indicator_bytes.append(null_indicator & 255)
                 null_indicator >>= 8
-            values = bs(null_indicator_bytes)
+            values = bytes(null_indicator_bytes)
         for p in params:
-            if (
-                (PYTHON_MAJOR_VER == 2 and type(p) == unicode) or
-                (PYTHON_MAJOR_VER == 3 and type(p) == str)
-            ):
+            if isinstance(p, str):
                 p = self.str_to_bytes(p)
             t = type(p)
             if p is None:
-                v = bs([])
-                blr += bs([14, 0, 0])
-            elif (
-                (PYTHON_MAJOR_VER == 2 and t == str) or
-                (PYTHON_MAJOR_VER == 3 and t == bytes)
-            ):
+                v = bytes([])
+                blr += bytes([14, 0, 0])
+            elif isinstance(p, bytes):
                 if len(p) > MAX_CHAR_LENGTH:
                     v = self._create_blob(trans_handle, p)
-                    blr += bs([9, 0])
+                    blr += bytes([9, 0])
                 else:
                     v = p
                     nbytes = len(v)
                     pad_length = ((4-nbytes) & 3)
-                    v += bs([0]) * pad_length
-                    blr += bs([14, nbytes & 255, nbytes >> 8])
-            elif t == int or (PYTHON_MAJOR_VER == 2 and t == long):
+                    v += bytes([0]) * pad_length
+                    blr += bytes([14, nbytes & 255, nbytes >> 8])
+            elif isinstance(p, bool):
+                v = bytes([1, 0, 0, 0]) if p else bytes([0, 0, 0, 0])
+                blr += bytes([23])
+            elif isinstance(p, int):
                 if p <= 0x7FFFFFFF and p >= -0x80000000:
                     v = bint_to_bytes(p, 4)
-                    blr += bs([8, 0])    # blr_long
+                    blr += bytes([8, 0])    # blr_long
                 else:
                     v = bint_to_bytes(p, 8)
-                    blr += bs([16, 0])    # blr_int64
-            elif t == float and p == float("inf"):
+                    blr += bytes([16, 0])    # blr_int64
+            elif isinstance(p, float) and p == float("inf"):
                 v = b'\x7f\x80\x00\x00'
-                blr += bs([10])
-            elif t == decimal.Decimal or t == float:
-                if t == float:
+                blr += bytes([10])
+            elif isinstance(p, decimal.Decimal) or isinstance(p, float):
+                if isinstance(p, float):
                     p = decimal.Decimal(str(p))
                 (sign, digits, exponent) = p.as_tuple()
                 v = 0
@@ -299,55 +281,52 @@ class WireProtocol(object):
                 v = bint_to_bytes(v, 8)
                 if exponent < 0:
                     exponent += 256
-                blr += bs([16, exponent])
-            elif t == datetime.date:
+                blr += bytes([16, exponent])
+            elif isinstance(p, datetime.date):
                 v = convert_date(p)
-                blr += bs([12])
-            elif t == datetime.time:
+                blr += bytes([12])
+            elif isinstance(p, datetime.time):
                 if p.tzinfo:
                     v = convert_time_tz(p)
-                    blr += bs([28])
+                    blr += bytes([28])
                 else:
                     v = convert_time(p)
-                    blr += bs([13])
-            elif t == datetime.datetime:
+                    blr += bytes([13])
+            elif isinstance(p, datetime.datetime):
                 if p.tzinfo:
                     v = convert_timestamp_tz(p)
-                    blr += bs([29])
+                    blr += bytes([29])
                 else:
                     v = convert_timestamp(p)
-                    blr += bs([35])
-            elif t == bool:
-                v = bs([1, 0, 0, 0]) if p else bs([0, 0, 0, 0])
-                blr += bs([23])
+                    blr += bytes([35])
             else:   # fallback, convert to string
                 p = p.__repr__()
-                if (PYTHON_MAJOR_VER == 3 and isinstance(p, str)) or (PYTHON_MAJOR_VER == 2 and type(p) == unicode):
+                if isinstance(p, str):
                     p = self.str_to_bytes(p)
                 v = p
                 nbytes = len(v)
                 pad_length = ((4-nbytes) & 3)
-                v += bs([0]) * pad_length
-                blr += bs([14, nbytes & 255, nbytes >> 8])
-            blr += bs([7, 0])
+                v += bytes([0]) * pad_length
+                blr += bytes([14, nbytes & 255, nbytes >> 8])
+            blr += bytes([7, 0])
             values += v
             if self.accept_version < PROTOCOL_VERSION13:
-                values += bs([0]) * 4 if p is not None else bs([0xff, 0xff, 0xff, 0xff])
-        blr += bs([255, 76])    # [blr_end, blr_eoc]
+                values += bytes([0]) * 4 if p is not None else bytes([0xff, 0xff, 0xff, 0xff])
+        blr += bytes([255, 76])    # [blr_end, blr_eoc]
         return blr, values
 
     def uid(self, auth_plugin_name, wire_crypt):
         def pack_cnct_param(k, v):
             if k != CNCT_specific_data:
-                return bs([k] + [len(v)]) + v
+                return bytes([k] + [len(v)]) + v
             # specific_data split per 254 bytes
             b = b''
             i = 0
             while len(v) > 254:
-                b += bs([k, 255, i]) + v[:254]
+                b += bytes([k, 255, i]) + v[:254]
                 v = v[254:]
                 i += 1
-            b += bs([k, len(v)+1, i]) + v
+            b += bytes([k, len(v)+1, i]) + v
             return b
 
         auth_plugin_list = ('Srp256', 'Srp', 'Legacy_Auth')
@@ -411,33 +390,33 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_create(self, timezone, page_size=4096):
-        dpb = bs([1])
+        dpb = bytes([1])
         s = self.str_to_bytes(self.charset)
-        dpb += bs([isc_dpb_set_db_charset, len(s)]) + s
-        dpb += bs([isc_dpb_lc_ctype, len(s)]) + s
+        dpb += bytes([isc_dpb_set_db_charset, len(s)]) + s
+        dpb += bytes([isc_dpb_lc_ctype, len(s)]) + s
         s = self.str_to_bytes(self.user)
-        dpb += bs([isc_dpb_user_name, len(s)]) + s
+        dpb += bytes([isc_dpb_user_name, len(s)]) + s
         if self.accept_version < PROTOCOL_VERSION13:
             enc_pass = get_crypt(self.password)
             if self.accept_version == PROTOCOL_VERSION10 or not enc_pass:
                 s = self.str_to_bytes(self.password)
-                dpb += bs([isc_dpb_password, len(s)]) + s
+                dpb += bytes([isc_dpb_password, len(s)]) + s
             else:
                 enc_pass = self.str_to_bytes(enc_pass)
-                dpb += bs([isc_dpb_password_enc, len(enc_pass)]) + enc_pass
+                dpb += bytes([isc_dpb_password_enc, len(enc_pass)]) + enc_pass
         if self.role:
             s = self.str_to_bytes(self.role)
-            dpb += bs([isc_dpb_sql_role_name, len(s)]) + s
+            dpb += bytes([isc_dpb_sql_role_name, len(s)]) + s
         if self.auth_data:
             s = bytes_to_hex(self.auth_data)
-            dpb += bs([isc_dpb_specific_auth_data, len(s)]) + s
+            dpb += bytes([isc_dpb_specific_auth_data, len(s)]) + s
         if timezone:
             s = self.str_to_bytes(timezone)
-            dpb += bs([isc_dpb_session_time_zone, len(s)]) + s
-        dpb += bs([isc_dpb_sql_dialect, 4]) + int_to_bytes(3, 4)
-        dpb += bs([isc_dpb_force_write, 4]) + int_to_bytes(1, 4)
-        dpb += bs([isc_dpb_overwrite, 4]) + int_to_bytes(1, 4)
-        dpb += bs([isc_dpb_page_size, 4]) + int_to_bytes(page_size, 4)
+            dpb += bytes([isc_dpb_session_time_zone, len(s)]) + s
+        dpb += bytes([isc_dpb_sql_dialect, 4]) + int_to_bytes(3, 4)
+        dpb += bytes([isc_dpb_force_write, 4]) + int_to_bytes(1, 4)
+        dpb += bytes([isc_dpb_overwrite, 4]) + int_to_bytes(1, 4)
+        dpb += bytes([isc_dpb_page_size, 4]) + int_to_bytes(page_size, 4)
         p = Packer()
         p.pack_int(self.op_create)
         p.pack_int(0)                       # Database Object ID
@@ -465,31 +444,31 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_attach(self, timezone):
-        dpb = bs([isc_dpb_version1])
+        dpb = bytes([isc_dpb_version1])
         s = self.str_to_bytes(self.charset)
-        dpb += bs([isc_dpb_lc_ctype, len(s)]) + s
+        dpb += bytes([isc_dpb_lc_ctype, len(s)]) + s
         s = self.str_to_bytes(self.user)
-        dpb += bs([isc_dpb_user_name, len(s)]) + s
+        dpb += bytes([isc_dpb_user_name, len(s)]) + s
         if self.accept_version < PROTOCOL_VERSION13:
             enc_pass = get_crypt(self.password)
             if self.accept_version == PROTOCOL_VERSION10 or not enc_pass:
                 s = self.str_to_bytes(self.password)
-                dpb += bs([isc_dpb_password, len(s)]) + s
+                dpb += bytes([isc_dpb_password, len(s)]) + s
             else:
                 enc_pass = self.str_to_bytes(enc_pass)
-                dpb += bs([isc_dpb_password_enc, len(enc_pass)]) + enc_pass
+                dpb += bytes([isc_dpb_password_enc, len(enc_pass)]) + enc_pass
         if self.role:
             s = self.str_to_bytes(self.role)
-            dpb += bs([isc_dpb_sql_role_name, len(s)]) + s
-        dpb += bs([isc_dpb_process_id, 4]) + int_to_bytes(os.getpid(), 4)
+            dpb += bytes([isc_dpb_sql_role_name, len(s)]) + s
+        dpb += bytes([isc_dpb_process_id, 4]) + int_to_bytes(os.getpid(), 4)
         s = self.str_to_bytes(sys.argv[0])
-        dpb += bs([isc_dpb_process_name, len(s)]) + s
+        dpb += bytes([isc_dpb_process_name, len(s)]) + s
         if self.auth_data:
             s = bytes_to_hex(self.auth_data)
-            dpb += bs([isc_dpb_specific_auth_data, len(s)]) + s
+            dpb += bytes([isc_dpb_specific_auth_data, len(s)]) + s
         if timezone:
             s = self.str_to_bytes(self.timezone)
-            dpb += bs([isc_dpb_session_time_zone, len(s)]) + s
+            dpb += bytes([isc_dpb_session_time_zone, len(s)]) + s
         p = Packer()
         p.pack_int(self.op_attach)
         p.pack_int(0)                       # Database Object ID
@@ -508,21 +487,21 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_service_attach(self):
-        spb = bs([2, 2])
+        spb = bytes([2, 2])
         s = self.str_to_bytes(self.user)
-        spb += bs([isc_spb_user_name, len(s)]) + s
+        spb += bytes([isc_spb_user_name, len(s)]) + s
         if self.accept_version < PROTOCOL_VERSION13:
             enc_pass = get_crypt(self.password)
             if self.accept_version == PROTOCOL_VERSION10 or not enc_pass:
                 s = self.str_to_bytes(self.password)
-                spb += bs([isc_dpb_password, len(s)]) + s
+                spb += bytes([isc_dpb_password, len(s)]) + s
             else:
                 enc_pass = self.str_to_bytes(enc_pass)
-                spb += bs([isc_dpb_password_enc, len(enc_pass)]) + enc_pass
+                spb += bytes([isc_dpb_password_enc, len(enc_pass)]) + enc_pass
         if self.auth_data:
             s = self.str_to_bytes(bytes_to_hex(self.auth_data))
-            spb += bs([isc_dpb_specific_auth_data, len(s)]) + s
-        spb += bs([isc_spb_dummy_packet_interval, 0x04, 0x78, 0x0a, 0x00, 0x00])
+            spb += bytes([isc_dpb_specific_auth_data, len(s)]) + s
+        spb += bytes([isc_spb_dummy_packet_interval, 0x04, 0x78, 0x0a, 0x00, 0x00])
         p = Packer()
         p.pack_int(self.op_service_attach)
         p.pack_int(0)
@@ -643,8 +622,8 @@ class WireProtocol(object):
     @wire_operation
     def _op_prepare_statement(self, stmt_handle, trans_handle, query, option_items=None):
         if option_items is None:
-            option_items = bs([])
-        desc_items = option_items + bs([isc_info_sql_stmt_type])+INFO_SQL_SELECT_DESCRIBE_VARS
+            option_items = bytes([])
+        desc_items = option_items + bytes([isc_info_sql_stmt_type])+INFO_SQL_SELECT_DESCRIBE_VARS
         p = Packer()
         p.pack_int(self.op_prepare_statement)
         p.pack_int(trans_handle)
@@ -673,7 +652,7 @@ class WireProtocol(object):
         p.pack_int(trans_handle)
 
         if len(params) == 0:
-            p.pack_bytes(bs([]))
+            p.pack_bytes(bytes([]))
             p.pack_int(0)
             p.pack_int(0)
             buf = p.get_buffer()
@@ -696,7 +675,7 @@ class WireProtocol(object):
 
         if len(params) == 0:
             values = b''
-            p.pack_bytes(bs([]))
+            p.pack_bytes(bytes([]))
             p.pack_int(0)
             p.pack_int(0)
         else:
@@ -717,7 +696,7 @@ class WireProtocol(object):
     def _op_exec_immediate(self, trans_handle, query):
         if self.db_handle is None:
             raise OperationalError('_op_exec_immediate() Invalid db handle')
-        desc_items = bs([])
+        desc_items = bytes([])
         p = Packer()
         p.pack_int(self.op_exec_immediate)
         p.pack_int(trans_handle)
@@ -790,7 +769,7 @@ class WireProtocol(object):
         p.pack_int(ln)
         p.pack_int(ln)
         pad_length = (4-ln) & 3
-        self.sock.send(p.get_buffer() + seg_data + bs([0])*pad_length)
+        self.sock.send(p.get_buffer() + seg_data + bytes([0])*pad_length)
 
     @wire_operation
     def _op_batch_segments(self, blob_handle, seg_data):
@@ -801,7 +780,7 @@ class WireProtocol(object):
         p.pack_int(ln + 2)
         p.pack_int(ln + 2)
         pad_length = ((4-(ln+2)) & 3)
-        self.sock.send(p.get_buffer() + int_to_bytes(ln, 2) + seg_data + bs([0])*pad_length)
+        self.sock.send(p.get_buffer() + int_to_bytes(ln, 2) + seg_data + bytes([0])*pad_length)
 
     @wire_operation
     def _op_close_blob(self, blob_handle):
@@ -820,9 +799,9 @@ class WireProtocol(object):
     def _op_que_events(self, event_count, event_id):
         if self.db_handle is None:
             raise OperationalError('_op_que_events() Invalid db handle')
-        params = bs([1])
+        params = bytes([1])
         for name, n in event_count.items():
-            params += bs([len(name)])
+            params += bytes([len(name)])
             params += self.str_to_bytes(name)
             params += int_to_bytes(n, 4)
         p = Packer()

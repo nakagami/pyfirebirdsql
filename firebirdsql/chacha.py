@@ -25,18 +25,10 @@
 #
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
-import sys
 import struct
 import copy
 
 sigma = b"expand 32-byte k"
-
-PYTHON_MAJOR_VER = sys.version_info[0]
-
-
-if PYTHON_MAJOR_VER == 3:
-    def ord(c):
-        return c
 
 
 def bytes_to_uint(b):        # Read as little endian.
@@ -58,10 +50,7 @@ def int_to_bytes(val, nbytes):  # Convert int value to little endian bytes.
                 byte_array[i] = 0
                 byte_array[i+1] += 1
 
-    if PYTHON_MAJOR_VER == 2:
-        return ''.join([chr(c) for c in byte_array])
-    else:
-        return bytes(byte_array)
+    return bytes(byte_array)
 
 
 def add_u32(x, y):
@@ -135,10 +124,7 @@ class ChaCha20:
         enc = b''
 
         for i in range(len(plain)):
-            if PYTHON_MAJOR_VER == 3:
-                enc += bytes([ord(plain[i]) ^ ord(self.block[self.block_pos])])
-            else:
-                enc += chr(ord(plain[i]) ^ ord(self.block[self.block_pos]))
+            enc += bytes([plain[i] ^ self.block[self.block_pos]])
             self.block_pos += 1
             if len(self.block) == self.block_pos:
                 # increment counter

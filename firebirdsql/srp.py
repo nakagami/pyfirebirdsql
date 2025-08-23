@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2014-2023, Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2014-2025, Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -91,7 +91,6 @@ The two parties also employ the following safeguards:
 See http://srp.stanford.edu/ for more information.
 '''
 from __future__ import print_function
-import sys
 import hashlib
 import random
 import binascii
@@ -101,12 +100,6 @@ DEBUG = False
 
 DEBUG_PRIVATE_KEY = 0x60975527035CF2AD1989806F0407210BC81EDC04E2762A56AFD529DDDA2D4393
 DEBUG_SALT = binascii.unhexlify('02E268803000000079A478A700000002D1A6979000000026E1601C000000054F')
-
-PYTHON_MAJOR_VER = sys.version_info[0]
-
-if PYTHON_MAJOR_VER == 3:
-    def ord(c):
-        return c
 
 SRP_KEY_SIZE = 128
 SRP_SALT_SIZE = 32
@@ -126,7 +119,7 @@ def bytes2long(s):
     n = 0
     for c in s:
         n <<= 8
-        n += ord(c)
+        n += c
     return n
 
 
@@ -135,10 +128,7 @@ def long2bytes(n):
     while n > 0:
         s.insert(0, n & 255)
         n >>= 8
-    if PYTHON_MAJOR_VER == 3:
-        return bytes(s)
-    else:
-        return b''.join([chr(c) for c in s])
+    return bytes(s)
 
 
 def hash_digest(hash_algo, *args):
@@ -157,10 +147,7 @@ def pad(n):
         n >>= 8
         if n == 0:
             break
-    if PYTHON_MAJOR_VER == 3:
-        return bytes(s)
-    else:
-        return b''.join([chr(c) for c in s])
+    return bytes(s)
 
 
 def get_scramble(x, y):
@@ -260,10 +247,7 @@ def client_proof(user, password, salt, A, B, a, hash_algo):
 
 
 def get_salt():
-    if PYTHON_MAJOR_VER == 3:
-        salt = bytes([random.randrange(0, 256) for x in range(SRP_SALT_SIZE)])
-    else:
-        salt = b''.join([chr(random.randrange(0, 256)) for x in range(SRP_SALT_SIZE)])
+    salt = bytes([random.randrange(0, 256) for x in range(SRP_SALT_SIZE)])
 
     if DEBUG:
         salt = DEBUG_SALT

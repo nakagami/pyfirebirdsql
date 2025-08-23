@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2009-2023, Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2009-2025, Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -178,7 +178,7 @@ class XSQLVAR:
         elif self.sqltype == SQL_TYPE_DOUBLE:
             return struct.unpack('!d', raw_value)[0]
         elif self.sqltype == SQL_TYPE_BOOLEAN:
-            return True if byte_to_int(raw_value[0]) != 0 else False
+            return True if raw_value[0] != 0 else False
         elif self.sqltype == SQL_TYPE_TIMESTAMP_TZ:
             yyyy, mm, dd = self._parse_date(raw_value[:4])
             h, m, s, ms = self._parse_time(raw_value[4:8])
@@ -253,18 +253,18 @@ def calc_blr(xsqlda):
     blr += [255, 76]    # [blr_end, blr_eoc]
 
     # x.sqlscale value should be negative, so b convert to range(0, 256)
-    return bs(256 + b if b < 0 else b for b in blr)
+    return bytes(256 + b if b < 0 else b for b in blr)
 
 
 def parse_select_items(buf, xsqlda, connection):
     index = 0
     i = 0
-    item = byte_to_int(buf[i])
+    item = buf[i]
     while item != isc_info_end:
         if item == isc_info_sql_sqlda_seq:
             ln = bytes_to_int(buf[i+1:i+3])
             index = bytes_to_int(buf[i+3:i+3+ln])
-            xsqlda[index-1] = XSQLVAR(connection.bytes_to_ustr if connection.use_unicode else connection.bytes_to_str)
+            xsqlda[index-1] = XSQLVAR(connection.bytes_to_str)
             i = i + 3 + ln
         elif item == isc_info_sql_type:
             ln = bytes_to_int(buf[i+1:i+3])
@@ -309,7 +309,7 @@ def parse_select_items(buf, xsqlda, connection):
         else:
             print('\t', item, 'Invalid item [%02x] ! i=%d' % (buf[i], i))
             i = i + 1
-        item = byte_to_int(buf[i])
+        item = buf[i]
     return -1   # no more info
 
 
@@ -318,10 +318,10 @@ def parse_xsqlda(buf, connection, stmt_handle):
     stmt_type = None
     i = 0
     while i < len(buf):
-        if buf[i:i+3] == bs([isc_info_sql_stmt_type, 0x04, 0x00]):
+        if buf[i:i+3] == bytes([isc_info_sql_stmt_type, 0x04, 0x00]):
             stmt_type = bytes_to_int(buf[i+3:i+7])
             i += 7
-        elif buf[i:i+2] == bs([isc_info_sql_select, isc_info_sql_describe_vars]):
+        elif buf[i:i+2] == bytes([isc_info_sql_select, isc_info_sql_describe_vars]):
             i += 2
             ln = bytes_to_int(buf[i:i+2])
             i += 2
@@ -331,10 +331,10 @@ def parse_xsqlda(buf, connection, stmt_handle):
             while next_index > 0:   # more describe vars
                 connection._op_info_sql(
                     stmt_handle,
-                    bs([isc_info_sql_sqlda_start, 2]) + int_to_bytes(next_index, 2) + INFO_SQL_SELECT_DESCRIBE_VARS
+                    bytes([isc_info_sql_sqlda_start, 2]) + int_to_bytes(next_index, 2) + INFO_SQL_SELECT_DESCRIBE_VARS
                 )
                 (h, oid, buf) = connection._op_response()
-                assert buf[:2] == bs([0x04, 0x07])
+                assert buf[:2] == bytes([0x04, 0x07])
                 ln = bytes_to_int(buf[2:4])
                 assert bytes_to_int(buf[4:4+ln]) == col_len
                 next_index = parse_select_items(buf[4+ln:], xsqlda, connection)

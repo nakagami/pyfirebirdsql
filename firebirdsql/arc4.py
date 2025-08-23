@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2014-2023, Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2014-2025, Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -25,15 +25,6 @@
 #
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
-import sys
-
-PYTHON_MAJOR_VER = sys.version_info[0]
-
-if PYTHON_MAJOR_VER == 3:
-    def ord(c):
-        return c
-
-
 class ARC4:
     def __init__(self, key):
         state = list(range(256))
@@ -41,7 +32,7 @@ class ARC4:
         index2 = 0
 
         for i in range(256):
-            index2 = (ord(key[index1]) + state[i] + index2) % 256
+            index2 = (key[index1] + state[i] + index2) % 256
             (state[i], state[index2]) = (state[index2], state[i])
             index1 = (index1 + 1) % len(key)
 
@@ -57,10 +48,7 @@ class ARC4:
             self.y = (self.y + state[self.x]) % 256
             (state[self.x], state[self.y]) = (state[self.y], state[self.x])
             xorIndex = (state[self.x] + state[self.y]) % 256
-            if PYTHON_MAJOR_VER == 3:
-                enc += bytes([plain[i] ^ state[xorIndex]])
-            else:
-                enc += chr(ord(plain[i]) ^ state[xorIndex])
+            enc += bytes([plain[i] ^ state[xorIndex]])
         return enc
 
     # PyCrypto compatible method

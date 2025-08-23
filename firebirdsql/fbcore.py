@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2009-2024, Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2009-2025, Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -86,7 +86,7 @@ class Statement(object):
                             h = -1
                         else:
                             (h, oid, buf) = connection._op_response()
-                        v = bs([])
+                        v = bytes([])
                         n = 1   # 0,1:mora data 2:no more data
                         while n != 2:
                             connection._op_get_segment(h)
@@ -102,10 +102,7 @@ class Statement(object):
                             (h, oid, buf) = connection._op_response()
                         r[i] = v
                         if x.sqlsubtype == 1:    # TEXT
-                            if connection.use_unicode:
-                                r[i] = connection.bytes_to_ustr(r[i])
-                            else:
-                                r[i] = connection.bytes_to_str(r[i])
+                            r[i] = connection.bytes_to_str(r[i])
                 yield tuple(r)
             if more_data:
                 connection._op_fetch(self.handle, calc_blr(self.xsqlda))
@@ -120,7 +117,7 @@ class Statement(object):
         if explain_plan:
             self.trans.connection._op_prepare_statement(
                 self.handle, self.trans.trans_handle, sql,
-                option_items=bs([isc_info_sql_get_plan]))
+                option_items=bytes([isc_info_sql_get_plan]))
         else:
             self.trans.connection._op_prepare_statement(
                 self.handle, self.trans.trans_handle, sql)
@@ -134,7 +131,7 @@ class Statement(object):
         (h, oid, buf) = self.trans.connection._op_response()
 
         i = 0
-        if byte_to_int(buf[i]) == isc_info_sql_get_plan:
+        if buf[i] == isc_info_sql_get_plan:
             ln = bytes_to_int(buf[i+1:i+3])
             self.plan = self.trans.connection.bytes_to_str(buf[i+3:i+3+ln])
             i += 3 + ln
@@ -226,7 +223,7 @@ class Cursor(object):
     def _convert_params(self, params):
         cooked_params = []
         for param in params:
-            if type(param) == str or (PYTHON_MAJOR_VER == 2 and type(param) == unicode):
+            if isinstance(param, str):
                 param = self.transaction.connection.str_to_bytes(param)
             cooked_params.append(param)
         return cooked_params
@@ -312,10 +309,7 @@ class Cursor(object):
             return None
         # select statement
         try:
-            if PYTHON_MAJOR_VER == 3:
-                result = tuple(next(self._fetch_records))
-            else:
-                result = tuple(self._fetch_records.next())
+            result = tuple(next(self._fetch_records))
         except StopIteration:
             result = None
         DEBUG_OUTPUT("Cursor::fetchone()", result)
@@ -415,11 +409,11 @@ class Cursor(object):
         if self.stmt.handle == -1:
             return -1
 
-        self.transaction.connection._op_info_sql(self.stmt.handle, bs([isc_info_sql_records]))
+        self.transaction.connection._op_info_sql(self.stmt.handle, bytes([isc_info_sql_records]))
         (h, oid, buf) = self.transaction.connection._op_response()
-        assert buf[:3] == bs([0x17, 0x1d, 0x00])    # isc_info_sql_records
+        assert buf[:3] == bytes([0x17, 0x1d, 0x00])    # isc_info_sql_records
         if self.stmt.stmt_type == isc_info_sql_stmt_select:
-            assert buf[17:20] == bs([0x0d, 0x04, 0x00])     # isc_info_req_select_count
+            assert buf[17:20] == bytes([0x0d, 0x04, 0x00])     # isc_info_req_select_count
             # select count
             count = bytes_to_int(buf[20:24])
         else:
@@ -431,15 +425,15 @@ class Cursor(object):
 class Transaction(object):
     transaction_parameter_block = (
         # ISOLATION_LEVEL_READ_COMMITED_LEGACY
-        bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_no_rec_version]),
+        bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_no_rec_version]),
         # ISOLATION_LEVEL_READ_COMMITED
-        bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
+        bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
         # ISOLATION_LEVEL_REPEATABLE_READ
-        bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_concurrency]),
+        bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_concurrency]),
         # ISOLATION_LEVEL_SERIALIZABLE
-        bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_consistency]),
+        bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_consistency]),
         # ISOLATION_LEVEL_READ_COMMITED_RO
-        bs([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
+        bytes([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
     )
 
     def __init__(self, connection, is_autocommit=False, isolation_level=None):
@@ -453,7 +447,7 @@ class Transaction(object):
         isolation_level = self._isolation_level if self._isolation_level is not None else self.connection.isolation_level
         tpb = self.transaction_parameter_block[isolation_level]
         if self._autocommit:
-            tpb += bs([isc_tpb_autocommit])
+            tpb += bytes([isc_tpb_autocommit])
         self.connection._op_transaction(tpb)
         (h, oid, buf) = self.connection._op_response()
         self._trans_handle = None if h < 0 else h
@@ -523,16 +517,16 @@ class Transaction(object):
 
     def _trans_info(self, info_requests):
         if info_requests[-1] == isc_info_end:
-            self.connection._op_info_transaction(self.trans_handle, bs(info_requests))
+            self.connection._op_info_transaction(self.trans_handle, bytes(info_requests))
         else:
             self.connection._op_info_transaction(
-                self.trans_handle, bs(info_requests+type(info_requests)([isc_info_end])))
+                self.trans_handle, bytes(info_requests+type(info_requests)([isc_info_end])))
         (h, oid, buf) = self.connection._op_response()
         i = 0
         i_request = 0
         r = []
         while i < len(buf):
-            req = byte_to_int(buf[i])
+            req = buf[i]
             if req == isc_info_end:
                 break
             assert req == info_requests[i_request] or req == isc_info_error
@@ -544,7 +538,7 @@ class Transaction(object):
         return r
 
     def trans_info(self, info_requests):
-        if type(info_requests) == int:  # singleton
+        if isinstance(info_requests, int):  # singleton
             r = self._trans_info([info_requests])
             return {info_requests: r[1][0]}
         else:
@@ -552,7 +546,7 @@ class Transaction(object):
             rs = self._trans_info(info_requests)
             for i in range(len(info_requests)):
                 if rs[i][0] == isc_info_tra_isolation:
-                    v = (byte_to_int(rs[i][1][0]), byte_to_int(rs[i][1][1]))
+                    v = (rs[i][1][0], rs[i][1][1])
                 elif rs[i][0] == isc_info_error:
                     v = None
                 else:
@@ -579,7 +573,7 @@ class ConnectionResponseMixin:
         n = nbytes
         if word_alignment and (n % 4):
             n += 4 - nbytes % 4  # 4 bytes word alignment
-        r = bs([])
+        r = bytes([])
         while n:
             if (self.timeout is not None and select.select([self.sock._sock], [], [], self.timeout)[0] == []):
                 break
@@ -673,7 +667,7 @@ class ConnectionResponseMixin:
             return self._parse_op_response()    # error occurred
 
         b = self._recv_channel(12)
-        self.accept_version = byte_to_int(b[3])
+        self.accept_version = b[3]
         self.accept_architecture = bytes_to_bint(b[4:8])
         self.accept_type = bytes_to_bint(b[8:])
         self.lazy_response_count = 0
@@ -811,7 +805,7 @@ class ConnectionResponseMixin:
                 else:
                     ln = x.io_length()
                 raw_value = self._recv_channel(ln, word_alignment=True)
-                if self._recv_channel(4) == bs([0]) * 4:     # Not NULL
+                if self._recv_channel(4) == bytes([0]) * 4:     # Not NULL
                     r.append(x.value(raw_value))
                 else:
                     r.append(None)
@@ -822,7 +816,7 @@ class ConnectionResponseMixin:
             null_indicator = 0
             for c in reversed(self._recv_channel(n, word_alignment=True)):
                 null_indicator <<= 8
-                null_indicator += c if PYTHON_MAJOR_VER == 3 else ord(c)
+                null_indicator += c
             for i in range(len(xsqlda)):
                 x = xsqlda[i]
                 if null_indicator & (1 << i):
@@ -866,7 +860,7 @@ class ConnectionResponseMixin:
                     else:
                         ln = x.io_length()
                     raw_value = self._recv_channel(ln, word_alignment=True)
-                    if self._recv_channel(4) == bs([0]) * 4:     # Not NULL
+                    if self._recv_channel(4) == bytes([0]) * 4:     # Not NULL
                         r[i] = x.value(raw_value)
             else:   # PROTOCOL_VERSION13
                 n = len(xsqlda) // 8
@@ -875,7 +869,7 @@ class ConnectionResponseMixin:
                 null_indicator = 0
                 for c in reversed(self._recv_channel(n, word_alignment=True)):
                     null_indicator <<= 8
-                    null_indicator += c if PYTHON_MAJOR_VER == 3 else ord(c)
+                    null_indicator += c
                 for i in range(len(xsqlda)):
                     x = xsqlda[i]
                     if null_indicator & (1 << i):
@@ -950,7 +944,7 @@ class ConnectionBase(WireProtocol):
         self, dsn=None, user=None, password=None, role=None, host=None,
         database=None, charset=DEFAULT_CHARSET, port=None,
         page_size=4096, is_services=False, cloexec=False,
-        timeout=None, isolation_level=None, use_unicode=None,
+        timeout=None, isolation_level=None,
         auth_plugin_name=None, wire_crypt=True, create_new=False,
         timezone=None
     ):
@@ -977,7 +971,6 @@ class ConnectionBase(WireProtocol):
             self.isolation_level = ISOLATION_LEVEL_READ_COMMITED
         else:
             self.isolation_level = int(isolation_level)
-        self.use_unicode = use_unicode
         self.timezone = timezone
 
 
@@ -1032,15 +1025,15 @@ class ConnectionBase(WireProtocol):
 
     def _db_info(self, info_requests):
         if info_requests[-1] == isc_info_end:
-            self._op_info_database(bs(info_requests))
+            self._op_info_database(bytes(info_requests))
         else:
-            self._op_info_database(bs(info_requests+type(info_requests)([isc_info_end])))
+            self._op_info_database(bytes(info_requests+type(info_requests)([isc_info_end])))
         (h, oid, buf) = self._op_response()
         i = 0
         i_request = 0
         r = []
         while i < len(buf):
-            req = byte_to_int(buf[i])
+            req = buf[i]
             if req == isc_info_end:
                 break
             assert req == info_requests[i_request] or req == isc_info_error
@@ -1050,7 +1043,7 @@ class ConnectionBase(WireProtocol):
                     ln = bytes_to_int(buf[i+1:i+3])
                     user_names.append(buf[i+3:i+3+ln])
                     i = i + 3 + ln
-                    req = byte_to_int(buf[i])
+                    req = buf[i]
                 r.append((req, user_names))
             else:
                 ln = bytes_to_int(buf[i+1:i+3])
@@ -1086,20 +1079,20 @@ class ConnectionBase(WireProtocol):
 
         if info_request in (isc_info_base_level, ):
             # IB6 API guide p52
-            return byte_to_int(v[1])
+            return v[1]
         elif info_request in (isc_info_db_id, ):
             # IB6 API guide p52
-            conn_code = byte_to_int(v[0])
-            len1 = byte_to_int(v[1])
+            conn_code = v[0]
+            len1 = v[1]
             filename = self.bytes_to_str(v[2:2+len1])
-            len2 = byte_to_int(v[2+len1])
+            len2 = v[2+len1]
             sitename = self.bytes_to_str(v[3+len1:3+len1+len2])
             return (conn_code, filename, sitename)
         elif info_request in (isc_info_implementation, ):
-            return (byte_to_int(v[1]), byte_to_int(v[2]))
+            return (v[1], v[2])
         elif info_request in (isc_info_version, isc_info_firebird_version):
             # IB6 API guide p53
-            return self.bytes_to_str(v[2:2+byte_to_int(v[1])])
+            return self.bytes_to_str(v[2:2+v[1]])
         elif info_request in (isc_info_user_names, ):
             # IB6 API guide p54
             user_names = []

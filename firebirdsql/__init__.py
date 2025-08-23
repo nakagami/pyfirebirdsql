@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2009-2024, Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2009-2025, Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -25,7 +25,6 @@
 #
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
-import sys
 import datetime
 import decimal
 from firebirdsql.consts import *    # noqa
@@ -37,8 +36,7 @@ from firebirdsql.err import (
 )
 
 
-if sys.version_info[0] > 2:
-    from firebirdsql import aio
+from firebirdsql import aio
 
 Date = datetime.date
 Time = datetime.time
@@ -76,10 +74,7 @@ class DBAPITypeObject:
 
 
 STRING = DBAPITypeObject(str)
-if PYTHON_MAJOR_VER == 3:
-    BINARY = DBAPITypeObject(bytes)
-else:
-    BINARY = DBAPITypeObject(str)
+BINARY = DBAPITypeObject(bytes)
 NUMBER = DBAPITypeObject(int, decimal.Decimal)
 DATE = DBAPITypeObject(datetime.date)
 DATETIME = DBAPITypeObject(datetime.datetime, datetime.date, datetime.time)

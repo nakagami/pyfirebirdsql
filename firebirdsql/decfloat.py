@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2018-2023, Hajime Nakagami<nakagami@gmail.com>
+# Copyright (c) 2018-2025, Hajime Nakagami<nakagami@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -25,22 +25,14 @@
 #
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
-import sys
 from decimal import Decimal
-
-PYTHON_MAJOR_VER = sys.version_info[0]
-
-
-if PYTHON_MAJOR_VER == 3:
-    def ord(c):
-        return c
 
 
 def bytes2long(b):
     n = 0
     for c in b:
         n <<= 8
-        n += ord(c)
+        n += c
     return n
 
 
@@ -123,8 +115,8 @@ def calc_significand(prefix, dpd_bits, num_bits):
 
 def decimal128_to_sign_digits_exponent(b):
     # https://en.wikipedia.org/wiki/Decimal128_floating-point_format
-    sign = 1 if ord(b[0]) & 0x80 else 0
-    combination_field = ((ord(b[0]) & 0x7f) << 10) + (ord(b[1]) << 2) + (ord(b[2]) >> 6)
+    sign = 1 if b[0] & 0x80 else 0
+    combination_field = ((b[0] & 0x7f) << 10) + (b[1]) << 2 + (b[2] >> 6)
     if (combination_field & 0b11111000000000000) == 0b11111000000000000:
         if sign:
             return Decimal('-NaN')
@@ -173,9 +165,9 @@ def decimal_fixed_to_decimal(b, scale):
 def decimal64_to_decimal(b):
     "decimal64 bytes to Decimal"
     # https://en.wikipedia.org/wiki/Decimal64_floating-point_format
-    sign = 1 if ord(b[0]) & 0x80 else 0
-    combination_field = (ord(b[0]) >> 2) & 0b11111
-    exponent = ((ord(b[0]) & 0b11) << 6) + ((ord(b[1]) >> 2) & 0b111111)
+    sign = 1 if b[0] & 0x80 else 0
+    combination_field = (b[0] >> 2) & 0b11111
+    exponent = ((b[0] & 0b11) << 6) + ((b[1] >> 2) & 0b111111)
     dpd_bits = bytes2long(b) & 0b11111111111111111111111111111111111111111111111111
 
     if combination_field == 0b11111:
