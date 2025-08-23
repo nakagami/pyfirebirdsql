@@ -64,15 +64,8 @@ INFO_SQL_SELECT_DESCRIBE_VARS = bs([
 
 
 def get_crypt(plain):
-    try:
-        from passlib.hash import des_crypt
-        return des_crypt.using(salt='9z').hash(plain)[2:]
-    except ImportError as e:
-        if PYTHON_MAJOR_VER == 3:
-            raise e
-        else:
-            import crypt
-            return crypt.crypt(plain, '9z')[2:]
+    from passlib.hash import des_crypt
+    return des_crypt.using(salt='9z').hash(plain)[2:]
 
 
 def convert_date(v):  # Convert datetime.date to BLR format data
@@ -202,8 +195,7 @@ class WireProtocol(object):
 
     def str_to_bytes(self, s):
         "convert str to bytes"
-        if ((PYTHON_MAJOR_VER == 3 and isinstance(s, str)) or
-                (PYTHON_MAJOR_VER == 2 and type(s) == unicode)):
+        if isinstance(s, str):
             return s.encode(charset_map.get(self.charset, self.charset))
         return s
 
@@ -247,19 +239,13 @@ class WireProtocol(object):
                 null_indicator >>= 8
             values = bs(null_indicator_bytes)
         for p in params:
-            if (
-                (PYTHON_MAJOR_VER == 2 and type(p) == unicode) or
-                (PYTHON_MAJOR_VER == 3 and type(p) == str)
-            ):
+            if isinstance(p, str):
                 p = self.str_to_bytes(p)
             t = type(p)
             if p is None:
                 v = bs([])
                 blr += bs([14, 0, 0])
-            elif (
-                (PYTHON_MAJOR_VER == 2 and t == str) or
-                (PYTHON_MAJOR_VER == 3 and t == bytes)
-            ):
+            elif t == bytes:
                 if len(p) > MAX_CHAR_LENGTH:
                     v = self._create_blob(trans_handle, p)
                     blr += bs([9, 0])
@@ -269,7 +255,7 @@ class WireProtocol(object):
                     pad_length = ((4-nbytes) & 3)
                     v += bs([0]) * pad_length
                     blr += bs([14, nbytes & 255, nbytes >> 8])
-            elif t == int or (PYTHON_MAJOR_VER == 2 and t == long):
+            elif t == int:
                 if p <= 0x7FFFFFFF and p >= -0x80000000:
                     v = bint_to_bytes(p, 4)
                     blr += bs([8, 0])    # blr_long
@@ -315,7 +301,7 @@ class WireProtocol(object):
                 blr += bs([23])
             else:   # fallback, convert to string
                 p = p.__repr__()
-                if (PYTHON_MAJOR_VER == 3 and isinstance(p, str)) or (PYTHON_MAJOR_VER == 2 and type(p) == unicode):
+                if isinstance(p, str):
                     p = self.str_to_bytes(p)
                 v = p
                 nbytes = len(v)
