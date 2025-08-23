@@ -48,10 +48,6 @@ def debug_level():
     return DEBUG_LEVEL
 
 
-def bs(byte_array):
-    return bytes(byte_array)
-
-
 def hex_to_bytes(s):
     """
     convert hex string to bytes
@@ -59,7 +55,7 @@ def hex_to_bytes(s):
     if len(s) % 2:
         s = b'0' + s
     ia = [int(s[i:i+2], 16) for i in range(0, len(s), 2)]   # int array
-    return bs(ia)
+    return bytes(ia)
 
 
 def bytes_to_hex(b):
@@ -118,7 +114,7 @@ def bint_to_bytes(val, nbytes):     # Convert int value to big endian bytes.
             if b[nbytes - i - 1] == 256:
                 b[nbytes - i - 1] = 0
                 b[nbytes - i - 2] += 1
-    return bs(b)
+    return bytes(b)
 
 
 def int_to_bytes(val, nbytes):  # Convert int value to little endian bytes.
@@ -134,7 +130,7 @@ def int_to_bytes(val, nbytes):  # Convert int value to little endian bytes.
             if b[i] == 256:
                 b[i] = 0
                 b[i+1] += 1
-    return bs(b)
+    return bytes(b)
 
 
 def parse_dsn(dsn, host=None, port=None, database=None, user=None, password=None):

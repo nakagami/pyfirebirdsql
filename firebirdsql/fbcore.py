@@ -86,7 +86,7 @@ class Statement(object):
                             h = -1
                         else:
                             (h, oid, buf) = connection._op_response()
-                        v = bs([])
+                        v = bytes([])
                         n = 1   # 0,1:mora data 2:no more data
                         while n != 2:
                             connection._op_get_segment(h)
@@ -117,7 +117,7 @@ class Statement(object):
         if explain_plan:
             self.trans.connection._op_prepare_statement(
                 self.handle, self.trans.trans_handle, sql,
-                option_items=bs([isc_info_sql_get_plan]))
+                option_items=bytes([isc_info_sql_get_plan]))
         else:
             self.trans.connection._op_prepare_statement(
                 self.handle, self.trans.trans_handle, sql)
@@ -409,11 +409,11 @@ class Cursor(object):
         if self.stmt.handle == -1:
             return -1
 
-        self.transaction.connection._op_info_sql(self.stmt.handle, bs([isc_info_sql_records]))
+        self.transaction.connection._op_info_sql(self.stmt.handle, bytes([isc_info_sql_records]))
         (h, oid, buf) = self.transaction.connection._op_response()
-        assert buf[:3] == bs([0x17, 0x1d, 0x00])    # isc_info_sql_records
+        assert buf[:3] == bytes([0x17, 0x1d, 0x00])    # isc_info_sql_records
         if self.stmt.stmt_type == isc_info_sql_stmt_select:
-            assert buf[17:20] == bs([0x0d, 0x04, 0x00])     # isc_info_req_select_count
+            assert buf[17:20] == bytes([0x0d, 0x04, 0x00])     # isc_info_req_select_count
             # select count
             count = bytes_to_int(buf[20:24])
         else:
@@ -425,15 +425,15 @@ class Cursor(object):
 class Transaction(object):
     transaction_parameter_block = (
         # ISOLATION_LEVEL_READ_COMMITED_LEGACY
-        bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_no_rec_version]),
+        bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_no_rec_version]),
         # ISOLATION_LEVEL_READ_COMMITED
-        bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
+        bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
         # ISOLATION_LEVEL_REPEATABLE_READ
-        bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_concurrency]),
+        bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_concurrency]),
         # ISOLATION_LEVEL_SERIALIZABLE
-        bs([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_consistency]),
+        bytes([isc_tpb_version3, isc_tpb_write, isc_tpb_wait, isc_tpb_consistency]),
         # ISOLATION_LEVEL_READ_COMMITED_RO
-        bs([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
+        bytes([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
     )
 
     def __init__(self, connection, is_autocommit=False, isolation_level=None):
@@ -447,7 +447,7 @@ class Transaction(object):
         isolation_level = self._isolation_level if self._isolation_level is not None else self.connection.isolation_level
         tpb = self.transaction_parameter_block[isolation_level]
         if self._autocommit:
-            tpb += bs([isc_tpb_autocommit])
+            tpb += bytes([isc_tpb_autocommit])
         self.connection._op_transaction(tpb)
         (h, oid, buf) = self.connection._op_response()
         self._trans_handle = None if h < 0 else h
@@ -517,10 +517,10 @@ class Transaction(object):
 
     def _trans_info(self, info_requests):
         if info_requests[-1] == isc_info_end:
-            self.connection._op_info_transaction(self.trans_handle, bs(info_requests))
+            self.connection._op_info_transaction(self.trans_handle, bytes(info_requests))
         else:
             self.connection._op_info_transaction(
-                self.trans_handle, bs(info_requests+type(info_requests)([isc_info_end])))
+                self.trans_handle, bytes(info_requests+type(info_requests)([isc_info_end])))
         (h, oid, buf) = self.connection._op_response()
         i = 0
         i_request = 0
@@ -573,7 +573,7 @@ class ConnectionResponseMixin:
         n = nbytes
         if word_alignment and (n % 4):
             n += 4 - nbytes % 4  # 4 bytes word alignment
-        r = bs([])
+        r = bytes([])
         while n:
             if (self.timeout is not None and select.select([self.sock._sock], [], [], self.timeout)[0] == []):
                 break
@@ -805,7 +805,7 @@ class ConnectionResponseMixin:
                 else:
                     ln = x.io_length()
                 raw_value = self._recv_channel(ln, word_alignment=True)
-                if self._recv_channel(4) == bs([0]) * 4:     # Not NULL
+                if self._recv_channel(4) == bytes([0]) * 4:     # Not NULL
                     r.append(x.value(raw_value))
                 else:
                     r.append(None)
@@ -860,7 +860,7 @@ class ConnectionResponseMixin:
                     else:
                         ln = x.io_length()
                     raw_value = self._recv_channel(ln, word_alignment=True)
-                    if self._recv_channel(4) == bs([0]) * 4:     # Not NULL
+                    if self._recv_channel(4) == bytes([0]) * 4:     # Not NULL
                         r[i] = x.value(raw_value)
             else:   # PROTOCOL_VERSION13
                 n = len(xsqlda) // 8
@@ -1025,9 +1025,9 @@ class ConnectionBase(WireProtocol):
 
     def _db_info(self, info_requests):
         if info_requests[-1] == isc_info_end:
-            self._op_info_database(bs(info_requests))
+            self._op_info_database(bytes(info_requests))
         else:
-            self._op_info_database(bs(info_requests+type(info_requests)([isc_info_end])))
+            self._op_info_database(bytes(info_requests+type(info_requests)([isc_info_end])))
         (h, oid, buf) = self._op_response()
         i = 0
         i_request = 0

@@ -38,7 +38,7 @@ class EventConduit(WireProtocol):
         n = nbytes
         if n % 4:
             n += 4 - nbytes % 4  # 4 bytes word alignment
-        r = bs([])
+        r = bytes([])
         while n:
             if (timeout is not None and select.select([self.sock._sock], [], [], timeout)[0] == []):
                 break
