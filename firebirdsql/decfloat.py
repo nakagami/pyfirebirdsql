@@ -28,8 +28,6 @@
 import sys
 from decimal import Decimal
 
-PYTHON_MAJOR_VER = sys.version_info[0]
-
 
 def bytes2long(b):
     n = 0
