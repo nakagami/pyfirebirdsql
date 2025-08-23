@@ -131,7 +131,7 @@ class Statement(object):
         (h, oid, buf) = self.trans.connection._op_response()
 
         i = 0
-        if byte_to_int(buf[i]) == isc_info_sql_get_plan:
+        if buf[i] == isc_info_sql_get_plan:
             ln = bytes_to_int(buf[i+1:i+3])
             self.plan = self.trans.connection.bytes_to_str(buf[i+3:i+3+ln])
             i += 3 + ln
@@ -526,7 +526,7 @@ class Transaction(object):
         i_request = 0
         r = []
         while i < len(buf):
-            req = byte_to_int(buf[i])
+            req = buf[i]
             if req == isc_info_end:
                 break
             assert req == info_requests[i_request] or req == isc_info_error
@@ -546,7 +546,7 @@ class Transaction(object):
             rs = self._trans_info(info_requests)
             for i in range(len(info_requests)):
                 if rs[i][0] == isc_info_tra_isolation:
-                    v = (byte_to_int(rs[i][1][0]), byte_to_int(rs[i][1][1]))
+                    v = (rs[i][1][0], rs[i][1][1])
                 elif rs[i][0] == isc_info_error:
                     v = None
                 else:
@@ -667,7 +667,7 @@ class ConnectionResponseMixin:
             return self._parse_op_response()    # error occurred
 
         b = self._recv_channel(12)
-        self.accept_version = byte_to_int(b[3])
+        self.accept_version = b[3]
         self.accept_architecture = bytes_to_bint(b[4:8])
         self.accept_type = bytes_to_bint(b[8:])
         self.lazy_response_count = 0
@@ -1033,7 +1033,7 @@ class ConnectionBase(WireProtocol):
         i_request = 0
         r = []
         while i < len(buf):
-            req = byte_to_int(buf[i])
+            req = buf[i]
             if req == isc_info_end:
                 break
             assert req == info_requests[i_request] or req == isc_info_error
@@ -1043,7 +1043,7 @@ class ConnectionBase(WireProtocol):
                     ln = bytes_to_int(buf[i+1:i+3])
                     user_names.append(buf[i+3:i+3+ln])
                     i = i + 3 + ln
-                    req = byte_to_int(buf[i])
+                    req = buf[i]
                 r.append((req, user_names))
             else:
                 ln = bytes_to_int(buf[i+1:i+3])
@@ -1079,20 +1079,20 @@ class ConnectionBase(WireProtocol):
 
         if info_request in (isc_info_base_level, ):
             # IB6 API guide p52
-            return byte_to_int(v[1])
+            return v[1]
         elif info_request in (isc_info_db_id, ):
             # IB6 API guide p52
-            conn_code = byte_to_int(v[0])
-            len1 = byte_to_int(v[1])
+            conn_code = v[0]
+            len1 = v[1]
             filename = self.bytes_to_str(v[2:2+len1])
-            len2 = byte_to_int(v[2+len1])
+            len2 = v[2+len1]
             sitename = self.bytes_to_str(v[3+len1:3+len1+len2])
             return (conn_code, filename, sitename)
         elif info_request in (isc_info_implementation, ):
-            return (byte_to_int(v[1]), byte_to_int(v[2]))
+            return (v[1], v[2])
         elif info_request in (isc_info_version, isc_info_firebird_version):
             # IB6 API guide p53
-            return self.bytes_to_str(v[2:2+byte_to_int(v[1])])
+            return self.bytes_to_str(v[2:2+v[1]])
         elif info_request in (isc_info_user_names, ):
             # IB6 API guide p54
             user_names = []
