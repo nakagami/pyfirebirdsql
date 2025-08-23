@@ -538,7 +538,7 @@ class Transaction(object):
         return r
 
     def trans_info(self, info_requests):
-        if type(info_requests) == int:  # singleton
+        if isinstance(info_requests, int):  # singleton
             r = self._trans_info([info_requests])
             return {info_requests: r[1][0]}
         else:
