@@ -4,7 +4,7 @@ import firebirdsql
 from firebirdsql.tests.base import *    # noqa
 
 
-def test_callback(s):
+def _test_callback(s):
     """
     It is not need in backup_database() and restore_database() parameter.
     """
@@ -43,7 +43,7 @@ class TestBackup(TestBase):
             password=self.password)
         svc.backup_database(self.database,
                             BACKUP_FILE,
-                            callback=test_callback)
+                            callback=_test_callback)
         svc.close()
         self.assertEqual(True, os.access(BACKUP_FILE, os.F_OK))
 
@@ -59,7 +59,7 @@ class TestBackup(TestBase):
             RESTORE_DATABASE,
             replace=True,
             pageSize=4096,
-            callback=test_callback
+            callback=_test_callback
         )
         svc.close()
         self.assertEqual(True, os.access(RESTORE_DATABASE, os.F_OK))

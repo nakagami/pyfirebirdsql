@@ -34,10 +34,12 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
+        python -m pip install setuptools
         python -m pip install --upgrade pip
         python -m pip install passlib
+        python -m pip install pytest
     - name: Test
       run: |
         source test_user.env
-        python -m pip install setuptools
-        python setup.py test
+        python -m pip install --upgrade pip
+        pytest
