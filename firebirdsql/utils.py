@@ -137,11 +137,6 @@ def int_to_bytes(val, nbytes):  # Convert int value to little endian bytes.
     return bs(b)
 
 
-def byte_to_int(b):
-    "byte to int"
-    return b
-
-
 def parse_dsn(dsn, host=None, port=None, database=None, user=None, password=None):
     if dsn:
         parsed = urlparse("//" + dsn)

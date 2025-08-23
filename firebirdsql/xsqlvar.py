@@ -178,7 +178,7 @@ class XSQLVAR:
         elif self.sqltype == SQL_TYPE_DOUBLE:
             return struct.unpack('!d', raw_value)[0]
         elif self.sqltype == SQL_TYPE_BOOLEAN:
-            return True if byte_to_int(raw_value[0]) != 0 else False
+            return True if raw_value[0] != 0 else False
         elif self.sqltype == SQL_TYPE_TIMESTAMP_TZ:
             yyyy, mm, dd = self._parse_date(raw_value[:4])
             h, m, s, ms = self._parse_time(raw_value[4:8])
@@ -259,7 +259,7 @@ def calc_blr(xsqlda):
 def parse_select_items(buf, xsqlda, connection):
     index = 0
     i = 0
-    item = byte_to_int(buf[i])
+    item = buf[i]
     while item != isc_info_end:
         if item == isc_info_sql_sqlda_seq:
             ln = bytes_to_int(buf[i+1:i+3])
@@ -309,7 +309,7 @@ def parse_select_items(buf, xsqlda, connection):
         else:
             print('\t', item, 'Invalid item [%02x] ! i=%d' % (buf[i], i))
             i = i + 1
-        item = byte_to_int(buf[i])
+        item = buf[i]
     return -1   # no more info
 
 

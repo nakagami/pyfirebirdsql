@@ -137,7 +137,7 @@ class AsyncStatement(Statement):
         (h, oid, buf) = await self.trans.connection._async_op_response()
 
         i = 0
-        if byte_to_int(buf[i]) == isc_info_sql_get_plan:
+        if buf[i] == isc_info_sql_get_plan:
             ln = bytes_to_int(buf[i+1:i+3])
             self.plan = self.trans.connection.bytes_to_str(buf[i+3:i+3+ln])
             i += 3 + ln
@@ -475,7 +475,7 @@ class AsyncTransaction(Transaction):
         i_request = 0
         r = []
         while i < len(buf):
-            req = byte_to_int(buf[i])
+            req = buf[i]
             if req == isc_info_end:
                 break
             assert req == info_requests[i_request] or req == isc_info_error
@@ -495,7 +495,7 @@ class AsyncTransaction(Transaction):
             rs = await self._trans_info(info_requests)
             for i in range(len(info_requests)):
                 if rs[i][0] == isc_info_tra_isolation:
-                    v = (byte_to_int(rs[i][1][0]), byte_to_int(rs[i][1][1]))
+                    v = (rs[i][1][0], rs[i][1][1])
                 elif rs[i][0] == isc_info_error:
                     v = None
                 else:
@@ -607,7 +607,7 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
             return await self._async_parse_op_response()    # error occurred
 
         b = await self._async_recv_channel(12)
-        self.accept_version = byte_to_int(b[3])
+        self.accept_version = b[3]
         self.accept_architecture = bytes_to_bint(b[4:8])
         self.accept_type = bytes_to_bint(b[8:])
         self.lazy_response_count = 0
@@ -940,7 +940,7 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
         i_request = 0
         r = []
         while i < len(buf):
-            req = byte_to_int(buf[i])
+            req = buf[i]
             if req == isc_info_end:
                 break
             assert req == info_requests[i_request] or req == isc_info_error
@@ -950,7 +950,7 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
                     ln = bytes_to_int(buf[i+1:i+3])
                     user_names.append(buf[i+3:i+3+ln])
                     i = i + 3 + ln
-                    req = byte_to_int(buf[i])
+                    req = buf[i]
                 r.append((req, user_names))
             else:
                 ln = bytes_to_int(buf[i+1:i+3])

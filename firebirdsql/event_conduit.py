@@ -64,10 +64,10 @@ class EventConduit(WireProtocol):
                 bytes_to_int(self._recv_channel(4, timeout))    # db_handle
                 ln = bytes_to_bint(self._recv_channel(4, timeout))
                 b = self._recv_channel(ln, timeout)
-                assert byte_to_int(b[0]) == 1
+                assert b[0] == 1
                 i = 1
                 while i < len(b):
-                    ln = byte_to_int(b[i])
+                    ln = b[i]
                     s = self.connection.bytes_to_str(b[i+1:i+1+ln])
                     n = bytes_to_int(b[i+1+ln:i+1+ln+4])
                     event_count[s] = n
@@ -98,11 +98,11 @@ class EventConduit(WireProtocol):
         family = buf[:2]
         port = bytes_to_bint(buf[2:4], u=True)
         if family == b'\x02\x00':     # IPv4
-            ip_address = '.'.join([str(byte_to_int(c)) for c in buf[4:8]])
+            ip_address = '.'.join([str(c) for c in buf[4:8]])
         elif family in (b'\x0a\x00', b'\x17\00'):  # IPv6
             if bytes_to_hex(buf[4:20]) == b"0000000000000000000000000000ffff":
                 # ipv4 mapped ipv6 address
-                ip_address = '.'.join([str(byte_to_int(c)) for c in buf[20:24]])
+                ip_address = '.'.join([str(c) for c in buf[20:24]])
             else:
                 address = bytes_to_hex(buf[4:20])
                 if not isinstance(address, str):    # Py3

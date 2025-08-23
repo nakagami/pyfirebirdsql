@@ -266,30 +266,30 @@ class Services(Connection):
     def _getIntegerVal(self, item_id):
         self._op_service_info(bs([]), bs([item_id]))
         (h, oid, buf) = self._op_response()
-        assert byte_to_int(buf[0]) == item_id
-        return byte_to_int(buf[1])
+        assert buf[0] == item_id
+        return buf[1]
 
     def _getStringVal(self, item_id):
         self._op_service_info(bs([]), bs([item_id]))
         (h, oid, buf) = self._op_response()
-        assert byte_to_int(buf[0]) == item_id
+        assert buf[0] == item_id
         ln = bytes_to_int(buf[1:3])
         return self.bytes_to_str(buf[3:3+ln])
 
     def _getSvrDbInfo(self):
         self._op_service_info(bs([]), bs([isc_info_svc_svr_db_info]))
         (h, oid, buf) = self._op_response()
-        assert byte_to_int(buf[0]) == isc_info_svc_svr_db_info
+        assert buf[0] == isc_info_svc_svr_db_info
         db_names = []
         i = 1
-        while i < len(buf) and byte_to_int(buf[i]) != isc_info_flag_end:
-            if byte_to_int(buf[i]) == isc_spb_num_att:
+        while i < len(buf) and buf[i] != isc_info_flag_end:
+            if buf[i] == isc_spb_num_att:
                 num_attach = bytes_to_int(buf[i+1:i+5])
                 i += 5
-            elif byte_to_int(buf[i]) == isc_spb_num_db:
+            elif buf[i] == isc_spb_num_db:
                 bytes_to_int(buf[7:11])     # db_num
                 i += 5
-            elif byte_to_int(buf[i]) == isc_spb_dbname:
+            elif buf[i] == isc_spb_dbname:
                 ln = bytes_to_int(buf[i+1:i+3])
                 db_name = self.bytes_to_str(buf[i+3:i+3+ln])
                 db_names.append(db_name)
