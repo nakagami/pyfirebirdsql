@@ -115,8 +115,8 @@ def calc_significand(prefix, dpd_bits, num_bits):
 
 def decimal128_to_sign_digits_exponent(b):
     # https://en.wikipedia.org/wiki/Decimal128_floating-point_format
-    sign = 1 if b[0] & 0x80 else 0
-    combination_field = ((b[0] & 0x7f) << 10) + (b[1]) << 2 + (b[2] >> 6)
+    sign = 1 if (b[0] & 0x80) else 0
+    combination_field = ((b[0] & 0x7f) << 10) + (b[1] << 2) + (b[2] >> 6)
     if (combination_field & 0b11111000000000000) == 0b11111000000000000:
         if sign:
             return Decimal('-NaN')
@@ -165,7 +165,7 @@ def decimal_fixed_to_decimal(b, scale):
 def decimal64_to_decimal(b):
     "decimal64 bytes to Decimal"
     # https://en.wikipedia.org/wiki/Decimal64_floating-point_format
-    sign = 1 if b[0] & 0x80 else 0
+    sign = 1 if (b[0] & 0x80) else 0
     combination_field = (b[0] >> 2) & 0b11111
     exponent = ((b[0] & 0b11) << 6) + ((b[1] >> 2) & 0b111111)
     dpd_bits = bytes2long(b) & 0b11111111111111111111111111111111111111111111111111
