@@ -245,7 +245,7 @@ class WireProtocol(object):
             if p is None:
                 v = bytes([])
                 blr += bytes([14, 0, 0])
-            elif isinstance(p, bytes):
+            elif t == bytes:
                 if len(p) > MAX_CHAR_LENGTH:
                     v = self._create_blob(trans_handle, p)
                     blr += bytes([9, 0])
@@ -255,21 +255,18 @@ class WireProtocol(object):
                     pad_length = ((4-nbytes) & 3)
                     v += bytes([0]) * pad_length
                     blr += bytes([14, nbytes & 255, nbytes >> 8])
-            elif isinstance(p, bool):
-                v = bytes([1, 0, 0, 0]) if p else bytes([0, 0, 0, 0])
-                blr += bytes([23])
-            elif isinstance(p, int):
+            elif t == int:
                 if p <= 0x7FFFFFFF and p >= -0x80000000:
                     v = bint_to_bytes(p, 4)
                     blr += bytes([8, 0])    # blr_long
                 else:
                     v = bint_to_bytes(p, 8)
                     blr += bytes([16, 0])    # blr_int64
-            elif isinstance(p, float) and p == float("inf"):
+            elif t == float and p == float("inf"):
                 v = b'\x7f\x80\x00\x00'
                 blr += bytes([10])
-            elif isinstance(p, decimal.Decimal) or isinstance(p, float):
-                if isinstance(p, float):
+            elif t == decimal.Decimal or t == float:
+                if t == float:
                     p = decimal.Decimal(str(p))
                 (sign, digits, exponent) = p.as_tuple()
                 v = 0
@@ -282,23 +279,26 @@ class WireProtocol(object):
                 if exponent < 0:
                     exponent += 256
                 blr += bytes([16, exponent])
-            elif isinstance(p, datetime.date):
+            elif t == datetime.date:
                 v = convert_date(p)
                 blr += bytes([12])
-            elif isinstance(p, datetime.time):
+            elif t == datetime.time:
                 if p.tzinfo:
                     v = convert_time_tz(p)
                     blr += bytes([28])
                 else:
                     v = convert_time(p)
                     blr += bytes([13])
-            elif isinstance(p, datetime.datetime):
+            elif t == datetime.datetime:
                 if p.tzinfo:
                     v = convert_timestamp_tz(p)
                     blr += bytes([29])
                 else:
                     v = convert_timestamp(p)
                     blr += bytes([35])
+            elif t == bool:
+                v = bytes([1, 0, 0, 0]) if p else bytes([0, 0, 0, 0])
+                blr += bytes([23])
             else:   # fallback, convert to string
                 p = p.__repr__()
                 if isinstance(p, str):
