@@ -319,3 +319,11 @@ Version 1.4.0
    - remove too much debug print
    - aio.connect() change to async method
    - refactoring many async methods
+
+Version 1.4.1
+==============
+
+   - Drop Python2.7, 3.8, 3.9 support
+   - create pyproject.toml and remove setup.py
+   - fix timeout parameter #125
+   - test with pytest
