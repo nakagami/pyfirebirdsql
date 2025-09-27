@@ -34,7 +34,8 @@ class TestBase(unittest.TestCase):
                 database=self.database,
                 user=self.user,
                 password=self.password,
-                page_size=self.page_size)
+                page_size=self.page_size,
+                timeout=1)
 
     def tearDown(self):
         self.connection.close()

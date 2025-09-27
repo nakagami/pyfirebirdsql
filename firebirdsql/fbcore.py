@@ -30,6 +30,7 @@ import sys
 import datetime
 import itertools
 import hashlib
+import select
 from firebirdsql.fberrmsgs import messages
 from firebirdsql.err import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError
 from firebirdsql.consts import *    # noqa

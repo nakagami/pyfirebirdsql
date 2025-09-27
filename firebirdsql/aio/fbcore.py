@@ -30,6 +30,7 @@ import asyncio
 import datetime
 import itertools
 import hashlib
+import select
 from firebirdsql.fbcore import Statement, PreparedStatement, Cursor, Transaction, ConnectionBase, ConnectionResponseMixin
 from firebirdsql.fberrmsgs import messages
 from firebirdsql.err import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError
