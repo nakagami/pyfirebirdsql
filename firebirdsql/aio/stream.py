@@ -25,16 +25,53 @@
 #
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
+import asyncio
+
 from firebirdsql.stream import SocketStream
+from firebirdsql.utils import bytes_to_bint
 
 
 class AsyncSocketStream(SocketStream):
     def __init__(self, host, port, loop, timeout, cloexec):
         super().__init__(host, port, timeout, cloexec)
         self.loop = loop
+        self._send_lock = asyncio.Lock()
+        self._last_send_task = None
+        self._sock.setblocking(False)
+        self._buf = b''
+
+    async def _await_pending_send(self):
+        task = self._last_send_task
+        if task is not None:
+            await task
 
     async def async_recv(self, nbytes):
-        b = await self.loop.sock_recv(self._sock, nbytes)
-        if self.read_translator:
-            b = self.read_translator.decrypt(b)
-        return b
+        await self._await_pending_send()
+        
+        if len(self._buf) < nbytes:
+            read_size = max(8192, nbytes - len(self._buf))
+            chunk = await self.loop.sock_recv(self._sock, read_size)
+            if self.read_translator:
+                chunk = self.read_translator.decrypt(chunk)
+            self._buf += chunk
+
+        ret = self._buf[:nbytes]
+        self._buf = self._buf[nbytes:]
+        return ret
+
+    def send(self, b):
+        if not self.loop.is_running():
+            return super().send(b)
+        if self.write_translator:
+            b = self.write_translator.encrypt(b)
+
+        previous_task = self._last_send_task
+
+        async def _send_all(payload):
+            if previous_task is not None:
+                await previous_task
+            async with self._send_lock:
+                await self.loop.sock_sendall(self._sock, payload)
+
+        self._last_send_task = self.loop.create_task(_send_all(b))
+        return None
