@@ -47,7 +47,7 @@ class AsyncSocketStream(SocketStream):
 
     async def async_recv(self, nbytes):
         await self._await_pending_send()
-        
+
         if len(self._buf) < nbytes:
             read_size = max(8192, nbytes - len(self._buf))
             chunk = await self.loop.sock_recv(self._sock, read_size)

@@ -1023,5 +1023,5 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
     def __del__(self):
         if self.sock:
             # Async close cannot be called from __del__
-            # self.close() 
+            # self.close()
             pass
