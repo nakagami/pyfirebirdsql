@@ -41,7 +41,7 @@ class EventConduit(WireProtocol):
         r = bytes([])
         while n:
             if (timeout is not None and select.select([self.sock._sock], [], [], timeout)[0] == []):
-                break
+                raise TimeoutError("Pakcet recv timeout error")
             b = self.sock.recv(n)
             if not b:
                 break
