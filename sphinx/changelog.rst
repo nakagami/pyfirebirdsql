@@ -327,3 +327,9 @@ Version 1.4.1
    - create pyproject.toml and remove setup.py
    - fix timeout parameter #125
    - test with pytest
+
+Version 1.4.2
+==============
+
+   - fix asyncio API #127
+
