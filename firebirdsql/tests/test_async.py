@@ -63,7 +63,7 @@ class AsyncTestCase(base.TestBase):
             result = await cur.fetchall()
             self.assertEqual(result, [(42, ), ])
             await cur.close()
-            conn.close()
+            await conn.close()
         loop.run_until_complete(_test_select())
         loop.close()
 
