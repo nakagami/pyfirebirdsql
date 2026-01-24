@@ -210,6 +210,7 @@ class Cursor(object):
         conn._cursors[self._transaction].append(self)
         self.stmt = None
         self.arraysize = 1
+        self.rowcount = -1
 
     def __enter__(self):
         return self
@@ -280,7 +281,9 @@ class Cursor(object):
     def execute(self, query, params=None):
         DEBUG_OUTPUT("Cursor::execute()", query, params)
         try:
-            return self._execute(query, params)
+            self._execute(query, params)
+            self.rowcount = self._rowcount()
+            return self
         finally:
             self.transaction.is_dirty = True
 
@@ -404,16 +407,16 @@ class Cursor(object):
             x.precision(), x.sqlscale, True if x.null_ok else False
         ) for x in self.stmt.xsqlda]
 
-    @property
-    def rowcount(self):
+    def _rowcount(self):
         DEBUG_OUTPUT("Cursor::rowcount()")
-        if self.stmt.handle == -1:
+        if not self.stmt or self.stmt.handle == -1:
             return -1
 
         self.transaction.connection._op_info_sql(self.stmt.handle, bytes([isc_info_sql_records]))
         (h, oid, buf) = self.transaction.connection._op_response()
-        assert buf[:3] == bytes([0x17, 0x1d, 0x00])    # isc_info_sql_records
-        if self.stmt.stmt_type == isc_info_sql_stmt_select:
+        if buf[:3] != bytes([0x17, 0x1d, 0x00]):    # isc_info_sql_records
+            count = -1
+        elif self.stmt.stmt_type == isc_info_sql_stmt_select:
             assert buf[17:20] == bytes([0x0d, 0x04, 0x00])     # isc_info_req_select_count
             # select count
             count = bytes_to_int(buf[20:24])
