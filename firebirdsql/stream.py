@@ -26,6 +26,7 @@
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
 import socket
+import zlib
 
 try:
     import fcntl
@@ -50,14 +51,39 @@ class SocketStream(object):
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         self.read_translator = None
         self.write_translator = None
+        self._compressor = None
+        self._decompressor = None
+        self._recv_buf = b''
+
+    def enable_compression(self):
+        """Enable zlib wire compression for the stream.
+        Called after the server accepts compression during protocol negotiation.
+        """
+        self._compressor = zlib.compressobj()
+        self._decompressor = zlib.decompressobj()
+        self._recv_buf = b''
 
     def recv(self, nbytes):
-        b = self._sock.recv(nbytes)
-        if self.read_translator:
-            b = self.read_translator.decrypt(b)
-        return b
+        if self._decompressor:
+            while len(self._recv_buf) < nbytes:
+                b = self._sock.recv(max(nbytes, 8192))
+                if not b:
+                    break
+                if self.read_translator:
+                    b = self.read_translator.decrypt(b)
+                self._recv_buf += self._decompressor.decompress(b)
+            result = self._recv_buf[:nbytes]
+            self._recv_buf = self._recv_buf[nbytes:]
+            return result
+        else:
+            b = self._sock.recv(nbytes)
+            if self.read_translator:
+                b = self.read_translator.decrypt(b)
+            return b
 
     def send(self, b):
+        if self._compressor:
+            b = self._compressor.compress(b) + self._compressor.flush(zlib.Z_SYNC_FLUSH)
         if self.write_translator:
             b = self.write_translator.encrypt(b)
         n = 0

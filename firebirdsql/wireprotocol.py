@@ -365,7 +365,7 @@ class WireProtocol(object):
         return r
 
     @wire_operation
-    def _op_connect(self, auth_plugin_name, wire_crypt):
+    def _op_connect(self, auth_plugin_name, wire_crypt, wire_compress=False):
         protocols = [
             # PROTOCOL_VERSION, Arch type (Generic=1), min, max, weight
             '0000000a00000001000000000000000500000002',     # 10, 1, 0, 5, 2
@@ -377,6 +377,19 @@ class WireProtocol(object):
             'ffff80100000000100000000000000050000000e',     # 16, 1, 0, 5, 14
             'ffff801100000001000000000000000500000010',     # 17, 1, 0, 5, 16
         ]
+        if wire_compress:
+            protocols_with_compress = [
+                # PROTOCOL_VERSION, Arch type (Generic=1), min, max|pflag_compress, weight
+                '0000000a00000001000000000000000500000002',     # 10, 1, 0, 5, 2
+                'ffff800b00000001000000000000000500000004',     # 11, 1, 0, 5, 4
+                'ffff800c00000001000000000000000500000006',     # 12, 1, 0, 5, 6
+                'ffff800d00000001000000000000010500000008',     # 13, 1, 0, 0x105, 8
+                'ffff800e0000000100000000000001050000000a',     # 14, 1, 0, 0x105, 10
+                'ffff800f0000000100000000000001050000000c',     # 15, 1, 0, 0x105, 12
+                'ffff80100000000100000000000001050000000e',     # 16, 1, 0, 0x105, 14
+                'ffff801100000001000000000000010500000010',     # 17, 1, 0, 0x105, 16
+            ]
+            protocols = protocols_with_compress
         p = Packer()
         p.pack_int(self.op_connect)
         p.pack_int(self.op_attach)
