@@ -26,6 +26,7 @@
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
 import asyncio
+import zlib
 
 from firebirdsql.stream import SocketStream
 from firebirdsql.utils import bytes_to_bint
@@ -48,12 +49,22 @@ class AsyncSocketStream(SocketStream):
     async def async_recv(self, nbytes):
         await self._await_pending_send()
 
-        if len(self._buf) < nbytes:
-            read_size = max(8192, nbytes - len(self._buf))
-            chunk = await self.loop.sock_recv(self._sock, read_size)
-            if self.read_translator:
-                chunk = self.read_translator.decrypt(chunk)
-            self._buf += chunk
+        if self._decompressor:
+            while len(self._buf) < nbytes:
+                read_size = max(8192, nbytes - len(self._buf))
+                chunk = await self.loop.sock_recv(self._sock, read_size)
+                if not chunk:
+                    break
+                if self.read_translator:
+                    chunk = self.read_translator.decrypt(chunk)
+                self._buf += self._decompressor.decompress(chunk)
+        else:
+            if len(self._buf) < nbytes:
+                read_size = max(8192, nbytes - len(self._buf))
+                chunk = await self.loop.sock_recv(self._sock, read_size)
+                if self.read_translator:
+                    chunk = self.read_translator.decrypt(chunk)
+                self._buf += chunk
 
         ret = self._buf[:nbytes]
         self._buf = self._buf[nbytes:]
@@ -62,6 +73,8 @@ class AsyncSocketStream(SocketStream):
     def send(self, b):
         if not self.loop.is_running():
             return super().send(b)
+        if self._compressor:
+            b = self._compressor.compress(b) + self._compressor.flush(zlib.Z_SYNC_FLUSH)
         if self.write_translator:
             b = self.write_translator.encrypt(b)
 
