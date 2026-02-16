@@ -34,7 +34,7 @@ class TestCompressionStream(unittest.TestCase):
 
     def test_compression_with_encryption(self):
         """Test that compression + encryption layering works correctly.
-        Order: compress -> encrypt -> decrypt -> decompress"""
+        Send order: compress -> encrypt. Receive order: decrypt -> decompress."""
         from firebirdsql.arc4 import ARC4
 
         compressor = zlib.compressobj()

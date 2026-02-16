@@ -56,6 +56,9 @@ class SocketStream(object):
         self._recv_buf = b''
 
     def enable_compression(self):
+        """Enable zlib wire compression for the stream.
+        Called after the server accepts compression during protocol negotiation.
+        """
         self._compressor = zlib.compressobj()
         self._decompressor = zlib.decompressobj()
         self._recv_buf = b''
