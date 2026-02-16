@@ -676,6 +676,10 @@ class ConnectionResponseMixin:
         self.accept_type = bytes_to_bint(b[8:])
         self.lazy_response_count = 0
 
+        if self.accept_type & pflag_compress:
+            self.sock.enable_compression()
+            self.accept_type &= ptype_MASK
+
         if op_code == self.op_cond_accept or op_code == self.op_accept_data:
             ln = bytes_to_bint(self._recv_channel(4))
             data = self._recv_channel(ln, word_alignment=True)
@@ -950,7 +954,7 @@ class ConnectionBase(WireProtocol):
         page_size=4096, is_services=False, cloexec=False,
         timeout=None, isolation_level=None,
         auth_plugin_name=None, wire_crypt=True, create_new=False,
-        timezone=None
+        timezone=None, wire_compress=False
     ):
         DEBUG_OUTPUT("Connection::__init__()", id(self))
         self.accept_plugin_name = ''
@@ -967,6 +971,7 @@ class ConnectionBase(WireProtocol):
         self.timeout = float(timeout) if timeout is not None else None
         self.auth_plugin_name = auth_plugin_name
         self.wire_crypt = wire_crypt
+        self.wire_compress = wire_compress
         self.create_new = create_new
         self.page_size = page_size
         self.is_services = is_services
@@ -986,7 +991,7 @@ class ConnectionBase(WireProtocol):
 
         self.sock = SocketStream(self.hostname, self.port, self.timeout, self.cloexec)
 
-        self._op_connect(self.auth_plugin_name, self.wire_crypt)
+        self._op_connect(self.auth_plugin_name, self.wire_crypt, self.wire_compress)
         try:
             self._parse_connect_response()
         except OperationalError as e:

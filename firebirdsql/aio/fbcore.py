@@ -633,6 +633,10 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
         self.accept_type = bytes_to_bint(b[8:])
         self.lazy_response_count = 0
 
+        if self.accept_type & pflag_compress:
+            self.sock.enable_compression()
+            self.accept_type &= ptype_MASK
+
         if op_code == self.op_cond_accept or op_code == self.op_accept_data:
             ln = bytes_to_bint(await self._async_recv_channel(4))
             data = await self._async_recv_channel(ln, word_alignment=True)
@@ -918,7 +922,7 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
 
         self.sock = AsyncSocketStream(self.hostname, self.port, self.loop, self.timeout, self.cloexec)
 
-        self._op_connect(self.auth_plugin_name, self.wire_crypt)
+        self._op_connect(self.auth_plugin_name, self.wire_crypt, self.wire_compress)
         try:
             await self._async_parse_connect_response()
         except OperationalError as e:
