@@ -1170,18 +1170,22 @@ class ConnectionBase(WireProtocol):
     def _close(self):
         if self.sock is None:
             return
-        if self.db_handle is not None:
-            # cleanup transaction
-            for trans in self._cursors.keys():
-                trans.close()
-            if self.is_services:
-                self._op_service_detach()
-            else:
-                self._op_detach()
-            (h, oid, buf) = self._op_response()
-        self.sock.close()
-        self.sock = None
-        self.db_handle = None
+        try:
+            if self.db_handle is not None:
+                # cleanup transaction
+                for trans in self._cursors.keys():
+                    trans.close()
+                if self.is_services:
+                    self._op_service_detach()
+                else:
+                    self._op_detach()
+                (h, oid, buf) = self._op_response()
+        except (OSError, ConnectionError):
+            pass
+        finally:
+            self.sock.close()
+            self.sock = None
+            self.db_handle = None
 
     def close(self):
         DEBUG_OUTPUT("Connection::close()", id(self), self.db_handle)
