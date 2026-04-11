@@ -283,11 +283,12 @@ class Cursor(object):
         try:
             self._execute(query, params)
             self.rowcount = self._rowcount()
-            # DML with RETURNING (stmt_type == exec_procedure) returns a
-            # phantom row of NULLs when no rows are affected.  Clear it
-            # so fetchone()/fetchall() return nothing, matching PEP 249.
+            # DML with RETURNING returns a phantom row of NULLs when no rows
+            # are affected. Clear it so fetchone()/fetchall() return nothing,
+            # matching PEP 249. Don't clear for EXECUTE PROCEDURE statements.
             if (self.rowcount == 0 and self._callproc_result is not None
-                    and self.stmt and self.stmt.xsqlda):
+                    and self.stmt and self.stmt.xsqlda
+                    and self.stmt.stmt_type != isc_info_sql_stmt_exec_procedure):
                 self._callproc_result = None
             return self
         finally:
