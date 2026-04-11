@@ -283,6 +283,12 @@ class Cursor(object):
         try:
             self._execute(query, params)
             self.rowcount = self._rowcount()
+            # DML with RETURNING (stmt_type == exec_procedure) returns a
+            # phantom row of NULLs when no rows are affected.  Clear it
+            # so fetchone()/fetchall() return nothing, matching PEP 249.
+            if (self.rowcount == 0 and self._callproc_result is not None
+                    and self.stmt and self.stmt.xsqlda):
+                self._callproc_result = None
             return self
         finally:
             self.transaction.is_dirty = True
@@ -296,8 +302,12 @@ class Cursor(object):
         return self._callproc_result
 
     def executemany(self, query, seq_of_params):
+        total = 0
         for params in seq_of_params:
             self.execute(query, params)
+            if self.rowcount > 0:
+                total += self.rowcount
+        self.rowcount = total
 
     def fetchone(self):
         if not self.transaction.is_dirty:
@@ -401,6 +411,8 @@ class Cursor(object):
     @property
     def description(self):
         if not self.stmt:
+            return None
+        if not self.stmt.xsqlda:
             return None
         return [(
             x.aliasname, x.sqltype, x.display_length(), x.io_length(),
@@ -902,7 +914,6 @@ class ConnectionBase(WireProtocol):
         DEBUG_OUTPUT("Connection::cursor()")
         if self._transaction is None:
             self._transaction = Transaction(self, self._autocommit)
-        self._cursors[self._transaction] = []
         return factory(self)
 
     def begin(self):
