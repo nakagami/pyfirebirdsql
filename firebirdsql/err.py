@@ -30,7 +30,9 @@ class Warning(Exception):
 
 
 class Error(Exception):
-    def __init__(self, message, gds_codes=set(), sql_code=0):
+    def __init__(self, message, gds_codes=None, sql_code=0):
+        if gds_codes is None:
+            gds_codes = set()
         self._message = message
         self.gds_codes = gds_codes
         self.sql_code = sql_code
