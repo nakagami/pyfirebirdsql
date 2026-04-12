@@ -300,7 +300,7 @@ class Cursor(object):
         DEBUG_OUTPUT("Cursor::callproc()")
         query = 'EXECUTE PROCEDURE ' + procname + ' ' + ','.join('?'*len(params))
         self.execute(query, params)
-        return self._callproc_result
+        return tuple(self._callproc_result) if self._callproc_result else None
 
     def executemany(self, query, seq_of_params):
         total = 0
@@ -317,7 +317,7 @@ class Cursor(object):
         # callproc or not select statement
         if not self._fetch_records:
             if self._callproc_result:
-                r = self._callproc_result
+                r = tuple(self._callproc_result)
                 self._callproc_result = None
                 DEBUG_OUTPUT("Cursor::fetchone()", r)
                 return r

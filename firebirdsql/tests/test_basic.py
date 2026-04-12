@@ -256,6 +256,65 @@ class TestBasic(TestBase):
         )
         cur.close()
 
+    def test_returning(self):
+        # Test RETURNING clause with DML statements
+        cur = self.connection.cursor()
+        
+        # INSERT with RETURNING
+        cur.execute(
+            "insert into foo(a, b, c) values (1, 'A', 'test') RETURNING a, b, c"
+        )
+        result = cur.fetchone()
+        self.assertEqual(result, (1, 'A', 'test'))
+        cur.close()
+        
+        # INSERT with RETURNING - partial columns
+        cur = self.connection.cursor()
+        cur.execute(
+            "insert into foo(a, b, c) values (2, 'B', 'test2') RETURNING a, b"
+        )
+        result = cur.fetchone()
+        self.assertEqual(result, (2, 'B'))
+        cur.close()
+        
+        self.connection.commit()
+        
+        # UPDATE with RETURNING
+        cur = self.connection.cursor()
+        cur.execute(
+            "update foo set c='updated' where a=1 RETURNING a, b, c"
+        )
+        result = cur.fetchone()
+        self.assertEqual(result, (1, 'A', 'updated'))
+        cur.close()
+        
+        # UPDATE with RETURNING using parameters
+        cur = self.connection.cursor()
+        cur.execute(
+            "update foo set c=? where a=? RETURNING a, c",
+            ('param_updated', 2)
+        )
+        result = cur.fetchone()
+        self.assertEqual(result, (2, 'param_updated'))
+        cur.close()
+        
+        self.connection.commit()
+        
+        # DELETE with RETURNING
+        cur = self.connection.cursor()
+        cur.execute("delete from foo where a=1 RETURNING a, b, c")
+        result = cur.fetchone()
+        self.assertEqual(result, (1, 'A', 'updated'))
+        cur.close()
+        
+        # Verify the record was deleted
+        cur = self.connection.cursor()
+        cur.execute("select count(*) from foo where a=1")
+        self.assertEqual(cur.fetchone()[0], 0)
+        cur.close()
+        
+        self.connection.commit()
+
     def test_autocommit(self):
         # autocommit
         cur = self.connection.cursor()
