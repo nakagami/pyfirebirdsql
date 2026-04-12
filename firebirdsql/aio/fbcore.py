@@ -270,6 +270,14 @@ class AsyncCursor(Cursor):
         try:
             await self._execute(query, params)
             self.rowcount = await self._rowcount()
+            # DML with RETURNING returns a phantom row of NULLs when no rows
+            # are affected. Clear it so fetchone()/fetchall() return nothing,
+            # matching PEP 249. Don't clear for EXECUTE PROCEDURE statements.
+            if (self.rowcount == 0 and self._callproc_result is not None
+                    and self.stmt and self.stmt.xsqlda
+                    and self.stmt.stmt_type == isc_info_sql_stmt_exec_procedure
+                    and not self._is_execute_procedure_query()):
+                self._callproc_result = None
             return self
         finally:
             self.transaction.is_dirty = True

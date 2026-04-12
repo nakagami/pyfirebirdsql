@@ -278,6 +278,13 @@ class Cursor(object):
 
         return self
 
+    def _is_execute_procedure_query(self):
+        """Return True if the current query is EXECUTE PROCEDURE / EXECUTE BLOCK."""
+        q = self.query
+        if isinstance(q, PreparedStatement):
+            q = q.sql
+        return isinstance(q, str) and q.lstrip().upper().startswith('EXECUTE')
+
     def execute(self, query, params=None):
         DEBUG_OUTPUT("Cursor::execute()", query, params)
         try:
@@ -288,7 +295,8 @@ class Cursor(object):
             # matching PEP 249. Don't clear for EXECUTE PROCEDURE statements.
             if (self.rowcount == 0 and self._callproc_result is not None
                     and self.stmt and self.stmt.xsqlda
-                    and self.stmt.stmt_type != isc_info_sql_stmt_exec_procedure):
+                    and self.stmt.stmt_type == isc_info_sql_stmt_exec_procedure
+                    and not self._is_execute_procedure_query()):
                 self._callproc_result = None
             return self
         finally:
