@@ -333,3 +333,17 @@ Version 1.4.2
 
    - fix asyncio API #127
 
+Version 1.4.3
+==============
+
+   - wire compression support
+
+Version 1.4.4
+==============
+
+   - fix for sqlalchemy dialect
+
+Version 1.4.5
+==============
+
+   - Fixes a bug in version 1.4.4
