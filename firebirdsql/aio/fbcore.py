@@ -38,7 +38,8 @@ from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
 from firebirdsql.wireprotocol import WireProtocol, get_crypt
 from firebirdsql.aio.stream import AsyncSocketStream
-from firebirdsql.xsqlvar import calc_blr, parse_xsqlda, async_parse_xsqlda
+from firebirdsql.xsqlvar import calc_blr, parse_xsqlda
+from firebirdsql.aio.xsqlvar import async_parse_xsqlda
 from firebirdsql import srp
 try:
     from Crypto.Cipher import ARC4

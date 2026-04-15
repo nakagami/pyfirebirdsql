@@ -341,33 +341,3 @@ def parse_xsqlda(buf, connection, stmt_handle):
         else:
             break
     return stmt_type, xsqlda
-
-
-async def async_parse_xsqlda(buf, connection, stmt_handle):
-    xsqlda = []
-    stmt_type = None
-    i = 0
-    while i < len(buf):
-        if buf[i:i+3] == bytes([isc_info_sql_stmt_type, 0x04, 0x00]):
-            stmt_type = bytes_to_int(buf[i+3:i+7])
-            i += 7
-        elif buf[i:i+2] == bytes([isc_info_sql_select, isc_info_sql_describe_vars]):
-            i += 2
-            ln = bytes_to_int(buf[i:i+2])
-            i += 2
-            col_len = bytes_to_int(buf[i:i+ln])
-            xsqlda = [None] * col_len
-            next_index = parse_select_items(buf[i+ln:], xsqlda, connection)
-            while next_index > 0:   # more describe vars
-                connection._op_info_sql(
-                    stmt_handle,
-                    bytes([isc_info_sql_sqlda_start, 2]) + int_to_bytes(next_index, 2) + INFO_SQL_SELECT_DESCRIBE_VARS
-                )
-                (h, oid, buf) = await connection._async_op_response()
-                assert buf[:2] == bytes([0x04, 0x07])
-                ln = bytes_to_int(buf[2:4])
-                assert bytes_to_int(buf[4:4+ln]) == col_len
-                next_index = parse_select_items(buf[4+ln:], xsqlda, connection)
-        else:
-            break
-    return stmt_type, xsqlda
