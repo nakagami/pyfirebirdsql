@@ -38,7 +38,7 @@ from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
 from firebirdsql.wireprotocol import WireProtocol, get_crypt
 from firebirdsql.aio.stream import AsyncSocketStream
-from firebirdsql.xsqlvar import calc_blr, parse_xsqlda
+from firebirdsql.xsqlvar import calc_blr, parse_xsqlda, async_parse_xsqlda
 from firebirdsql import srp
 try:
     from Crypto.Cipher import ARC4
@@ -147,7 +147,7 @@ class AsyncStatement(Statement):
             ln = bytes_to_int(buf[i+1:i+3])
             self.plan = self.trans.connection.bytes_to_str(buf[i+3:i+3+ln])
             i += 3 + ln
-        self.stmt_type, self.xsqlda = parse_xsqlda(buf[i:], self.trans.connection, self.handle)
+        self.stmt_type, self.xsqlda = await async_parse_xsqlda(buf[i:], self.trans.connection, self.handle)
         if self.stmt_type == isc_info_sql_stmt_select:
             self._is_open = True
 
