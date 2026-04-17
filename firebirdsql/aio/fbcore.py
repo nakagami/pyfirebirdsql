@@ -897,7 +897,7 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
         if self._transaction is None:
             self._transaction = AsyncTransaction(self, self._autocommit)
             await self._transaction.begin()
-        self._transaction.check_trans_handle()
+        await self._transaction.check_trans_handle()
         self._op_exec_immediate(
             self._transaction.trans_handle, query=query)
         (h, oid, buf) = await self._async_op_response()
