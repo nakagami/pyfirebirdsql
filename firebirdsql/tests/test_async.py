@@ -124,6 +124,52 @@ class AsyncTestCase(base.TestBase):
         loop.run_until_complete(_test_insert_returning(loop))
         loop.close()
 
+    def test_many_columns_query(self):
+        """Test for PR #132: Fix TimeoutError with queries having many columns.
+        
+        When a query's SQLDA description spans multiple packets, parse_xsqlda
+        needs to paginate by calling _op_response. In async mode, this must use
+        await _async_op_response() to avoid blocking the event loop.
+        """
+        async def _test_many_columns(loop):
+            pool = await firebirdsql.aio.create_pool(
+                auth_plugin_name=self.auth_plugin_name,
+                wire_crypt=self.wire_crypt,
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                user=self.user,
+                password=self.password,
+                page_size=self.page_size,
+                loop=loop,
+            )
+            async with pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    # Create a table with many columns to trigger SQLDA pagination
+                    columns = ', '.join([f'col{i} INTEGER' for i in range(100)])
+                    await cur.execute(f"CREATE TABLE many_cols ({columns})")
+                    await conn.commit()
+                    
+                    # Insert test data
+                    values = ', '.join(['?' for _ in range(100)])
+                    await cur.execute(f"INSERT INTO many_cols VALUES ({values})", list(range(100)))
+                    await conn.commit()
+                    
+                    # This SELECT should trigger async_parse_xsqlda when preparing
+                    await cur.execute("SELECT * FROM many_cols")
+                    result = await cur.fetchone()
+                    
+                    # Verify we got all 100 columns back
+                    self.assertEqual(len(result), 100)
+                    self.assertEqual(result, tuple(range(100)))
+                    await conn.commit()
+            pool.close()
+            await pool.wait_closed()
+
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(_test_many_columns(loop))
+        loop.close()
+
 
 if __name__ == "__main__":
     unittest.main()
