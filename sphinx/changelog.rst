@@ -347,3 +347,10 @@ Version 1.4.5
 ==============
 
    - Fixes a bug in version 1.4.4
+
+
+Version 1.4.6
+==============
+
+   - fix aio and many columns bug #132
+   - fix execute_immediate bug #133
