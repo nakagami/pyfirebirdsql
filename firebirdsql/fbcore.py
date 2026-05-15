@@ -984,7 +984,7 @@ class ConnectionBase(WireProtocol):
         page_size=4096, is_services=False, cloexec=False,
         timeout=None, isolation_level=None,
         auth_plugin_name=None, wire_crypt=True, create_new=False,
-        timezone=None, wire_compress=False
+        timezone=None, wire_compress=False, readonly=False
     ):
         DEBUG_OUTPUT("Connection::__init__()", id(self))
         self.accept_plugin_name = ''
@@ -1006,7 +1006,9 @@ class ConnectionBase(WireProtocol):
         self.page_size = page_size
         self.is_services = is_services
         self.cloexec = cloexec
-        if isolation_level is None:
+        if readonly:
+            self.isolation_level = ISOLATION_LEVEL_READ_COMMITED_RO
+        elif isolation_level is None:
             self.isolation_level = ISOLATION_LEVEL_READ_COMMITED
         else:
             self.isolation_level = int(isolation_level)
