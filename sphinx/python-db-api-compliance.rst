@@ -74,8 +74,10 @@ subsection elsewhere.
       firebirdsql.connect(dsn='host:/path/database.db', user='sysdba',
           password='pass', charset='UTF8')
 
-   :timeout:  (`Optional`) Dictionary with timeout and action specification. See section
-              about `Connection Timeouts <beyond-python-db-api.html#connection-timeout>`_ for details.
+   :timeout:  (`Optional`) Connection timeout in seconds as a float.
+
+   :readonly:  (`Optional`) If `True`, all transactions use read-only mode
+               (`ISOLATION_LEVEL_READ_COMMITED_RO`). Default is `False`.
 
 .. class:: Connection
 

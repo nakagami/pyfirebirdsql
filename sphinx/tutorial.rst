@@ -87,7 +87,7 @@ the `languages` table:
     cur.execute("select * from languages order by year_released")
 
     # Retrieve all rows as a sequence and print that sequence:
-    print cur.fetchall()
+    print(cur.fetchall())
 
 
 Sample output:
@@ -115,12 +115,12 @@ fetching a single row at a time from a `SELECT`-cursor:
     # resulting sequences to yield their elements (name, year_released):
     cur.execute(SELECT)
     for (name, year_released) in cur:
-        print '%s has been publicly available since %d.' % (name, year_released)
+        print('%s has been publicly available since %d.' % (name, year_released))
 
     # 2. Equivalently:
     cur.execute(SELECT)
     for row in cur:
-        print '%s has been publicly available since %d.' % (row[0], row[1])
+        print('%s has been publicly available since %d.' % (row[0], row[1]))
 
 
 Sample output:
@@ -153,9 +153,9 @@ example to `languages`):
     # Print a header.
     for fieldDesc in cur.description:
         # Description name
-        print fieldDesc[0] ,
-    print # Finish the header with a newline.
-    print '-' * 78
+        print(fieldDesc[0], end=' ')
+    print()  # Finish the header with a newline.
+    print('-' * 78)
 
     # For each row, print the value of each field left-justified within
     # the maximum possible width of that field.
@@ -166,9 +166,9 @@ example to `languages`):
             #DESCRIPTION_DISPLAY_SIZE
             fieldMaxWidth = cur.description[fieldIndex][2]
 
-            print fieldValue.ljust(fieldMaxWidth) ,
+            print(fieldValue.ljust(fieldMaxWidth), end=' ')
 
-        print # Finish the row with a newline.
+        print()  # Finish the row with a newline.
 
 
 Sample output:
