@@ -872,7 +872,7 @@ class ConnectionResponseMixin:
 
         if op_code != self.op_fetch_response:
             if op_code == self.op_response:
-                self._parse_op_response()
+                self._parse_op_response()  # raises the actual Firebird error
             raise InternalError("op_fetch_response:op_code = %d" % (op_code,))
         b = self._recv_channel(8)
         status = bytes_to_bint(b[:4])
@@ -911,10 +911,20 @@ class ConnectionResponseMixin:
                     raw_value = self._recv_channel(ln, word_alignment=True)
                     r[i] = x.value(raw_value)
             rows.append(r)
-            b = self._recv_channel(12)
-            op_code = bytes_to_bint(b[:4])
-            status = bytes_to_bint(b[4:8])
-            count = bytes_to_bint(b[8:])
+            # Read the next opcode first (4 bytes) before committing to the
+            # full 12-byte fetch-response continuation header.  Firebird can
+            # send op_response (an error) here instead of another
+            # op_fetch_response, which would desynchronise the protocol if we
+            # consumed the bytes blindly.
+            next_op = bytes_to_bint(self._recv_channel(4))
+            if next_op == self.op_response:
+                self._parse_op_response()  # raises the actual Firebird error
+                raise InternalError("op_fetch_response:Internal Error")
+            if next_op != self.op_fetch_response:
+                raise InternalError("op_fetch_response:op_code = %d" % (next_op,))
+            b = self._recv_channel(8)
+            status = bytes_to_bint(b[:4])
+            count = bytes_to_bint(b[4:8])
         return rows, status != 100
 
 

@@ -490,3 +490,39 @@ class TestBasic(TestBase):
         cur.close()
 
         self.connection.close()
+
+    def test_selectable_proc_exception_propagation(self):
+        """
+        When a server-side exception occurs after at least one row has been
+        returned from a selectable procedure, the actual Firebird error message
+        should be propagated to the caller instead of an opaque internal error.
+        """
+        cur = self.connection.cursor()
+        cur.execute("CREATE EXCEPTION EX_PROC_ERR 'proc error message'")
+        cur.execute("""
+            CREATE PROCEDURE PROC_WITH_EXCEPTION
+            RETURNS (N INTEGER)
+            AS
+            BEGIN
+              N = 1;
+              SUSPEND;
+              EXCEPTION EX_PROC_ERR 'proc error message';
+            END""")
+        self.connection.commit()
+
+        # The server-side exception may surface at execute() or fetchone() time
+        # depending on how the server batches op_fetch_response / op_response.
+        try:
+            cur.execute("SELECT * FROM PROC_WITH_EXCEPTION")
+            row = cur.fetchone()
+            self.assertEqual(row[0], 1)
+            cur.fetchone()  # should raise the server exception
+            self.fail("Expected a server exception to be raised")
+        except AssertionError:
+            raise
+        except Exception as e:
+            err_msg = str(e)
+            self.assertNotIn("opFetchResponse:Internal Error", err_msg,
+                "error should not be the generic internal error fallback")
+            self.assertIn("proc error message", err_msg,
+                "error should contain the actual Firebird exception message")
