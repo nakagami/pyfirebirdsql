@@ -22,9 +22,12 @@ Nominally Supported Optional Features
         .. attribute:: arraysize
 
         As required by the spec, the value of this attribute is observed with
-        respect to the `fetchmany` method. However, changing the value of this
-        attribute does not make any difference in fetch efficiency because
-        the database engine only supports fetching a single row at a time.
+        respect to the `fetchmany` method. In addition, it is used as a hint
+        for how many rows to request from the server per network roundtrip:
+        when a SELECT is executed, the driver fetches ``max(arraysize, 400)``
+        rows at a time. Raising `arraysize` before calling `execute` therefore
+        reduces the number of roundtrips when reading large result sets. The
+        default `arraysize` of 1 keeps the historical batch size of 400 rows.
 
         .. method:: setinputsizes()
 

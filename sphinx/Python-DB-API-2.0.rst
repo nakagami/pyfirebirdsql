@@ -342,7 +342,7 @@ following methods and attributes:
       subclass) exception is raised if the previous call to `executeXXX()`
       did not produce any result set or no call was issued yet.
 
-   .. attaribute arraysize
+   .. attribute:: arraysize
 
       This read/write attribute specifies the number of
       rows to fetch at a time with `fetchmany()`. It defaults to 1 meaning

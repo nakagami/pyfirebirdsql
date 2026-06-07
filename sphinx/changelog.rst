@@ -354,3 +354,8 @@ Version 1.4.6
 
    - fix aio and many columns bug #132
    - fix execute_immediate bug #133
+
+Version 1.?.?
+==============
+
+   - honour cursor.arraysize as a hint for rows fetched per server roundtrip

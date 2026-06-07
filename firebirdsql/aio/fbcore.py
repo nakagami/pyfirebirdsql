@@ -83,7 +83,7 @@ class AsyncStatement(Statement):
             self.handle = h
         return self
 
-    async def fetch_generator(self, rows, more_data):
+    async def fetch_generator(self, rows, more_data, fetch_count=DEFAULT_FETCH_COUNT):
         DEBUG_OUTPUT("AsyncStatement::_fetch_generator()", self.handle, self.trans._trans_handle, self.trans.connection.db_handle)
         connection = self.trans.connection
         while rows:
@@ -119,7 +119,7 @@ class AsyncStatement(Statement):
                             r[i] = connection.bytes_to_str(r[i])
                 yield tuple(r)
             if more_data:
-                connection._op_fetch(self.handle, calc_blr(self.xsqlda))
+                connection._op_fetch(self.handle, calc_blr(self.xsqlda), fetch_count)
                 (rows, more_data) = await connection._async_op_fetch_response(self.handle, self.xsqlda)
             else:
                 break
@@ -257,9 +257,10 @@ class AsyncCursor(Cursor):
             (h, oid, buf) = await self.transaction.connection._async_op_response()
 
             if stmt.stmt_type == isc_info_sql_stmt_select:
-                self.transaction.connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda))
+                fetch_count = self._fetch_count()
+                self.transaction.connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda), fetch_count)
                 (rows, more_data) = await self.transaction.connection._async_op_fetch_response(stmt.handle, stmt.xsqlda)
-                self._fetch_records = stmt.fetch_generator(rows, more_data)
+                self._fetch_records = stmt.fetch_generator(rows, more_data, fetch_count)
             else:
                 self._fetch_records = None
             self._callproc_result = None
