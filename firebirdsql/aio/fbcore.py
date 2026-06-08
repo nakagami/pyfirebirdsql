@@ -83,7 +83,7 @@ class AsyncStatement(Statement):
             self.handle = h
         return self
 
-    async def fetch_generator(self, rows, more_data, fetch_count=DEFAULT_FETCH_COUNT):
+    async def fetch_generator(self, rows, more_data):
         DEBUG_OUTPUT("AsyncStatement::_fetch_generator()", self.handle, self.trans._trans_handle, self.trans.connection.db_handle)
         connection = self.trans.connection
         while rows:
@@ -119,7 +119,7 @@ class AsyncStatement(Statement):
                             r[i] = connection.bytes_to_str(r[i])
                 yield tuple(r)
             if more_data:
-                connection._op_fetch(self.handle, calc_blr(self.xsqlda), fetch_count)
+                connection._op_fetch(self.handle, calc_blr(self.xsqlda), max(self.arraysize, DEFAULT_FETCH_COUNT)
                 (rows, more_data) = await connection._async_op_fetch_response(self.handle, self.xsqlda)
             else:
                 break

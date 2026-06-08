@@ -70,7 +70,7 @@ class Statement(object):
         self._is_open = False
         self.stmt_type = None
 
-    def fetch_generator(self, rows, more_data, fetch_count=DEFAULT_FETCH_COUNT):
+    def fetch_generator(self, rows, more_data):
         DEBUG_OUTPUT("Statement::_fetch_generator()", self.handle, self.trans._trans_handle, self.trans.connection.db_handle)
         connection = self.trans.connection
         while rows:
@@ -106,7 +106,7 @@ class Statement(object):
                             r[i] = connection.bytes_to_str(r[i])
                 yield tuple(r)
             if more_data:
-                connection._op_fetch(self.handle, calc_blr(self.xsqlda), fetch_count)
+                connection._op_fetch(self.handle, calc_blr(self.xsqlda), max(self.arraysize, DEFAULT_FETCH_COUNT))
                 (rows, more_data) = connection._op_fetch_response(self.handle, self.xsqlda)
             else:
                 break
@@ -269,7 +269,7 @@ class Cursor(object):
             (h, oid, buf) = self.transaction.connection._op_response()
 
             if stmt.stmt_type == isc_info_sql_stmt_select:
-                fetch_count = self._fetch_count()
+                fetch_count = max(self.arraysize, DEFAULT_FETCH_COUNT)
                 self.transaction.connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda), fetch_count)
                 (rows, more_data) = self.transaction.connection._op_fetch_response(stmt.handle, stmt.xsqlda)
                 self._fetch_records = stmt.fetch_generator(rows, more_data, fetch_count)
@@ -278,19 +278,6 @@ class Cursor(object):
             self._callproc_result = None
 
         return self
-
-    def _fetch_count(self):
-        """Rows to request per server roundtrip.
-
-        Honour cursor.arraysize (PEP 249) as a hint to reduce roundtrips, but
-        never drop below DEFAULT_FETCH_COUNT so the default arraysize of 1 keeps
-        its historical batching instead of fetching a single row at a time.
-        """
-        try:
-            arraysize = int(self.arraysize)
-        except (TypeError, ValueError):
-            arraysize = 0
-        return max(arraysize, DEFAULT_FETCH_COUNT)
 
     def _is_execute_procedure_query(self):
         """Return True if the current query is EXECUTE PROCEDURE / EXECUTE BLOCK."""

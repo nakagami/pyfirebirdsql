@@ -721,7 +721,7 @@ class WireProtocol(object):
         self.sock.send(p.get_buffer())
 
     @wire_operation
-    def _op_fetch(self, stmt_handle, blr, fetch_count=DEFAULT_FETCH_COUNT):
+    def _op_fetch(self, stmt_handle, blr, fetch_count):
         p = Packer()
         p.pack_int(self.op_fetch)
         p.pack_int(stmt_handle)
