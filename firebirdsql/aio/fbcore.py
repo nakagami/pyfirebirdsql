@@ -119,7 +119,7 @@ class AsyncStatement(Statement):
                             r[i] = connection.bytes_to_str(r[i])
                 yield tuple(r)
             if more_data:
-                connection._op_fetch(self.handle, calc_blr(self.xsqlda), max(self.arraysize, DEFAULT_FETCH_COUNT)
+                connection._op_fetch(self.handle, calc_blr(self.xsqlda), max(self.arraysize, DEFAULT_FETCH_COUNT))
                 (rows, more_data) = await connection._async_op_fetch_response(self.handle, self.xsqlda)
             else:
                 break
