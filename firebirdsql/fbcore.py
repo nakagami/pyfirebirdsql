@@ -70,7 +70,7 @@ class Statement(object):
         self._is_open = False
         self.stmt_type = None
 
-    def fetch_generator(self, rows, more_data):
+    def fetch_generator(self, rows, more_data, fetch_count):
         DEBUG_OUTPUT("Statement::_fetch_generator()", self.handle, self.trans._trans_handle, self.trans.connection.db_handle)
         connection = self.trans.connection
         while rows:
@@ -106,7 +106,7 @@ class Statement(object):
                             r[i] = connection.bytes_to_str(r[i])
                 yield tuple(r)
             if more_data:
-                connection._op_fetch(self.handle, calc_blr(self.xsqlda), max(self.arraysize, DEFAULT_FETCH_COUNT))
+                connection._op_fetch(self.handle, calc_blr(self.xsqlda), fetch_count)
                 (rows, more_data) = connection._op_fetch_response(self.handle, self.xsqlda)
             else:
                 break
