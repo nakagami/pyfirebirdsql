@@ -31,6 +31,11 @@ ISC_TIME_SECONDS_PRECISION = 10000
 MAX_CHAR_LENGTH = 32767
 BLOB_SEGMENT_SIZE = 32000
 
+# Number of rows requested from the server per op_fetch roundtrip.
+# Used as the lower bound when a cursor's arraysize is smaller, so the
+# DB-API default (arraysize == 1) keeps its historical batching behaviour.
+DEFAULT_FETCH_COUNT = 400
+
 DESCRIPTION_NAME = 0
 DESCRIPTION_TYPE_CODE = 1
 DESCRIPTION_DISPLAY_SIZE = 2
