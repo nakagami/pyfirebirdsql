@@ -64,22 +64,68 @@ class DBAPITypeObject:
     def __init__(self, *values):
         self.values = values
 
-    def __cmp__(self, other):
-        if other in self.values:
-            return 0
-        if other < self.values:
-            return 1
-        else:
-            return -1
+    def __eq__(self, other):
+        if isinstance(other, DBAPITypeObject):
+            return self.values == other.values
+        return other in self.values
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def __hash__(self):
+        return hash(self.values)
+
+    def __repr__(self):
+        return f"<DBAPITypeObject {self.values}>"
 
 
-STRING = DBAPITypeObject(str)
-BINARY = DBAPITypeObject(bytes)
-NUMBER = DBAPITypeObject(int, decimal.Decimal)
-DATE = DBAPITypeObject(datetime.date)
-DATETIME = DBAPITypeObject(datetime.datetime, datetime.date, datetime.time)
-TIMESTAMP = DBAPITypeObject(datetime.datetime)
-TIME = DBAPITypeObject(datetime.time)
+STRING = DBAPITypeObject(
+    str,
+    SQL_TYPE_TEXT, SQL_TYPE_TEXT + 1,
+    SQL_TYPE_VARYING, SQL_TYPE_VARYING + 1,
+)
+BINARY = DBAPITypeObject(
+    bytes, bytearray, memoryview,
+    SQL_TYPE_BLOB, SQL_TYPE_BLOB + 1,
+    SQL_TYPE_ARRAY, SQL_TYPE_ARRAY + 1,
+    SQL_TYPE_QUAD, SQL_TYPE_QUAD + 1,
+)
+NUMBER = DBAPITypeObject(
+    int, float, decimal.Decimal,
+    SQL_TYPE_SHORT, SQL_TYPE_SHORT + 1,
+    SQL_TYPE_LONG, SQL_TYPE_LONG + 1,
+    SQL_TYPE_INT64, SQL_TYPE_INT64 + 1,
+    SQL_TYPE_INT128, SQL_TYPE_INT128 + 1,
+    SQL_TYPE_FLOAT, SQL_TYPE_FLOAT + 1,
+    SQL_TYPE_DOUBLE, SQL_TYPE_DOUBLE + 1,
+    SQL_TYPE_D_FLOAT, SQL_TYPE_D_FLOAT + 1,
+    SQL_TYPE_DEC_FIXED, SQL_TYPE_DEC_FIXED + 1,
+    SQL_TYPE_DEC64, SQL_TYPE_DEC64 + 1,
+    SQL_TYPE_DEC128, SQL_TYPE_DEC128 + 1,
+    SQL_TYPE_BOOLEAN, SQL_TYPE_BOOLEAN + 1,
+)
+DATE = DBAPITypeObject(
+    datetime.date,
+    SQL_TYPE_DATE, SQL_TYPE_DATE + 1,
+)
+DATETIME = DBAPITypeObject(
+    datetime.datetime, datetime.date, datetime.time,
+    SQL_TYPE_DATE, SQL_TYPE_DATE + 1,
+    SQL_TYPE_TIME, SQL_TYPE_TIME + 1,
+    SQL_TYPE_TIME_TZ, SQL_TYPE_TIME_TZ + 1,
+    SQL_TYPE_TIMESTAMP, SQL_TYPE_TIMESTAMP + 1,
+    SQL_TYPE_TIMESTAMP_TZ, SQL_TYPE_TIMESTAMP_TZ + 1,
+)
+TIMESTAMP = DBAPITypeObject(
+    datetime.datetime,
+    SQL_TYPE_TIMESTAMP, SQL_TYPE_TIMESTAMP + 1,
+    SQL_TYPE_TIMESTAMP_TZ, SQL_TYPE_TIMESTAMP_TZ + 1,
+)
+TIME = DBAPITypeObject(
+    datetime.time,
+    SQL_TYPE_TIME, SQL_TYPE_TIME + 1,
+    SQL_TYPE_TIME_TZ, SQL_TYPE_TIME_TZ + 1,
+)
 ROWID = DBAPITypeObject()
 
 
