@@ -28,37 +28,38 @@
 import binascii
 import struct
 from urllib.parse import urlparse
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping, Sequence
+from typing import Any
 from firebirdsql.err import InternalError
 
 DEBUG_LEVEL = 0
 
 
-def enable_debug_print(verbose=False):
+def enable_debug_print(verbose: bool = False) -> None:
     global DEBUG_LEVEL
     DEBUG_LEVEL = 2 if verbose else 1
 
 
-def disable_debug_print():
-    global DEBUG
+def disable_debug_print() -> None:
+    global DEBUG_LEVEL
     DEBUG_LEVEL = 0
 
 
-def debug_level():
+def debug_level() -> int:
     return DEBUG_LEVEL
 
 
-def hex_to_bytes(s):
+def hex_to_bytes(s: bytes | str) -> bytes:
     """
     convert hex string to bytes
     """
     if len(s) % 2:
-        s = b'0' + s
+        s = b'0' + s if isinstance(s, bytes) else '0' + s
     ia = [int(s[i:i+2], 16) for i in range(0, len(s), 2)]   # int array
     return bytes(ia)
 
 
-def bytes_to_hex(b):
+def bytes_to_hex(b: bytes) -> bytes:
     """
     convert bytes to hex string
     """
@@ -67,7 +68,7 @@ def bytes_to_hex(b):
     return s
 
 
-def bytes_to_bint(b, u=False):           # Read as big endian
+def bytes_to_bint(b: bytes, u: bool = False) -> int:           # Read as big endian
     if u:
         fmtmap = {1: 'B', 2: '>H', 4: '>L', 8: '>Q'}
     else:
@@ -76,16 +77,16 @@ def bytes_to_bint(b, u=False):           # Read as big endian
     if fmt is None:
         if len(b) == 16:
             if u:
-                a, b = struct.unpack('>QQ', b)
+                a, b_int = struct.unpack('>QQ', b)
             else:
-                a, b = struct.unpack('>qq', b)
-            return (a << 64) | b
+                a, b_int = struct.unpack('>qq', b)
+            return (a << 64) | b_int
 
         raise InternalError("Invalid bytes length:%d" % (len(b), ))
     return struct.unpack(fmt, b)[0]
 
 
-def bytes_to_int(b):        # Read as little endian.
+def bytes_to_int(b: bytes) -> int:        # Read as little endian.
     fmtmap = {1: 'b', 2: '<h', 4: '<l', 8: '<q'}
     fmt = fmtmap.get(len(b))
     if fmt is None:
@@ -93,7 +94,7 @@ def bytes_to_int(b):        # Read as little endian.
     return struct.unpack(fmt, b)[0]
 
 
-def bytes_to_uint(b):        # Read as little endian unsigned int.
+def bytes_to_uint(b: bytes) -> int:        # Read as little endian unsigned int.
     fmtmap = {1: 'B', 2: '<H', 4: '<L', 8: '<Q'}
     fmt = fmtmap.get(len(b))
     if fmt is None:
@@ -101,7 +102,7 @@ def bytes_to_uint(b):        # Read as little endian unsigned int.
     return struct.unpack(fmt, b)[0]
 
 
-def bint_to_bytes(val, nbytes):     # Convert int value to big endian bytes.
+def bint_to_bytes(val: int, nbytes: int) -> bytes:     # Convert int value to big endian bytes.
     v = abs(val)
     b = []
     for n in range(nbytes):
@@ -117,7 +118,7 @@ def bint_to_bytes(val, nbytes):     # Convert int value to big endian bytes.
     return bytes(b)
 
 
-def int_to_bytes(val, nbytes):  # Convert int value to little endian bytes.
+def int_to_bytes(val: int, nbytes: int) -> bytes:  # Convert int value to little endian bytes.
     v = abs(val)
     b = []
     for n in range(nbytes):
@@ -133,7 +134,14 @@ def int_to_bytes(val, nbytes):  # Convert int value to little endian bytes.
     return bytes(b)
 
 
-def parse_dsn(dsn, host=None, port=None, database=None, user=None, password=None):
+def parse_dsn(
+    dsn: str | None,
+    host: str | None = None,
+    port: int | None = None,
+    database: str | None = None,
+    user: str | None = None,
+    password: str | None = None,
+) -> tuple[str, int, str | None, str | None, str | None]:
     if dsn:
         parsed = urlparse("//" + dsn)
         if host is None and parsed.hostname is not None:
@@ -159,7 +167,7 @@ def parse_dsn(dsn, host=None, port=None, database=None, user=None, password=None
     return host, port, database, user, password
 
 
-def guess_wire_crypt(b):
+def guess_wire_crypt(b: bytes) -> tuple[bytes | None, bytes | None]:
     available_plugins = []
     plugin_nonce = []
     i = 0
@@ -195,7 +203,7 @@ class RowMapping(Mapping):
     """
     __slots__ = ("_description", "_fields")
 
-    def __init__(self, row, description):
+    def __init__(self, row: Sequence[Any], description: Sequence[Sequence[Any]]) -> None:
         self._fields = fields = {}
         # result may contain multiple fields with the same name. The
         # RowMapping API ignores these additional fields.
@@ -203,7 +211,7 @@ class RowMapping(Mapping):
             fields.setdefault(descr[0], row[i])
         self._description = description
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         fields = self._fields
         # try unnormalized key first
         try:
@@ -226,13 +234,13 @@ class RowMapping(Mapping):
                            "field names are: %s" %
                            (key, ", ".join(self.keys())))
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return iter(self._fields)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._fields)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         fields = self._fields
         values = ["%s=%r" % (desc[0], fields[desc[0]])
                   for desc in self._description]
