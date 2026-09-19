@@ -28,3 +28,7 @@ version = {attr = "firebirdsql.__version__"}
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["firebirdsql*"]
+
+[tool.setuptools.package-data]
+firebirdsql = ["py.typed"]
+

@@ -30,7 +30,7 @@ class Warning(Exception):
 
 
 class Error(Exception):
-    def __init__(self, message, gds_codes=None, sql_code=0):
+    def __init__(self, message: str, gds_codes: set[int] | None = None, sql_code: int = 0) -> None:
         if gds_codes is None:
             gds_codes = set()
         self._message = message
@@ -38,10 +38,10 @@ class Error(Exception):
         self.sql_code = sql_code
         self.args = [message, sql_code]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "%d:%s" % (self.sql_code, self._message)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self._message
 
 
@@ -78,5 +78,6 @@ class DataError(DatabaseError):
 
 
 class NotSupportedError(DatabaseError):
-    def __init__(self):
+    def __init__(self) -> None:
         DatabaseError.__init__(self, 'NotSupportedError')
+

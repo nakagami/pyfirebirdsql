@@ -25,13 +25,15 @@
 #
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
+from collections.abc import Callable, Sequence
+from typing import Any
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
 from firebirdsql.fbcore import Connection
 
 
 class Services(Connection):
-    def sweep(self, database_name, callback=None):
+    def sweep(self, database_name: str, callback: Callable[[str], Any] | None = None) -> None:
         spb = bytes([isc_spb_rpr_validate_db | isc_spb_rpr_sweep_db])
         s = self.str_to_bytes(database_name)
         spb += bytes([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
@@ -51,7 +53,7 @@ class Services(Connection):
                 ln = bytes_to_int(buf[1:3])
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def bringOnline(self, database_name, callback=None):
+    def bringOnline(self, database_name: str, callback: Callable[[str], Any] | None = None) -> None:
         spb = bytes([isc_action_svc_properties])
         s = self.str_to_bytes(database_name)
         spb += bytes([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
@@ -73,10 +75,14 @@ class Services(Connection):
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
     def shutdown(
-        self, database_name, timeout=0, shutForce=True,
-        shutDenyNewAttachments=False, shutDenyNewTransactions=False,
-        callback=None
-    ):
+        self,
+        database_name: str,
+        timeout: int = 0,
+        shutForce: bool = True,
+        shutDenyNewAttachments: bool = False,
+        shutDenyNewTransactions: bool = False,
+        callback: Callable[[str], Any] | None = None,
+    ) -> None:
         spb = bytes([isc_action_svc_properties])
         s = self.str_to_bytes(database_name)
         spb += bytes([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
@@ -101,11 +107,18 @@ class Services(Connection):
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
     def backup_database(
-        self, database_name, backup_filename,
-        transportable=True, metadataOnly=False, garbageCollect=True,
-        ignoreLimboTransactions=False, ignoreChecksums=False,
-        convertExternalTablesToInternalTables=True, expand=False, callback=None
-    ):
+        self,
+        database_name: str,
+        backup_filename: str,
+        transportable: bool = True,
+        metadataOnly: bool = False,
+        garbageCollect: bool = True,
+        ignoreLimboTransactions: bool = False,
+        ignoreChecksums: bool = False,
+        convertExternalTablesToInternalTables: bool = True,
+        expand: bool = False,
+        callback: Callable[[str], Any] | None = None,
+    ) -> None:
         spb = bytes([isc_action_svc_backup])
         s = self.str_to_bytes(database_name)
         spb += bytes([isc_spb_dbname]) + int_to_bytes(len(s), 2) + s
@@ -142,12 +155,20 @@ class Services(Connection):
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
     def restore_database(
-        self, restore_filename, database_name,
-        replace=False, create=False, deactivateIndexes=False,
-        doNotRestoreShadows=False, doNotEnforceConstraints=False,
-        commitAfterEachTable=False, useAllPageSpace=False, pageSize=None,
-        cacheBuffers=None, callback=None
-    ):
+        self,
+        restore_filename: str,
+        database_name: str,
+        replace: bool = False,
+        create: bool = False,
+        deactivateIndexes: bool = False,
+        doNotRestoreShadows: bool = False,
+        doNotEnforceConstraints: bool = False,
+        commitAfterEachTable: bool = False,
+        useAllPageSpace: bool = False,
+        pageSize: int | None = None,
+        cacheBuffers: int | None = None,
+        callback: Callable[[str], Any] | None = None,
+    ) -> None:
         spb = bytes([isc_action_svc_restore])
         s = self.str_to_bytes(restore_filename)
         spb += bytes([isc_spb_bkp_file]) + int_to_bytes(len(s), 2) + s
@@ -187,7 +208,7 @@ class Services(Connection):
                 ln = bytes_to_int(buf[1:3])
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def trace_start(self, name=None, cfg=None, callback=None):
+    def trace_start(self, name: str | None = None, cfg: str | None = None, callback: Callable[[str], Any] | None = None) -> None:
         spb = bytes([isc_action_svc_trace_start])
         if name:
             s = self.str_to_bytes(name)
@@ -207,7 +228,7 @@ class Services(Connection):
             if callback:
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def trace_stop(self, id, callback=None):
+    def trace_stop(self, id: int, callback: Callable[[str], Any] | None = None) -> None:
         id = int(id)
         spb = bytes([isc_action_svc_trace_stop])
         spb += bytes([isc_spb_trc_id]) + int_to_bytes(id, 4)
@@ -221,7 +242,7 @@ class Services(Connection):
         if callback:
             callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def trace_suspend(self, id, callback=None):
+    def trace_suspend(self, id: int, callback: Callable[[str], Any] | None = None) -> None:
         id = int(id)
         spb = bytes([isc_action_svc_trace_suspend])
         spb += bytes([isc_spb_trc_id]) + int_to_bytes(id, 4)
@@ -235,7 +256,7 @@ class Services(Connection):
         if callback:
             callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def trace_resume(self, id, callback=None):
+    def trace_resume(self, id: int, callback: Callable[[str], Any] | None = None) -> None:
         id = int(id)
         spb = bytes([isc_action_svc_trace_resume])
         spb += bytes([isc_spb_trc_id]) + int_to_bytes(id, 4)
@@ -249,7 +270,7 @@ class Services(Connection):
         if callback:
             callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def trace_list(self, callback=None):
+    def trace_list(self, callback: Callable[[str], Any] | None = None) -> None:
         spb = bytes([isc_action_svc_trace_list])
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
@@ -263,25 +284,26 @@ class Services(Connection):
             if callback:
                 callback(self.bytes_to_str(buf[3:3+ln]))
 
-    def _getIntegerVal(self, item_id):
+    def _getIntegerVal(self, item_id: int) -> int:
         self._op_service_info(bytes([]), bytes([item_id]))
         (h, oid, buf) = self._op_response()
         assert buf[0] == item_id
         return buf[1]
 
-    def _getStringVal(self, item_id):
+    def _getStringVal(self, item_id: int) -> str:
         self._op_service_info(bytes([]), bytes([item_id]))
         (h, oid, buf) = self._op_response()
         assert buf[0] == item_id
         ln = bytes_to_int(buf[1:3])
         return self.bytes_to_str(buf[3:3+ln])
 
-    def _getSvrDbInfo(self):
+    def _getSvrDbInfo(self) -> tuple[int, list[str]]:
         self._op_service_info(bytes([]), bytes([isc_info_svc_svr_db_info]))
         (h, oid, buf) = self._op_response()
         assert buf[0] == isc_info_svc_svr_db_info
         db_names = []
         i = 1
+        num_attach = 0
         while i < len(buf) and buf[i] != isc_info_flag_end:
             if buf[i] == isc_spb_num_att:
                 num_attach = bytes_to_int(buf[i+1:i+5])
@@ -297,7 +319,7 @@ class Services(Connection):
 
         return (num_attach, db_names)
 
-    def _getLogLines(self, spb):
+    def _getLogLines(self, spb: bytes) -> str:
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
@@ -311,47 +333,49 @@ class Services(Connection):
             logs += self.bytes_to_str(buf[3:3+ln]) + '\n'
         return logs
 
-    def getServiceManagerVersion(self):
+    def getServiceManagerVersion(self) -> int:
         return self._getIntegerVal(isc_info_svc_version)
 
-    def getServerVersion(self):
+    def getServerVersion(self) -> str:
         return self._getStringVal(isc_info_svc_server_version)
 
-    def getArchitecture(self):
+    def getArchitecture(self) -> str:
         return self._getStringVal(isc_info_svc_implementation)
 
-    def getHomeDir(self):
+    def getHomeDir(self) -> str:
         return self._getStringVal(isc_info_svc_get_env)
 
-    def getSecurityDatabasePath(self):
+    def getSecurityDatabasePath(self) -> str:
         return self._getStringVal(isc_info_svc_user_dbpath)
 
-    def getLockFileDir(self):
+    def getLockFileDir(self) -> str:
         return self._getStringVal(isc_info_svc_get_env_lock)
 
-    def getCapabilityMask(self):
+    def getCapabilityMask(self) -> int:
         return self._getIntegerVal(isc_info_svc_capabilities)
 
-    def getMessageFileDir(self):
+    def getMessageFileDir(self) -> str:
         return self._getStringVal(isc_info_svc_get_env_msg)
 
-    def getConnectionCount(self):
+    def getConnectionCount(self) -> int:
         return self._getSvrDbInfo()[0]
 
-    def getAttachedDatabaseNames(self):
+    def getAttachedDatabaseNames(self) -> list[str]:
         return self._getSvrDbInfo()[1]
 
-    def getLog(self):
+    def getLog(self) -> str:
         spb = bytes([isc_action_svc_get_fb_log])
         return self._getLogLines(spb)
 
     def getStatistics(
-        self, dbname, showOnlyDatabaseLogPages=False,
-        showOnlyDatabaseHeaderPages=False,
-        showUserDataPages=True,
-        showUserIndexPages=True,
-        showSystemTablesAndIndexes=False
-    ):
+        self,
+        dbname: str,
+        showOnlyDatabaseLogPages: bool = False,
+        showOnlyDatabaseHeaderPages: bool = False,
+        showUserDataPages: bool = True,
+        showUserIndexPages: bool = True,
+        showSystemTablesAndIndexes: bool = False,
+    ) -> str:
         optionMask = 0
         if showUserDataPages:
             optionMask |= isc_spb_sts_data_pages
@@ -371,8 +395,45 @@ class Services(Connection):
         return self._getLogLines(spb)
 
 
-def connect(**kwargs):
+def connect(
+    dsn: str | None = None,
+    user: str | None = None,
+    password: str | None = None,
+    role: str | None = None,
+    host: str | None = None,
+    database: str | None = None,
+    charset: str = DEFAULT_CHARSET,
+    port: int | None = None,
+    page_size: int = 4096,
+    cloexec: bool = False,
+    timeout: float | None = None,
+    isolation_level: int | None = None,
+    auth_plugin_name: str | None = None,
+    wire_crypt: bool = True,
+    timezone: str | None = None,
+    wire_compress: bool = False,
+    **kwargs: Any,
+) -> Services:
     kwargs['is_services'] = True
-    services = Services(**kwargs)
+    services = Services(
+        dsn=dsn,
+        user=user,
+        password=password,
+        role=role,
+        host=host,
+        database=database,
+        charset=charset,
+        port=port,
+        page_size=page_size,
+        cloexec=cloexec,
+        timeout=timeout,
+        isolation_level=isolation_level,
+        auth_plugin_name=auth_plugin_name,
+        wire_crypt=wire_crypt,
+        timezone=timezone,
+        wire_compress=wire_compress,
+        **kwargs,
+    )
     services._initialize()
     return services
+

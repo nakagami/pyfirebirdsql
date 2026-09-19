@@ -31,6 +31,8 @@ import datetime
 import itertools
 import hashlib
 import select
+from collections.abc import AsyncIterator, Iterator, Sequence
+from typing import Any
 from firebirdsql.fbcore import Statement, PreparedStatement, Cursor, Transaction, ConnectionBase, ConnectionResponseMixin
 from firebirdsql.fberrmsgs import messages
 from firebirdsql.err import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError
@@ -175,20 +177,20 @@ class AsyncStatement(Statement):
 
 
 class AsyncPreparedStatement(PreparedStatement):
-    async def __init__(self, cur, sql, explain_plan=False):
+    async def __init__(self, cur: 'AsyncCursor', sql: str, explain_plan: bool = False) -> None:
         DEBUG_OUTPUT("AsyncPreparedStatement::__init__()")
         await cur.transaction.check_trans_handle()
         self.stmt = await AsyncStatement.create(cur.transaction)
         await self.stmt.prepare(sql, explain_plan)
         self.sql = sql
 
-    async def close(self):
+    async def close(self) -> None:
         DEBUG_OUTPUT("AsyncPreparedStatement::close()")
         await self.stmt.close()
 
 
 class AsyncCursor(Cursor):
-    def __init__(self, obj):
+    def __init__(self, obj: 'AsyncConnection' | 'AsyncTransaction') -> None:
         DEBUG_OUTPUT("AsyncCursor::__init__()")
         if isinstance(obj, AsyncConnection):
             self._transaction = obj._transaction
@@ -201,21 +203,21 @@ class AsyncCursor(Cursor):
         if self._transaction not in conn._cursors:
             conn._cursors[self._transaction] = []
         conn._cursors[self._transaction].append(self)
-        self.stmt = None
-        self.arraysize = 1
-        self.rowcount = -1
+        self.stmt: AsyncStatement | None = None
+        self.arraysize: int = 1
+        self.rowcount: int = -1
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> 'AsyncCursor':
         return self
 
-    async def __aexit__(self, exc, value, traceback):
+    async def __aexit__(self, exc: Any, value: Any, traceback: Any) -> None:
         await self.close()
 
     @property
-    def transaction(self):
+    def transaction(self) -> 'AsyncTransaction':
         return self._transaction
 
-    async def _get_stmt(self, query):
+    async def _get_stmt(self, query: str | PreparedStatement) -> AsyncStatement:
         self.query = query
         if isinstance(query, PreparedStatement):
             stmt = query.stmt
@@ -229,12 +231,12 @@ class AsyncCursor(Cursor):
             await stmt.prepare(query)
         return stmt
 
-    async def prep(self, query, explain_plan=False):
+    async def prep(self, query: str, explain_plan: bool = False) -> AsyncPreparedStatement:
         DEBUG_OUTPUT("AcyncCursor::prep()")
         prepared_statement = await AsyncPreparedStatement(self, query, explain_plan=explain_plan)
         return prepared_statement
 
-    async def _execute(self, query, params):
+    async def _execute(self, query: str | PreparedStatement, params: Sequence[Any] | None) -> 'AsyncCursor':
         if params is None:
             params = []
         await self.transaction.check_trans_handle()
@@ -267,7 +269,7 @@ class AsyncCursor(Cursor):
 
         return self
 
-    async def execute(self, query, params=None):
+    async def execute(self, query: str | PreparedStatement, params: Sequence[Any] | None = None) -> 'AsyncCursor':
         DEBUG_OUTPUT("AsyncCursor::execute()", query, params)
         try:
             await self._execute(query, params)
@@ -284,7 +286,7 @@ class AsyncCursor(Cursor):
         finally:
             self.transaction.is_dirty = True
 
-    async def callproc(self, procname, params=None):
+    async def callproc(self, procname: str, params: Sequence[Any] | None = None) -> tuple[Any, ...] | list[Any] | None:
         if params is None:
             params = []
         DEBUG_OUTPUT("AsyncCursor::callproc()")
@@ -292,11 +294,11 @@ class AsyncCursor(Cursor):
         await self.execute(query, params)
         return self._callproc_result
 
-    async def executemany(self, query, seq_of_params):
+    async def executemany(self, query: str | PreparedStatement, seq_of_params: Sequence[Sequence[Any]]) -> None:
         for params in seq_of_params:
             await self.execute(query, params)
 
-    async def fetchone(self):
+    async def fetchone(self) -> tuple[Any, ...] | None:
         if not self.transaction.is_dirty:
             DEBUG_OUTPUT("AsyncCursor::fetchone() not dirty")
             return None
@@ -316,13 +318,16 @@ class AsyncCursor(Cursor):
         DEBUG_OUTPUT("AsyncCursor::fetchone()", result)
         return result
 
-    async def __anext__(self):
+    def __aiter__(self) -> 'AsyncCursor':
+        return self
+
+    async def __anext__(self) -> tuple[Any, ...]:
         r = await self.fetchone()
         if not r:
             raise StopIteration()
         return r
 
-    async def fetchall(self):
+    async def fetchall(self) -> list[tuple[Any, ...]] | None:
         # callproc or not select statement
         if not self.transaction.is_dirty:
             return None
@@ -337,7 +342,7 @@ class AsyncCursor(Cursor):
         DEBUG_OUTPUT("AsyncCursor::fetchall()", results)
         return results
 
-    async def fetchmany(self, size=None):
+    async def fetchmany(self, size: int | None = None) -> list[tuple[Any, ...]]:
         if not size:
             size = self.arraysize
         # callproc or not select statement
@@ -351,44 +356,47 @@ class AsyncCursor(Cursor):
         return list(itertools.islice(self._fetch_records, size))
 
     # kinterbasdb extended API
-    async def fetchonemap(self):
+    async def fetchonemap(self) -> RowMapping | dict[str, Any]:
         r = await self.fetchone()
         if r is None:
             return {}
         return RowMapping(r, self.description)
 
-    async def fetchallmap(self):
+    async def fetchallmap(self) -> list[RowMapping] | None:
         desc = self.description
-        return [RowMapping(row, desc) for row in await self.fetchall()]
+        rows = await self.fetchall()
+        if rows is None:
+            return None
+        return [RowMapping(row, desc) for row in rows]
 
-    async def fetchmanymap(self, size=None):
+    async def fetchmanymap(self, size: int | None = None) -> list[RowMapping]:
         desc = self.description
         return [RowMapping(row, desc) for row in await self.fetchmany(size)]
 
-    async def itermap(self):
+    async def itermap(self) -> AsyncIterator[RowMapping]:
         r = await self.fetchonemap()
         while r:
             yield r
             r = await self.fetchonemap()
 
-    async def close(self):
+    async def close(self) -> None:
         DEBUG_OUTPUT("AsyncCursor::close()")
         if not self.stmt:
             return
         await self.stmt.drop()
         self.stmt = None
 
-    def nextset(self):
+    def nextset(self) -> bool:
         raise NotSupportedError()
 
-    def setinputsizes(self, sizes):
+    def setinputsizes(self, sizes: Any) -> None:
         pass
 
-    def setoutputsize(self, size, column):
+    def setoutputsize(self, size: Any, column: Any = None) -> None:
         pass
 
     @property
-    def description(self):
+    def description(self) -> list[tuple[str, int, int, int, int, int, bool]] | None:
         if not self.stmt:
             return None
         return [(
@@ -396,7 +404,7 @@ class AsyncCursor(Cursor):
             x.precision(), x.sqlscale, True if x.null_ok else False
         ) for x in self.stmt.xsqlda]
 
-    async def _rowcount(self):
+    async def _rowcount(self) -> int:
         DEBUG_OUTPUT("AsyncCursor::rowcount()")
         if not self.stmt or self.stmt.handle == -1:
             return -1
@@ -416,14 +424,14 @@ class AsyncCursor(Cursor):
 
 
 class AsyncTransaction(Transaction):
-    def __init__(self, connection, is_autocommit=False, isolation_level=None):
+    def __init__(self, connection: 'AsyncConnection', is_autocommit: bool = False, isolation_level: int | None = None) -> None:
         DEBUG_OUTPUT("AsyncTransaction::__init__()")
         self._connection = connection
-        self._trans_handle = None
+        self._trans_handle: int | None = None
         self._autocommit = is_autocommit
         self._isolation_level = isolation_level
 
-    async def _begin(self):
+    async def _begin(self) -> None:
         tpb = self.transaction_parameter_block[self._isolation_level if self._isolation_level is not None else self.connection.isolation_level]
         if self._autocommit:
             tpb += bytes([isc_tpb_autocommit])
@@ -434,18 +442,109 @@ class AsyncTransaction(Transaction):
             "AsyncTransaction::_begin()", self._trans_handle, self.connection.db_handle)
         self.is_dirty = False
 
-    async def begin(self):
+    async def begin(self) -> None:
         DEBUG_OUTPUT("AsyncTransaction::begin()")
         await self._begin()
 
-    async def savepoint(self, name):
+    async def savepoint(self, name: str) -> None:
         DEBUG_OUTPUT("AsyncTransaction::savepoint()", name)
         if self._trans_handle is None:
             return
         self.connection._op_exec_immediate(self._trans_handle, query='SAVEPOINT '+name)
         (h, oid, buf) = await self.connection._async_op_response()
 
-    async def commit(self, retaining=False):
+    async def commit(self, retaining: bool = False) -> None:
+        DEBUG_OUTPUT(
+            "AsyncTransaction::commit()", self._trans_handle, self.connection.db_handle, retaining)
+        if self._trans_handle is None:
+            return
+        if not self.is_dirty:
+            return
+        if retaining:
+            self.connection._op_commit_retaining(self._trans_handle)
+            (h, oid, buf) = await self.connection._async_op_response()
+        else:
+            self.connection._op_commit(self._trans_handle)
+            (h, oid, buf) = await self.connection._async_op_response()
+            self._trans_handle = None
+        self.is_dirty = False
+
+    async def rollback(self, retaining: bool = False, savepoint: str | None = None) -> None:
+        DEBUG_OUTPUT(
+            "AsyncTransaction::rollback()", self._trans_handle,
+            self.connection.db_handle, retaining, savepoint)
+        if self._trans_handle is None:
+            return
+        if savepoint:
+            self.connection._op_exec_immediate(
+                self._trans_handle, query='ROLLBACK TO '+savepoint)
+            (h, oid, buf) = await self.connection._async_op_response()
+            return
+        if not self.is_dirty:
+            return
+        if retaining:
+            self.connection._op_rollback_retaining(self._trans_handle)
+            (h, oid, buf) = await self.connection._async_op_response()
+        else:
+            self.connection._op_rollback(self._trans_handle)
+            (h, oid, buf) = await self.connection._async_op_response()
+            self._trans_handle = None
+        self.is_dirty = False
+
+    async def _trans_info(self, info_requests: Sequence[int]) -> list[tuple[int, Any]]:
+        if info_requests[-1] == isc_info_end:
+            self.connection._op_info_transaction(self.trans_handle, bytes(info_requests))
+        else:
+            self.connection._op_info_transaction(
+                self.trans_handle, bytes(info_requests+type(info_requests)([isc_info_end])))
+        (h, oid, buf) = await self.connection._async_op_response()
+        i = 0
+        i_request = 0
+        r = []
+        while i < len(buf):
+            req = buf[i]
+            if req == isc_info_end:
+                break
+            assert req == info_requests[i_request] or req == isc_info_error
+            ln = bytes_to_int(buf[i+1:i+3])
+            r.append((req, buf[i+3:i+3+ln]))
+            i = i + 3 + ln
+
+            i_request += 1
+        return r
+
+    async def trans_info(self, info_requests: int | Sequence[int]) -> dict[int, Any]:
+        if isinstance(info_requests, int):  # singleton
+            r = await self._trans_info([info_requests])
+            return {info_requests: r[1][0]}
+        else:
+            results = {}
+            rs = await self._trans_info(info_requests)
+            for i in range(len(info_requests)):
+                if rs[i][0] == isc_info_tra_isolation:
+                    v = (rs[i][1][0], rs[i][1][1])
+                elif rs[i][0] == isc_info_error:
+                    v = None
+                else:
+                    v = bytes_to_int(rs[i][1])
+                results[info_requests[i]] = v
+            return results
+
+    async def check_trans_handle(self) -> None:
+        if self._trans_handle is None:
+            await self._begin()
+
+    async def close(self) -> None:
+        if self._trans_handle is None:
+            return
+        if not self.is_dirty:
+            return
+        DEBUG_OUTPUT("AsyncTransaction::close()", self._trans_handle, self.connection.db_handle)
+        self.connection._op_rollback(self._trans_handle)
+        (h, oid, buf) = await self.connection._async_op_response()
+        self._trans_handle = None
+        self.is_dirty = False
+
         DEBUG_OUTPUT(
             "AsyncTransaction::commit()", self._trans_handle, self.connection.db_handle, retaining)
         if self._trans_handle is None:
@@ -864,7 +963,7 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
 
 
 class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
-    def cursor(self, factory=AsyncCursor):
+    def cursor(self, factory: type[AsyncCursor] = AsyncCursor) -> AsyncCursor:
         DEBUG_OUTPUT("AsyncConnection::cursor()")
         self.last_usage = self.loop.time()
         if self._transaction is None:
@@ -872,7 +971,7 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
         self._cursors[self._transaction] = []
         return factory(self)
 
-    def begin(self):
+    def begin(self) -> None:
         DEBUG_OUTPUT("AsyncConnection::begin()")
         if not self.sock:
             raise InternalError("Missing socket")
@@ -881,21 +980,21 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
         self._cursors[self._transaction] = []
         self._transaction.begin()
 
-    async def commit(self, retaining=False):
+    async def commit(self, retaining: bool = False) -> None:
         DEBUG_OUTPUT("AsyncConnection::commit()")
         if self._transaction:
             await self._transaction.commit(retaining=retaining)
 
-    async def savepoint(self, name):
+    async def savepoint(self, name: str) -> None:
         DEBUG_OUTPUT("AsyncConnection::savepoint()", name)
         return await self._transaction.savepoint(name)
 
-    async def rollback(self, retaining=False, savepoint=None):
+    async def rollback(self, retaining: bool = False, savepoint: str | None = None) -> None:
         DEBUG_OUTPUT("AsyncConnection::rollback()")
         if self._transaction:
             await self._transaction.rollback(retaining=retaining, savepoint=savepoint)
 
-    async def execute_immediate(self, query):
+    async def execute_immediate(self, query: str) -> None:
         if self._transaction is None:
             self._transaction = AsyncTransaction(self, self._autocommit)
             await self._transaction.begin()
@@ -905,7 +1004,7 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
         (h, oid, buf) = await self._async_op_response()
         self._transaction.is_dirty = True
 
-    async def ping(self, reconnect=True):
+    async def ping(self, reconnect: bool = True) -> bool:
         try:
             self._op_ping()
             (h, oid, buf) = await self._async_op_response()
@@ -913,18 +1012,18 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
         except:
             if reconnect:
                 await self.reconnect()
-                return await self.reconnect(False)
+                return await self.ping(False)
+            return False
 
-    def __init__(self, *args, **kwargs):
-        if kwargs.get("loop"):
-            self.loop = kwargs.get("loop")
-            del kwargs["loop"]
-        else:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self.sock = None
+        self.loop = kwargs.pop("loop", None)
+        if self.loop is None:
             self.loop = asyncio.get_event_loop()
         super().__init__(*args, **kwargs)
         self.last_usage = self.loop.time()
 
-    async def _initialize(self):
+    async def _initialize(self) -> None:
         self.last_event_id = 0
         self._autocommit = False
         self._transaction = None
@@ -944,10 +1043,10 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
         self.db_handle = h
         DEBUG_OUTPUT("AsyncConnection::_initialize()", id(self), self.db_handle)
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> 'AsyncConnection':
         return self
 
-    async def __aexit__(self, exc, value, traceback):
+    async def __aexit__(self, exc: Any, value: Any, traceback: Any) -> None:
         "On successful exit, commit. On exception, rollback. "
         if exc:
             await self.rollback()
@@ -955,17 +1054,17 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
             await self.commit()
         await self.close()
 
-    async def reconnect(self):
+    async def reconnect(self) -> None:
         self._close()
         await self._initialize()
 
-    async def set_autocommit(self, is_autocommit):
+    async def set_autocommit(self, is_autocommit: bool) -> None:
         if self._autocommit != is_autocommit and self._transaction is not None:
             await self.rollback()
             self._transaction = None
         self._autocommit = is_autocommit
 
-    async def _db_info(self, info_requests):
+    async def _db_info(self, info_requests: Sequence[int]) -> list[tuple[int, Any]]:
         if info_requests[-1] == isc_info_end:
             self._op_info_database(bytes(info_requests))
         else:
@@ -994,10 +1093,10 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
             i_request += 1
         return r
 
-    async def db_info(self, info_requests):
+    async def db_info(self, info_requests: int | Sequence[int]) -> Any:
         DEBUG_OUTPUT("AsyncConnection::db_info()")
-        if type(info_requests) == int:  # singleton
-            r = self._db_info([info_requests])
+        if isinstance(info_requests, int):  # singleton
+            r = await self._db_info([info_requests])
             return self._db_info_convert_type(info_requests, r[0][1])
         else:
             results = {}
@@ -1009,15 +1108,16 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
                     results[info_requests[i]] = self._db_info_convert_type(info_requests[i], rs[i][1])
             return results
 
-    async def drop_database(self):
+    async def drop_database(self) -> None:
         DEBUG_OUTPUT("AsyncConnection::drop_database()")
         self._op_drop_database()
         (h, oid, buf) = await self._async_op_response()
-        self.sock.close()
-        self.sock = None
+        if self.sock is not None:
+            self.sock.close()
+            self.sock = None
         self.db_handle = None
 
-    async def close(self):
+    async def close(self) -> None:
         DEBUG_OUTPUT("AsyncConnection::close()", id(self), self.db_handle)
         if self.sock is None:
             return
@@ -1034,8 +1134,9 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
         self.sock = None
         self.db_handle = None
 
-    def __del__(self):
+    def __del__(self) -> None:
         if self.sock:
             # Async close cannot be called from __del__
             # self.close()
             pass
+

@@ -27,6 +27,8 @@
 ##############################################################################
 import datetime
 import decimal
+import time
+from typing import Any
 from firebirdsql.consts import *    # noqa
 from firebirdsql.fbcore import Connection
 import firebirdsql.services
@@ -44,38 +46,38 @@ TimeDelta = datetime.timedelta
 Timestamp = datetime.datetime
 
 
-def DateFromTicks(ticks):
-    return apply(Date, time.localtime(ticks)[:3])
+def DateFromTicks(ticks: float) -> datetime.date:
+    return Date(*time.localtime(ticks)[:3])
 
 
-def TimeFromTicks(ticks):
-    return apply(Time, time.localtime(ticks)[3:6])
+def TimeFromTicks(ticks: float) -> datetime.time:
+    return Time(*time.localtime(ticks)[3:6])
 
 
-def TimestampFromTicks(ticks):
-    return apply(Timestamp, time.localtime(ticks)[:6])
+def TimestampFromTicks(ticks: float) -> datetime.datetime:
+    return Timestamp(*time.localtime(ticks)[:6])
 
 
-def Binary(b):
+def Binary(b: Any) -> bytes:
     return bytes(b)
 
 
 class DBAPITypeObject:
-    def __init__(self, *values):
+    def __init__(self, *values: Any) -> None:
         self.values = values
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, DBAPITypeObject):
             return self.values == other.values
         return other in self.values
 
-    def __ne__(self, other):
+    def __ne__(self, other: Any) -> bool:
         return not (self == other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.values)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<DBAPITypeObject {self.values}>"
 
 
@@ -135,12 +137,95 @@ threadsafety = 1
 paramstyle = 'qmark'
 
 
-def connect(*args, **kwargs):
-    conn = Connection(*args, **kwargs)
+def connect(
+    dsn: str | None = None,
+    user: str | None = None,
+    password: str | None = None,
+    role: str | None = None,
+    host: str | None = None,
+    database: str | None = None,
+    charset: str = DEFAULT_CHARSET,
+    port: int | None = None,
+    page_size: int = 4096,
+    is_services: bool = False,
+    cloexec: bool = False,
+    timeout: float | None = None,
+    isolation_level: int | None = None,
+    auth_plugin_name: str | None = None,
+    wire_crypt: bool = True,
+    create_new: bool = False,
+    timezone: str | None = None,
+    wire_compress: bool = False,
+    readonly: bool = False,
+    **kwargs: Any,
+) -> Connection:
+    conn = Connection(
+        dsn=dsn,
+        user=user,
+        password=password,
+        role=role,
+        host=host,
+        database=database,
+        charset=charset,
+        port=port,
+        page_size=page_size,
+        is_services=is_services,
+        cloexec=cloexec,
+        timeout=timeout,
+        isolation_level=isolation_level,
+        auth_plugin_name=auth_plugin_name,
+        wire_crypt=wire_crypt,
+        create_new=create_new,
+        timezone=timezone,
+        wire_compress=wire_compress,
+        readonly=readonly,
+        **kwargs,
+    )
     conn._initialize()
     return conn
 
 
-def create_database(*args, **kwargs):
-    kwargs['create_new'] = True
-    return connect(*args, **kwargs)
+def create_database(
+    dsn: str | None = None,
+    user: str | None = None,
+    password: str | None = None,
+    role: str | None = None,
+    host: str | None = None,
+    database: str | None = None,
+    charset: str = DEFAULT_CHARSET,
+    port: int | None = None,
+    page_size: int = 4096,
+    is_services: bool = False,
+    cloexec: bool = False,
+    timeout: float | None = None,
+    isolation_level: int | None = None,
+    auth_plugin_name: str | None = None,
+    wire_crypt: bool = True,
+    timezone: str | None = None,
+    wire_compress: bool = False,
+    readonly: bool = False,
+    **kwargs: Any,
+) -> Connection:
+    return connect(
+        dsn=dsn,
+        user=user,
+        password=password,
+        role=role,
+        host=host,
+        database=database,
+        charset=charset,
+        port=port,
+        page_size=page_size,
+        is_services=is_services,
+        cloexec=cloexec,
+        timeout=timeout,
+        isolation_level=isolation_level,
+        auth_plugin_name=auth_plugin_name,
+        wire_crypt=wire_crypt,
+        create_new=True,
+        timezone=timezone,
+        wire_compress=wire_compress,
+        readonly=readonly,
+        **kwargs,
+    )
+

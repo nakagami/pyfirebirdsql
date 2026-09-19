@@ -31,6 +31,8 @@ import datetime
 import itertools
 import hashlib
 import select
+from collections.abc import Iterator, Sequence
+from typing import Any
 from firebirdsql.fberrmsgs import messages
 from firebirdsql.err import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError
 from firebirdsql.consts import *    # noqa
@@ -167,14 +169,14 @@ class Statement(object):
 
 
 class PreparedStatement(object):
-    def __init__(self, cur, sql, explain_plan=False):
+    def __init__(self, cur: 'Cursor', sql: str, explain_plan: bool = False) -> None:
         DEBUG_OUTPUT("PreparedStatement::__init__()")
         cur.transaction.check_trans_handle()
         self.stmt = Statement(cur.transaction)
         self.stmt.prepare(sql, explain_plan)
         self.sql = sql
 
-    def __getattr__(self, attrname):
+    def __getattr__(self, attrname: str) -> Any:
         if attrname == 'description':
             if len(self.stmt.xsqlda) == 0:
                 return None
@@ -189,13 +191,13 @@ class PreparedStatement(object):
             return len(self.stmt.xsqlda)
         raise AttributeError
 
-    def close(self):
+    def close(self) -> None:
         DEBUG_OUTPUT("PreparedStatement::close()")
         self.stmt.close()
 
 
 class Cursor(object):
-    def __init__(self, obj):
+    def __init__(self, obj: 'ConnectionBase' | 'Transaction') -> None:
         DEBUG_OUTPUT("Cursor::__init__()")
         if isinstance(obj, Connection):
             self._transaction = obj._transaction
@@ -208,21 +210,21 @@ class Cursor(object):
         if self._transaction not in conn._cursors:
             conn._cursors[self._transaction] = []
         conn._cursors[self._transaction].append(self)
-        self.stmt = None
-        self.arraysize = 1
-        self.rowcount = -1
+        self.stmt: Statement | None = None
+        self.arraysize: int = 1
+        self.rowcount: int = -1
 
-    def __enter__(self):
+    def __enter__(self) -> 'Cursor':
         return self
 
-    def __exit__(self, exc, value, traceback):
+    def __exit__(self, exc: Any, value: Any, traceback: Any) -> None:
         self.close()
 
     @property
-    def transaction(self):
+    def transaction(self) -> 'Transaction':
         return self._transaction
 
-    def _convert_params(self, params):
+    def _convert_params(self, params: Sequence[Any]) -> list[Any]:
         cooked_params = []
         for param in params:
             if isinstance(param, str):
@@ -230,7 +232,7 @@ class Cursor(object):
             cooked_params.append(param)
         return cooked_params
 
-    def _get_stmt(self, query):
+    def _get_stmt(self, query: str | PreparedStatement) -> Statement:
         self.query = query
         if isinstance(query, PreparedStatement):
             stmt = query.stmt
@@ -244,12 +246,12 @@ class Cursor(object):
             stmt.prepare(query)
         return stmt
 
-    def prep(self, query, explain_plan=False):
+    def prep(self, query: str, explain_plan: bool = False) -> PreparedStatement:
         DEBUG_OUTPUT("Cursor::prep()")
         prepared_statement = PreparedStatement(self, query, explain_plan=explain_plan)
         return prepared_statement
 
-    def _execute(self, query, params):
+    def _execute(self, query: str | PreparedStatement, params: Sequence[Any] | None) -> 'Cursor':
         if params is None:
             params = []
         self.transaction.check_trans_handle()
@@ -279,14 +281,14 @@ class Cursor(object):
 
         return self
 
-    def _is_execute_procedure_query(self):
+    def _is_execute_procedure_query(self) -> bool:
         """Return True if the current query is EXECUTE PROCEDURE / EXECUTE BLOCK."""
         q = self.query
         if isinstance(q, PreparedStatement):
             q = q.sql
         return isinstance(q, str) and q.lstrip().upper().startswith('EXECUTE')
 
-    def execute(self, query, params=None):
+    def execute(self, query: str | PreparedStatement, params: Sequence[Any] | None = None) -> 'Cursor':
         DEBUG_OUTPUT("Cursor::execute()", query, params)
         try:
             self._execute(query, params)
@@ -303,7 +305,7 @@ class Cursor(object):
         finally:
             self.transaction.is_dirty = True
 
-    def callproc(self, procname, params=None):
+    def callproc(self, procname: str, params: Sequence[Any] | None = None) -> tuple[Any, ...] | None:
         if params is None:
             params = []
         DEBUG_OUTPUT("Cursor::callproc()")
@@ -311,7 +313,7 @@ class Cursor(object):
         self.execute(query, params)
         return tuple(self._callproc_result) if self._callproc_result else None
 
-    def executemany(self, query, seq_of_params):
+    def executemany(self, query: str | PreparedStatement, seq_of_params: Sequence[Sequence[Any]]) -> None:
         total = 0
         for params in seq_of_params:
             self.execute(query, params)
@@ -319,7 +321,7 @@ class Cursor(object):
                 total += self.rowcount
         self.rowcount = total
 
-    def fetchone(self):
+    def fetchone(self) -> tuple[Any, ...] | None:
         if not self.transaction.is_dirty:
             DEBUG_OUTPUT("Cursor::fetchone() not dirty")
             return None
@@ -339,19 +341,19 @@ class Cursor(object):
         DEBUG_OUTPUT("Cursor::fetchone()", result)
         return result
 
-    def __iter__(self):
+    def __iter__(self) -> 'Cursor':
         return self
 
-    def __next__(self):
+    def __next__(self) -> tuple[Any, ...]:
         r = self.fetchone()
         if not r:
             raise StopIteration()
         return r
 
-    def next(self):
+    def next(self) -> tuple[Any, ...]:
         return self.__next__()
 
-    def fetchall(self):
+    def fetchall(self) -> list[tuple[Any, ...]] | None:
         # callproc or not select statement
         if not self.transaction.is_dirty:
             return None
@@ -366,7 +368,7 @@ class Cursor(object):
         DEBUG_OUTPUT("Cursor::fetchall()", results)
         return results
 
-    def fetchmany(self, size=None):
+    def fetchmany(self, size: int | None = None) -> list[tuple[Any, ...]]:
         if not size:
             size = self.arraysize
         # callproc or not select statement
@@ -382,44 +384,47 @@ class Cursor(object):
         return results_list
 
     # kinterbasdb extended API
-    def fetchonemap(self):
+    def fetchonemap(self) -> RowMapping | dict[str, Any]:
         r = self.fetchone()
         if r is None:
             return {}
         return RowMapping(r, self.description)
 
-    def fetchallmap(self):
+    def fetchallmap(self) -> list[RowMapping] | None:
         desc = self.description
-        return [RowMapping(row, desc) for row in self.fetchall()]
+        rows = self.fetchall()
+        if rows is None:
+            return None
+        return [RowMapping(row, desc) for row in rows]
 
-    def fetchmanymap(self, size=None):
+    def fetchmanymap(self, size: int | None = None) -> list[RowMapping]:
         desc = self.description
         return [RowMapping(row, desc) for row in self.fetchmany(size)]
 
-    def itermap(self):
+    def itermap(self) -> Iterator[RowMapping]:
         r = self.fetchonemap()
         while r:
             yield r
             r = self.fetchonemap()
 
-    def close(self):
+    def close(self) -> None:
         DEBUG_OUTPUT("Cursor::close()")
         if not self.stmt:
             return
         self.stmt.drop()
         self.stmt = None
 
-    def nextset(self):
+    def nextset(self) -> bool:
         raise NotSupportedError()
 
-    def setinputsizes(self, sizes):
+    def setinputsizes(self, sizes: Any) -> None:
         pass
 
-    def setoutputsize(self, size, column):
+    def setoutputsize(self, size: Any, column: Any = None) -> None:
         pass
 
     @property
-    def description(self):
+    def description(self) -> list[tuple[str, int, int, int, int, int, bool]] | None:
         if not self.stmt:
             return None
         if not self.stmt.xsqlda:
@@ -429,7 +434,7 @@ class Cursor(object):
             x.precision(), x.sqlscale, True if x.null_ok else False
         ) for x in self.stmt.xsqlda]
 
-    def _rowcount(self):
+    def _rowcount(self) -> int:
         DEBUG_OUTPUT("Cursor::rowcount()")
         if not self.stmt or self.stmt.handle == -1:
             return -1
@@ -448,6 +453,7 @@ class Cursor(object):
         return count
 
 
+
 class Transaction(object):
     transaction_parameter_block = (
         # ISOLATION_LEVEL_READ_COMMITED_LEGACY
@@ -462,14 +468,14 @@ class Transaction(object):
         bytes([isc_tpb_version3, isc_tpb_read, isc_tpb_wait, isc_tpb_read_committed, isc_tpb_rec_version]),
     )
 
-    def __init__(self, connection, is_autocommit=False, isolation_level=None):
+    def __init__(self, connection: 'ConnectionBase', is_autocommit: bool = False, isolation_level: int | None = None) -> None:
         DEBUG_OUTPUT("Transaction::__init__()")
         self._connection = connection
-        self._trans_handle = None
+        self._trans_handle: int | None = None
         self._autocommit = is_autocommit
         self._isolation_level = isolation_level
 
-    def _begin(self):
+    def _begin(self) -> None:
         isolation_level = self._isolation_level if self._isolation_level is not None else self.connection.isolation_level
         tpb = self.transaction_parameter_block[isolation_level]
         if self._autocommit:
@@ -481,7 +487,7 @@ class Transaction(object):
             "Transaction::_begin()", self.connection.db_handle, isolation_level, self._autocommit, self._trans_handle)
         self.is_dirty = False
 
-    def close(self):
+    def close(self) -> None:
         if self._trans_handle is None:
             return
         if not self.is_dirty:
@@ -492,18 +498,18 @@ class Transaction(object):
         self._trans_handle = None
         self.is_dirty = False
 
-    def begin(self):
+    def begin(self) -> None:
         DEBUG_OUTPUT("Transaction::begin()")
         self._begin()
 
-    def savepoint(self, name):
+    def savepoint(self, name: str) -> None:
         DEBUG_OUTPUT("Transaction::savepoint()", name)
         if self._trans_handle is None:
             return
         self.connection._op_exec_immediate(self._trans_handle, query='SAVEPOINT '+name)
         (h, oid, buf) = self.connection._op_response()
 
-    def commit(self, retaining=False):
+    def commit(self, retaining: bool = False) -> None:
         DEBUG_OUTPUT(
             "Transaction::commit()", self._trans_handle, self.connection.db_handle, retaining)
         if self._trans_handle is None:
@@ -519,7 +525,7 @@ class Transaction(object):
             self._trans_handle = None
         self.is_dirty = False
 
-    def rollback(self, retaining=False, savepoint=None):
+    def rollback(self, retaining: bool = False, savepoint: str | None = None) -> None:
         DEBUG_OUTPUT(
             "Transaction::rollback()", self._trans_handle,
             self.connection.db_handle, retaining, savepoint)
@@ -541,7 +547,7 @@ class Transaction(object):
             self._trans_handle = None
         self.is_dirty = False
 
-    def _trans_info(self, info_requests):
+    def _trans_info(self, info_requests: Sequence[int]) -> list[tuple[int, bytes]]:
         if info_requests[-1] == isc_info_end:
             self.connection._op_info_transaction(self.trans_handle, bytes(info_requests))
         else:
@@ -563,7 +569,7 @@ class Transaction(object):
             i_request += 1
         return r
 
-    def trans_info(self, info_requests):
+    def trans_info(self, info_requests: int | Sequence[int]) -> dict[int, Any]:
         if isinstance(info_requests, int):  # singleton
             r = self._trans_info([info_requests])
             return {info_requests: r[1][0]}
@@ -580,16 +586,16 @@ class Transaction(object):
                 results[info_requests[i]] = v
             return results
 
-    def check_trans_handle(self):
+    def check_trans_handle(self) -> None:
         if self._trans_handle is None:
             self._begin()
 
     @property
-    def connection(self):
+    def connection(self) -> 'ConnectionBase':
         return self._connection
 
     @property
-    def trans_handle(self):
+    def trans_handle(self) -> int:
         assert(self._trans_handle is not None)
         return self._trans_handle
 
@@ -930,13 +936,13 @@ class ConnectionResponseMixin:
 
 
 class ConnectionBase(WireProtocol):
-    def cursor(self, factory=Cursor):
+    def cursor(self, factory: type[Cursor] = Cursor) -> Cursor:
         DEBUG_OUTPUT("Connection::cursor()")
         if self._transaction is None:
             self._transaction = Transaction(self, self._autocommit)
         return factory(self)
 
-    def begin(self):
+    def begin(self) -> None:
         DEBUG_OUTPUT("Connection::begin()")
         if not self.sock:
             raise InternalError("Missing socket")
@@ -945,21 +951,21 @@ class ConnectionBase(WireProtocol):
         self._cursors[self._transaction] = []
         self._transaction.begin()
 
-    def commit(self, retaining=False):
+    def commit(self, retaining: bool = False) -> None:
         DEBUG_OUTPUT("Connection::commit()")
         if self._transaction:
             self._transaction.commit(retaining=retaining)
 
-    def savepoint(self, name):
+    def savepoint(self, name: str) -> None:
         DEBUG_OUTPUT("Connection::savepoint()", name)
         return self._transaction.savepoint(name)
 
-    def rollback(self, retaining=False, savepoint=None):
+    def rollback(self, retaining: bool = False, savepoint: str | None = None) -> None:
         DEBUG_OUTPUT("Connection::rollback()")
         if self._transaction:
             self._transaction.rollback(retaining=retaining, savepoint=savepoint)
 
-    def execute_immediate(self, query):
+    def execute_immediate(self, query: str) -> None:
         if self._transaction is None:
             self._transaction = Transaction(self, self._autocommit)
             self._transaction.begin()
@@ -969,7 +975,7 @@ class ConnectionBase(WireProtocol):
         (h, oid, buf) = self._op_response()
         self._transaction.is_dirty = True
 
-    def ping(self, reconnect=True):
+    def ping(self, reconnect: bool = True) -> bool:
         try:
             self._op_ping()
             (h, oid, buf) = self._op_response()
@@ -978,23 +984,38 @@ class ConnectionBase(WireProtocol):
             if reconnect:
                 self.reconnect()
                 return self.ping(False)
+            return False
 
     def __init__(
-        self, dsn=None, user=None, password=None, role=None, host=None,
-        database=None, charset=DEFAULT_CHARSET, port=None,
-        page_size=4096, is_services=False, cloexec=False,
-        timeout=None, isolation_level=None,
-        auth_plugin_name=None, wire_crypt=True, create_new=False,
-        timezone=None, wire_compress=False, readonly=False
-    ):
+        self,
+        dsn: str | None = None,
+        user: str | None = None,
+        password: str | None = None,
+        role: str | None = None,
+        host: str | None = None,
+        database: str | None = None,
+        charset: str = DEFAULT_CHARSET,
+        port: int | None = None,
+        page_size: int = 4096,
+        is_services: bool = False,
+        cloexec: bool = False,
+        timeout: float | None = None,
+        isolation_level: int | None = None,
+        auth_plugin_name: str | None = None,
+        wire_crypt: bool = True,
+        create_new: bool = False,
+        timezone: str | None = None,
+        wire_compress: bool = False,
+        readonly: bool = False,
+    ) -> None:
         DEBUG_OUTPUT("Connection::__init__()", id(self))
         self.accept_plugin_name = ''
         self.auth_data = b''
         if auth_plugin_name is None:
             auth_plugin_name = 'Srp256'
 
-        self.sock = None
-        self.db_handle = None
+        self.sock: SocketStream | None = None
+        self.db_handle: int | None = None
         (self.hostname, self.port, self.filename, self.user, self.password) = \
             parse_dsn(dsn, host, port, database, user, password)
         self.role = role
@@ -1015,8 +1036,7 @@ class ConnectionBase(WireProtocol):
             self.isolation_level = int(isolation_level)
         self.timezone = timezone
 
-
-    def _initialize(self):
+    def _initialize(self) -> None:
         self.last_event_id = 0
         self._autocommit = False
         self._transaction = None
@@ -1041,10 +1061,10 @@ class ConnectionBase(WireProtocol):
         self.db_handle = h
         DEBUG_OUTPUT("Connection::_initialize()", id(self), self.db_handle)
 
-    def __enter__(self):
+    def __enter__(self) -> 'ConnectionBase':
         return self
 
-    def __exit__(self, exc, value, traceback):
+    def __exit__(self, exc: Any, value: Any, traceback: Any) -> None:
         "On successful exit, commit. On exception, rollback. "
         if exc:
             self.rollback()
@@ -1052,20 +1072,20 @@ class ConnectionBase(WireProtocol):
             self.commit()
         self.close()
 
-    def reconnect(self):
+    def reconnect(self) -> None:
         self._close()
         self._initialize()
 
-    def set_isolation_level(self, isolation_level):
+    def set_isolation_level(self, isolation_level: int) -> None:
         self.isolation_level = int(isolation_level)
 
-    def set_autocommit(self, is_autocommit):
+    def set_autocommit(self, is_autocommit: bool) -> None:
         if self._autocommit != is_autocommit and self._transaction is not None:
             self.rollback()
             self._transaction = None
         self._autocommit = is_autocommit
 
-    def _db_info(self, info_requests):
+    def _db_info(self, info_requests: Sequence[int]) -> list[tuple[int, Any]]:
         if info_requests[-1] == isc_info_end:
             self._op_info_database(bytes(info_requests))
         else:
@@ -1094,7 +1114,7 @@ class ConnectionBase(WireProtocol):
             i_request += 1
         return r
 
-    def _db_info_convert_type(self, info_request, v):
+    def _db_info_convert_type(self, info_request: int, v: Any) -> Any:
         REQ_INT = set([
             isc_info_allocation, isc_info_no_reserve, isc_info_db_sql_dialect,
             isc_info_ods_minor_version, isc_info_ods_version,
@@ -1180,9 +1200,9 @@ class ConnectionBase(WireProtocol):
         else:
             return v
 
-    def db_info(self, info_requests):
+    def db_info(self, info_requests: int | Sequence[int]) -> Any:
         DEBUG_OUTPUT("Connection::db_info()")
-        if type(info_requests) == int:  # singleton
+        if isinstance(info_requests, int):  # singleton
             r = self._db_info([info_requests])
             return self._db_info_convert_type(info_requests, r[0][1])
         else:
@@ -1195,12 +1215,12 @@ class ConnectionBase(WireProtocol):
                     results[info_requests[i]] = self._db_info_convert_type(info_requests[i], rs[i][1])
             return results
 
-    def trans_info(self, info_requests):
+    def trans_info(self, info_requests: int | Sequence[int]) -> dict[int, Any]:
         if self._transaction:
             return self._transaction.trans_info(info_requests)
         return {}
 
-    def _close(self):
+    def _close(self) -> None:
         if self.sock is None:
             return
         try:
@@ -1220,29 +1240,31 @@ class ConnectionBase(WireProtocol):
             self.sock = None
             self.db_handle = None
 
-    def close(self):
+    def close(self) -> None:
         DEBUG_OUTPUT("Connection::close()", id(self), self.db_handle)
         self._close()
 
-    def drop_database(self):
+    def drop_database(self) -> None:
         DEBUG_OUTPUT("Connection::drop_database()")
         self._op_drop_database()
         (h, oid, buf) = self._op_response()
-        self.sock.close()
-        self.sock = None
+        if self.sock is not None:
+            self.sock.close()
+            self.sock = None
         self.db_handle = None
 
-    def event_conduit(self, event_count, event_id=None):
+    def event_conduit(self, event_count: Sequence[str], event_id: int | None = None) -> EventConduit:
         return EventConduit(self, event_count, event_id, self.timeout)
 
-    def __del__(self):
+    def __del__(self) -> None:
         if self.sock:
             self.close()
 
-    def is_disconnect(self):
+    def is_disconnect(self) -> bool:
         return self.sock is None
 
 
 class Connection(ConnectionBase, ConnectionResponseMixin):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         ConnectionBase.__init__(self, *args, **kwargs)
+

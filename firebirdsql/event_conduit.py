@@ -26,15 +26,20 @@
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
 import select
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 from firebirdsql.err import InternalError, OperationalError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
 from firebirdsql.wireprotocol import WireProtocol
 from firebirdsql.stream import SocketStream
 
+if TYPE_CHECKING:
+    from firebirdsql.fbcore import ConnectionBase
+
 
 class EventConduit(WireProtocol):
-    def _recv_channel(self, nbytes, timeout):
+    def _recv_channel(self, nbytes: int, timeout: float | None) -> bytes:
         n = nbytes
         if n % 4:
             n += 4 - nbytes % 4  # 4 bytes word alignment
@@ -51,7 +56,7 @@ class EventConduit(WireProtocol):
             raise OperationalError('Can not recv() packets')
         return r[:nbytes]
 
-    def _wait_for_event(self, timeout):
+    def _wait_for_event(self, timeout: float | None) -> dict[str, int]:
         event_count = {}
         event_id = 0
         while True:
@@ -86,9 +91,9 @@ class EventConduit(WireProtocol):
             self.event_count[k] = v
         return r
 
-    def __init__(self, conn, names, event_id, timeout):
+    def __init__(self, conn: 'ConnectionBase', names: Sequence[str], event_id: int | None, timeout: float | None) -> None:
         self.connection = conn
-        self.event_count = {}
+        self.event_count: dict[str, int] = {}
         for name in names:
             self.event_count[name] = 0
 
@@ -122,14 +127,16 @@ class EventConduit(WireProtocol):
 
         self._wait_for_event(timeout)
 
-    def wait(self, timeout=None):
+    def wait(self, timeout: float | None = None) -> dict[str, int]:
         self.connection._op_que_events(self.event_count, self.event_id)
         (h, oid, buf) = self.connection._op_response()
 
         return self._wait_for_event(timeout)
 
-    def close(self):
+    def close(self) -> None:
         self.connection._op_cancel_events(self.event_id)
         (h, oid, buf) = self.connection._op_response()
-        self.sock.close()
-        self.sock = None
+        if self.sock is not None:
+            self.sock.close()
+            self.sock = None
+
