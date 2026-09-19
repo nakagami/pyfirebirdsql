@@ -190,7 +190,7 @@ class AsyncPreparedStatement(PreparedStatement):
 
 
 class AsyncCursor(Cursor):
-    def __init__(self, obj: 'AsyncConnection' | 'AsyncTransaction') -> None:
+    def __init__(self, obj: 'AsyncConnection | AsyncTransaction') -> None:
         DEBUG_OUTPUT("AsyncCursor::__init__()")
         if isinstance(obj, AsyncConnection):
             self._transaction = obj._transaction

@@ -197,7 +197,7 @@ class PreparedStatement(object):
 
 
 class Cursor(object):
-    def __init__(self, obj: 'ConnectionBase' | 'Transaction') -> None:
+    def __init__(self, obj: 'ConnectionBase | Transaction') -> None:
         DEBUG_OUTPUT("Cursor::__init__()")
         if isinstance(obj, Connection):
             self._transaction = obj._transaction
