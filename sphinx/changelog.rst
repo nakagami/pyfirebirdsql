@@ -355,7 +355,13 @@ Version 1.4.6
    - fix aio and many columns bug #132
    - fix execute_immediate bug #133
 
-Version 1.?.?
+Version 1.4.7
 ==============
 
    - honour cursor.arraysize as a hint for rows fetched per server roundtrip
+   - fix for handling errors that occur while reading rows
+   - add readonly parameter at connect()
+   - honour cursor.arraysize as a hint for rows fetched per server roundtrip #134
+   - DBAPITypeObject for Python 3
+   - add type hints (PEP 561)
+   - fix async connection loop handling
