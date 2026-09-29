@@ -131,7 +131,7 @@ TIME = DBAPITypeObject(
 ROWID = DBAPITypeObject()
 
 
-__version__ = '1.4.6'
+__version__ = '1.4.7'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
