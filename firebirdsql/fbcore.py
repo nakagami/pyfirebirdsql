@@ -71,6 +71,7 @@ class Statement(object):
 
         self._is_open = False
         self.stmt_type = None
+        self.bind_xsqlda = []
 
     def fetch_generator(self, rows, more_data, fetch_count):
         DEBUG_OUTPUT("Statement::_fetch_generator()", self.handle, self.trans._trans_handle, self.trans.connection.db_handle)
@@ -106,6 +107,11 @@ class Statement(object):
                         r[i] = v
                         if x.sqlsubtype == 1:    # TEXT
                             r[i] = connection.bytes_to_str(r[i])
+                    elif x.sqltype == SQL_TYPE_ARRAY:
+                        if not r[i]:
+                            continue
+                        if x.array_meta:
+                            r[i] = connection._op_get_slice(self.trans.trans_handle, r[i], x.array_meta)
                 yield tuple(r)
             if more_data:
                 connection._op_fetch(self.handle, calc_blr(self.xsqlda), fetch_count)
@@ -138,7 +144,7 @@ class Statement(object):
             ln = bytes_to_int(buf[i+1:i+3])
             self.plan = self.trans.connection.bytes_to_str(buf[i+3:i+3+ln])
             i += 3 + ln
-        self.stmt_type, self.xsqlda = parse_xsqlda(buf[i:], self.trans.connection, self.handle)
+        self.stmt_type, self.xsqlda, self.bind_xsqlda = parse_xsqlda(buf[i:], self.trans.connection, self.handle)
         if self.stmt_type == isc_info_sql_stmt_select:
             self._is_open = True
 
@@ -261,13 +267,22 @@ class Cursor(object):
             self.transaction.connection._op_execute2(
                 stmt.handle,
                 self.transaction.trans_handle, cooked_params,
-                calc_blr(stmt.xsqlda))
+                calc_blr(stmt.xsqlda),
+                input_xsqlda=stmt.bind_xsqlda)
             self._callproc_result = self.transaction.connection._op_sql_response(stmt.xsqlda)
             self.transaction.connection._op_response()
+            if self._callproc_result:
+                for i in range(len(stmt.xsqlda)):
+                    x = stmt.xsqlda[i]
+                    if x.sqltype == SQL_TYPE_ARRAY and self._callproc_result[i] and x.array_meta:
+                        self._callproc_result[i] = self.transaction.connection._op_get_slice(
+                            self.transaction.trans_handle, self._callproc_result[i], x.array_meta
+                        )
             self._fetch_records = None
         else:
             self.transaction.connection._op_execute(
-                stmt.handle, self.transaction.trans_handle, cooked_params)
+                stmt.handle, self.transaction.trans_handle, cooked_params,
+                input_xsqlda=stmt.bind_xsqlda)
             (h, oid, buf) = self.transaction.connection._op_response()
 
             if stmt.stmt_type == isc_info_sql_stmt_select:
@@ -865,7 +880,52 @@ class ConnectionResponseMixin:
                         ln = x.io_length()
                     raw_value = self._recv_channel(ln, word_alignment=True)
                     r.append(x.value(raw_value))
+
         return r
+
+    def _op_slice_response(self, meta):
+        from firebirdsql.array import (
+            array_get_element_stride, slice_wire_element_size, decode_slice_elements
+        )
+        b = self._recv_channel(4)
+        while bytes_to_bint(b) == self.op_dummy:
+            b = self._recv_channel(4)
+        op_code = bytes_to_bint(b)
+        while op_code == self.op_response and self.lazy_response_count:
+            self.lazy_response_count -= 1
+            h, oid, buf = self._parse_op_response()
+            b = self._recv_channel(4)
+        if op_code == self.op_response:
+            self._parse_op_response()
+            raise InternalError("_op_slice_response: error")
+        if op_code not in (self.op_slice, self.op_slice_response):
+            raise InternalError("_op_slice_response: unexpected op_code = %d" % (op_code,))
+
+        b = self._recv_channel(8)
+        slr_len = bytes_to_bint(b[:4])
+        lstr_len = bytes_to_bint(b[4:8])
+        if lstr_len == 0:
+            return []
+
+        stride = array_get_element_stride(meta)
+        if stride < 1:
+            raise OperationalError(f"invalid array element stride {stride}")
+        count = lstr_len // stride
+
+        elem_len, varying = slice_wire_element_size(meta)
+        data = bytearray()
+        for i in range(count):
+            if varying:
+                len_buf = self._recv_channel(4)
+                l = bytes_to_bint(len_buf)
+                elem_data = self._recv_channel(l, word_alignment=True)
+                data.extend(len_buf)
+                data.extend(elem_data)
+            else:
+                chunk = self._recv_channel(elem_len, word_alignment=True)
+                data.extend(chunk)
+
+        return decode_slice_elements(meta, bytes(data), self.bytes_to_str)
 
     def _op_fetch_response(self, stmt_handle, xsqlda):
         op_code = bytes_to_bint(self._recv_channel(4))
