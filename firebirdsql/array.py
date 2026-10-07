@@ -157,11 +157,10 @@ def append_dimension_bound(sdl: bytearray, v: int) -> None:
 def generate_sdl(meta: ArrayMeta, dims: list[ArrayDimension], for_get: bool = False) -> bytes:
     sdl = bytearray([isc_sdl_version1, isc_sdl_struct, 1, meta.blr_type_id & 0xFF])
 
-    if meta.blr_type_id in (7, 8, 9, blr_type_int64):
+    if meta.blr_type_id in (7, 8, 9, blr_type_int64, blr_type_int128):
         sdl.append(meta.scale & 0xFF)
     elif meta.blr_type_id in (blr_type_text, blr_type_text2, blr_type_cstring, blr_type_cstring2, blr_type_varying):
-        text_len = meta.field_bytes if for_get else meta.length
-        sdl.extend(struct.pack('<H', text_len))
+        sdl.extend(struct.pack('<H', meta.field_bytes))
 
     table_bytes = meta.table_name.encode('utf-8')
     sdl.extend([isc_sdl_relation, len(table_bytes)])
@@ -191,25 +190,22 @@ def array_element_stride(meta: ArrayMeta) -> int:
         return 2
     elif meta.type_id in (SQL_TYPE_LONG, SQL_TYPE_FLOAT, SQL_TYPE_DATE, SQL_TYPE_TIME):
         return 4
-    elif meta.type_id in (SQL_TYPE_INT64, SQL_TYPE_DOUBLE, SQL_TYPE_TIMESTAMP, SQL_TYPE_QUAD):
+    elif meta.type_id in (SQL_TYPE_INT64, SQL_TYPE_DOUBLE, SQL_TYPE_TIMESTAMP, SQL_TYPE_QUAD, SQL_TYPE_DEC64):
         return 8
+    elif meta.type_id in (SQL_TYPE_INT128, SQL_TYPE_DEC128):
+        return 16
     elif meta.type_id == SQL_TYPE_BOOLEAN:
         return 1
     elif meta.type_id == SQL_TYPE_TEXT:
-        return meta.length
-    elif meta.type_id == SQL_TYPE_VARYING:
-        return 2 + meta.length
-    else:
-        return meta.length
-
-
-def array_get_element_stride(meta: ArrayMeta) -> int:
-    if meta.type_id == SQL_TYPE_TEXT:
         return meta.field_bytes
     elif meta.type_id == SQL_TYPE_VARYING:
         return 2 + meta.field_bytes
     else:
-        return array_element_stride(meta)
+        return meta.field_bytes
+
+
+def array_get_element_stride(meta: ArrayMeta) -> int:
+    return array_element_stride(meta)
 
 
 def all_elements_count(dimensions: list[ArrayDimension]) -> int:
@@ -245,8 +241,10 @@ def round_up_4(n: int) -> int:
 
 
 def slice_wire_element_size(meta: ArrayMeta) -> tuple[int, bool]:
-    if meta.type_id in (SQL_TYPE_INT64, SQL_TYPE_DOUBLE, SQL_TYPE_TIMESTAMP, SQL_TYPE_QUAD):
+    if meta.type_id in (SQL_TYPE_INT64, SQL_TYPE_DOUBLE, SQL_TYPE_TIMESTAMP, SQL_TYPE_QUAD, SQL_TYPE_DEC64):
         return (8, False)
+    elif meta.type_id in (SQL_TYPE_INT128, SQL_TYPE_DEC128):
+        return (16, False)
     elif meta.type_id == SQL_TYPE_VARYING:
         return (meta.field_bytes, True)
     elif meta.type_id == SQL_TYPE_TEXT:
@@ -257,7 +255,7 @@ def slice_wire_element_size(meta: ArrayMeta) -> tuple[int, bool]:
 
 def put_slice_wire_element_size(meta: ArrayMeta) -> int:
     if meta.type_id == SQL_TYPE_TEXT:
-        return round_up_4(meta.length)
+        return round_up_4(meta.field_bytes)
     size, varying = slice_wire_element_size(meta)
     if varying:
         return 4
@@ -329,19 +327,22 @@ def encode_array_element(meta: ArrayMeta, e: Any, charset: str) -> bytes:
             e = str(e)
         codec = charset_map.get(charset, charset) or 'utf-8'
         enc = e.encode(codec)
-        if len(enc) > meta.length:
+        if (meta.length and len(e) > meta.length) or len(enc) > meta.field_bytes:
             raise OperationalError(f"value {e!r} too long for CHAR({meta.length}) array element")
-        padded = enc + b' ' * (round_up_4(meta.length) - len(enc))
+        padded = enc + b' ' * (round_up_4(meta.field_bytes) - len(enc))
         return padded
     elif type_id == SQL_TYPE_VARYING:
         if not isinstance(e, str):
             e = str(e)
         codec = charset_map.get(charset, charset) or 'utf-8'
         enc = e.encode(codec)
-        if len(enc) > meta.length:
+        if (meta.length and len(e) > meta.length) or len(enc) > meta.field_bytes:
             raise OperationalError(f"value {e!r} too long for VARCHAR({meta.length}) array element")
         pad_len = (4 - (len(enc) % 4)) % 4
         return struct.pack('!i', len(enc)) + enc + (b'\x00' * pad_len)
+    elif type_id == SQL_TYPE_INT128:
+        v = to_scaled_int(e, scale)
+        return bint_to_bytes(v, 16)
     elif type_id == SQL_TYPE_DATE:
         from firebirdsql.wireprotocol import convert_date
         if not isinstance(e, datetime.date):
@@ -565,8 +566,8 @@ def _internal_query(connection: Any, query: str) -> list[tuple[Any, ...]]:
 
 
 def query_array_meta(connection: Any, pairs: list[tuple[str, str]]) -> tuple[dict[tuple[str, str], ArrayMeta], dict[str, list[ArrayDimension]]]:
-    tables = [quote_meta_literal(p[0]) for p in pairs]
-    fields = [quote_meta_literal(p[1]) for p in pairs]
+    tables = list({quote_meta_literal(p[0]) for p in pairs})
+    fields = list({quote_meta_literal(p[1]) for p in pairs})
 
     query = (
         "SELECT Y.RDB$FIELD_TYPE, Y.RDB$FIELD_SCALE, Y.RDB$FIELD_LENGTH, "
@@ -610,6 +611,7 @@ def query_array_meta(connection: Any, pairs: list[tuple[str, str]]) -> tuple[dic
             sub_type=sub,
             field_source=source,
         )
+        metas[(rel, field)] = am
         metas[(rel.upper(), field.upper())] = am
         if source and source not in dimensions:
             sources.append(source)
@@ -642,7 +644,7 @@ def resolve_array_meta(connection: Any, xsqlda: list[Any] | None) -> None:
     seen: set[tuple[str, str]] = set()
     for x in xsqlda:
         if x and x.sqltype == SQL_TYPE_ARRAY and x.relname and x.fieldname:
-            k = (x.relname.strip().upper(), x.fieldname.strip().upper())
+            k = (x.relname.strip(), x.fieldname.strip())
             if k not in seen:
                 seen.add(k)
                 pairs.append(k)
@@ -656,7 +658,7 @@ def resolve_array_meta(connection: Any, xsqlda: list[Any] | None) -> None:
             am.dimensions = dimensions.get(am.field_source, [])
         for x in xsqlda:
             if x and x.sqltype == SQL_TYPE_ARRAY and x.relname and x.fieldname:
-                k = (x.relname.strip().upper(), x.fieldname.strip().upper())
-                x.array_meta = metas.get(k)
+                k = (x.relname.strip(), x.fieldname.strip())
+                x.array_meta = metas.get(k) or metas.get((k[0].upper(), k[1].upper()))
     finally:
         connection._resolving_array_meta = False

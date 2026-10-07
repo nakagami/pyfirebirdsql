@@ -112,6 +112,10 @@ class Statement(object):
                             continue
                         if x.array_meta:
                             r[i] = connection._op_get_slice(self.trans.trans_handle, r[i], x.array_meta)
+                        else:
+                            raise OperationalError(
+                                f"cannot fetch array column '{x.aliasname or x.fieldname}': array metadata unavailable"
+                            )
                 yield tuple(r)
             if more_data:
                 connection._op_fetch(self.handle, calc_blr(self.xsqlda), fetch_count)
@@ -274,10 +278,15 @@ class Cursor(object):
             if self._callproc_result:
                 for i in range(len(stmt.xsqlda)):
                     x = stmt.xsqlda[i]
-                    if x.sqltype == SQL_TYPE_ARRAY and self._callproc_result[i] and x.array_meta:
-                        self._callproc_result[i] = self.transaction.connection._op_get_slice(
-                            self.transaction.trans_handle, self._callproc_result[i], x.array_meta
-                        )
+                    if x.sqltype == SQL_TYPE_ARRAY and self._callproc_result[i]:
+                        if x.array_meta:
+                            self._callproc_result[i] = self.transaction.connection._op_get_slice(
+                                self.transaction.trans_handle, self._callproc_result[i], x.array_meta
+                            )
+                        else:
+                            raise OperationalError(
+                                f"cannot fetch array column '{x.aliasname or x.fieldname}': array metadata unavailable"
+                            )
             self._fetch_records = None
         else:
             self.transaction.connection._op_execute(

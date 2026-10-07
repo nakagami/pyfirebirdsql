@@ -128,8 +128,8 @@ class TestArrayUnit(unittest.TestCase):
         )
         put_sdl = generate_sdl(meta, meta.dimensions, for_get=False)
         get_sdl = generate_sdl(meta, meta.dimensions, for_get=True)
-        # put carries character length (10), get carries field bytes (40)
-        self.assertEqual(put_sdl[4:6], bytes([10, 0]))
+        # Both put and get SDL carry field bytes (40)
+        self.assertEqual(put_sdl[4:6], bytes([40, 0]))
         self.assertEqual(get_sdl[4:6], bytes([40, 0]))
 
 
@@ -168,6 +168,21 @@ class TestArrayIntegration(TestBase):
                     arr_bool BOOLEAN [1:4]
                 )
             ''')
+
+        if self.server_version[0] >= 4:
+            cur.execute('''
+                CREATE TABLE test_arr_fb4 (
+                    id INTEGER NOT NULL PRIMARY KEY,
+                    arr_i128 INT128 [1:3]
+                )
+            ''')
+
+        cur.execute('''
+            CREATE TABLE "MyTable" (
+                id INTEGER NOT NULL PRIMARY KEY,
+                "myArr" INTEGER [1:3]
+            )
+        ''')
 
         cur.execute('''
             CREATE TABLE test_arr_multi (
@@ -320,12 +335,40 @@ class TestArrayIntegration(TestBase):
 
     def test_array_utf8(self):
         cur = self.connection.cursor()
-        cur.execute('INSERT INTO test_arr_basic (id, arr_vchar) VALUES (?, ?)', (50, ['こんにちは', '世界', 'テスト']))
+        cur.execute('INSERT INTO test_arr_basic (id, arr_vchar, arr_char) VALUES (?, ?, ?)', (
+            50,
+            ['こんにちは', '世界', 'テスト'],
+            ['東京', '大阪', '京都'],
+        ))
         self.connection.commit()
 
-        cur.execute('SELECT arr_vchar FROM test_arr_basic WHERE id = 50')
+        cur.execute('SELECT arr_vchar, arr_char FROM test_arr_basic WHERE id = 50')
         row = cur.fetchone()
         self.assertEqual(row[0], ['こんにちは', '世界', 'テスト'])
+        self.assertEqual(row[1], ['東京', '大阪', '京都'])
+
+    def test_array_quoted_identifier(self):
+        cur = self.connection.cursor()
+        cur.execute('INSERT INTO "MyTable" (id, "myArr") VALUES (?, ?)', (1, [100, 200, 300]))
+        self.connection.commit()
+
+        cur.execute('SELECT "myArr" FROM "MyTable" WHERE id = 1')
+        row = cur.fetchone()
+        self.assertEqual(row[0], [100, 200, 300])
+
+    def test_array_int128(self):
+        if self.server_version[0] < 4:
+            return
+        cur = self.connection.cursor()
+        big1 = 123456789012345678901234567890
+        big2 = 987654321098765432109876543210
+        big3 = -555555555555555555555555555555
+        cur.execute('INSERT INTO test_arr_fb4 (id, arr_i128) VALUES (?, ?)', (1, [big1, big2, big3]))
+        self.connection.commit()
+
+        cur.execute('SELECT arr_i128 FROM test_arr_fb4 WHERE id = 1')
+        row = cur.fetchone()
+        self.assertEqual(row[0], [big1, big2, big3])
 
     def test_array_partial_elements(self):
         cur = self.connection.cursor()
