@@ -31,6 +31,7 @@ import datetime
 import itertools
 import hashlib
 import select
+import weakref
 from collections.abc import Iterator, Sequence
 from typing import Any
 from firebirdsql.fberrmsgs import messages
@@ -218,8 +219,8 @@ class Cursor(object):
         else:
             raise NotSupportedError()
         if self._transaction not in conn._cursors:
-            conn._cursors[self._transaction] = []
-        conn._cursors[self._transaction].append(self)
+            conn._cursors[self._transaction] = weakref.WeakSet()
+        conn._cursors[self._transaction].add(self)
         self.stmt: Statement | None = None
         self.arraysize: int = 1
         self.rowcount: int = -1
@@ -433,10 +434,21 @@ class Cursor(object):
 
     def close(self) -> None:
         DEBUG_OUTPUT("Cursor::close()")
+        if self._transaction in self.transaction.connection._cursors:
+            self.transaction.connection._cursors[self._transaction].discard(self)
         if not self.stmt:
             return
         self.stmt.drop()
         self.stmt = None
+
+    def __del__(self) -> None:
+        try:
+            if hasattr(self, 'stmt') and self.stmt and self.stmt.handle != -1:
+                if hasattr(self, '_transaction') and self._transaction:
+                    if self._transaction.connection and self._transaction.connection.sock is not None:
+                        self.close()
+        except Exception:
+            pass
 
     def nextset(self) -> bool:
         raise NotSupportedError()
@@ -1017,7 +1029,7 @@ class ConnectionBase(WireProtocol):
             raise InternalError("Missing socket")
         if self._transaction is None:
             self._transaction = Transaction(self, self._autocommit)
-        self._cursors[self._transaction] = []
+        self._cursors[self._transaction] = weakref.WeakSet()
         self._transaction.begin()
 
     def commit(self, retaining: bool = False) -> None:
