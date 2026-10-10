@@ -31,6 +31,7 @@ import time
 from typing import Any
 from firebirdsql.consts import *    # noqa
 from firebirdsql.fbcore import Connection
+from firebirdsql.array import Array, ArrayDimension, ArrayMeta
 import firebirdsql.services
 from firebirdsql.err import (
     Warning, Error, InterfaceError, DatabaseError, DisconnectByPeer, InternalError,
@@ -127,6 +128,10 @@ TIME = DBAPITypeObject(
     datetime.time,
     SQL_TYPE_TIME, SQL_TYPE_TIME + 1,
     SQL_TYPE_TIME_TZ, SQL_TYPE_TIME_TZ + 1,
+)
+ARRAY = DBAPITypeObject(
+    list, tuple, Array,
+    SQL_TYPE_ARRAY, SQL_TYPE_ARRAY + 1,
 )
 ROWID = DBAPITypeObject()
 

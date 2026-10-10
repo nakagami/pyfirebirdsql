@@ -76,11 +76,7 @@ def bytes_to_bint(b: bytes, u: bool = False) -> int:           # Read as big end
     fmt = fmtmap.get(len(b))
     if fmt is None:
         if len(b) == 16:
-            if u:
-                a, b_int = struct.unpack('>QQ', b)
-            else:
-                a, b_int = struct.unpack('>qq', b)
-            return (a << 64) | b_int
+            return int.from_bytes(b, byteorder='big', signed=not u)
 
         raise InternalError("Invalid bytes length:%d" % (len(b), ))
     return struct.unpack(fmt, b)[0]

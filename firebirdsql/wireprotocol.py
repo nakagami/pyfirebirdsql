@@ -62,6 +62,21 @@ INFO_SQL_SELECT_DESCRIBE_VARS = bytes([
     isc_info_sql_alias,
     isc_info_sql_describe_end])
 
+INFO_SQL_BIND_DESCRIBE_VARS = bytes([
+    isc_info_sql_bind,
+    isc_info_sql_describe_vars,
+    isc_info_sql_sqlda_seq,
+    isc_info_sql_type,
+    isc_info_sql_sub_type,
+    isc_info_sql_scale,
+    isc_info_sql_length,
+    isc_info_sql_null_ind,
+    isc_info_sql_field,
+    isc_info_sql_relation,
+    isc_info_sql_owner,
+    isc_info_sql_alias,
+    isc_info_sql_describe_end])
+
 
 def get_crypt(plain):
     from passlib.hash import des_crypt
@@ -162,6 +177,10 @@ class WireProtocol(object):
     op_connect_request = 53
     op_open_blob2 = 56
     op_create_blob2 = 57
+    op_get_slice = 58
+    op_put_slice = 59
+    op_slice = 60
+    op_slice_response = 60
     op_allocate_statement = 62
     op_execute = 63
     op_exec_immediate = 64
@@ -216,8 +235,17 @@ class WireProtocol(object):
         (h, oid, buf) = self._op_response()
         return blob_id
 
-    def params_to_blr(self, trans_handle, params):
+    def _is_array_param_null(self, p):
+        from firebirdsql.array import Array
+        if p is None:
+            return True
+        if isinstance(p, Array) and p.elements is None:
+            return True
+        return False
+
+    def params_to_blr(self, trans_handle, params, input_xsqlda=None):
         "Convert parameter array to BLR and values format."
+        from firebirdsql.array import Array, extract_array_elements, encode_slice_elements
         ln = len(params) * 2
         blr = bytes([5, 2, 4, 0, ln & 255, ln >> 8])
         if self.accept_version < PROTOCOL_VERSION13:
@@ -226,7 +254,7 @@ class WireProtocol(object):
             # start with null indicator bitmap
             null_indicator = 0
             for i, p in enumerate(params):
-                if p is None:
+                if self._is_array_param_null(p):
                     null_indicator |= (1 << i)
             n = len(params) // 8
             if len(params) % 8 != 0:
@@ -238,13 +266,24 @@ class WireProtocol(object):
                 null_indicator_bytes.append(null_indicator & 255)
                 null_indicator >>= 8
             values = bytes(null_indicator_bytes)
-        for p in params:
+        for i, p in enumerate(params):
             if isinstance(p, str):
                 p = self.str_to_bytes(p)
             t = type(p)
-            if p is None:
+            if self._is_array_param_null(p):
                 v = bytes([])
                 blr += bytes([14, 0, 0])
+            elif isinstance(p, (list, tuple, Array)):
+                meta = None
+                if input_xsqlda and i < len(input_xsqlda) and input_xsqlda[i]:
+                    meta = input_xsqlda[i].array_meta
+                if meta is None:
+                    raise OperationalError(f"array parameter {i+1}: column metadata unavailable")
+                elements = extract_array_elements(p)
+                data = encode_slice_elements(meta, elements, self.charset)
+                array_id = self._op_put_slice(trans_handle, meta, data, len(elements))
+                blr += bytes([9, 0])
+                v = array_id
             elif t == bytes:
                 if len(p) > MAX_CHAR_LENGTH:
                     v = self._create_blob(trans_handle, p)
@@ -311,7 +350,7 @@ class WireProtocol(object):
             blr += bytes([7, 0])
             values += v
             if self.accept_version < PROTOCOL_VERSION13:
-                values += bytes([0]) * 4 if p is not None else bytes([0xff, 0xff, 0xff, 0xff])
+                values += bytes([0]) * 4 if not self._is_array_param_null(p) else bytes([0xff, 0xff, 0xff, 0xff])
         blr += bytes([255, 76])    # [blr_end, blr_eoc]
         return blr, values
 
@@ -636,7 +675,7 @@ class WireProtocol(object):
     def _op_prepare_statement(self, stmt_handle, trans_handle, query, option_items=None):
         if option_items is None:
             option_items = bytes([])
-        desc_items = option_items + bytes([isc_info_sql_stmt_type])+INFO_SQL_SELECT_DESCRIBE_VARS
+        desc_items = option_items + bytes([isc_info_sql_stmt_type]) + INFO_SQL_SELECT_DESCRIBE_VARS + INFO_SQL_BIND_DESCRIBE_VARS
         p = Packer()
         p.pack_int(self.op_prepare_statement)
         p.pack_int(trans_handle)
@@ -658,7 +697,7 @@ class WireProtocol(object):
         self.sock.send(p.get_buffer())
 
     @wire_operation
-    def _op_execute(self, stmt_handle, trans_handle, params):
+    def _op_execute(self, stmt_handle, trans_handle, params, input_xsqlda=None):
         p = Packer()
         p.pack_int(self.op_execute)
         p.pack_int(stmt_handle)
@@ -670,7 +709,7 @@ class WireProtocol(object):
             p.pack_int(0)
             buf = p.get_buffer()
         else:
-            (blr, values) = self.params_to_blr(trans_handle, params)
+            (blr, values) = self.params_to_blr(trans_handle, params, input_xsqlda)
             p.pack_bytes(blr)
             p.pack_int(0)
             p.pack_int(1)
@@ -680,7 +719,7 @@ class WireProtocol(object):
         self.sock.send(buf)
 
     @wire_operation
-    def _op_execute2(self, stmt_handle, trans_handle, params, output_blr):
+    def _op_execute2(self, stmt_handle, trans_handle, params, output_blr, input_xsqlda=None):
         p = Packer()
         p.pack_int(self.op_execute2)
         p.pack_int(stmt_handle)
@@ -692,7 +731,7 @@ class WireProtocol(object):
             p.pack_int(0)
             p.pack_int(0)
         else:
-            (blr, values) = self.params_to_blr(trans_handle, params)
+            (blr, values) = self.params_to_blr(trans_handle, params, input_xsqlda)
             p.pack_bytes(blr)
             p.pack_int(0)
             p.pack_int(1)
@@ -704,6 +743,44 @@ class WireProtocol(object):
         if self.accept_version >= PROTOCOL_VERSION16:
             buf += int_to_bytes(0, 4)
         self.sock.send(buf)
+
+    @wire_operation
+    def _op_get_slice(self, trans_handle, array_id, meta):
+        from firebirdsql.array import array_slice_get_length, generate_sdl
+        app_len = array_slice_get_length(meta, meta.dimensions)
+        if app_len <= 0:
+            raise OperationalError(f"invalid array slice length {app_len}")
+        sdl = generate_sdl(meta, meta.dimensions, for_get=True)
+        p = Packer()
+        p.pack_int(self.op_get_slice)
+        p.pack_int(trans_handle)
+        p.buf += array_id
+        p.pack_int(app_len)
+        p.pack_bytes(sdl)
+        p.pack_bytes(b'')
+        p.pack_bytes(b'')
+        self.sock.send(p.get_buffer())
+        return self._op_slice_response(meta)
+
+    @wire_operation
+    def _op_put_slice(self, trans_handle, meta, data, actual_count):
+        from firebirdsql.array import array_slice_app_length, pad_slice_wire, generate_sdl
+        app_len = array_slice_app_length(meta, meta.dimensions)
+        if app_len <= 0:
+            raise OperationalError(f"invalid array slice length {app_len}")
+        wire = pad_slice_wire(meta, data, actual_count)
+        sdl = generate_sdl(meta, meta.dimensions, for_get=False)
+        p = Packer()
+        p.pack_int(self.op_put_slice)
+        p.pack_int(trans_handle)
+        p.buf += bint_to_bytes(0, 8)
+        p.pack_int(app_len)
+        p.pack_bytes(sdl)
+        p.pack_bytes(b'')
+        p.pack_int(app_len)
+        self.sock.send(p.get_buffer() + wire)
+        (h, oid, buf) = self._op_response()
+        return oid
 
     @wire_operation
     def _op_exec_immediate(self, trans_handle, query):
