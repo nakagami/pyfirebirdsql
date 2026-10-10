@@ -365,3 +365,8 @@ Version 1.4.7
    - DBAPITypeObject for Python 3
    - add type hints (PEP 561)
    - fix async connection loop handling
+
+Version 1.4.8
+==============
+
+   - array type support
