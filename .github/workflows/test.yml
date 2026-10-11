@@ -30,6 +30,8 @@ jobs:
     services:
       firebird:
         image: ${{ matrix.firebird-image }}
+        volumes:
+          - /tmp:/tmp
         env:
           ISC_PASSWORD: masterkey
           FIREBIRD_ROOT_PASSWORD: masterkey
