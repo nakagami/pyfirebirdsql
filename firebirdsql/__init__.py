@@ -30,12 +30,23 @@ import decimal
 import time
 from typing import Any
 from firebirdsql.consts import *    # noqa
-from firebirdsql.fbcore import Connection
-from firebirdsql.array import Array, ArrayDimension, ArrayMeta
+from firebirdsql.fbcore import Connection as Connection
+from firebirdsql.array import (
+    Array as Array, ArrayDimension as ArrayDimension, ArrayMeta as ArrayMeta
+)
 import firebirdsql.services
 from firebirdsql.err import (
-    Warning, Error, InterfaceError, DatabaseError, DisconnectByPeer, InternalError,
-    OperationalError, ProgrammingError, IntegrityError, DataError, NotSupportedError
+    Warning as Warning,
+    Error as Error,
+    InterfaceError as InterfaceError,
+    DatabaseError as DatabaseError,
+    DisconnectByPeer as DisconnectByPeer,
+    InternalError as InternalError,
+    OperationalError as OperationalError,
+    ProgrammingError as ProgrammingError,
+    IntegrityError as IntegrityError,
+    DataError as DataError,
+    NotSupportedError as NotSupportedError,
 )
 
 
