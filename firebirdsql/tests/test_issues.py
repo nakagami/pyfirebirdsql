@@ -155,3 +155,18 @@ WHERE doc.RFCEMPRESA = 'p2' and doc.NOSUCURSAL = 0 and doc.TIPO = 700 and doc.SE
         self.assertEqual(len(cur.fetchall()), 1)
 
         cur.close()
+
+    def test_issue_111(self):
+        import gc
+        cur1 = self.connection.cursor()
+        self.assertIn(cur1, self.connection._cursors[self.connection._transaction])
+        cur1.close()
+        self.assertNotIn(cur1, self.connection._cursors[self.connection._transaction])
+
+        cur2 = self.connection.cursor()
+        cur2.execute("SELECT 1 FROM RDB$DATABASE")
+        self.assertEqual(cur2.fetchone()[0], 1)
+        del cur2
+        gc.collect()
+        self.assertEqual(len(self.connection._cursors[self.connection._transaction]), 0)
+

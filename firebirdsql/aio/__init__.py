@@ -1,8 +1,8 @@
 import asyncio
 from typing import Any
 from firebirdsql.consts import DEFAULT_CHARSET
-from .fbcore import AsyncConnection, AsyncCursor
-from .pool import create_pool
+from .fbcore import AsyncConnection as AsyncConnection, AsyncCursor as AsyncCursor
+from .pool import create_pool as create_pool
 
 
 async def connect(

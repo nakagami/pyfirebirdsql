@@ -31,6 +31,7 @@ import datetime
 import itertools
 import hashlib
 import select
+import weakref
 from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import Any
 from firebirdsql.fbcore import Statement, PreparedStatement, Cursor, Transaction, ConnectionBase, ConnectionResponseMixin
@@ -201,11 +202,14 @@ class AsyncCursor(Cursor):
         else:
             raise NotSupportedError()
         if self._transaction not in conn._cursors:
-            conn._cursors[self._transaction] = []
-        conn._cursors[self._transaction].append(self)
+            conn._cursors[self._transaction] = weakref.WeakSet()
+        conn._cursors[self._transaction].add(self)
         self.stmt: AsyncStatement | None = None
         self.arraysize: int = 1
         self.rowcount: int = -1
+
+    def __del__(self) -> None:
+        pass
 
     async def __aenter__(self) -> 'AsyncCursor':
         return self
@@ -381,6 +385,8 @@ class AsyncCursor(Cursor):
 
     async def close(self) -> None:
         DEBUG_OUTPUT("AsyncCursor::close()")
+        if self._transaction in self.transaction.connection._cursors:
+            self.transaction.connection._cursors[self._transaction].discard(self)
         if not self.stmt:
             return
         await self.stmt.drop()
@@ -968,7 +974,6 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
         self.last_usage = self.loop.time()
         if self._transaction is None:
             self._transaction = AsyncTransaction(self, self._autocommit)
-        self._cursors[self._transaction] = []
         return factory(self)
 
     def begin(self) -> None:
@@ -977,7 +982,7 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
             raise InternalError("Missing socket")
         if self._transaction is None:
             self._transaction = AsyncTransaction(self, self._autocommit)
-        self._cursors[self._transaction] = []
+        self._cursors[self._transaction] = weakref.WeakSet()
         self._transaction.begin()
 
     async def commit(self, retaining: bool = False) -> None:

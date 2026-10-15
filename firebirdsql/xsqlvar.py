@@ -30,7 +30,7 @@ import decimal
 
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
-from firebirdsql.wireprotocol import INFO_SQL_SELECT_DESCRIBE_VARS
+from firebirdsql.wireprotocol import INFO_SQL_SELECT_DESCRIBE_VARS, INFO_SQL_BIND_DESCRIBE_VARS
 from firebirdsql.tz_utils import get_tzinfo_by_id
 from firebirdsql import decfloat
 
@@ -91,6 +91,7 @@ class XSQLVAR:
         self.relname = ''
         self.ownname = ''
         self.aliasname = ''
+        self.array_meta = None
 
     def io_length(self):
         sqltype = self.sqltype
@@ -256,65 +257,84 @@ def calc_blr(xsqlda):
     return bytes(256 + b if b < 0 else b for b in blr)
 
 
-def parse_select_items(buf, xsqlda, connection):
+def parse_select_items_with_offset(buf, offset, xsqlda, connection):
     index = 0
-    i = 0
-    item = buf[i]
-    while item != isc_info_end:
-        if item == isc_info_sql_sqlda_seq:
+    i = offset
+    while i < len(buf):
+        item = buf[i]
+        if item == isc_info_end:
+            return -1, i
+        elif item in (isc_info_sql_select, isc_info_sql_bind) and i + 1 < len(buf) and buf[i+1] == isc_info_sql_describe_vars:
+            return -1, i
+        elif item == isc_info_truncated:
+            return index, i + 1
+        elif item == isc_info_sql_describe_end:
+            i += 1
+        elif item == isc_info_sql_sqlda_seq:
             ln = bytes_to_int(buf[i+1:i+3])
             index = bytes_to_int(buf[i+3:i+3+ln])
-            xsqlda[index-1] = XSQLVAR(connection.bytes_to_str)
+            if index - 1 < len(xsqlda):
+                xsqlda[index-1] = XSQLVAR(connection.bytes_to_str)
             i = i + 3 + ln
         elif item == isc_info_sql_type:
             ln = bytes_to_int(buf[i+1:i+3])
-            xsqlda[index-1].sqltype = bytes_to_int(buf[i+3:i+3+ln]) & ~ 1
+            if index - 1 < len(xsqlda) and xsqlda[index-1] is not None:
+                xsqlda[index-1].sqltype = bytes_to_int(buf[i+3:i+3+ln]) & ~ 1
             i = i + 3 + ln
         elif item == isc_info_sql_sub_type:
             ln = bytes_to_int(buf[i+1:i+3])
-            xsqlda[index-1].sqlsubtype = bytes_to_int(buf[i+3:i+3+ln])
+            if index - 1 < len(xsqlda) and xsqlda[index-1] is not None:
+                xsqlda[index-1].sqlsubtype = bytes_to_int(buf[i+3:i+3+ln])
             i = i + 3 + ln
         elif item == isc_info_sql_scale:
             ln = bytes_to_int(buf[i+1:i+3])
-            xsqlda[index-1].sqlscale = bytes_to_int(buf[i+3:i+3+ln])
+            if index - 1 < len(xsqlda) and xsqlda[index-1] is not None:
+                xsqlda[index-1].sqlscale = bytes_to_int(buf[i+3:i+3+ln])
             i = i + 3 + ln
         elif item == isc_info_sql_length:
             ln = bytes_to_int(buf[i+1:i+3])
-            xsqlda[index-1].sqllen = bytes_to_int(buf[i+3:i+3+ln])
+            if index - 1 < len(xsqlda) and xsqlda[index-1] is not None:
+                xsqlda[index-1].sqllen = bytes_to_int(buf[i+3:i+3+ln])
             i = i + 3 + ln
         elif item == isc_info_sql_null_ind:
             ln = bytes_to_int(buf[i+1:i+3])
-            xsqlda[index-1].null_ok = bytes_to_int(buf[i+3:i+3+ln])
+            if index - 1 < len(xsqlda) and xsqlda[index-1] is not None:
+                xsqlda[index-1].null_ok = bytes_to_int(buf[i+3:i+3+ln])
             i = i + 3 + ln
         elif item == isc_info_sql_field:
             ln = bytes_to_int(buf[i+1:i+3])
-            xsqlda[index-1].fieldname = connection.bytes_to_str(buf[i+3:i+3+ln])
+            if index - 1 < len(xsqlda) and xsqlda[index-1] is not None:
+                xsqlda[index-1].fieldname = connection.bytes_to_str(buf[i+3:i+3+ln])
             i = i + 3 + ln
         elif item == isc_info_sql_relation:
             ln = bytes_to_int(buf[i+1:i+3])
-            xsqlda[index-1].relname = connection.bytes_to_str(buf[i+3:i+3+ln])
+            if index - 1 < len(xsqlda) and xsqlda[index-1] is not None:
+                xsqlda[index-1].relname = connection.bytes_to_str(buf[i+3:i+3+ln])
             i = i + 3 + ln
         elif item == isc_info_sql_owner:
             ln = bytes_to_int(buf[i+1:i+3])
-            xsqlda[index-1].ownname = connection.bytes_to_str(buf[i+3:i+3+ln])
+            if index - 1 < len(xsqlda) and xsqlda[index-1] is not None:
+                xsqlda[index-1].ownname = connection.bytes_to_str(buf[i+3:i+3+ln])
             i = i + 3 + ln
         elif item == isc_info_sql_alias:
             ln = bytes_to_int(buf[i+1:i+3])
-            xsqlda[index-1].aliasname = connection.bytes_to_str(buf[i+3:i+3+ln])
+            if index - 1 < len(xsqlda) and xsqlda[index-1] is not None:
+                xsqlda[index-1].aliasname = connection.bytes_to_str(buf[i+3:i+3+ln])
             i = i + 3 + ln
-        elif item == isc_info_truncated:
-            return index    # return next index
-        elif item == isc_info_sql_describe_end:
-            i = i + 1
         else:
-            print('\t', item, 'Invalid item [%02x] ! i=%d' % (buf[i], i))
             i = i + 1
-        item = buf[i]
-    return -1   # no more info
+    return -1, i
+
+
+def parse_select_items(buf, xsqlda, connection):
+    index, _ = parse_select_items_with_offset(buf, 0, xsqlda, connection)
+    return index
 
 
 def parse_xsqlda(buf, connection, stmt_handle):
+    from firebirdsql.array import resolve_array_meta
     xsqlda = []
+    bind_xsqlda = []
     stmt_type = None
     i = 0
     while i < len(buf):
@@ -326,18 +346,42 @@ def parse_xsqlda(buf, connection, stmt_handle):
             ln = bytes_to_int(buf[i:i+2])
             i += 2
             col_len = bytes_to_int(buf[i:i+ln])
+            i += ln
             xsqlda = [None] * col_len
-            next_index = parse_select_items(buf[i+ln:], xsqlda, connection)
+            next_index, i = parse_select_items_with_offset(buf, i, xsqlda, connection)
             while next_index > 0:   # more describe vars
                 connection._op_info_sql(
                     stmt_handle,
                     bytes([isc_info_sql_sqlda_start, 2]) + int_to_bytes(next_index, 2) + INFO_SQL_SELECT_DESCRIBE_VARS
                 )
-                (h, oid, buf) = connection._op_response()
-                assert buf[:2] == bytes([0x04, 0x07])
-                ln = bytes_to_int(buf[2:4])
-                assert bytes_to_int(buf[4:4+ln]) == col_len
-                next_index = parse_select_items(buf[4+ln:], xsqlda, connection)
-        else:
+                (h, oid, buf2) = connection._op_response()
+                assert buf2[:2] == bytes([0x04, 0x07])
+                ln2 = bytes_to_int(buf2[2:4])
+                assert bytes_to_int(buf2[4:4+ln2]) == col_len
+                next_index, _ = parse_select_items_with_offset(buf2, 4+ln2, xsqlda, connection)
+        elif buf[i:i+2] == bytes([isc_info_sql_bind, isc_info_sql_describe_vars]):
+            i += 2
+            ln = bytes_to_int(buf[i:i+2])
+            i += 2
+            col_len = bytes_to_int(buf[i:i+ln])
+            i += ln
+            bind_xsqlda = [None] * col_len
+            next_index, i = parse_select_items_with_offset(buf, i, bind_xsqlda, connection)
+            while next_index > 0:   # more describe vars
+                connection._op_info_sql(
+                    stmt_handle,
+                    bytes([isc_info_sql_sqlda_start, 2]) + int_to_bytes(next_index, 2) + INFO_SQL_BIND_DESCRIBE_VARS
+                )
+                (h, oid, buf2) = connection._op_response()
+                assert buf2[:2] == bytes([0x08, 0x07])
+                ln2 = bytes_to_int(buf2[2:4])
+                assert bytes_to_int(buf2[4:4+ln2]) == col_len
+                next_index, _ = parse_select_items_with_offset(buf2, 4+ln2, bind_xsqlda, connection)
+        elif buf[i] == isc_info_end:
             break
-    return stmt_type, xsqlda
+        else:
+            i += 1
+
+    resolve_array_meta(connection, xsqlda)
+    resolve_array_meta(connection, bind_xsqlda)
+    return stmt_type, xsqlda, bind_xsqlda
