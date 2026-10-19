@@ -86,6 +86,11 @@ class XSQLVAR:
         self.sqlscale = None
         self.sqlsubtype = None
         self.sqllen = None
+        # Byte length declared for a text column in the output message BLR
+        # when it differs from sqllen (see widen_untransliterated_text).
+        # None means sqllen. Metadata (io_length, display_length and so
+        # cursor.description) keeps using sqllen.
+        self.msglen = None
         self.null_ok = None
         self.fieldname = ''
         self.relname = ''
@@ -99,6 +104,16 @@ class XSQLVAR:
             return self.sqllen
         else:
             return self.type_length[sqltype]
+
+    def message_length(self):
+        "Byte length of a text column in the message buffer."
+        return self.msglen if self.msglen else self.sqllen
+
+    def wire_length(self):
+        "Bytes of a fetched value on the wire; -1 for a length-prefixed VARCHAR."
+        if self.sqltype == SQL_TYPE_TEXT:
+            return self.message_length()
+        return self.type_length[self.sqltype]
 
     def display_length(self):
         sqltype = self.sqltype
@@ -226,6 +241,79 @@ sqltype2blr = {
     }
 
 
+# RDB$CHARACTER_SETS.RDB$BYTES_PER_CHARACTER of the multi-byte charsets, by id
+# and by name; every other charset is single-byte. The same in Firebird 2.5-6.0.
+CHARSET_ID_OCTETS = 1
+_BYTES_PER_CHAR_BY_ID = {3: 3, 4: 4, 5: 2, 6: 2, 44: 2, 56: 2, 57: 2, 67: 2, 68: 2, 69: 4}
+_BYTES_PER_CHAR_BY_NAME = {
+    'UNICODE_FSS': 3, 'UTF8': 4, 'GB18030': 4,
+    'SJIS_0208': 2, 'EUCJ_0208': 2, 'KSC_5601': 2, 'BIG_5': 2, 'GB_2312': 2, 'GBK': 2, 'CP943C': 2,
+}
+
+
+def charset_bytes_per_char(charset_id):
+    "Maximum bytes per character of a charset id."
+    return _BYTES_PER_CHAR_BY_ID.get(charset_id, 1)
+
+
+def connection_bytes_per_char(charset):
+    "Maximum bytes per character of a connection charset name."
+    return _BYTES_PER_CHAR_BY_NAME.get((charset or '').upper(), 1)
+
+
+def widen_untransliterated_text(xsqlda, conn_bytes_per_char):
+    """
+    Size the output message buffer of text columns that the server returns in
+    their own charset instead of the connection charset.
+
+    Under a multi-byte connection charset (UTF8, UNICODE_FSS, SJIS_0208, ...)
+    the server transliterates text columns and describes them in the
+    connection charset: a WIN1252 VARCHAR(40) is described as sqllen 160 under
+    UTF8. Columns in CHARACTER SET NONE (and OCTETS) are not transliterated and
+    are described with their byte length: a NONE VARCHAR(40) is sqllen 40.
+
+    The output message declares text items as blr_text/blr_varying, which
+    carry no charset. Firebird 2.5 to 5.0 treat such an item's length as
+    bytes. Firebird 6 treats it as characters of the connection charset, so a
+    40-byte item holds only 40 / 4 = 10 UTF8 characters and fetching a longer
+    NONE value fails with "string right truncation, expected length 10,
+    actual 15". System columns such as RDB$CONSTRAINT_TYPE (CHAR(11)
+    CHARACTER SET NONE) fail the same way: "expected length 2, actual 11".
+
+    Declaring char length * connection bytes per character satisfies
+    Firebird 6 and is harmless on Firebird 3 to 5: VARCHAR values carry their
+    own length, and the blank padding of a wider CHAR buffer is stripped like
+    any CHAR padding. The widened length is capped to fit the 16-bit BLR
+    length. Callers apply it on protocol 13+ only (Firebird 3+): Firebird 2.5
+    is not affected and rejects messages over 64 KB with "SQLDA error", which
+    widening can produce. node-firebird applies the same widening (its issue
+    #422).
+
+    OCTETS columns are binary and never widened.
+    """
+    if conn_bytes_per_char <= 1:
+        return
+    max_len = 0xFFFF // conn_bytes_per_char * conn_bytes_per_char
+    for x in xsqlda:
+        if x is None or x.sqltype not in (SQL_TYPE_TEXT, SQL_TYPE_VARYING) or not x.sqllen:
+            continue
+        charset_id = (x.sqlsubtype or 0) & 0xFF
+        if charset_id == CHARSET_ID_OCTETS:
+            continue
+        col_bytes_per_char = charset_bytes_per_char(charset_id)
+        if col_bytes_per_char >= conn_bytes_per_char:
+            continue    # transliterated, or already as wide as the connection charset
+        widened = min(x.sqllen // col_bytes_per_char * conn_bytes_per_char, max_len)
+        if widened > x.sqllen:
+            x.msglen = widened
+
+
+def widen_output_messages(xsqlda, connection):
+    "Apply widen_untransliterated_text for a statement's output columns."
+    if connection.accept_version >= PROTOCOL_VERSION13:
+        widen_untransliterated_text(xsqlda, connection_bytes_per_char(connection.charset))
+
+
 def calc_blr(xsqlda):
     "Calculate  BLR from XSQLVAR array."
     ln = len(xsqlda) * 2
@@ -233,9 +321,11 @@ def calc_blr(xsqlda):
     for x in xsqlda:
         sqltype = x.sqltype
         if sqltype == SQL_TYPE_VARYING:
-            blr += [37, x.sqllen & 255, x.sqllen >> 8]
+            ln = x.message_length()
+            blr += [37, ln & 255, ln >> 8]
         elif sqltype == SQL_TYPE_TEXT:
-            blr += [14, x.sqllen & 255, x.sqllen >> 8]
+            ln = x.message_length()
+            blr += [14, ln & 255, ln >> 8]
         elif sqltype == SQL_TYPE_LONG:
             blr += [8, x.sqlscale]
         elif sqltype == SQL_TYPE_SHORT:
@@ -384,4 +474,5 @@ def parse_xsqlda(buf, connection, stmt_handle):
 
     resolve_array_meta(connection, xsqlda)
     resolve_array_meta(connection, bind_xsqlda)
+    widen_output_messages(xsqlda, connection)
     return stmt_type, xsqlda, bind_xsqlda

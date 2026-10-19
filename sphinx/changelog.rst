@@ -372,3 +372,6 @@ Version 1.4.8
    - array type support
    - aggregate and add tests for Firebird 2.5cs, 4, 5
    - Re-export the public names explicitly for type checkers- #140
+   - fix "string right truncation" fetching CHARACTER SET NONE columns
+     over a multi-byte connection charset (e.g. the default UTF8) with
+     Firebird 6
