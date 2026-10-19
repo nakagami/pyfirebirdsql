@@ -575,6 +575,42 @@ that take longer than this time will raise a timeout error.
 
 
 
+.. _character-sets:
+
+Character Sets
+==============
+
+The `charset` parameter to :func:`firebirdsql.connect()` sets the
+connection character set (default ``UTF8``). The server converts text
+columns from their own character set to it, so a ``WIN1252`` column is
+returned as UTF8 text under the default.
+
+Columns in ``CHARACTER SET NONE`` are not converted: their bytes are
+returned as stored and decoded with the connection character set.
+``NONE`` is the default for text columns in a database created without
+``DEFAULT CHARACTER SET``, and several system columns use it, such as
+``RDB$RELATION_CONSTRAINTS.RDB$CONSTRAINT_TYPE``.
+
+``NONE`` columns and Firebird 6
+-------------------------------
+
+Firebird 6 sizes the row buffer of an unconverted text column in
+characters of the connection character set instead of bytes. With a
+buffer of the column's byte length, a ``VARCHAR(40) CHARACTER SET NONE``
+would hold only 10 characters under UTF8, and longer values would fail
+with::
+
+   arithmetic exception, numeric overflow, or string truncation
+   string right truncation
+   expected length 10, actual 15
+
+pyfirebirdsql therefore declares the buffer of such columns as
+*length x bytes per character of the connection charset* (up to the
+64 KB limit of a single column), on Firebird 3.0 and later. Values and
+:attr:`Cursor.description` are unchanged; Firebird 2.5 is not affected
+and keeps the exact buffer sizes.
+
+
 Database Event Notification
 ===========================
 
