@@ -33,7 +33,7 @@ import struct
 import datetime
 import decimal
 
-from firebirdsql.err import OperationalError
+from firebirdsql.err import OperationalError, DataError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
 from firebirdsql import srp
@@ -962,13 +962,25 @@ class WireProtocol(object):
         return length
 
     def _encode_batch_field(self, x, val):
-        if x.sqltype in (SQL_TYPE_SHORT, SQL_TYPE_LONG):
+        if x.sqltype == SQL_TYPE_SHORT:
             if x.sqlscale < 0:
                 if not isinstance(val, decimal.Decimal):
                     val = decimal.Decimal(str(val))
                 v = int(val * (10 ** (-x.sqlscale)))
             else:
                 v = int(val)
+            if v < -32768 or v > 32767:
+                raise DataError(f"Numeric value {v} out of range for SMALLINT")
+            return bint_to_bytes(v, 2)
+        elif x.sqltype == SQL_TYPE_LONG:
+            if x.sqlscale < 0:
+                if not isinstance(val, decimal.Decimal):
+                    val = decimal.Decimal(str(val))
+                v = int(val * (10 ** (-x.sqlscale)))
+            else:
+                v = int(val)
+            if v < -2147483648 or v > 2147483647:
+                raise DataError(f"Numeric value {v} out of range for INTEGER")
             return bint_to_bytes(v, 4)
         elif x.sqltype in (SQL_TYPE_INT64, SQL_TYPE_QUAD):
             if x.sqlscale < 0:
@@ -977,12 +989,16 @@ class WireProtocol(object):
                 v = int(val * (10 ** (-x.sqlscale)))
             else:
                 v = int(val)
+            if v < -9223372036854775808 or v > 9223372036854775807:
+                raise DataError(f"Numeric value {v} out of range for BIGINT")
             return bint_to_bytes(v, 8)
         elif x.sqltype == SQL_TYPE_FLOAT:
             return struct.pack('>f', float(val))
         elif x.sqltype in (SQL_TYPE_DOUBLE, SQL_TYPE_D_FLOAT):
             return struct.pack('>d', float(val))
         elif x.sqltype == SQL_TYPE_BOOLEAN:
+            if type(val) is not bool and val not in (0, 1):
+                raise DataError(f"Invalid boolean value for batch execution: {val!r}")
             return b'\x01' if val else b'\x00'
         elif x.sqltype in (SQL_TYPE_TEXT, SQL_TYPE_VARYING):
             if isinstance(val, str):
@@ -992,17 +1008,19 @@ class WireProtocol(object):
             else:
                 b = self.str_to_bytes(str(val))
             if x.sqllen and len(b) > x.sqllen:
-                b = b[:x.sqllen]
+                raise DataError(f"String length {len(b)} exceeds maximum length {x.sqllen}")
             return b
         elif x.sqltype == SQL_TYPE_DATE:
+            if not isinstance(val, datetime.date) or isinstance(val, datetime.datetime):
+                raise DataError(f"Invalid DATE value for batch execution: {val!r}")
             return convert_date(val)
         elif x.sqltype == SQL_TYPE_TIME:
             if getattr(val, 'tzinfo', None):
-                return convert_time_tz(val)
+                raise DataError("Cannot bind timezone-aware time to plain TIME in batch execution")
             return convert_time(val)
         elif x.sqltype == SQL_TYPE_TIMESTAMP:
             if getattr(val, 'tzinfo', None):
-                return convert_timestamp_tz(val)
+                raise DataError("Cannot bind timezone-aware datetime to plain TIMESTAMP in batch execution")
             return convert_timestamp(val)
         elif x.sqltype == SQL_TYPE_TIME_TZ:
             return convert_time_tz(val)
@@ -1040,7 +1058,7 @@ class WireProtocol(object):
             elif x.sqltype == SQL_TYPE_TEXT:
                 need = x.sqllen
                 if len(fb) > need:
-                    fb = fb[:need]
+                    raise DataError(f"String length {len(fb)} exceeds maximum length {need}")
                 out.extend(fb)
                 if len(fb) < need:
                     out.extend(b' ' * (need - len(fb)))

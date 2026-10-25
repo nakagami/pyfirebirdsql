@@ -29,6 +29,7 @@ from __future__ import print_function
 import sys
 import struct
 import datetime
+import decimal
 import itertools
 import hashlib
 import select
@@ -226,6 +227,8 @@ class Cursor(object):
         self.arraysize: int = 1
         self.rowcount: int = -1
         self.statement_timeout: float | int | None = timeout if timeout is not None else getattr(conn, 'statement_timeout', None)
+        self._fetch_records = None
+        self._callproc_result = None
 
     @property
     def timeout(self) -> float | int | None:
@@ -351,7 +354,87 @@ class Cursor(object):
         self.execute(query, params)
         return tuple(self._callproc_result) if self._callproc_result else None
 
-    def _can_use_batch(self, stmt: Statement) -> bool:
+    def _is_safe_batch_row(self, bind_xsqlda: Sequence[Any], params: Sequence[Any]) -> bool:
+        if len(params) != len(bind_xsqlda):
+            return False
+        for i, x in enumerate(bind_xsqlda):
+            val = params[i]
+            if val is None:
+                continue
+            if x.sqltype == SQL_TYPE_BOOLEAN:
+                if type(val) is not bool:
+                    return False
+            elif x.sqltype == SQL_TYPE_DATE:
+                if type(val) is not datetime.date or isinstance(val, datetime.datetime):
+                    return False
+            elif x.sqltype == SQL_TYPE_TIME:
+                if type(val) is not datetime.time or val.tzinfo is not None:
+                    return False
+            elif x.sqltype == SQL_TYPE_TIMESTAMP:
+                if type(val) is not datetime.datetime or val.tzinfo is not None:
+                    return False
+            elif x.sqltype == SQL_TYPE_TIME_TZ:
+                if type(val) is not datetime.time or val.tzinfo is None:
+                    return False
+            elif x.sqltype == SQL_TYPE_TIMESTAMP_TZ:
+                if type(val) is not datetime.datetime or val.tzinfo is None:
+                    return False
+            elif x.sqltype in (SQL_TYPE_TEXT, SQL_TYPE_VARYING):
+                if isinstance(val, str):
+                    b = self.transaction.connection.str_to_bytes(val)
+                elif isinstance(val, bytes):
+                    b = val
+                else:
+                    return False
+                if x.sqllen and len(b) > x.sqllen:
+                    return False
+            elif x.sqltype == SQL_TYPE_SHORT:
+                if not isinstance(val, (int, float, decimal.Decimal)):
+                    return False
+                try:
+                    if x.sqlscale < 0:
+                        dec = val if isinstance(val, decimal.Decimal) else decimal.Decimal(str(val))
+                        v = int(dec * (10 ** (-x.sqlscale)))
+                    else:
+                        v = int(val)
+                except Exception:
+                    return False
+                if v < -32768 or v > 32767:
+                    return False
+            elif x.sqltype == SQL_TYPE_LONG:
+                if not isinstance(val, (int, float, decimal.Decimal)):
+                    return False
+                try:
+                    if x.sqlscale < 0:
+                        dec = val if isinstance(val, decimal.Decimal) else decimal.Decimal(str(val))
+                        v = int(dec * (10 ** (-x.sqlscale)))
+                    else:
+                        v = int(val)
+                except Exception:
+                    return False
+                if v < -2147483648 or v > 2147483647:
+                    return False
+            elif x.sqltype in (SQL_TYPE_INT64, SQL_TYPE_QUAD):
+                if not isinstance(val, (int, float, decimal.Decimal)):
+                    return False
+                try:
+                    if x.sqlscale < 0:
+                        dec = val if isinstance(val, decimal.Decimal) else decimal.Decimal(str(val))
+                        v = int(dec * (10 ** (-x.sqlscale)))
+                    else:
+                        v = int(val)
+                except Exception:
+                    return False
+                if v < -9223372036854775808 or v > 9223372036854775807:
+                    return False
+            elif x.sqltype in (SQL_TYPE_FLOAT, SQL_TYPE_DOUBLE, SQL_TYPE_D_FLOAT):
+                if not isinstance(val, (int, float, decimal.Decimal)):
+                    return False
+        return True
+
+    def _can_use_batch(self, stmt: Statement, seq_of_params: Any = None) -> bool:
+        if self.statement_timeout:
+            return False
         conn = self.transaction.connection
         if conn.accept_version < PROTOCOL_VERSION16:
             return False
@@ -363,9 +446,15 @@ class Cursor(object):
             return False
         if any(x.sqltype not in BATCH_SUPPORTED_SQL_TYPES for x in stmt.bind_xsqlda):
             return False
+        if seq_of_params:
+            for params in seq_of_params:
+                if not self._is_safe_batch_row(stmt.bind_xsqlda, params):
+                    return False
         return True
 
     def _executemany_batch(self, stmt: Statement, seq_of_params: Iterable[Sequence[Any]]) -> int:
+        self._fetch_records = None
+        self._callproc_result = None
         conn = self.transaction.connection
         flush_threshold = 128 * 1024
         batch_created = False
@@ -407,15 +496,28 @@ class Cursor(object):
     def executemany(self, query: str | PreparedStatement, seq_of_params: Sequence[Sequence[Any]]) -> None:
         self.transaction.check_trans_handle()
         stmt = self._get_stmt(query)
-        if self._can_use_batch(stmt):
+        self._fetch_records = None
+        self._callproc_result = None
+
+        if isinstance(seq_of_params, (list, tuple)):
+            param_list = seq_of_params
+        else:
+            param_list = list(seq_of_params)
+
+        try:
+            can_batch = self._can_use_batch(stmt, param_list)
+        except TypeError:
+            can_batch = self._can_use_batch(stmt)
+
+        if can_batch:
             try:
-                self.rowcount = self._executemany_batch(stmt, seq_of_params)
+                self.rowcount = self._executemany_batch(stmt, param_list)
                 return
             finally:
                 self.transaction.is_dirty = True
 
         total = 0
-        for params in seq_of_params:
+        for params in param_list:
             self.execute(query, params)
             if self.rowcount > 0:
                 total += self.rowcount
@@ -1101,7 +1203,9 @@ class ConnectionResponseMixin:
                 while len(buf) < needed:
                     if self.timeout is not None and select.select([self.sock._sock], [], [], self.timeout)[0] == []:
                         raise TimeoutError("Pakcet recv timeout error")
-                    chunk = self.sock.recv(max(65536, needed - len(buf)))
+                    is_compressed = getattr(self.sock, '_decompressor', None) is not None
+                    read_size = (needed - len(buf)) if is_compressed else max(65536, needed - len(buf))
+                    chunk = self.sock.recv(read_size)
                     if not chunk:
                         raise OperationalError('Can not recv() packets')
                     buf.extend(chunk)
@@ -1218,7 +1322,10 @@ class ConnectionResponseMixin:
             raw_value = None
             mv = None
             if pos > 0:
-                del buf[:pos]
+                try:
+                    del buf[:pos]
+                except BufferError:
+                    self._recv_buf = bytearray(buf[pos:])
 
 
 class ConnectionBase(WireProtocol):

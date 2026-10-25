@@ -932,7 +932,8 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
                     del buf[:pos]
                     pos = 0
                 while len(buf) < needed:
-                    read_size = max(65536, needed - len(buf))
+                    is_compressed = getattr(self.sock, '_decompressor', None) is not None
+                    read_size = (needed - len(buf)) if is_compressed else max(65536, needed - len(buf))
                     if self.timeout is not None:
                         chunk = await asyncio.wait_for(self.sock.async_recv(read_size), timeout=self.timeout)
                     else:
@@ -1053,7 +1054,10 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
             raw_value = None
             mv = None
             if pos > 0:
-                del buf[:pos]
+                try:
+                    del buf[:pos]
+                except BufferError:
+                    self._recv_buf = bytearray(buf[pos:])
 
 
 class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):

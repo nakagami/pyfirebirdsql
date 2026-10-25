@@ -681,6 +681,73 @@ class TestBasic(TestBase):
         self.assertEqual(cur.rowcount, 0)
         cur.close()
 
+    def test_batch_edge_cases(self):
+        if self.server_version[0] < 4:
+            self.connection.close()
+            return
+
+        cur = self.connection.cursor()
+        cur.execute("""
+            CREATE TABLE batch_edge (
+                id INT PRIMARY KEY,
+                s VARCHAR(5),
+                dt DATE,
+                flag BOOLEAN,
+                ts TIMESTAMP,
+                si SMALLINT
+            )
+        """)
+        self.connection.commit()
+
+        # 1. Fresh cursor executemany followed by fetchone should return None (not raise AttributeError)
+        cur_fresh = self.connection.cursor()
+        cur_fresh.executemany("INSERT INTO batch_edge (id, s) VALUES (?, ?)", [(1, "a")])
+        self.assertIsNone(cur_fresh.fetchone())
+        self.assertEqual(cur_fresh.fetchall(), [])
+
+        # 2. Previous SELECT cursor: executemany clears stale results
+        cur_stale = self.connection.cursor()
+        cur_stale.execute("SELECT id FROM batch_edge")
+        cur_stale.executemany("INSERT INTO batch_edge (id, s) VALUES (?, ?)", [(2, "b")])
+        self.assertIsNone(cur_stale.fetchone())
+        self.assertEqual(cur_stale.fetchall(), [])
+
+        # 3. DATE string / BOOLEAN string fallback to ordinary execution and succeed
+        cur.executemany(
+            "INSERT INTO batch_edge (id, dt, flag) VALUES (?, ?, ?)",
+            [(3, "2025-01-01", "false"), (4, "2025-01-02", "true")]
+        )
+        self.connection.commit()
+        cur.execute("SELECT id, dt, flag FROM batch_edge WHERE id IN (3, 4) ORDER BY id")
+        self.assertEqual(cur.fetchall(), [
+            (3, datetime.date(2025, 1, 1), False),
+            (4, datetime.date(2025, 1, 2), True),
+        ])
+
+        # 4. Overlong VARCHAR does not silently truncate (raises error)
+        with self.assertRaises(firebirdsql.DatabaseError):
+            cur.executemany("INSERT INTO batch_edge (id, s) VALUES (?, ?)", [(10, "abcdef")])
+        self.connection.rollback()
+
+        # 5. Out of range SMALLINT does not silently wrap (raises error)
+        with self.assertRaises(firebirdsql.DatabaseError):
+            cur.executemany("INSERT INTO batch_edge (id, si) VALUES (?, ?)", [(20, 70000)])
+        self.connection.rollback()
+
+        # 6. Timezone-aware timestamp on plain TIMESTAMP field falls back or safely handles without corrupting protocol
+        aware_dt = datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+        cur.executemany("INSERT INTO batch_edge (id, ts) VALUES (?, ?)", [(30, aware_dt)])
+        self.connection.commit()
+        cur.execute("SELECT id FROM batch_edge WHERE id = 30")
+        self.assertEqual(cur.fetchone()[0], 30)
+
+        # 7. statement_timeout cursor disables batching
+        cur_timeout = self.connection.cursor(timeout=5)
+        prep = cur_timeout.prep("INSERT INTO batch_edge (id, s) VALUES (?, ?)")
+        self.assertFalse(cur_timeout._can_use_batch(prep.stmt))
+
+        cur.close()
+
     def test_fetch_memoryview(self):
         cur = self.connection.cursor()
         cur.execute("""
@@ -754,4 +821,26 @@ class TestBasic(TestBase):
         self.assertEqual(ids, list(range(10)))
 
         cur.close()
+
+    def test_fetch_conversion_exception_not_masked(self):
+        conn = firebirdsql.connect(
+            auth_plugin_name=self.auth_plugin_name,
+            wire_crypt=self.wire_crypt,
+            host=self.host,
+            port=self.port,
+            database=self.database,
+            user=self.user,
+            password=self.password,
+            timeout=1,
+        )
+        cur = conn.cursor()
+        prep = cur.prep("SELECT 1 FROM rdb$database")
+        orig_val = prep.stmt.xsqlda[0].value
+        try:
+            prep.stmt.xsqlda[0].value = lambda raw: int("not_a_number")
+            with self.assertRaises(ValueError):
+                cur.execute(prep)
+        finally:
+            prep.stmt.xsqlda[0].value = orig_val
+            conn.sock.close()
 
