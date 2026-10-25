@@ -769,9 +769,13 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
         self.accept_type = bytes_to_bint(b[8:])
         self.lazy_response_count = 0
 
-        if self.accept_type & pflag_compress:
-            self.sock.enable_compression()
+        # Firebird sends the whole accept packet uncompressed and compresses what
+        # follows, so compression is enabled once the packet has been read.
+        compress = self.accept_type & pflag_compress
+        if compress:
             self.accept_type &= ptype_MASK
+            if op_code not in (self.op_cond_accept, self.op_accept_data):
+                self.sock.enable_compression()
 
         if op_code == self.op_cond_accept or op_code == self.op_accept_data:
             ln = bytes_to_bint(await self._async_recv_channel(4))
@@ -783,6 +787,8 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
             is_authenticated = bytes_to_bint(await self._async_recv_channel(4))
             ln = bytes_to_bint(await self._async_recv_channel(4))
             await self._async_recv_channel(ln, word_alignment=True)   # keys
+            if compress:
+                self.sock.enable_compression()
 
             if is_authenticated == 0:
                 if self.accept_plugin_name in (b'Srp256',  b'Srp'):
