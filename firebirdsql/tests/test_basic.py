@@ -681,3 +681,77 @@ class TestBasic(TestBase):
         self.assertEqual(cur.rowcount, 0)
         cur.close()
 
+    def test_fetch_memoryview(self):
+        cur = self.connection.cursor()
+        cur.execute("""
+            CREATE TABLE fetch_mv_test (
+                id INT PRIMARY KEY,
+                s VARCHAR(50),
+                val DOUBLE PRECISION,
+                d DATE,
+                t TIME,
+                ts TIMESTAMP,
+                n DECIMAL(12, 2)
+            )
+        """)
+        self.connection.commit()
+
+        # Insert 600 rows (exceeds DEFAULT_FETCH_COUNT=400 to test multi-batch fetch)
+        test_rows = [
+            (
+                i,
+                f"str_{i:04d}",
+                float(i) * 1.25,
+                datetime.date(2025, 1, 1 + (i % 28)),
+                datetime.time(i % 24, i % 60, i % 60),
+                datetime.datetime(2025, 1, 1, i % 24, i % 60, i % 60),
+                Decimal(f"{i}.75"),
+            )
+            for i in range(600)
+        ]
+        # Include some rows with NULL values
+        test_rows[10] = (10, None, None, None, None, None, None)
+        test_rows[500] = (500, None, 500.0, None, None, None, None)
+
+        cur.executemany(
+            "INSERT INTO fetch_mv_test VALUES (?, ?, ?, ?, ?, ?, ?)",
+            test_rows
+        )
+        self.connection.commit()
+
+        # Test fetchall
+        cur.execute("SELECT id, s, val, d, t, ts, n FROM fetch_mv_test ORDER BY id")
+        rows = cur.fetchall()
+        self.assertEqual(len(rows), 600)
+
+        # Check first, middle, last, and NULL rows
+        self.assertEqual(rows[0][0], 0)
+        self.assertEqual(rows[0][1], "str_0000")
+        self.assertAlmostEqual(rows[0][2], 0.0)
+        self.assertEqual(rows[0][3], datetime.date(2025, 1, 1))
+        self.assertEqual(rows[0][6], Decimal("0.75"))
+
+        self.assertEqual(rows[10], (10, None, None, None, None, None, None))
+        self.assertEqual(rows[500][1], None)
+        self.assertAlmostEqual(rows[500][2], 500.0)
+
+        self.assertEqual(rows[599][0], 599)
+        self.assertEqual(rows[599][1], "str_0599")
+        self.assertAlmostEqual(rows[599][2], 599 * 1.25)
+        self.assertEqual(rows[599][6], Decimal("599.75"))
+
+        # Test fetchone and fetchmany
+        cur.execute("SELECT id, s FROM fetch_mv_test ORDER BY id")
+        self.assertEqual(cur.fetchone(), (0, "str_0000"))
+        batch = cur.fetchmany(5)
+        self.assertEqual(len(batch), 5)
+        self.assertEqual(batch[0], (1, "str_0001"))
+        self.assertEqual(batch[4], (5, "str_0005"))
+
+        # Test cursor iteration
+        cur.execute("SELECT id FROM fetch_mv_test WHERE id < 10 ORDER BY id")
+        ids = [row[0] for row in cur]
+        self.assertEqual(ids, list(range(10)))
+
+        cur.close()
+

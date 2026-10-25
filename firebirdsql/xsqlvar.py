@@ -206,7 +206,7 @@ class XSQLVAR:
         elif self.sqltype == SQL_TYPE_DEC128:
             return decfloat.decimal128_to_decimal(raw_value)
         else:
-            return raw_value
+            return bytes(raw_value) if isinstance(raw_value, memoryview) else raw_value
 
 
 sqltype2blr = {

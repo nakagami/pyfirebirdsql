@@ -168,7 +168,41 @@ class AsyncTestCase(base.TestBase):
 
         loop = asyncio.new_event_loop()
         loop.run_until_complete(_test_many_columns(loop))
-        loop.close()
+
+    def test_aio_fetch_memoryview(self):
+        async def _test():
+            conn = await firebirdsql.aio.connect(
+                auth_plugin_name=self.auth_plugin_name,
+                wire_crypt=self.wire_crypt,
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                user=self.user,
+                password=self.password,
+                page_size=self.page_size,
+            )
+            cur = conn.cursor()
+            await cur.execute("CREATE TABLE t_aio_mv (id INT, name VARCHAR(50), val DOUBLE PRECISION)")
+            await conn.commit()
+
+            # Insert 700 rows to ensure multi-batch fetching
+            for i in range(700):
+                val = float(i) * 1.5 if i % 2 == 0 else None
+                name = f"row_{i}" if i % 3 != 0 else None
+                await cur.execute("INSERT INTO t_aio_mv (id, name, val) VALUES (?, ?, ?)", (i, name, val))
+            await conn.commit()
+
+            await cur.execute("SELECT id, name, val FROM t_aio_mv ORDER BY id")
+            rows = await cur.fetchall()
+            self.assertEqual(len(rows), 700)
+            self.assertEqual(rows[0], (0, None, 0.0))
+            self.assertEqual(rows[1], (1, "row_1", None))
+            self.assertEqual(rows[2], (2, "row_2", 3.0))
+
+            await cur.close()
+            await conn.close()
+
+        asyncio.run(_test())
 
 
 if __name__ == "__main__":

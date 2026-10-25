@@ -228,7 +228,7 @@ class WireProtocol(object):
         return s
 
     def bytes_to_str(self, b):
-        return b.decode(charset_map.get(self.charset, self.charset))
+        return bytes(b).decode(charset_map.get(self.charset, self.charset))
 
     def _create_blob(self, trans_handle, b):
         self._op_create_blob2(trans_handle)

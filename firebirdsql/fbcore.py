@@ -27,6 +27,7 @@
 ##############################################################################
 from __future__ import print_function
 import sys
+import struct
 import datetime
 import itertools
 import hashlib
@@ -715,18 +716,23 @@ class ConnectionResponseMixin:
         n = nbytes
         if word_alignment and (n % 4):
             n += 4 - nbytes % 4  # 4 bytes word alignment
-        r = bytes([])
+        r = bytearray()
+        if hasattr(self, '_recv_buf') and self._recv_buf:
+            take = min(n, len(self._recv_buf))
+            r.extend(self._recv_buf[:take])
+            del self._recv_buf[:take]
+            n -= take
         while n:
             if (self.timeout is not None and select.select([self.sock._sock], [], [], self.timeout)[0] == []):
                 raise TimeoutError("Pakcet recv timeout error")
             b = self.sock.recv(n)
             if not b:
                 break
-            r += b
+            r.extend(b)
             n -= len(b)
         if len(r) < nbytes:
             raise OperationalError('Can not recv() packets')
-        return r[:nbytes]
+        return bytes(r[:nbytes])
 
     def _parse_status_vector(self):
         sql_code = 0
@@ -1078,71 +1084,141 @@ class ConnectionResponseMixin:
         return decode_slice_elements(meta, bytes(data), self.bytes_to_str)
 
     def _op_fetch_response(self, stmt_handle, xsqlda):
-        op_code = bytes_to_bint(self._recv_channel(4))
-        while op_code == self.op_dummy:
-            op_code = bytes_to_bint(self._recv_channel(4))
+        if not hasattr(self, '_recv_buf'):
+            self._recv_buf = bytearray()
+        buf = self._recv_buf
+        pos = 0
+        mv = None
 
-        while op_code == self.op_response and self.lazy_response_count:
-            self.lazy_response_count -= 1
-            h, oid, buf = self._parse_op_response()
-            op_code = bytes_to_bint(self._recv_channel(4))
+        def ensure(needed):
+            nonlocal pos, mv, raw_value
+            if len(buf) - pos < needed:
+                raw_value = None
+                mv = None
+                if pos > 0:
+                    del buf[:pos]
+                    pos = 0
+                while len(buf) < needed:
+                    if self.timeout is not None and select.select([self.sock._sock], [], [], self.timeout)[0] == []:
+                        raise TimeoutError("Pakcet recv timeout error")
+                    chunk = self.sock.recv(max(65536, needed - len(buf)))
+                    if not chunk:
+                        raise OperationalError('Can not recv() packets')
+                    buf.extend(chunk)
+                mv = memoryview(buf)
+            elif mv is None:
+                mv = memoryview(buf)
 
-        if op_code != self.op_fetch_response:
-            if op_code == self.op_response:
-                self._parse_op_response()  # raises the actual Firebird error
-            raise InternalError("op_fetch_response:op_code = %d" % (op_code,))
-        b = self._recv_channel(8)
-        status = bytes_to_bint(b[:4])
-        count = bytes_to_bint(b[4:8])
-        rows = []
-        while count:
-            r = [None] * len(xsqlda)
-            if self.accept_version < PROTOCOL_VERSION13:
-                for i in range(len(xsqlda)):
-                    x = xsqlda[i]
-                    if x.io_length() < 0:
-                        b = self._recv_channel(4)
-                        ln = bytes_to_bint(b)
-                    else:
-                        ln = x.io_length()
-                    raw_value = self._recv_channel(ln, word_alignment=True)
-                    if self._recv_channel(4) == bytes([0]) * 4:     # Not NULL
-                        r[i] = x.value(raw_value)
-            else:   # PROTOCOL_VERSION13
-                n = len(xsqlda) // 8
-                if len(xsqlda) % 8 != 0:
-                    n += 1
-                null_indicator = 0
-                for c in reversed(self._recv_channel(n, word_alignment=True)):
-                    null_indicator <<= 8
-                    null_indicator += c
-                for i in range(len(xsqlda)):
-                    x = xsqlda[i]
-                    if null_indicator & (1 << i):
-                        continue
-                    if x.io_length() < 0:
-                        b = self._recv_channel(4)
-                        ln = bytes_to_bint(b)
-                    else:
-                        ln = x.io_length()
-                    raw_value = self._recv_channel(ln, word_alignment=True)
-                    r[i] = x.value(raw_value)
-            rows.append(r)
-            # Read the next opcode first (4 bytes) before committing to the
-            # full 12-byte fetch-response continuation header.  Firebird can
-            # send op_response (an error) here instead of another
-            # op_fetch_response, which would desynchronise the protocol if we
-            # consumed the bytes blindly.
-            next_op = bytes_to_bint(self._recv_channel(4))
-            if next_op == self.op_response:
-                self._parse_op_response()  # raises the actual Firebird error
-                raise InternalError("op_fetch_response:Internal Error")
-            if next_op != self.op_fetch_response:
-                raise InternalError("op_fetch_response:op_code = %d" % (next_op,))
-            b = self._recv_channel(8)
-            status = bytes_to_bint(b[:4])
-            count = bytes_to_bint(b[4:8])
-        return rows, status != 100
+        try:
+            ensure(4)
+            op_code = struct.unpack_from('>i', mv, pos)[0]
+            pos += 4
+            while op_code == self.op_dummy:
+                ensure(4)
+                op_code = struct.unpack_from('>i', mv, pos)[0]
+                pos += 4
+
+            while op_code == self.op_response and self.lazy_response_count:
+                self.lazy_response_count -= 1
+                mv = None
+                del buf[:pos]
+                pos = 0
+                h, oid, b = self._parse_op_response()
+                ensure(4)
+                op_code = struct.unpack_from('>i', mv, pos)[0]
+                pos += 4
+
+            if op_code != self.op_fetch_response:
+                if op_code == self.op_response:
+                    mv = None
+                    del buf[:pos]
+                    pos = 0
+                    self._parse_op_response()  # raises the actual Firebird error
+                raise InternalError("op_fetch_response:op_code = %d" % (op_code,))
+
+            ensure(8)
+            status = struct.unpack_from('>i', mv, pos)[0]
+            count = struct.unpack_from('>i', mv, pos + 4)[0]
+            pos += 8
+
+            rows = []
+            num_cols = len(xsqlda)
+            n_null = num_cols // 8 + (1 if num_cols % 8 != 0 else 0)
+            aligned_null = n_null + (4 - n_null % 4 if n_null % 4 else 0)
+
+            while count:
+                r = [None] * num_cols
+                if self.accept_version >= PROTOCOL_VERSION13:
+                    ensure(aligned_null)
+                    null_indicator = int.from_bytes(mv[pos : pos + n_null], byteorder='little')
+                    pos += aligned_null
+                    for i in range(num_cols):
+                        if null_indicator & (1 << i):
+                            continue
+                        x = xsqlda[i]
+                        io_len = x.io_length()
+                        if io_len < 0:
+                            ensure(4)
+                            ln = struct.unpack_from('>i', mv, pos)[0]
+                            pos += 4
+                        else:
+                            ln = io_len
+                        aligned_ln = ln + (4 - ln % 4 if ln % 4 else 0)
+                        ensure(aligned_ln)
+                        raw_value = mv[pos : pos + ln]
+                        pos += aligned_ln
+                        if x.sqltype in (SQL_TYPE_BLOB, SQL_TYPE_ARRAY):
+                            r[i] = bytes(raw_value)
+                        else:
+                            r[i] = x.value(raw_value)
+                        raw_value = None
+                else:
+                    for i in range(num_cols):
+                        x = xsqlda[i]
+                        io_len = x.io_length()
+                        if io_len < 0:
+                            ensure(4)
+                            ln = struct.unpack_from('>i', mv, pos)[0]
+                            pos += 4
+                        else:
+                            ln = io_len
+                        aligned_ln = ln + (4 - ln % 4 if ln % 4 else 0)
+                        ensure(aligned_ln + 4)
+                        raw_value = mv[pos : pos + ln]
+                        pos += aligned_ln
+                        is_not_null = (struct.unpack_from('>i', mv, pos)[0] == 0)
+                        pos += 4
+                        if is_not_null:
+                            if x.sqltype in (SQL_TYPE_BLOB, SQL_TYPE_ARRAY):
+                                r[i] = bytes(raw_value)
+                            else:
+                                r[i] = x.value(raw_value)
+                        raw_value = None
+                rows.append(r)
+
+                raw_value = None
+                ensure(12)
+                next_op = struct.unpack_from('>i', mv, pos)[0]
+                pos += 4
+                if next_op == self.op_response:
+                    raw_value = None
+                    mv = None
+                    del buf[:pos]
+                    pos = 0
+                    self._parse_op_response()  # raises the actual Firebird error
+                    raise InternalError("op_fetch_response:Internal Error")
+                if next_op != self.op_fetch_response:
+                    raise InternalError("op_fetch_response:op_code = %d" % (next_op,))
+                status = struct.unpack_from('>i', mv, pos)[0]
+                count = struct.unpack_from('>i', mv, pos + 4)[0]
+                pos += 8
+
+            return rows, status != 100
+        finally:
+            raw_value = None
+            mv = None
+            if pos > 0:
+                del buf[:pos]
 
 
 class ConnectionBase(WireProtocol):
