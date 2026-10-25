@@ -971,7 +971,7 @@ class WireProtocol(object):
                 v = int(val)
             if v < -32768 or v > 32767:
                 raise DataError(f"Numeric value {v} out of range for SMALLINT")
-            return bint_to_bytes(v, 2)
+            return bint_to_bytes(v, 4)
         elif x.sqltype == SQL_TYPE_LONG:
             if x.sqlscale < 0:
                 if not isinstance(val, decimal.Decimal):
@@ -1134,5 +1134,3 @@ class WireProtocol(object):
         self.sock.send(p.get_buffer())
         self._op_ping()
         self._receive_two_responses()
-
-

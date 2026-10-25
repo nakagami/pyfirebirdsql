@@ -208,6 +208,7 @@ class AsyncCursor(Cursor):
         self.stmt: AsyncStatement | None = None
         self.arraysize: int = 1
         self.rowcount: int = -1
+        self.statement_timeout: float | int | None = getattr(conn, 'statement_timeout', None)
 
     def __del__(self) -> None:
         pass
@@ -247,11 +248,12 @@ class AsyncCursor(Cursor):
         await self.transaction.check_trans_handle()
         stmt = await self._get_stmt(query)
         cooked_params = self._convert_params(params)
+        timeout = self.statement_timeout
         if stmt.stmt_type == isc_info_sql_stmt_exec_procedure:
             self.transaction.connection._op_execute2(
                 stmt.handle,
                 self.transaction.trans_handle, cooked_params,
-                calc_blr(stmt.xsqlda))
+                calc_blr(stmt.xsqlda), timeout=timeout)
             self._callproc_result = await self.transaction.connection._async_op_sql_response(stmt.xsqlda)
             await self.transaction.connection._async_op_response()
             self._fetch_records = None
@@ -260,7 +262,8 @@ class AsyncCursor(Cursor):
                 "AsyncCursor::execute() _op_execute()",
                 stmt.handle, self.transaction.trans_handle)
             self.transaction.connection._op_execute(
-                stmt.handle, self.transaction.trans_handle, cooked_params)
+                stmt.handle, self.transaction.trans_handle, cooked_params,
+                timeout=timeout)
             (h, oid, buf) = await self.transaction.connection._async_op_response()
 
             if stmt.stmt_type == isc_info_sql_stmt_select:
@@ -1236,4 +1239,3 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
             # Async close cannot be called from __del__
             # self.close()
             pass
-

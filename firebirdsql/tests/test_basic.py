@@ -691,10 +691,12 @@ class TestBasic(TestBase):
             CREATE TABLE batch_edge (
                 id INT PRIMARY KEY,
                 s VARCHAR(5),
+                amount DECIMAL(10, 2),
                 dt DATE,
                 flag BOOLEAN,
                 ts TIMESTAMP,
-                si SMALLINT
+                si SMALLINT,
+                after_si INTEGER
             )
         """)
         self.connection.commit()
@@ -723,6 +725,41 @@ class TestBasic(TestBase):
             (3, datetime.date(2025, 1, 1), False),
             (4, datetime.date(2025, 1, 2), True),
         ])
+
+        cur.executemany(
+            "INSERT INTO batch_edge (id, amount) VALUES (?, ?)",
+            [(5, Decimal("1.239"))]
+        )
+        self.connection.commit()
+        cur.execute("SELECT amount FROM batch_edge WHERE id = 5")
+        self.assertEqual(cur.fetchone()[0], Decimal("1.24"))
+
+        integer_stmt = cur.prep("INSERT INTO batch_edge (id) VALUES (?)")
+        self.assertFalse(
+            cur._is_safe_batch_row(integer_stmt.stmt.bind_xsqlda, [Decimal("1.5")])
+        )
+        integer_stmt.close()
+
+        cur.executemany(
+            "INSERT INTO batch_edge (id, si, after_si) VALUES (?, ?, ?)",
+            [(6, -123, 456), (7, 123, 789)]
+        )
+        self.connection.commit()
+        cur.execute("SELECT id, si, after_si FROM batch_edge WHERE id IN (6, 7) ORDER BY id")
+        self.assertEqual(cur.fetchall(), [(6, -123, 456), (7, 123, 789)])
+
+        def generated_rows():
+            yield (8, "8")
+            verify = self.connection.cursor()
+            verify.execute("SELECT COUNT(*) FROM batch_edge WHERE id = 8")
+            self.assertEqual(verify.fetchone()[0], 1)
+            verify.close()
+            yield (9, "9")
+
+        cur.executemany("INSERT INTO batch_edge (id, s) VALUES (?, ?)", generated_rows())
+        self.connection.commit()
+        cur.execute("SELECT id, s FROM batch_edge WHERE id IN (8, 9) ORDER BY id")
+        self.assertEqual(cur.fetchall(), [(8, "8"), (9, "9")])
 
         # 4. Overlong VARCHAR does not silently truncate (raises error)
         with self.assertRaises(firebirdsql.DatabaseError):
@@ -843,4 +880,3 @@ class TestBasic(TestBase):
         finally:
             prep.stmt.xsqlda[0].value = orig_val
             conn.sock.close()
-

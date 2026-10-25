@@ -391,39 +391,24 @@ class Cursor(object):
             elif x.sqltype == SQL_TYPE_SHORT:
                 if not isinstance(val, (int, float, decimal.Decimal)):
                     return False
-                try:
-                    if x.sqlscale < 0:
-                        dec = val if isinstance(val, decimal.Decimal) else decimal.Decimal(str(val))
-                        v = int(dec * (10 ** (-x.sqlscale)))
-                    else:
-                        v = int(val)
-                except Exception:
+                v = self._batch_integer_value(x, val)
+                if v is None:
                     return False
                 if v < -32768 or v > 32767:
                     return False
             elif x.sqltype == SQL_TYPE_LONG:
                 if not isinstance(val, (int, float, decimal.Decimal)):
                     return False
-                try:
-                    if x.sqlscale < 0:
-                        dec = val if isinstance(val, decimal.Decimal) else decimal.Decimal(str(val))
-                        v = int(dec * (10 ** (-x.sqlscale)))
-                    else:
-                        v = int(val)
-                except Exception:
+                v = self._batch_integer_value(x, val)
+                if v is None:
                     return False
                 if v < -2147483648 or v > 2147483647:
                     return False
             elif x.sqltype in (SQL_TYPE_INT64, SQL_TYPE_QUAD):
                 if not isinstance(val, (int, float, decimal.Decimal)):
                     return False
-                try:
-                    if x.sqlscale < 0:
-                        dec = val if isinstance(val, decimal.Decimal) else decimal.Decimal(str(val))
-                        v = int(dec * (10 ** (-x.sqlscale)))
-                    else:
-                        v = int(val)
-                except Exception:
+                v = self._batch_integer_value(x, val)
+                if v is None:
                     return False
                 if v < -9223372036854775808 or v > 9223372036854775807:
                     return False
@@ -431,6 +416,18 @@ class Cursor(object):
                 if not isinstance(val, (int, float, decimal.Decimal)):
                     return False
         return True
+
+    @staticmethod
+    def _batch_integer_value(x: Any, val: int | float | decimal.Decimal) -> int | None:
+        try:
+            number = val if isinstance(val, decimal.Decimal) else decimal.Decimal(str(val))
+            if x.sqlscale < 0:
+                number *= decimal.Decimal(10) ** (-x.sqlscale)
+            if number != number.to_integral_value():
+                return None
+            return int(number)
+        except Exception:
+            return None
 
     def _can_use_batch(self, stmt: Statement, seq_of_params: Any = None) -> bool:
         if self.statement_timeout:
@@ -501,13 +498,10 @@ class Cursor(object):
 
         if isinstance(seq_of_params, (list, tuple)):
             param_list = seq_of_params
-        else:
-            param_list = list(seq_of_params)
-
-        try:
             can_batch = self._can_use_batch(stmt, param_list)
-        except TypeError:
-            can_batch = self._can_use_batch(stmt)
+        else:
+            param_list = seq_of_params
+            can_batch = False
 
         if can_batch:
             try:
@@ -1664,4 +1658,3 @@ class ConnectionBase(WireProtocol):
 class Connection(ConnectionBase, ConnectionResponseMixin):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         ConnectionBase.__init__(self, *args, **kwargs)
-
