@@ -104,21 +104,22 @@ class AsyncStatement(Statement):
                             h = -1
                         else:
                             (h, oid, buf) = await connection._async_op_response()
-                        v = bytes([])
+                        v = bytearray()
                         n = 1   # 0,1:mora data 2:no more data
                         while n != 2:
                             connection._op_get_segment(h)
                             (n, oid, buf) = await connection._async_op_response()
-                            while buf:
-                                ln = bytes_to_int(buf[:2])
-                                v += buf[2:ln+2]
-                                buf = buf[ln+2:]
+                            pos = 0
+                            while pos < len(buf):
+                                ln = bytes_to_int(buf[pos:pos+2])
+                                v += buf[pos+2:pos+2+ln]
+                                pos += ln + 2
                         connection._op_close_blob(h)
                         if (connection.accept_type & ptype_MASK)== ptype_lazy_send:
                             connection.lazy_response_count += 1
                         else:
                             (h, oid, buf) = await connection._async_op_response()
-                        r[i] = v
+                        r[i] = bytes(v)
                         if x.sqlsubtype == 1:    # TEXT
                             r[i] = connection.bytes_to_str(r[i])
                 yield tuple(r)

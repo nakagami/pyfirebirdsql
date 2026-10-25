@@ -9,6 +9,21 @@ class TestIssues(TestBase):
         cur = self.connection.cursor()
         self.assertEqual(None, cur.description)
 
+    def test_large_blobs(self):
+        """BLOBs spanning many segments and get_segment responses."""
+        cur = self.connection.cursor()
+        cur.execute("CREATE TABLE large_blobs (b BLOB SUB_TYPE BINARY, t BLOB SUB_TYPE TEXT CHARACTER SET UTF8)")
+        self.connection.commit()
+        binary = bytes(i * 7 % 256 for i in range(1 << 20))
+        text = "Grüße, ほげ " * 20000
+        cur.execute("INSERT INTO large_blobs VALUES (?, ?)", (binary, text))
+        self.connection.commit()
+        cur.execute("SELECT b, t FROM large_blobs")
+        b, t = cur.fetchone()
+        self.assertEqual(b, binary)
+        self.assertEqual(t, text)
+        cur.close()
+
     def test_issue_40(self):
         cur = self.connection.cursor()
         cur.execute("SELECT RDB$INDEX_NAME FROM RDB$INDICES WHERE RDB$INDEX_NAME LIKE 'RDB$INDEX_%'")

@@ -150,6 +150,7 @@ class Packer(object):
 
 class WireProtocol(object):
     buffer_length = 1024
+    blob_segment_length = 65535     # op_get_segment buffer (USHORT): fewer round trips
 
     op_connect = 1
     op_exit = 2
@@ -857,7 +858,7 @@ class WireProtocol(object):
         p = Packer()
         p.pack_int(self.op_get_segment)
         p.pack_int(blob_handle)
-        p.pack_int(self.buffer_length)
+        p.pack_int(self.blob_segment_length)
         p.pack_int(0)
         self.sock.send(p.get_buffer())
 
