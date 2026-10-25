@@ -209,6 +209,8 @@ class AsyncCursor(Cursor):
         self.arraysize: int = 1
         self.rowcount: int = -1
         self.statement_timeout: float | int | None = getattr(conn, 'statement_timeout', None)
+        self._fetch_records = None
+        self._callproc_result = None
 
     def __del__(self) -> None:
         pass
@@ -266,6 +268,9 @@ class AsyncCursor(Cursor):
                 timeout=timeout)
             (h, oid, buf) = await self.transaction.connection._async_op_response()
 
+            if self._fetch_records is not None and hasattr(self._fetch_records, 'aclose'):
+                await self._fetch_records.aclose()
+
             if stmt.stmt_type == isc_info_sql_stmt_select:
                 fetch_count = max(self.arraysize, DEFAULT_FETCH_COUNT)
                 self.transaction.connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda), fetch_count)
@@ -321,8 +326,11 @@ class AsyncCursor(Cursor):
         # select statement
         try:
             result = tuple(await self._fetch_records.__anext__())
-        except StopIteration:
+        except (StopAsyncIteration, StopIteration):
             result = None
+            if hasattr(self._fetch_records, 'aclose'):
+                await self._fetch_records.aclose()
+            self._fetch_records = None
         DEBUG_OUTPUT("AsyncCursor::fetchone()", result)
         return result
 
@@ -391,6 +399,10 @@ class AsyncCursor(Cursor):
         DEBUG_OUTPUT("AsyncCursor::close()")
         if self._transaction in self.transaction.connection._cursors:
             self.transaction.connection._cursors[self._transaction].discard(self)
+        if self._fetch_records is not None:
+            if hasattr(self._fetch_records, 'aclose'):
+                await self._fetch_records.aclose()
+            self._fetch_records = None
         if not self.stmt:
             return
         await self.stmt.drop()
