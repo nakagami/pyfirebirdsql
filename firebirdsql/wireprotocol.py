@@ -995,12 +995,12 @@ class WireProtocol(object):
         elif x.sqltype == SQL_TYPE_FLOAT:
             try:
                 return struct.pack('>f', float(val))
-            except OverflowError as e:
+            except (OverflowError, struct.error) as e:
                 raise DataError(f"Numeric value {val!r} out of range for FLOAT") from e
         elif x.sqltype in (SQL_TYPE_DOUBLE, SQL_TYPE_D_FLOAT):
             try:
                 return struct.pack('>d', float(val))
-            except OverflowError as e:
+            except (OverflowError, struct.error) as e:
                 raise DataError(f"Numeric value {val!r} out of range for DOUBLE") from e
         elif x.sqltype == SQL_TYPE_BOOLEAN:
             if type(val) is not bool and val not in (0, 1):

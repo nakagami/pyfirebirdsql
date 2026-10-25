@@ -483,7 +483,7 @@ class Cursor(object):
                 rows_buf.extend(row_bytes)
                 batch_row_count += 1
 
-                if batch_row_count * native_msg_len >= flush_threshold:
+                if len(rows_buf) >= flush_threshold or (batch_row_count * native_msg_len) >= flush_threshold:
                     _flush_and_exec()
 
             _flush_and_exec()

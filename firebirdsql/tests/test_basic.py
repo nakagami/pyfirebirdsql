@@ -699,8 +699,8 @@ class TestBasic(TestBase):
                 after_si INTEGER
             )
         """)
-        cur.execute("CREATE TABLE batch_native (large_value VARCHAR(32765))")
-        cur.execute("CREATE TABLE batch_float (value FLOAT)")
+        cur.execute("CREATE TABLE batch_native (large_value VARCHAR(32765) CHARACTER SET OCTETS)")
+        cur.execute("CREATE TABLE batch_float (fval FLOAT)")
         self.connection.commit()
 
         # 1. Fresh cursor executemany followed by fetchone should return None (not raise AttributeError)
@@ -820,8 +820,7 @@ class TestBasic(TestBase):
             del cur.batch_flush_threshold
 
         with self.assertRaises(firebirdsql.DataError):
-            cur.executemany("INSERT INTO batch_float (value) VALUES (?)", [(1e39,)])
-
+            cur.executemany("INSERT INTO batch_float (fval) VALUES (?)", [(1e39,)])
         cur.close()
 
     def test_fetch_memoryview(self):
