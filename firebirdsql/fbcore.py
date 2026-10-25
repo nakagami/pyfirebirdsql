@@ -32,10 +32,10 @@ import itertools
 import hashlib
 import select
 import weakref
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from typing import Any
 from firebirdsql.fberrmsgs import messages
-from firebirdsql.err import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError
+from firebirdsql.err import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError, ProgrammingError, DatabaseError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
 from firebirdsql.wireprotocol import WireProtocol, get_crypt
@@ -208,7 +208,7 @@ class PreparedStatement(object):
 
 
 class Cursor(object):
-    def __init__(self, obj: 'ConnectionBase | Transaction') -> None:
+    def __init__(self, obj: 'ConnectionBase | Transaction', timeout: float | int | None = None) -> None:
         DEBUG_OUTPUT("Cursor::__init__()")
         if isinstance(obj, Connection):
             self._transaction = obj._transaction
@@ -224,6 +224,15 @@ class Cursor(object):
         self.stmt: Statement | None = None
         self.arraysize: int = 1
         self.rowcount: int = -1
+        self.statement_timeout: float | int | None = timeout if timeout is not None else getattr(conn, 'statement_timeout', None)
+
+    @property
+    def timeout(self) -> float | int | None:
+        return self.statement_timeout
+
+    @timeout.setter
+    def timeout(self, value: float | int | None) -> None:
+        self.statement_timeout = value
 
     def __enter__(self) -> 'Cursor':
         return self
@@ -262,7 +271,7 @@ class Cursor(object):
         prepared_statement = PreparedStatement(self, query, explain_plan=explain_plan)
         return prepared_statement
 
-    def _execute(self, query: str | PreparedStatement, params: Sequence[Any] | None) -> 'Cursor':
+    def _execute(self, query: str | PreparedStatement, params: Sequence[Any] | None, timeout: float | int | None = None) -> 'Cursor':
         if params is None:
             params = []
         self.transaction.check_trans_handle()
@@ -273,7 +282,8 @@ class Cursor(object):
                 stmt.handle,
                 self.transaction.trans_handle, cooked_params,
                 calc_blr(stmt.xsqlda),
-                input_xsqlda=stmt.bind_xsqlda)
+                input_xsqlda=stmt.bind_xsqlda,
+                timeout=timeout)
             self._callproc_result = self.transaction.connection._op_sql_response(stmt.xsqlda)
             self.transaction.connection._op_response()
             if self._callproc_result:
@@ -292,7 +302,8 @@ class Cursor(object):
         else:
             self.transaction.connection._op_execute(
                 stmt.handle, self.transaction.trans_handle, cooked_params,
-                input_xsqlda=stmt.bind_xsqlda)
+                input_xsqlda=stmt.bind_xsqlda,
+                timeout=timeout)
             (h, oid, buf) = self.transaction.connection._op_response()
 
             if stmt.stmt_type == isc_info_sql_stmt_select:
@@ -313,10 +324,11 @@ class Cursor(object):
             q = q.sql
         return isinstance(q, str) and q.lstrip().upper().startswith('EXECUTE')
 
-    def execute(self, query: str | PreparedStatement, params: Sequence[Any] | None = None) -> 'Cursor':
+    def execute(self, query: str | PreparedStatement, params: Sequence[Any] | None = None, timeout: float | int | None = None) -> 'Cursor':
         DEBUG_OUTPUT("Cursor::execute()", query, params)
+        eff_timeout = timeout if timeout is not None else self.statement_timeout
         try:
-            self._execute(query, params)
+            self._execute(query, params, timeout=eff_timeout)
             self.rowcount = self._rowcount()
             # DML with RETURNING returns a phantom row of NULLs when no rows
             # are affected. Clear it so fetchone()/fetchall() return nothing,
@@ -338,7 +350,69 @@ class Cursor(object):
         self.execute(query, params)
         return tuple(self._callproc_result) if self._callproc_result else None
 
+    def _can_use_batch(self, stmt: Statement) -> bool:
+        conn = self.transaction.connection
+        if conn.accept_version < PROTOCOL_VERSION16:
+            return False
+        if stmt.stmt_type not in (isc_info_sql_stmt_insert, isc_info_sql_stmt_update, isc_info_sql_stmt_delete):
+            return False
+        if len(stmt.xsqlda) > 0:
+            return False
+        if len(stmt.bind_xsqlda) == 0:
+            return False
+        if any(x.sqltype not in BATCH_SUPPORTED_SQL_TYPES for x in stmt.bind_xsqlda):
+            return False
+        return True
+
+    def _executemany_batch(self, stmt: Statement, seq_of_params: Iterable[Sequence[Any]]) -> int:
+        conn = self.transaction.connection
+        flush_threshold = 128 * 1024
+        batch_created = False
+        rows_buf = bytearray()
+        batch_row_count = 0
+
+        try:
+            for params in seq_of_params:
+                if not batch_created:
+                    conn._op_batch_create(stmt.handle, stmt.bind_xsqlda)
+                    batch_created = True
+
+                row_bytes = conn._encode_batch_row(stmt.bind_xsqlda, params)
+                rows_buf.extend(row_bytes)
+                batch_row_count += 1
+
+                if len(rows_buf) >= flush_threshold:
+                    conn._op_batch_msg(stmt.handle, rows_buf, batch_row_count)
+                    rows_buf = bytearray()
+                    batch_row_count = 0
+
+            if not batch_created:
+                return 0
+
+            if batch_row_count > 0:
+                conn._op_batch_msg(stmt.handle, rows_buf, batch_row_count)
+                rows_buf = bytearray()
+                batch_row_count = 0
+
+            affected = conn._op_batch_exec(stmt.handle, self.transaction.trans_handle)
+            return affected
+        finally:
+            if batch_created:
+                try:
+                    conn._op_batch_rls(stmt.handle)
+                except Exception:
+                    pass
+
     def executemany(self, query: str | PreparedStatement, seq_of_params: Sequence[Sequence[Any]]) -> None:
+        self.transaction.check_trans_handle()
+        stmt = self._get_stmt(query)
+        if self._can_use_batch(stmt):
+            try:
+                self.rowcount = self._executemany_batch(stmt, seq_of_params)
+                return
+            finally:
+                self.transaction.is_dirty = True
+
         total = 0
         for params in seq_of_params:
             self.execute(query, params)
@@ -722,6 +796,61 @@ class ConnectionResponseMixin:
             raise InternalError("_op_response:op_code = %d" % (op_code,))
         return self._parse_op_response()
 
+    def _receive_two_responses(self):
+        first_exc = None
+        for _ in range(2):
+            try:
+                self._op_response()
+            except (IntegrityError, DataError, OperationalError, ProgrammingError, DatabaseError) as e:
+                if first_exc is None:
+                    first_exc = e
+        if first_exc is not None:
+            raise first_exc
+
+    def _op_batch_cs(self):
+        b = self._recv_channel(4)
+        while bytes_to_bint(b) == self.op_dummy:
+            b = self._recv_channel(4)
+        while bytes_to_bint(b) == self.op_response and self.lazy_response_count:
+            self.lazy_response_count -= 1
+            self._parse_op_response()
+            b = self._recv_channel(4)
+        op_code = bytes_to_bint(b)
+        if op_code != self.op_batch_cs:
+            if op_code == self.op_response:
+                self._parse_op_response()
+            raise InternalError(f"_op_batch_cs: op_code = {op_code}")
+
+        stmt_h = bytes_to_bint(self._recv_channel(4))
+        total_records = bytes_to_bint(self._recv_channel(4))
+        update_count = bytes_to_bint(self._recv_channel(4))
+        detailed_count = bytes_to_bint(self._recv_channel(4))
+        simplified_count = bytes_to_bint(self._recv_channel(4))
+        update_counts = [bytes_to_bint(self._recv_channel(4)) for _ in range(update_count)]
+        detailed_errors = []
+        for _ in range(detailed_count):
+            row_num = bytes_to_bint(self._recv_channel(4))
+            gds_codes, sql_code, message = self._parse_status_vector()
+            detailed_errors.append((row_num, gds_codes, sql_code, message))
+        simplified_errors = [bytes_to_bint(self._recv_channel(4)) for _ in range(simplified_count)]
+
+        if detailed_errors:
+            row_num, gds_codes, sql_code, message = detailed_errors[0]
+            if gds_codes.intersection([
+                335544838, 335544879, 335544880, 335544466, 335544665, 335544347, 335544558
+            ]):
+                raise IntegrityError(f"Row {row_num}: {message}", gds_codes, sql_code)
+            elif gds_codes.intersection([335544321]):
+                raise DataError(f"Row {row_num}: {message}", gds_codes, sql_code)
+            elif (sql_code or message) and not gds_codes.intersection([335544434]):
+                raise OperationalError(f"Row {row_num}: {message}", gds_codes, sql_code)
+            else:
+                raise OperationalError(f"Row {row_num}: batch execution failed")
+        if simplified_errors:
+            raise OperationalError(f"Row {simplified_errors[0]}: batch execution failed")
+
+        return sum(u for u in update_counts if u > 0) if update_counts else total_records
+
     def _parse_connect_response(self):
         # want and treat op_accept or op_cond_accept or op_accept_data
         b = self._recv_channel(4)
@@ -1017,10 +1146,12 @@ class ConnectionResponseMixin:
 
 
 class ConnectionBase(WireProtocol):
-    def cursor(self, factory: type[Cursor] = Cursor) -> Cursor:
+    def cursor(self, factory: type[Cursor] = Cursor, timeout: float | int | None = None) -> Cursor:
         DEBUG_OUTPUT("Connection::cursor()")
         if self._transaction is None:
             self._transaction = Transaction(self, self._autocommit)
+        if timeout is not None:
+            return factory(self, timeout=timeout)
         return factory(self)
 
     def begin(self) -> None:
@@ -1088,6 +1219,7 @@ class ConnectionBase(WireProtocol):
         timezone: str | None = None,
         wire_compress: bool = False,
         readonly: bool = False,
+        statement_timeout: float | int | None = None,
     ) -> None:
         DEBUG_OUTPUT("Connection::__init__()", id(self))
         self.accept_plugin_name = ''
@@ -1102,6 +1234,7 @@ class ConnectionBase(WireProtocol):
         self.role = role
         self.charset = charset
         self.timeout = float(timeout) if timeout is not None else None
+        self.statement_timeout = float(statement_timeout) if statement_timeout is not None else None
         self.auth_plugin_name = auth_plugin_name
         self.wire_crypt = wire_crypt
         self.wire_compress = wire_compress

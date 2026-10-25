@@ -29,6 +29,7 @@ from __future__ import print_function
 import sys
 import os
 import socket
+import struct
 import datetime
 import decimal
 
@@ -211,6 +212,14 @@ class WireProtocol(object):
     op_crypt = 96
     op_crypt_key_callback = 97
     op_cond_accept = 98
+    # FB4
+    op_batch_create = 99
+    op_batch_msg = 100
+    op_batch_exec = 101
+    op_batch_rls = 102
+    op_batch_cs = 103
+    op_batch_cancel = 109
+    op_batch_sync = 110
 
     def str_to_bytes(self, s):
         "convert str to bytes"
@@ -697,7 +706,7 @@ class WireProtocol(object):
         self.sock.send(p.get_buffer())
 
     @wire_operation
-    def _op_execute(self, stmt_handle, trans_handle, params, input_xsqlda=None):
+    def _op_execute(self, stmt_handle, trans_handle, params, input_xsqlda=None, timeout=None):
         p = Packer()
         p.pack_int(self.op_execute)
         p.pack_int(stmt_handle)
@@ -715,11 +724,12 @@ class WireProtocol(object):
             p.pack_int(1)
             buf = p.get_buffer() + values
         if self.accept_version >= PROTOCOL_VERSION16:
-            buf += int_to_bytes(0, 4)
+            timeout_ms = int(timeout * 1000) if timeout else 0
+            buf += bint_to_bytes(timeout_ms, 4)
         self.sock.send(buf)
 
     @wire_operation
-    def _op_execute2(self, stmt_handle, trans_handle, params, output_blr, input_xsqlda=None):
+    def _op_execute2(self, stmt_handle, trans_handle, params, output_blr, input_xsqlda=None, timeout=None):
         p = Packer()
         p.pack_int(self.op_execute2)
         p.pack_int(stmt_handle)
@@ -741,7 +751,8 @@ class WireProtocol(object):
         q.pack_int(0)
         buf = p.get_buffer() + values + q.get_buffer()
         if self.accept_version >= PROTOCOL_VERSION16:
-            buf += int_to_bytes(0, 4)
+            timeout_ms = int(timeout * 1000) if timeout else 0
+            buf += bint_to_bytes(timeout_ms, 4)
         self.sock.send(buf)
 
     @wire_operation
@@ -923,4 +934,187 @@ class WireProtocol(object):
         p.pack_int(self.db_handle)
         p.pack_int(0)
         self.sock.send(p.get_buffer())
+
+    def _calculate_batch_msg_len(self, xsqlda):
+        length = 0
+        for x in xsqlda:
+            field_len = x.sqllen
+            align = 1
+            if x.sqltype in (SQL_TYPE_TEXT, SQL_TYPE_NULL, SQL_TYPE_BOOLEAN):
+                align = 1
+            elif x.sqltype == SQL_TYPE_SHORT:
+                align = 2
+            elif x.sqltype == SQL_TYPE_VARYING:
+                align = 2
+                field_len += 2
+            elif x.sqltype in (
+                SQL_TYPE_FLOAT, SQL_TYPE_LONG, SQL_TYPE_DATE, SQL_TYPE_TIME,
+                SQL_TYPE_TIMESTAMP, SQL_TYPE_BLOB, SQL_TYPE_ARRAY, SQL_TYPE_QUAD,
+                SQL_TYPE_TIMESTAMP_TZ, SQL_TYPE_TIME_TZ
+            ):
+                align = 4
+            else:
+                align = 8
+            if align > 1:
+                length = (length + align - 1) & ~(align - 1)
+            length += field_len
+            length = ((length + 1) & ~1) + 2
+        return length
+
+    def _encode_batch_field(self, x, val):
+        if x.sqltype in (SQL_TYPE_SHORT, SQL_TYPE_LONG):
+            if x.sqlscale < 0:
+                if not isinstance(val, decimal.Decimal):
+                    val = decimal.Decimal(str(val))
+                v = int(val * (10 ** (-x.sqlscale)))
+            else:
+                v = int(val)
+            return bint_to_bytes(v, 4)
+        elif x.sqltype in (SQL_TYPE_INT64, SQL_TYPE_QUAD):
+            if x.sqlscale < 0:
+                if not isinstance(val, decimal.Decimal):
+                    val = decimal.Decimal(str(val))
+                v = int(val * (10 ** (-x.sqlscale)))
+            else:
+                v = int(val)
+            return bint_to_bytes(v, 8)
+        elif x.sqltype == SQL_TYPE_FLOAT:
+            return struct.pack('>f', float(val))
+        elif x.sqltype in (SQL_TYPE_DOUBLE, SQL_TYPE_D_FLOAT):
+            return struct.pack('>d', float(val))
+        elif x.sqltype == SQL_TYPE_BOOLEAN:
+            return b'\x01' if val else b'\x00'
+        elif x.sqltype in (SQL_TYPE_TEXT, SQL_TYPE_VARYING):
+            if isinstance(val, str):
+                b = self.str_to_bytes(val)
+            elif isinstance(val, bytes):
+                b = val
+            else:
+                b = self.str_to_bytes(str(val))
+            if x.sqllen and len(b) > x.sqllen:
+                b = b[:x.sqllen]
+            return b
+        elif x.sqltype == SQL_TYPE_DATE:
+            return convert_date(val)
+        elif x.sqltype == SQL_TYPE_TIME:
+            if getattr(val, 'tzinfo', None):
+                return convert_time_tz(val)
+            return convert_time(val)
+        elif x.sqltype == SQL_TYPE_TIMESTAMP:
+            if getattr(val, 'tzinfo', None):
+                return convert_timestamp_tz(val)
+            return convert_timestamp(val)
+        elif x.sqltype == SQL_TYPE_TIME_TZ:
+            return convert_time_tz(val)
+        elif x.sqltype == SQL_TYPE_TIMESTAMP_TZ:
+            return convert_timestamp_tz(val)
+        else:
+            raise OperationalError(f"Unsupported batch column type: {x.sqltype}")
+
+    def _encode_batch_row(self, xsqlda, params):
+        if len(params) != len(xsqlda):
+            raise OperationalError(f"expected {len(xsqlda)} parameters, got {len(params)}")
+        n = (len(xsqlda) + 7) // 8
+        if n % 4 != 0:
+            n += 4 - (n % 4)
+        null_bytes = bytearray(n)
+        field_bufs = []
+        for i, p in enumerate(params):
+            if p is None:
+                null_bytes[i // 8] |= (1 << (i % 8))
+                field_bufs.append(b'')
+            else:
+                field_bufs.append(self._encode_batch_field(xsqlda[i], p))
+
+        out = bytearray(null_bytes)
+        for i, x in enumerate(xsqlda):
+            if null_bytes[i // 8] & (1 << (i % 8)):
+                continue
+            fb = field_bufs[i]
+            if x.sqltype == SQL_TYPE_VARYING:
+                out.extend(bint_to_bytes(len(fb), 4))
+                out.extend(fb)
+                pad = (4 - len(fb)) & 3
+                if pad:
+                    out.extend(b' ' * pad)
+            elif x.sqltype == SQL_TYPE_TEXT:
+                need = x.sqllen
+                if len(fb) > need:
+                    fb = fb[:need]
+                out.extend(fb)
+                if len(fb) < need:
+                    out.extend(b' ' * (need - len(fb)))
+                pad = (4 - need) & 3
+                if pad:
+                    out.extend(b' ' * pad)
+            elif x.sqltype == SQL_TYPE_BOOLEAN:
+                out.extend(fb)
+                pad = (4 - len(fb)) & 3
+                if pad:
+                    out.extend(bytes(pad))
+            else:
+                out.extend(fb)
+        return bytes(out)
+
+    @wire_operation
+    def _op_batch_create(self, stmt_handle, bind_xsqlda):
+        from firebirdsql.xsqlvar import calc_blr
+        msg_len = self._calculate_batch_msg_len(bind_xsqlda)
+        bpb = bytearray([batchVersion1])
+        bpb.append(batchTagRecordCounts)
+        bpb.extend(int_to_bytes(4, 4))
+        bpb.extend(int_to_bytes(1, 4))
+        bpb.append(batchTagDetailedErrors)
+        bpb.extend(int_to_bytes(4, 4))
+        bpb.extend(int_to_bytes(1, 4))
+        bpb.append(batchTagBlobPolicy)
+        bpb.extend(int_to_bytes(1, 4))
+        bpb.append(batchBlobIDUser)
+
+        p = Packer()
+        p.pack_int(self.op_batch_create)
+        p.pack_int(stmt_handle)
+        p.pack_bytes(calc_blr(bind_xsqlda))
+        p.pack_int(msg_len)
+        p.pack_bytes(bytes(bpb))
+        self.sock.send(p.get_buffer())
+        self._op_ping()
+        self._receive_two_responses()
+
+    @wire_operation
+    def _op_batch_msg(self, stmt_handle, rows_buf, row_count):
+        p = Packer()
+        p.pack_int(self.op_batch_msg)
+        p.pack_int(stmt_handle)
+        p.pack_int(row_count)
+        p.buf += rows_buf
+        pad = (4 - len(rows_buf)) & 3
+        if pad:
+            p.buf += bytes(pad)
+        if self.accept_version >= PROTOCOL_VERSION17:
+            p.pack_int(self.op_batch_sync)
+            self.sock.send(p.get_buffer())
+        else:
+            self.sock.send(p.get_buffer())
+            self._op_ping()
+        self._receive_two_responses()
+
+    @wire_operation
+    def _op_batch_exec(self, stmt_handle, trans_handle):
+        p = Packer()
+        p.pack_int(self.op_batch_exec)
+        p.pack_int(stmt_handle)
+        p.pack_int(trans_handle)
+        self.sock.send(p.get_buffer())
+        return self._op_batch_cs()
+
+    @wire_operation
+    def _op_batch_rls(self, stmt_handle):
+        p = Packer()
+        p.pack_int(self.op_batch_rls)
+        p.pack_int(stmt_handle)
+        self.sock.send(p.get_buffer())
+        self._op_ping()
+        self._receive_two_responses()
+
 

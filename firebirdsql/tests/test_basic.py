@@ -526,3 +526,158 @@ class TestBasic(TestBase):
                 "error should not be the generic internal error fallback")
             self.assertIn("proc error message", err_msg,
                 "error should contain the actual Firebird exception message")
+
+    def test_statement_timeout(self):
+        if self.server_version[0] < 4:
+            self.connection.close()
+            return
+
+        cur = self.connection.cursor()
+        # Fast query with timeout should succeed
+        cur.execute("SELECT 1 FROM RDB$DATABASE", timeout=5.0)
+        self.assertEqual(cur.fetchone()[0], 1)
+
+        # Slow query with short timeout should fail with OperationalError
+        with self.assertRaises(firebirdsql.OperationalError):
+            cur.execute(
+                "EXECUTE BLOCK AS DECLARE VARIABLE I INT = 0; BEGIN WHILE (I < 50000000) DO I = I + 1; END",
+                timeout=0.2
+            )
+        self.connection.rollback()
+
+        # Cursor-level statement timeout
+        cur2 = self.connection.cursor(timeout=0.2)
+        self.assertEqual(cur2.timeout, 0.2)
+        with self.assertRaises(firebirdsql.OperationalError):
+            cur2.execute("EXECUTE BLOCK AS DECLARE VARIABLE I INT = 0; BEGIN WHILE (I < 50000000) DO I = I + 1; END")
+        self.connection.rollback()
+        cur2.close()
+
+        # Connection-level statement timeout
+        conn2 = firebirdsql.connect(
+            auth_plugin_name=self.auth_plugin_name,
+            wire_crypt=self.wire_crypt,
+            host=self.host,
+            database=self.database,
+            port=self.port,
+            user=self.user,
+            password=self.password,
+            statement_timeout=0.2,
+        )
+        cur3 = conn2.cursor()
+        with self.assertRaises(firebirdsql.OperationalError):
+            cur3.execute("EXECUTE BLOCK AS DECLARE VARIABLE I INT = 0; BEGIN WHILE (I < 50000000) DO I = I + 1; END")
+        conn2.rollback()
+        conn2.close()
+
+    def test_executemany_batch(self):
+        if self.server_version[0] < 4:
+            self.connection.close()
+            return
+
+        cur = self.connection.cursor()
+        cur.execute("""
+            CREATE TABLE batch_tbl (
+                id INT PRIMARY KEY,
+                name VARCHAR(50),
+                val DECIMAL(10, 2),
+                dt DATE,
+                tm TIME,
+                ts TIMESTAMP,
+                flag BOOLEAN
+            )
+        """)
+        self.connection.commit()
+
+        # Insert 150 records using Batch Execution API
+        records = [
+            (
+                i,
+                f"Item_{i}",
+                Decimal(f"{i}.95"),
+                datetime.date(2025, 1, 1),
+                datetime.time(12, 0, 0),
+                datetime.datetime(2025, 1, 1, 12, 0, 0),
+                i % 2 == 0,
+            )
+            for i in range(150)
+        ]
+        cur.executemany(
+            "INSERT INTO batch_tbl (id, name, val, dt, tm, ts, flag) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            records
+        )
+        self.assertEqual(cur.rowcount, 150)
+        self.connection.commit()
+
+        cur.execute("SELECT COUNT(*) FROM batch_tbl")
+        self.assertEqual(cur.fetchone()[0], 150)
+
+        # Verify selected data matches
+        cur.execute("SELECT name, val, flag FROM batch_tbl WHERE id = 10")
+        row = cur.fetchone()
+        self.assertEqual(row, ("Item_10", Decimal("10.95"), True))
+
+        # Insert record with NULLs
+        cur.executemany(
+            "INSERT INTO batch_tbl (id, name, val, dt, tm, ts, flag) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [(150, None, None, None, None, None, None)]
+        )
+        self.assertEqual(cur.rowcount, 1)
+        self.connection.commit()
+
+        cur.execute("SELECT name, val, flag FROM batch_tbl WHERE id = 150")
+        self.assertEqual(cur.fetchone(), (None, None, None))
+
+        # Batch UPDATE
+        update_data = [(f"Updated_{i}", i) for i in range(10)]
+        cur.executemany("UPDATE batch_tbl SET name = ? WHERE id = ?", update_data)
+        self.assertEqual(cur.rowcount, 10)
+        self.connection.commit()
+
+        cur.execute("SELECT name FROM batch_tbl WHERE id = 5")
+        self.assertEqual(cur.fetchone()[0], "Updated_5")
+
+        # Batch DELETE
+        delete_data = [(i,) for i in range(10)]
+        cur.executemany("DELETE FROM batch_tbl WHERE id = ?", delete_data)
+        self.assertEqual(cur.rowcount, 10)
+        self.connection.commit()
+
+        cur.execute("SELECT COUNT(*) FROM batch_tbl")
+        self.assertEqual(cur.fetchone()[0], 141)
+
+        # Batch IntegrityError (duplicate primary key)
+        with self.assertRaises(firebirdsql.IntegrityError):
+            cur.executemany(
+                "INSERT INTO batch_tbl (id, name) VALUES (?, ?)",
+                [(100, "dup")]
+            )
+        self.connection.rollback()
+
+        # Verify _can_use_batch returns False for protocol < 16
+        old_ver = self.connection.accept_version
+        try:
+            self.connection.accept_version = 15
+            prep_stmt = cur.prep("INSERT INTO batch_tbl (id, name) VALUES (?, ?)")
+            self.assertFalse(cur._can_use_batch(prep_stmt.stmt))
+        finally:
+            self.connection.accept_version = old_ver
+
+        # Fallback to loop when batch cannot be used
+        orig_can_use_batch = cur._can_use_batch
+        try:
+            cur._can_use_batch = lambda stmt: False
+            fallback_data = [(200 + i, f"Fallback_{i}") for i in range(5)]
+            cur.executemany("INSERT INTO batch_tbl (id, name) VALUES (?, ?)", fallback_data)
+            self.assertEqual(cur.rowcount, 5)
+            self.connection.commit()
+            cur.execute("SELECT COUNT(*) FROM batch_tbl WHERE id >= 200")
+            self.assertEqual(cur.fetchone()[0], 5)
+        finally:
+            cur._can_use_batch = orig_can_use_batch
+
+        # Empty seq_of_params
+        cur.executemany("INSERT INTO batch_tbl (id, name) VALUES (?, ?)", [])
+        self.assertEqual(cur.rowcount, 0)
+        cur.close()
+
