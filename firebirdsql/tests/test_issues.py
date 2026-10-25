@@ -170,3 +170,14 @@ WHERE doc.RFCEMPRESA = 'p2' and doc.NOSUCURSAL = 0 and doc.TIPO = 700 and doc.SE
         gc.collect()
         self.assertEqual(len(self.connection._cursors[self.connection._transaction]), 0)
 
+    def test_many_parameters(self):
+        """A parameter description that continues in a second info request
+        (isc_info_sql_bind, isc_info_sql_describe_vars) must be parsed."""
+        n = 60
+        cur = self.connection.cursor()
+        cur.execute("CREATE TABLE many_params (%s)" % ", ".join("c%d INTEGER" % i for i in range(n)))
+        self.connection.commit()
+        cur.execute("INSERT INTO many_params VALUES (%s)" % ", ".join("?" * n), list(range(n)))
+        cur.execute("SELECT * FROM many_params WHERE c0 = ? AND c%d = ?" % (n - 1), (0, n - 1))
+        self.assertEqual(list(cur.fetchone()), list(range(n)))
+        cur.close()
