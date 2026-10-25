@@ -45,8 +45,14 @@ from firebirdsql.stream import SocketStream
 from firebirdsql.xsqlvar import calc_blr, parse_xsqlda
 from firebirdsql.event_conduit import EventConduit
 from firebirdsql import srp
-from firebirdsql.arc4 import ARC4
-from firebirdsql.chacha import ChaCha20
+try:    # C implementations when pycryptodome is installed
+    from Crypto.Cipher import ARC4
+except ImportError:
+    from firebirdsql.arc4 import ARC4
+try:
+    from Crypto.Cipher import ChaCha20
+except ImportError:
+    from firebirdsql.chacha import ChaCha20
 
 def DEBUG_OUTPUT(*argv):
     if debug_level() == 0:
@@ -1071,12 +1077,12 @@ class ConnectionResponseMixin:
                 if enc_plugin in (b'ChaCha64', b'ChaCha'):
                     k = hashlib.sha256(session_key).digest()
                     self.sock.set_translator(
-                        ChaCha20.new(k, nonce),
-                        ChaCha20.new(k, nonce),
+                        ChaCha20.new(key=k, nonce=nonce),
+                        ChaCha20.new(key=k, nonce=nonce),
                     )
                 elif enc_plugin == b'Arc4':
                     self.sock.set_translator(
-                        ARC4.new(session_key), ARC4.new(session_key))
+                        ARC4.new(key=session_key), ARC4.new(key=session_key))
                 else:
                     raise OperationalError(
                         'Unknown wirecrypt plugin %s' % (enc_plugin)
