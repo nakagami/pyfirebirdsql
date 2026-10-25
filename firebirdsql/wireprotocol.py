@@ -150,7 +150,7 @@ class Packer(object):
 
 class WireProtocol(object):
     buffer_length = 1024
-    blob_segment_length = 65535     # op_get_segment buffer (USHORT): fewer round trips
+    blob_segment_length = 32767     # Keep response lengths within Firebird 2.5's signed limit
 
     op_connect = 1
     op_exit = 2
