@@ -41,6 +41,10 @@ class AsyncTestCase(base.TestBase):
             self.assertEqual(cur.rowcount, 1)
             result = await cur.fetchall()
             self.assertEqual(result, [(42,)])
+
+            await cur.execute("SELECT 42 FROM rdb$database")
+            rows = [row async for row in cur]
+            self.assertEqual(rows, [(42,)])
         asyncio.run(_test_select())
 
     def test_aio_connect_with_loop(self):

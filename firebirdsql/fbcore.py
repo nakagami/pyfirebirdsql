@@ -454,6 +454,7 @@ class Cursor(object):
         self._callproc_result = None
         conn = self.transaction.connection
         flush_threshold = getattr(self, "batch_flush_threshold", 128 * 1024)
+        native_msg_len = conn._calculate_batch_msg_len(stmt.bind_xsqlda)
         batch_created = False
         rows_buf = bytearray()
         batch_row_count = 0
@@ -482,7 +483,7 @@ class Cursor(object):
                 rows_buf.extend(row_bytes)
                 batch_row_count += 1
 
-                if len(rows_buf) >= flush_threshold:
+                if batch_row_count * native_msg_len >= flush_threshold:
                     _flush_and_exec()
 
             _flush_and_exec()

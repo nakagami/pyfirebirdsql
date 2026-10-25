@@ -699,6 +699,8 @@ class TestBasic(TestBase):
                 after_si INTEGER
             )
         """)
+        cur.execute("CREATE TABLE batch_native (large_value VARCHAR(32765))")
+        cur.execute("CREATE TABLE batch_float (value FLOAT)")
         self.connection.commit()
 
         # 1. Fresh cursor executemany followed by fetchone should return None (not raise AttributeError)
@@ -805,6 +807,20 @@ class TestBasic(TestBase):
         finally:
             self.connection._op_batch_exec = orig_batch_exec
             del cur.batch_flush_threshold
+
+        # NULL values still occupy the full native message size in the batch buffer.
+        cur.batch_flush_threshold = 64 * 1024
+        batch_exec_calls = 0
+        self.connection._op_batch_exec = counting_batch_exec
+        try:
+            cur.executemany("INSERT INTO batch_native (large_value) VALUES (?)", [(None,)] * 5)
+            self.assertGreater(batch_exec_calls, 1)
+        finally:
+            self.connection._op_batch_exec = orig_batch_exec
+            del cur.batch_flush_threshold
+
+        with self.assertRaises(firebirdsql.DataError):
+            cur.executemany("INSERT INTO batch_float (value) VALUES (?)", [(1e39,)])
 
         cur.close()
 

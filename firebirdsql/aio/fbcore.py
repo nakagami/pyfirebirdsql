@@ -340,7 +340,7 @@ class AsyncCursor(Cursor):
     async def __anext__(self) -> tuple[Any, ...]:
         r = await self.fetchone()
         if not r:
-            raise StopIteration()
+            raise StopAsyncIteration
         return r
 
     async def fetchall(self) -> list[tuple[Any, ...]] | None:

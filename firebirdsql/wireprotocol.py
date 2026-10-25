@@ -993,9 +993,15 @@ class WireProtocol(object):
                 raise DataError(f"Numeric value {v} out of range for BIGINT")
             return bint_to_bytes(v, 8)
         elif x.sqltype == SQL_TYPE_FLOAT:
-            return struct.pack('>f', float(val))
+            try:
+                return struct.pack('>f', float(val))
+            except OverflowError as e:
+                raise DataError(f"Numeric value {val!r} out of range for FLOAT") from e
         elif x.sqltype in (SQL_TYPE_DOUBLE, SQL_TYPE_D_FLOAT):
-            return struct.pack('>d', float(val))
+            try:
+                return struct.pack('>d', float(val))
+            except OverflowError as e:
+                raise DataError(f"Numeric value {val!r} out of range for DOUBLE") from e
         elif x.sqltype == SQL_TYPE_BOOLEAN:
             if type(val) is not bool and val not in (0, 1):
                 raise DataError(f"Invalid boolean value for batch execution: {val!r}")
