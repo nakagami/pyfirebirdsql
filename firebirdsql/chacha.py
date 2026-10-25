@@ -121,10 +121,10 @@ class ChaCha20:
         self.block_pos = 0
 
     def translate(self, plain):
-        enc = b''
+        enc = bytearray(plain)
 
-        for i in range(len(plain)):
-            enc += bytes([plain[i] ^ self.block[self.block_pos]])
+        for i in range(len(enc)):
+            enc[i] ^= self.block[self.block_pos]
             self.block_pos += 1
             if len(self.block) == self.block_pos:
                 # increment counter
@@ -136,7 +136,7 @@ class ChaCha20:
                     self.state[13] = bytes_to_uint(counter_bytes[4:])
                 self.set_chacha20_round_block()
 
-        return enc
+        return bytes(enc)
 
     # PyCrypto compatible method
     @staticmethod

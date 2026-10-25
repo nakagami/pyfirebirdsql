@@ -27,15 +27,17 @@
 ##############################################################################
 from __future__ import print_function
 import sys
+import struct
 import datetime
+import decimal
 import itertools
 import hashlib
 import select
 import weakref
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from typing import Any
 from firebirdsql.fberrmsgs import messages
-from firebirdsql.err import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError
+from firebirdsql.err import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError, ProgrammingError, DatabaseError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
 from firebirdsql.wireprotocol import WireProtocol, get_crypt
@@ -208,7 +210,7 @@ class PreparedStatement(object):
 
 
 class Cursor(object):
-    def __init__(self, obj: 'ConnectionBase | Transaction') -> None:
+    def __init__(self, obj: 'ConnectionBase | Transaction', timeout: float | int | None = None) -> None:
         DEBUG_OUTPUT("Cursor::__init__()")
         if isinstance(obj, Connection):
             self._transaction = obj._transaction
@@ -224,6 +226,17 @@ class Cursor(object):
         self.stmt: Statement | None = None
         self.arraysize: int = 1
         self.rowcount: int = -1
+        self.statement_timeout: float | int | None = timeout if timeout is not None else getattr(conn, 'statement_timeout', None)
+        self._fetch_records = None
+        self._callproc_result = None
+
+    @property
+    def timeout(self) -> float | int | None:
+        return self.statement_timeout
+
+    @timeout.setter
+    def timeout(self, value: float | int | None) -> None:
+        self.statement_timeout = value
 
     def __enter__(self) -> 'Cursor':
         return self
@@ -262,7 +275,7 @@ class Cursor(object):
         prepared_statement = PreparedStatement(self, query, explain_plan=explain_plan)
         return prepared_statement
 
-    def _execute(self, query: str | PreparedStatement, params: Sequence[Any] | None) -> 'Cursor':
+    def _execute(self, query: str | PreparedStatement, params: Sequence[Any] | None, timeout: float | int | None = None) -> 'Cursor':
         if params is None:
             params = []
         self.transaction.check_trans_handle()
@@ -273,7 +286,8 @@ class Cursor(object):
                 stmt.handle,
                 self.transaction.trans_handle, cooked_params,
                 calc_blr(stmt.xsqlda),
-                input_xsqlda=stmt.bind_xsqlda)
+                input_xsqlda=stmt.bind_xsqlda,
+                timeout=timeout)
             self._callproc_result = self.transaction.connection._op_sql_response(stmt.xsqlda)
             self.transaction.connection._op_response()
             if self._callproc_result:
@@ -292,7 +306,8 @@ class Cursor(object):
         else:
             self.transaction.connection._op_execute(
                 stmt.handle, self.transaction.trans_handle, cooked_params,
-                input_xsqlda=stmt.bind_xsqlda)
+                input_xsqlda=stmt.bind_xsqlda,
+                timeout=timeout)
             (h, oid, buf) = self.transaction.connection._op_response()
 
             if stmt.stmt_type == isc_info_sql_stmt_select:
@@ -313,10 +328,11 @@ class Cursor(object):
             q = q.sql
         return isinstance(q, str) and q.lstrip().upper().startswith('EXECUTE')
 
-    def execute(self, query: str | PreparedStatement, params: Sequence[Any] | None = None) -> 'Cursor':
+    def execute(self, query: str | PreparedStatement, params: Sequence[Any] | None = None, timeout: float | int | None = None) -> 'Cursor':
         DEBUG_OUTPUT("Cursor::execute()", query, params)
+        eff_timeout = timeout if timeout is not None else self.statement_timeout
         try:
-            self._execute(query, params)
+            self._execute(query, params, timeout=eff_timeout)
             self.rowcount = self._rowcount()
             # DML with RETURNING returns a phantom row of NULLs when no rows
             # are affected. Clear it so fetchone()/fetchall() return nothing,
@@ -338,9 +354,169 @@ class Cursor(object):
         self.execute(query, params)
         return tuple(self._callproc_result) if self._callproc_result else None
 
+    def _is_safe_batch_row(self, bind_xsqlda: Sequence[Any], params: Sequence[Any]) -> bool:
+        if len(params) != len(bind_xsqlda):
+            return False
+        for i, x in enumerate(bind_xsqlda):
+            val = params[i]
+            if val is None:
+                continue
+            if x.sqltype == SQL_TYPE_BOOLEAN:
+                if type(val) is not bool:
+                    return False
+            elif x.sqltype == SQL_TYPE_DATE:
+                if type(val) is not datetime.date or isinstance(val, datetime.datetime):
+                    return False
+            elif x.sqltype == SQL_TYPE_TIME:
+                if type(val) is not datetime.time or val.tzinfo is not None:
+                    return False
+            elif x.sqltype == SQL_TYPE_TIMESTAMP:
+                if type(val) is not datetime.datetime or val.tzinfo is not None:
+                    return False
+            elif x.sqltype == SQL_TYPE_TIME_TZ:
+                if type(val) is not datetime.time or val.tzinfo is None:
+                    return False
+            elif x.sqltype == SQL_TYPE_TIMESTAMP_TZ:
+                if type(val) is not datetime.datetime or val.tzinfo is None:
+                    return False
+            elif x.sqltype in (SQL_TYPE_TEXT, SQL_TYPE_VARYING):
+                if isinstance(val, str):
+                    b = self.transaction.connection.str_to_bytes(val)
+                elif isinstance(val, bytes):
+                    b = val
+                else:
+                    return False
+                if x.sqllen and len(b) > x.sqllen:
+                    return False
+            elif x.sqltype == SQL_TYPE_SHORT:
+                if not isinstance(val, (int, float, decimal.Decimal)):
+                    return False
+                v = self._batch_integer_value(x, val)
+                if v is None:
+                    return False
+                if v < -32768 or v > 32767:
+                    return False
+            elif x.sqltype == SQL_TYPE_LONG:
+                if not isinstance(val, (int, float, decimal.Decimal)):
+                    return False
+                v = self._batch_integer_value(x, val)
+                if v is None:
+                    return False
+                if v < -2147483648 or v > 2147483647:
+                    return False
+            elif x.sqltype in (SQL_TYPE_INT64, SQL_TYPE_QUAD):
+                if not isinstance(val, (int, float, decimal.Decimal)):
+                    return False
+                v = self._batch_integer_value(x, val)
+                if v is None:
+                    return False
+                if v < -9223372036854775808 or v > 9223372036854775807:
+                    return False
+            elif x.sqltype in (SQL_TYPE_FLOAT, SQL_TYPE_DOUBLE, SQL_TYPE_D_FLOAT):
+                if not isinstance(val, (int, float, decimal.Decimal)):
+                    return False
+        return True
+
+    @staticmethod
+    def _batch_integer_value(x: Any, val: int | float | decimal.Decimal) -> int | None:
+        try:
+            number = val if isinstance(val, decimal.Decimal) else decimal.Decimal(str(val))
+            if x.sqlscale < 0:
+                number *= decimal.Decimal(10) ** (-x.sqlscale)
+            if number != number.to_integral_value():
+                return None
+            return int(number)
+        except Exception:
+            return None
+
+    def _can_use_batch(self, stmt: Statement, seq_of_params: Any = None) -> bool:
+        if self.statement_timeout:
+            return False
+        conn = self.transaction.connection
+        if conn.accept_version < PROTOCOL_VERSION16:
+            return False
+        if stmt.stmt_type not in (isc_info_sql_stmt_insert, isc_info_sql_stmt_update, isc_info_sql_stmt_delete):
+            return False
+        if len(stmt.xsqlda) > 0:
+            return False
+        if len(stmt.bind_xsqlda) == 0:
+            return False
+        if any(x.sqltype not in BATCH_SUPPORTED_SQL_TYPES for x in stmt.bind_xsqlda):
+            return False
+        if seq_of_params:
+            for params in seq_of_params:
+                if not self._is_safe_batch_row(stmt.bind_xsqlda, params):
+                    return False
+        return True
+
+    def _executemany_batch(self, stmt: Statement, seq_of_params: Iterable[Sequence[Any]]) -> int:
+        self._fetch_records = None
+        self._callproc_result = None
+        conn = self.transaction.connection
+        flush_threshold = getattr(self, "batch_flush_threshold", 128 * 1024)
+        native_msg_len = conn._calculate_batch_msg_len(stmt.bind_xsqlda)
+        batch_created = False
+        rows_buf = bytearray()
+        batch_row_count = 0
+        total_affected = 0
+
+        def _flush_and_exec():
+            nonlocal rows_buf, batch_row_count, batch_created, total_affected
+            if batch_row_count > 0:
+                conn._op_batch_msg(stmt.handle, rows_buf, batch_row_count)
+                rows_buf = bytearray()
+                batch_row_count = 0
+            if batch_created:
+                affected = conn._op_batch_exec(stmt.handle, self.transaction.trans_handle)
+                if affected > 0:
+                    total_affected += affected
+                conn._op_batch_rls(stmt.handle)
+                batch_created = False
+
+        try:
+            for params in seq_of_params:
+                if not batch_created:
+                    conn._op_batch_create(stmt.handle, stmt.bind_xsqlda)
+                    batch_created = True
+
+                row_bytes = conn._encode_batch_row(stmt.bind_xsqlda, params)
+                rows_buf.extend(row_bytes)
+                batch_row_count += 1
+
+                if len(rows_buf) >= flush_threshold or (batch_row_count * native_msg_len) >= flush_threshold:
+                    _flush_and_exec()
+
+            _flush_and_exec()
+            return total_affected
+        finally:
+            if batch_created:
+                try:
+                    conn._op_batch_rls(stmt.handle)
+                except Exception:
+                    pass
+
     def executemany(self, query: str | PreparedStatement, seq_of_params: Sequence[Sequence[Any]]) -> None:
+        self.transaction.check_trans_handle()
+        stmt = self._get_stmt(query)
+        self._fetch_records = None
+        self._callproc_result = None
+
+        if isinstance(seq_of_params, (list, tuple)):
+            param_list = seq_of_params
+            can_batch = self._can_use_batch(stmt, param_list)
+        else:
+            param_list = seq_of_params
+            can_batch = False
+
+        if can_batch:
+            try:
+                self.rowcount = self._executemany_batch(stmt, param_list)
+                return
+            finally:
+                self.transaction.is_dirty = True
+
         total = 0
-        for params in seq_of_params:
+        for params in param_list:
             self.execute(query, params)
             if self.rowcount > 0:
                 total += self.rowcount
@@ -641,18 +817,23 @@ class ConnectionResponseMixin:
         n = nbytes
         if word_alignment and (n % 4):
             n += 4 - nbytes % 4  # 4 bytes word alignment
-        r = bytes([])
+        r = bytearray()
+        if hasattr(self, '_recv_buf') and self._recv_buf:
+            take = min(n, len(self._recv_buf))
+            r.extend(self._recv_buf[:take])
+            del self._recv_buf[:take]
+            n -= take
         while n:
             if (self.timeout is not None and select.select([self.sock._sock], [], [], self.timeout)[0] == []):
                 raise TimeoutError("Pakcet recv timeout error")
             b = self.sock.recv(n)
             if not b:
                 break
-            r += b
+            r.extend(b)
             n -= len(b)
         if len(r) < nbytes:
             raise OperationalError('Can not recv() packets')
-        return r[:nbytes]
+        return bytes(r[:nbytes])
 
     def _parse_status_vector(self):
         sql_code = 0
@@ -721,6 +902,61 @@ class ConnectionResponseMixin:
         elif op_code != self.op_response:
             raise InternalError("_op_response:op_code = %d" % (op_code,))
         return self._parse_op_response()
+
+    def _receive_two_responses(self):
+        first_exc = None
+        for _ in range(2):
+            try:
+                self._op_response()
+            except (IntegrityError, DataError, OperationalError, ProgrammingError, DatabaseError) as e:
+                if first_exc is None:
+                    first_exc = e
+        if first_exc is not None:
+            raise first_exc
+
+    def _op_batch_cs(self):
+        b = self._recv_channel(4)
+        while bytes_to_bint(b) == self.op_dummy:
+            b = self._recv_channel(4)
+        while bytes_to_bint(b) == self.op_response and self.lazy_response_count:
+            self.lazy_response_count -= 1
+            self._parse_op_response()
+            b = self._recv_channel(4)
+        op_code = bytes_to_bint(b)
+        if op_code != self.op_batch_cs:
+            if op_code == self.op_response:
+                self._parse_op_response()
+            raise InternalError(f"_op_batch_cs: op_code = {op_code}")
+
+        stmt_h = bytes_to_bint(self._recv_channel(4))
+        total_records = bytes_to_bint(self._recv_channel(4))
+        update_count = bytes_to_bint(self._recv_channel(4))
+        detailed_count = bytes_to_bint(self._recv_channel(4))
+        simplified_count = bytes_to_bint(self._recv_channel(4))
+        update_counts = [bytes_to_bint(self._recv_channel(4)) for _ in range(update_count)]
+        detailed_errors = []
+        for _ in range(detailed_count):
+            row_num = bytes_to_bint(self._recv_channel(4))
+            gds_codes, sql_code, message = self._parse_status_vector()
+            detailed_errors.append((row_num, gds_codes, sql_code, message))
+        simplified_errors = [bytes_to_bint(self._recv_channel(4)) for _ in range(simplified_count)]
+
+        if detailed_errors:
+            row_num, gds_codes, sql_code, message = detailed_errors[0]
+            if gds_codes.intersection([
+                335544838, 335544879, 335544880, 335544466, 335544665, 335544347, 335544558
+            ]):
+                raise IntegrityError(f"Row {row_num}: {message}", gds_codes, sql_code)
+            elif gds_codes.intersection([335544321]):
+                raise DataError(f"Row {row_num}: {message}", gds_codes, sql_code)
+            elif (sql_code or message) and not gds_codes.intersection([335544434]):
+                raise OperationalError(f"Row {row_num}: {message}", gds_codes, sql_code)
+            else:
+                raise OperationalError(f"Row {row_num}: batch execution failed")
+        if simplified_errors:
+            raise OperationalError(f"Row {simplified_errors[0]}: batch execution failed")
+
+        return sum(u for u in update_counts if u > 0) if update_counts else total_records
 
     def _parse_connect_response(self):
         # want and treat op_accept or op_cond_accept or op_accept_data
@@ -949,78 +1185,155 @@ class ConnectionResponseMixin:
         return decode_slice_elements(meta, bytes(data), self.bytes_to_str)
 
     def _op_fetch_response(self, stmt_handle, xsqlda):
-        op_code = bytes_to_bint(self._recv_channel(4))
-        while op_code == self.op_dummy:
-            op_code = bytes_to_bint(self._recv_channel(4))
+        if not hasattr(self, '_recv_buf'):
+            self._recv_buf = bytearray()
+        buf = self._recv_buf
+        pos = 0
+        mv = None
 
-        while op_code == self.op_response and self.lazy_response_count:
-            self.lazy_response_count -= 1
-            h, oid, buf = self._parse_op_response()
-            op_code = bytes_to_bint(self._recv_channel(4))
+        def ensure(needed):
+            nonlocal pos, mv, raw_value
+            if len(buf) - pos < needed:
+                raw_value = None
+                mv = None
+                if pos > 0:
+                    del buf[:pos]
+                    pos = 0
+                while len(buf) < needed:
+                    if self.timeout is not None and select.select([self.sock._sock], [], [], self.timeout)[0] == []:
+                        raise TimeoutError("Pakcet recv timeout error")
+                    is_compressed = getattr(self.sock, '_decompressor', None) is not None
+                    read_size = (needed - len(buf)) if is_compressed else max(65536, needed - len(buf))
+                    chunk = self.sock.recv(read_size)
+                    if not chunk:
+                        raise OperationalError('Can not recv() packets')
+                    buf.extend(chunk)
+                mv = memoryview(buf)
+            elif mv is None:
+                mv = memoryview(buf)
 
-        if op_code != self.op_fetch_response:
-            if op_code == self.op_response:
-                self._parse_op_response()  # raises the actual Firebird error
-            raise InternalError("op_fetch_response:op_code = %d" % (op_code,))
-        b = self._recv_channel(8)
-        status = bytes_to_bint(b[:4])
-        count = bytes_to_bint(b[4:8])
-        rows = []
-        while count:
-            r = [None] * len(xsqlda)
-            if self.accept_version < PROTOCOL_VERSION13:
-                for i in range(len(xsqlda)):
-                    x = xsqlda[i]
-                    if x.io_length() < 0:
-                        b = self._recv_channel(4)
-                        ln = bytes_to_bint(b)
-                    else:
-                        ln = x.io_length()
-                    raw_value = self._recv_channel(ln, word_alignment=True)
-                    if self._recv_channel(4) == bytes([0]) * 4:     # Not NULL
-                        r[i] = x.value(raw_value)
-            else:   # PROTOCOL_VERSION13
-                n = len(xsqlda) // 8
-                if len(xsqlda) % 8 != 0:
-                    n += 1
-                null_indicator = 0
-                for c in reversed(self._recv_channel(n, word_alignment=True)):
-                    null_indicator <<= 8
-                    null_indicator += c
-                for i in range(len(xsqlda)):
-                    x = xsqlda[i]
-                    if null_indicator & (1 << i):
-                        continue
-                    if x.io_length() < 0:
-                        b = self._recv_channel(4)
-                        ln = bytes_to_bint(b)
-                    else:
-                        ln = x.io_length()
-                    raw_value = self._recv_channel(ln, word_alignment=True)
-                    r[i] = x.value(raw_value)
-            rows.append(r)
-            # Read the next opcode first (4 bytes) before committing to the
-            # full 12-byte fetch-response continuation header.  Firebird can
-            # send op_response (an error) here instead of another
-            # op_fetch_response, which would desynchronise the protocol if we
-            # consumed the bytes blindly.
-            next_op = bytes_to_bint(self._recv_channel(4))
-            if next_op == self.op_response:
-                self._parse_op_response()  # raises the actual Firebird error
-                raise InternalError("op_fetch_response:Internal Error")
-            if next_op != self.op_fetch_response:
-                raise InternalError("op_fetch_response:op_code = %d" % (next_op,))
-            b = self._recv_channel(8)
-            status = bytes_to_bint(b[:4])
-            count = bytes_to_bint(b[4:8])
-        return rows, status != 100
+        try:
+            ensure(4)
+            op_code = struct.unpack_from('>i', mv, pos)[0]
+            pos += 4
+            while op_code == self.op_dummy:
+                ensure(4)
+                op_code = struct.unpack_from('>i', mv, pos)[0]
+                pos += 4
+
+            while op_code == self.op_response and self.lazy_response_count:
+                self.lazy_response_count -= 1
+                mv = None
+                del buf[:pos]
+                pos = 0
+                h, oid, b = self._parse_op_response()
+                ensure(4)
+                op_code = struct.unpack_from('>i', mv, pos)[0]
+                pos += 4
+
+            if op_code != self.op_fetch_response:
+                if op_code == self.op_response:
+                    mv = None
+                    del buf[:pos]
+                    pos = 0
+                    self._parse_op_response()  # raises the actual Firebird error
+                raise InternalError("op_fetch_response:op_code = %d" % (op_code,))
+
+            ensure(8)
+            status = struct.unpack_from('>i', mv, pos)[0]
+            count = struct.unpack_from('>i', mv, pos + 4)[0]
+            pos += 8
+
+            rows = []
+            num_cols = len(xsqlda)
+            n_null = num_cols // 8 + (1 if num_cols % 8 != 0 else 0)
+            aligned_null = n_null + (4 - n_null % 4 if n_null % 4 else 0)
+
+            while count:
+                r = [None] * num_cols
+                if self.accept_version >= PROTOCOL_VERSION13:
+                    ensure(aligned_null)
+                    null_indicator = int.from_bytes(mv[pos : pos + n_null], byteorder='little')
+                    pos += aligned_null
+                    for i in range(num_cols):
+                        if null_indicator & (1 << i):
+                            continue
+                        x = xsqlda[i]
+                        io_len = x.io_length()
+                        if io_len < 0:
+                            ensure(4)
+                            ln = struct.unpack_from('>i', mv, pos)[0]
+                            pos += 4
+                        else:
+                            ln = io_len
+                        aligned_ln = ln + (4 - ln % 4 if ln % 4 else 0)
+                        ensure(aligned_ln)
+                        raw_value = mv[pos : pos + ln]
+                        pos += aligned_ln
+                        if x.sqltype in (SQL_TYPE_BLOB, SQL_TYPE_ARRAY):
+                            r[i] = bytes(raw_value)
+                        else:
+                            r[i] = x.value(raw_value)
+                        raw_value = None
+                else:
+                    for i in range(num_cols):
+                        x = xsqlda[i]
+                        io_len = x.io_length()
+                        if io_len < 0:
+                            ensure(4)
+                            ln = struct.unpack_from('>i', mv, pos)[0]
+                            pos += 4
+                        else:
+                            ln = io_len
+                        aligned_ln = ln + (4 - ln % 4 if ln % 4 else 0)
+                        ensure(aligned_ln + 4)
+                        raw_value = mv[pos : pos + ln]
+                        pos += aligned_ln
+                        is_not_null = (struct.unpack_from('>i', mv, pos)[0] == 0)
+                        pos += 4
+                        if is_not_null:
+                            if x.sqltype in (SQL_TYPE_BLOB, SQL_TYPE_ARRAY):
+                                r[i] = bytes(raw_value)
+                            else:
+                                r[i] = x.value(raw_value)
+                        raw_value = None
+                rows.append(r)
+
+                raw_value = None
+                ensure(12)
+                next_op = struct.unpack_from('>i', mv, pos)[0]
+                pos += 4
+                if next_op == self.op_response:
+                    raw_value = None
+                    mv = None
+                    del buf[:pos]
+                    pos = 0
+                    self._parse_op_response()  # raises the actual Firebird error
+                    raise InternalError("op_fetch_response:Internal Error")
+                if next_op != self.op_fetch_response:
+                    raise InternalError("op_fetch_response:op_code = %d" % (next_op,))
+                status = struct.unpack_from('>i', mv, pos)[0]
+                count = struct.unpack_from('>i', mv, pos + 4)[0]
+                pos += 8
+
+            return rows, status != 100
+        finally:
+            raw_value = None
+            mv = None
+            if pos > 0:
+                try:
+                    del buf[:pos]
+                except BufferError:
+                    self._recv_buf = bytearray(buf[pos:])
 
 
 class ConnectionBase(WireProtocol):
-    def cursor(self, factory: type[Cursor] = Cursor) -> Cursor:
+    def cursor(self, factory: type[Cursor] = Cursor, timeout: float | int | None = None) -> Cursor:
         DEBUG_OUTPUT("Connection::cursor()")
         if self._transaction is None:
             self._transaction = Transaction(self, self._autocommit)
+        if timeout is not None:
+            return factory(self, timeout=timeout)
         return factory(self)
 
     def begin(self) -> None:
@@ -1088,6 +1401,7 @@ class ConnectionBase(WireProtocol):
         timezone: str | None = None,
         wire_compress: bool = False,
         readonly: bool = False,
+        statement_timeout: float | int | None = None,
     ) -> None:
         DEBUG_OUTPUT("Connection::__init__()", id(self))
         self.accept_plugin_name = ''
@@ -1102,6 +1416,7 @@ class ConnectionBase(WireProtocol):
         self.role = role
         self.charset = charset
         self.timeout = float(timeout) if timeout is not None else None
+        self.statement_timeout = float(statement_timeout) if statement_timeout is not None else None
         self.auth_plugin_name = auth_plugin_name
         self.wire_crypt = wire_crypt
         self.wire_compress = wire_compress
@@ -1348,4 +1663,3 @@ class ConnectionBase(WireProtocol):
 class Connection(ConnectionBase, ConnectionResponseMixin):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         ConnectionBase.__init__(self, *args, **kwargs)
-

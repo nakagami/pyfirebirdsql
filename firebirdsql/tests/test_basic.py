@@ -526,3 +526,395 @@ class TestBasic(TestBase):
                 "error should not be the generic internal error fallback")
             self.assertIn("proc error message", err_msg,
                 "error should contain the actual Firebird exception message")
+
+    def test_statement_timeout(self):
+        if self.server_version[0] < 4:
+            self.connection.close()
+            return
+
+        cur = self.connection.cursor()
+        # Fast query with timeout should succeed
+        cur.execute("SELECT 1 FROM RDB$DATABASE", timeout=5.0)
+        self.assertEqual(cur.fetchone()[0], 1)
+
+        # Slow query with short timeout should fail with OperationalError
+        with self.assertRaises(firebirdsql.OperationalError):
+            cur.execute(
+                "EXECUTE BLOCK AS DECLARE VARIABLE I INT = 0; BEGIN WHILE (I < 50000000) DO I = I + 1; END",
+                timeout=0.2
+            )
+        self.connection.rollback()
+
+        # Cursor-level statement timeout
+        cur2 = self.connection.cursor(timeout=0.2)
+        self.assertEqual(cur2.timeout, 0.2)
+        with self.assertRaises(firebirdsql.OperationalError):
+            cur2.execute("EXECUTE BLOCK AS DECLARE VARIABLE I INT = 0; BEGIN WHILE (I < 50000000) DO I = I + 1; END")
+        self.connection.rollback()
+        cur2.close()
+
+        # Connection-level statement timeout
+        conn2 = firebirdsql.connect(
+            auth_plugin_name=self.auth_plugin_name,
+            wire_crypt=self.wire_crypt,
+            host=self.host,
+            database=self.database,
+            port=self.port,
+            user=self.user,
+            password=self.password,
+            statement_timeout=0.2,
+        )
+        cur3 = conn2.cursor()
+        with self.assertRaises(firebirdsql.OperationalError):
+            cur3.execute("EXECUTE BLOCK AS DECLARE VARIABLE I INT = 0; BEGIN WHILE (I < 50000000) DO I = I + 1; END")
+        conn2.rollback()
+        conn2.close()
+
+    def test_executemany_batch(self):
+        if self.server_version[0] < 4:
+            self.connection.close()
+            return
+
+        cur = self.connection.cursor()
+        cur.execute("""
+            CREATE TABLE batch_tbl (
+                id INT PRIMARY KEY,
+                name VARCHAR(50),
+                val DECIMAL(10, 2),
+                dt DATE,
+                tm TIME,
+                ts TIMESTAMP,
+                flag BOOLEAN
+            )
+        """)
+        self.connection.commit()
+
+        # Insert 150 records using Batch Execution API
+        records = [
+            (
+                i,
+                f"Item_{i}",
+                Decimal(f"{i}.95"),
+                datetime.date(2025, 1, 1),
+                datetime.time(12, 0, 0),
+                datetime.datetime(2025, 1, 1, 12, 0, 0),
+                i % 2 == 0,
+            )
+            for i in range(150)
+        ]
+        cur.executemany(
+            "INSERT INTO batch_tbl (id, name, val, dt, tm, ts, flag) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            records
+        )
+        self.assertEqual(cur.rowcount, 150)
+        self.connection.commit()
+
+        cur.execute("SELECT COUNT(*) FROM batch_tbl")
+        self.assertEqual(cur.fetchone()[0], 150)
+
+        # Verify selected data matches
+        cur.execute("SELECT name, val, flag FROM batch_tbl WHERE id = 10")
+        row = cur.fetchone()
+        self.assertEqual(row, ("Item_10", Decimal("10.95"), True))
+
+        # Insert record with NULLs
+        cur.executemany(
+            "INSERT INTO batch_tbl (id, name, val, dt, tm, ts, flag) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [(150, None, None, None, None, None, None)]
+        )
+        self.assertEqual(cur.rowcount, 1)
+        self.connection.commit()
+
+        cur.execute("SELECT name, val, flag FROM batch_tbl WHERE id = 150")
+        self.assertEqual(cur.fetchone(), (None, None, None))
+
+        # Batch UPDATE
+        update_data = [(f"Updated_{i}", i) for i in range(10)]
+        cur.executemany("UPDATE batch_tbl SET name = ? WHERE id = ?", update_data)
+        self.assertEqual(cur.rowcount, 10)
+        self.connection.commit()
+
+        cur.execute("SELECT name FROM batch_tbl WHERE id = 5")
+        self.assertEqual(cur.fetchone()[0], "Updated_5")
+
+        # Batch DELETE
+        delete_data = [(i,) for i in range(10)]
+        cur.executemany("DELETE FROM batch_tbl WHERE id = ?", delete_data)
+        self.assertEqual(cur.rowcount, 10)
+        self.connection.commit()
+
+        cur.execute("SELECT COUNT(*) FROM batch_tbl")
+        self.assertEqual(cur.fetchone()[0], 141)
+
+        # Batch IntegrityError (duplicate primary key)
+        with self.assertRaises(firebirdsql.IntegrityError):
+            cur.executemany(
+                "INSERT INTO batch_tbl (id, name) VALUES (?, ?)",
+                [(100, "dup")]
+            )
+        self.connection.rollback()
+
+        # Verify _can_use_batch returns False for protocol < 16
+        old_ver = self.connection.accept_version
+        try:
+            self.connection.accept_version = 15
+            prep_stmt = cur.prep("INSERT INTO batch_tbl (id, name) VALUES (?, ?)")
+            self.assertFalse(cur._can_use_batch(prep_stmt.stmt))
+        finally:
+            self.connection.accept_version = old_ver
+
+        # Fallback to loop when batch cannot be used
+        orig_can_use_batch = cur._can_use_batch
+        try:
+            cur._can_use_batch = lambda *args, **kwargs: False
+            fallback_data = [(200 + i, f"Fallback_{i}") for i in range(5)]
+            cur.executemany("INSERT INTO batch_tbl (id, name) VALUES (?, ?)", fallback_data)
+            self.assertEqual(cur.rowcount, 5)
+            self.connection.commit()
+            cur.execute("SELECT COUNT(*) FROM batch_tbl WHERE id >= 200")
+            self.assertEqual(cur.fetchone()[0], 5)
+        finally:
+            cur._can_use_batch = orig_can_use_batch
+
+        # Empty seq_of_params
+        cur.executemany("INSERT INTO batch_tbl (id, name) VALUES (?, ?)", [])
+        self.assertEqual(cur.rowcount, 0)
+        cur.close()
+
+    def test_batch_edge_cases(self):
+        if self.server_version[0] < 4:
+            self.connection.close()
+            return
+
+        cur = self.connection.cursor()
+        cur.execute("""
+            CREATE TABLE batch_edge (
+                id INT PRIMARY KEY,
+                s VARCHAR(5),
+                amount DECIMAL(10, 2),
+                dt DATE,
+                flag BOOLEAN,
+                ts TIMESTAMP,
+                si SMALLINT,
+                after_si INTEGER
+            )
+        """)
+        cur.execute("CREATE TABLE batch_native (large_value VARCHAR(32765) CHARACTER SET OCTETS)")
+        cur.execute("CREATE TABLE batch_float (fval FLOAT)")
+        self.connection.commit()
+
+        # 1. Fresh cursor executemany followed by fetchone should return None (not raise AttributeError)
+        cur_fresh = self.connection.cursor()
+        cur_fresh.executemany("INSERT INTO batch_edge (id, s) VALUES (?, ?)", [(1, "a")])
+        self.assertIsNone(cur_fresh.fetchone())
+        self.assertEqual(cur_fresh.fetchall(), [])
+
+        # 2. Previous SELECT cursor: executemany clears stale results
+        cur_stale = self.connection.cursor()
+        cur_stale.execute("SELECT id FROM batch_edge")
+        cur_stale.executemany("INSERT INTO batch_edge (id, s) VALUES (?, ?)", [(2, "b")])
+        self.assertIsNone(cur_stale.fetchone())
+        self.assertEqual(cur_stale.fetchall(), [])
+
+        # 3. DATE string / BOOLEAN string fallback to ordinary execution and succeed
+        cur.executemany(
+            "INSERT INTO batch_edge (id, dt, flag) VALUES (?, ?, ?)",
+            [(3, "2025-01-01", "false"), (4, "2025-01-02", "true")]
+        )
+        self.connection.commit()
+        cur.execute("SELECT id, dt, flag FROM batch_edge WHERE id IN (3, 4) ORDER BY id")
+        self.assertEqual(cur.fetchall(), [
+            (3, datetime.date(2025, 1, 1), False),
+            (4, datetime.date(2025, 1, 2), True),
+        ])
+
+        cur.executemany(
+            "INSERT INTO batch_edge (id, amount) VALUES (?, ?)",
+            [(5, Decimal("1.239"))]
+        )
+        self.connection.commit()
+        cur.execute("SELECT amount FROM batch_edge WHERE id = 5")
+        self.assertEqual(cur.fetchone()[0], Decimal("1.24"))
+
+        integer_stmt = cur.prep("INSERT INTO batch_edge (id) VALUES (?)")
+        self.assertFalse(
+            cur._is_safe_batch_row(integer_stmt.stmt.bind_xsqlda, [Decimal("1.5")])
+        )
+        integer_stmt.close()
+
+        cur.executemany(
+            "INSERT INTO batch_edge (id, si, after_si) VALUES (?, ?, ?)",
+            [(6, -123, 456), (7, 123, 789)]
+        )
+        self.connection.commit()
+        cur.execute("SELECT id, si, after_si FROM batch_edge WHERE id IN (6, 7) ORDER BY id")
+        self.assertEqual(cur.fetchall(), [(6, -123, 456), (7, 123, 789)])
+
+        def generated_rows():
+            yield (8, "8")
+            verify = self.connection.cursor()
+            verify.execute("SELECT COUNT(*) FROM batch_edge WHERE id = 8")
+            self.assertEqual(verify.fetchone()[0], 1)
+            verify.close()
+            yield (9, "9")
+
+        cur.executemany("INSERT INTO batch_edge (id, s) VALUES (?, ?)", generated_rows())
+        self.connection.commit()
+        cur.execute("SELECT id, s FROM batch_edge WHERE id IN (8, 9) ORDER BY id")
+        self.assertEqual(cur.fetchall(), [(8, "8"), (9, "9")])
+
+        # 4. Overlong VARCHAR does not silently truncate (raises error)
+        with self.assertRaises(firebirdsql.DatabaseError):
+            cur.executemany("INSERT INTO batch_edge (id, s) VALUES (?, ?)", [(10, "abcdef")])
+        self.connection.rollback()
+
+        # 5. Out of range SMALLINT does not silently wrap (raises error)
+        with self.assertRaises(firebirdsql.DatabaseError):
+            cur.executemany("INSERT INTO batch_edge (id, si) VALUES (?, ?)", [(20, 70000)])
+        self.connection.rollback()
+
+        # 6. Timezone-aware timestamp on plain TIMESTAMP field falls back or safely handles without corrupting protocol
+        aware_dt = datetime.datetime(2025, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+        cur.executemany("INSERT INTO batch_edge (id, ts) VALUES (?, ?)", [(30, aware_dt)])
+        self.connection.commit()
+        cur.execute("SELECT id FROM batch_edge WHERE id = 30")
+        self.assertEqual(cur.fetchone()[0], 30)
+
+        # 7. statement_timeout cursor disables batching
+        cur_timeout = self.connection.cursor(timeout=5)
+        prep = cur_timeout.prep("INSERT INTO batch_edge (id, s) VALUES (?, ?)")
+        self.assertFalse(cur_timeout._can_use_batch(prep.stmt))
+
+        # 8. Bounded batch execution: splits batches and accumulates affected count
+        cur.batch_flush_threshold = 50
+        batch_exec_calls = 0
+        orig_batch_exec = self.connection._op_batch_exec
+
+        def counting_batch_exec(*args, **kwargs):
+            nonlocal batch_exec_calls
+            batch_exec_calls += 1
+            return orig_batch_exec(*args, **kwargs)
+
+        self.connection._op_batch_exec = counting_batch_exec
+        try:
+            chunked_rows = [(2000 + i, f"c_{i}") for i in range(20)]
+            cur.executemany("INSERT INTO batch_edge (id, s) VALUES (?, ?)", chunked_rows)
+            self.assertEqual(cur.rowcount, 20)
+            self.assertGreater(batch_exec_calls, 1)
+            self.connection.commit()
+            cur.execute("SELECT COUNT(*) FROM batch_edge WHERE id >= 2000")
+            self.assertEqual(cur.fetchone()[0], 20)
+        finally:
+            self.connection._op_batch_exec = orig_batch_exec
+            del cur.batch_flush_threshold
+
+        # NULL values still occupy the full native message size in the batch buffer.
+        cur.batch_flush_threshold = 64 * 1024
+        batch_exec_calls = 0
+        self.connection._op_batch_exec = counting_batch_exec
+        try:
+            cur.executemany("INSERT INTO batch_native (large_value) VALUES (?)", [(None,)] * 5)
+            self.assertGreater(batch_exec_calls, 1)
+        finally:
+            self.connection._op_batch_exec = orig_batch_exec
+            del cur.batch_flush_threshold
+
+        with self.assertRaises(firebirdsql.DataError):
+            cur.executemany("INSERT INTO batch_float (fval) VALUES (?)", [(1e39,)])
+        cur.close()
+
+    def test_fetch_memoryview(self):
+        cur = self.connection.cursor()
+        cur.execute("""
+            CREATE TABLE fetch_mv_test (
+                id INT PRIMARY KEY,
+                s VARCHAR(50),
+                val DOUBLE PRECISION,
+                d DATE,
+                t TIME,
+                ts TIMESTAMP,
+                n DECIMAL(12, 2)
+            )
+        """)
+        self.connection.commit()
+
+        # Insert 600 rows (exceeds DEFAULT_FETCH_COUNT=400 to test multi-batch fetch)
+        test_rows = [
+            (
+                i,
+                f"str_{i:04d}",
+                float(i) * 1.25,
+                datetime.date(2025, 1, 1 + (i % 28)),
+                datetime.time(i % 24, i % 60, i % 60),
+                datetime.datetime(2025, 1, 1, i % 24, i % 60, i % 60),
+                Decimal(f"{i}.75"),
+            )
+            for i in range(600)
+        ]
+        # Include some rows with NULL values
+        test_rows[10] = (10, None, None, None, None, None, None)
+        test_rows[500] = (500, None, 500.0, None, None, None, None)
+
+        cur.executemany(
+            "INSERT INTO fetch_mv_test VALUES (?, ?, ?, ?, ?, ?, ?)",
+            test_rows
+        )
+        self.connection.commit()
+
+        # Test fetchall
+        cur.execute("SELECT id, s, val, d, t, ts, n FROM fetch_mv_test ORDER BY id")
+        rows = cur.fetchall()
+        self.assertEqual(len(rows), 600)
+
+        # Check first, middle, last, and NULL rows
+        self.assertEqual(rows[0][0], 0)
+        self.assertEqual(rows[0][1], "str_0000")
+        self.assertAlmostEqual(rows[0][2], 0.0)
+        self.assertEqual(rows[0][3], datetime.date(2025, 1, 1))
+        self.assertEqual(rows[0][6], Decimal("0.75"))
+
+        self.assertEqual(rows[10], (10, None, None, None, None, None, None))
+        self.assertEqual(rows[500][1], None)
+        self.assertAlmostEqual(rows[500][2], 500.0)
+
+        self.assertEqual(rows[599][0], 599)
+        self.assertEqual(rows[599][1], "str_0599")
+        self.assertAlmostEqual(rows[599][2], 599 * 1.25)
+        self.assertEqual(rows[599][6], Decimal("599.75"))
+
+        # Test fetchone and fetchmany
+        cur.execute("SELECT id, s FROM fetch_mv_test ORDER BY id")
+        self.assertEqual(cur.fetchone(), (0, "str_0000"))
+        batch = cur.fetchmany(5)
+        self.assertEqual(len(batch), 5)
+        self.assertEqual(batch[0], (1, "str_0001"))
+        self.assertEqual(batch[4], (5, "str_0005"))
+
+        # Test cursor iteration
+        cur.execute("SELECT id FROM fetch_mv_test WHERE id < 10 ORDER BY id")
+        ids = [row[0] for row in cur]
+        self.assertEqual(ids, list(range(10)))
+
+        cur.close()
+
+    def test_fetch_conversion_exception_not_masked(self):
+        conn = firebirdsql.connect(
+            auth_plugin_name=self.auth_plugin_name,
+            wire_crypt=self.wire_crypt,
+            host=self.host,
+            port=self.port,
+            database=self.database,
+            user=self.user,
+            password=self.password,
+            timeout=1,
+        )
+        cur = conn.cursor()
+        prep = cur.prep("SELECT 1 FROM rdb$database")
+        orig_val = prep.stmt.xsqlda[0].value
+        try:
+            prep.stmt.xsqlda[0].value = lambda raw: int("not_a_number")
+            with self.assertRaises(ValueError):
+                cur.execute(prep)
+        finally:
+            prep.stmt.xsqlda[0].value = orig_val
+            conn.sock.close()
