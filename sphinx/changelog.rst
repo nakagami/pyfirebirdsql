@@ -366,7 +366,7 @@ Version 1.4.7
    - add type hints (PEP 561)
    - fix async connection loop handling
 
-Version 1.4.8
+Version 1.5.0
 ==============
 
    - array type support
