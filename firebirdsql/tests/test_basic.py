@@ -666,7 +666,7 @@ class TestBasic(TestBase):
         # Fallback to loop when batch cannot be used
         orig_can_use_batch = cur._can_use_batch
         try:
-            cur._can_use_batch = lambda stmt: False
+            cur._can_use_batch = lambda *args, **kwargs: False
             fallback_data = [(200 + i, f"Fallback_{i}") for i in range(5)]
             cur.executemany("INSERT INTO batch_tbl (id, name) VALUES (?, ?)", fallback_data)
             self.assertEqual(cur.rowcount, 5)
@@ -782,6 +782,29 @@ class TestBasic(TestBase):
         cur_timeout = self.connection.cursor(timeout=5)
         prep = cur_timeout.prep("INSERT INTO batch_edge (id, s) VALUES (?, ?)")
         self.assertFalse(cur_timeout._can_use_batch(prep.stmt))
+
+        # 8. Bounded batch execution: splits batches and accumulates affected count
+        cur.batch_flush_threshold = 50
+        batch_exec_calls = 0
+        orig_batch_exec = self.connection._op_batch_exec
+
+        def counting_batch_exec(*args, **kwargs):
+            nonlocal batch_exec_calls
+            batch_exec_calls += 1
+            return orig_batch_exec(*args, **kwargs)
+
+        self.connection._op_batch_exec = counting_batch_exec
+        try:
+            chunked_rows = [(2000 + i, f"c_{i}") for i in range(20)]
+            cur.executemany("INSERT INTO batch_edge (id, s) VALUES (?, ?)", chunked_rows)
+            self.assertEqual(cur.rowcount, 20)
+            self.assertGreater(batch_exec_calls, 1)
+            self.connection.commit()
+            cur.execute("SELECT COUNT(*) FROM batch_edge WHERE id >= 2000")
+            self.assertEqual(cur.fetchone()[0], 20)
+        finally:
+            self.connection._op_batch_exec = orig_batch_exec
+            del cur.batch_flush_threshold
 
         cur.close()
 

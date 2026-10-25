@@ -453,10 +453,24 @@ class Cursor(object):
         self._fetch_records = None
         self._callproc_result = None
         conn = self.transaction.connection
-        flush_threshold = 128 * 1024
+        flush_threshold = getattr(self, "batch_flush_threshold", 128 * 1024)
         batch_created = False
         rows_buf = bytearray()
         batch_row_count = 0
+        total_affected = 0
+
+        def _flush_and_exec():
+            nonlocal rows_buf, batch_row_count, batch_created, total_affected
+            if batch_row_count > 0:
+                conn._op_batch_msg(stmt.handle, rows_buf, batch_row_count)
+                rows_buf = bytearray()
+                batch_row_count = 0
+            if batch_created:
+                affected = conn._op_batch_exec(stmt.handle, self.transaction.trans_handle)
+                if affected > 0:
+                    total_affected += affected
+                conn._op_batch_rls(stmt.handle)
+                batch_created = False
 
         try:
             for params in seq_of_params:
@@ -469,20 +483,10 @@ class Cursor(object):
                 batch_row_count += 1
 
                 if len(rows_buf) >= flush_threshold:
-                    conn._op_batch_msg(stmt.handle, rows_buf, batch_row_count)
-                    rows_buf = bytearray()
-                    batch_row_count = 0
+                    _flush_and_exec()
 
-            if not batch_created:
-                return 0
-
-            if batch_row_count > 0:
-                conn._op_batch_msg(stmt.handle, rows_buf, batch_row_count)
-                rows_buf = bytearray()
-                batch_row_count = 0
-
-            affected = conn._op_batch_exec(stmt.handle, self.transaction.trans_handle)
-            return affected
+            _flush_and_exec()
+            return total_affected
         finally:
             if batch_created:
                 try:
