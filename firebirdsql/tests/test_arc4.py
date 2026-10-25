@@ -10,3 +10,9 @@ class TestArc4(unittest.TestCase):
         a2 = ARC4.new(b'a key')
         plain = a2.translate(enc)
         self.assertEqual(plain, b'plain text')
+
+    def test_chunks(self):
+        data = bytes(i % 251 for i in range(5000))
+        whole = ARC4.new(b'a key').translate(data)
+        a = ARC4.new(b'a key')
+        self.assertEqual(a.translate(data[:1]) + a.translate(data[1:1000]) + a.translate(data[1000:]), whole)
