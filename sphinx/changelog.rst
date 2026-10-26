@@ -366,7 +366,7 @@ Version 1.4.7
    - add type hints (PEP 561)
    - fix async connection loop handling
 
-Version 1.4.8
+Version 1.5.0
 ==============
 
    - array type support
@@ -374,4 +374,10 @@ Version 1.4.8
    - Re-export the public names explicitly for type checkers- #140
    - Firebird 4.0+ Batch Execution API and statement timeout support
    - optimize row fetch with buffered memoryview parsing
+
+Version 1.5.1
+==============
+
+   - Fix 1.5.0 regressions #144
+   - performance tuning #145
 
