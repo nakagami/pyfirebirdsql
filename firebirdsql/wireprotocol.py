@@ -253,7 +253,7 @@ class WireProtocol(object):
             return True
         return False
 
-    def params_to_blr(self, trans_handle, params, input_xsqlda=None):
+    def params_to_blr(self, trans_handle, params, input_xsqlda=None, blob_ids=None):
         "Convert parameter array to BLR and values format."
         from firebirdsql.array import Array, extract_array_elements, encode_slice_elements
         ln = len(params) * 2
@@ -296,7 +296,10 @@ class WireProtocol(object):
                 v = array_id
             elif t == bytes:
                 if len(p) > MAX_CHAR_LENGTH:
-                    v = self._create_blob(trans_handle, p)
+                    if blob_ids and i in blob_ids:
+                        v = blob_ids[i]
+                    else:
+                        v = self._create_blob(trans_handle, p)
                     blr += bytes([9, 0])
                 else:
                     v = p
@@ -707,7 +710,7 @@ class WireProtocol(object):
         self.sock.send(p.get_buffer())
 
     @wire_operation
-    def _op_execute(self, stmt_handle, trans_handle, params, input_xsqlda=None, timeout=None):
+    def _op_execute(self, stmt_handle, trans_handle, params, input_xsqlda=None, timeout=None, blob_ids=None):
         p = Packer()
         p.pack_int(self.op_execute)
         p.pack_int(stmt_handle)
@@ -719,7 +722,7 @@ class WireProtocol(object):
             p.pack_int(0)
             buf = p.get_buffer()
         else:
-            (blr, values) = self.params_to_blr(trans_handle, params, input_xsqlda)
+            (blr, values) = self.params_to_blr(trans_handle, params, input_xsqlda, blob_ids)
             p.pack_bytes(blr)
             p.pack_int(0)
             p.pack_int(1)
@@ -730,7 +733,7 @@ class WireProtocol(object):
         self.sock.send(buf)
 
     @wire_operation
-    def _op_execute2(self, stmt_handle, trans_handle, params, output_blr, input_xsqlda=None, timeout=None):
+    def _op_execute2(self, stmt_handle, trans_handle, params, output_blr, input_xsqlda=None, timeout=None, blob_ids=None):
         p = Packer()
         p.pack_int(self.op_execute2)
         p.pack_int(stmt_handle)
@@ -742,7 +745,7 @@ class WireProtocol(object):
             p.pack_int(0)
             p.pack_int(0)
         else:
-            (blr, values) = self.params_to_blr(trans_handle, params, input_xsqlda)
+            (blr, values) = self.params_to_blr(trans_handle, params, input_xsqlda, blob_ids)
             p.pack_bytes(blr)
             p.pack_int(0)
             p.pack_int(1)

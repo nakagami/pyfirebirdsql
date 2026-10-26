@@ -251,23 +251,29 @@ class AsyncCursor(Cursor):
         await self.transaction.check_trans_handle()
         stmt = await self._get_stmt(query)
         cooked_params = self._convert_params(params)
+        connection = self.transaction.connection
+        blob_ids = {}
+        for i, param in enumerate(cooked_params):
+            if type(param) is bytes and len(param) > MAX_CHAR_LENGTH:
+                blob_ids[i] = await connection._async_create_blob(
+                    self.transaction.trans_handle, param)
         timeout = self.statement_timeout
         if stmt.stmt_type == isc_info_sql_stmt_exec_procedure:
-            self.transaction.connection._op_execute2(
+            connection._op_execute2(
                 stmt.handle,
                 self.transaction.trans_handle, cooked_params,
-                calc_blr(stmt.xsqlda), timeout=timeout)
-            self._callproc_result = await self.transaction.connection._async_op_sql_response(stmt.xsqlda)
-            await self.transaction.connection._async_op_response()
+                calc_blr(stmt.xsqlda), timeout=timeout, blob_ids=blob_ids)
+            self._callproc_result = await connection._async_op_sql_response(stmt.xsqlda)
+            await connection._async_op_response()
             self._fetch_records = None
         else:
             DEBUG_OUTPUT(
                 "AsyncCursor::execute() _op_execute()",
                 stmt.handle, self.transaction.trans_handle)
-            self.transaction.connection._op_execute(
+            connection._op_execute(
                 stmt.handle, self.transaction.trans_handle, cooked_params,
-                timeout=timeout)
-            (h, oid, buf) = await self.transaction.connection._async_op_response()
+                timeout=timeout, blob_ids=blob_ids)
+            (h, oid, buf) = await connection._async_op_response()
 
             if self._fetch_records is not None and hasattr(self._fetch_records, 'aclose'):
                 await self._fetch_records.aclose()
@@ -1082,6 +1088,18 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
 
 
 class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
+    async def _async_create_blob(self, trans_handle, data: bytes) -> bytes:
+        self._op_create_blob2(trans_handle)
+        blob_handle, blob_id, buf = await self._async_op_response()
+
+        for offset in range(0, len(data), BLOB_SEGMENT_SIZE):
+            self._op_put_segment(blob_handle, data[offset:offset + BLOB_SEGMENT_SIZE])
+            await self._async_op_response()
+
+        self._op_close_blob(blob_handle)
+        await self._async_op_response()
+        return blob_id
+
     def cursor(self, factory: type[AsyncCursor] = AsyncCursor) -> AsyncCursor:
         DEBUG_OUTPUT("AsyncConnection::cursor()")
         self.last_usage = self.loop.time()
