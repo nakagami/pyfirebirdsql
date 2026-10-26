@@ -47,6 +47,42 @@ class AsyncTestCase(base.TestBase):
             self.assertEqual(rows, [(42,)])
         asyncio.run(_test_select())
 
+    def test_aio_wire_compress(self):
+        conn = firebirdsql.connect(
+            auth_plugin_name=self.auth_plugin_name,
+            wire_crypt=self.wire_crypt,
+            host=self.host,
+            port=self.port,
+            database=self.database,
+            user=self.user,
+            password=self.password,
+        )
+        cur = conn.cursor()
+        cur.execute("SELECT rdb$get_context('SYSTEM', 'ENGINE_VERSION') FROM rdb$database")
+        major = int(cur.fetchone()[0].split('.')[0])
+        conn.close()
+        if major < 3:
+            self.skipTest("wire compression needs Firebird 3+")
+
+        async def _test_select():
+            conn = await firebirdsql.aio.connect(
+                auth_plugin_name=self.auth_plugin_name,
+                wire_crypt=self.wire_crypt,
+                wire_compress=True,
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                user=self.user,
+                password=self.password,
+            )
+            cur = conn.cursor()
+            await cur.execute("SELECT RDB$GET_CONTEXT('SYSTEM', 'WIRE_COMPRESSED') FROM RDB$DATABASE")
+            self.assertEqual(await cur.fetchall(), [('TRUE',)])
+            await cur.execute("SELECT RDB$FIELD_NAME FROM RDB$FIELDS")
+            self.assertGreater(len(await cur.fetchall()), 100)
+            await conn.close()
+        asyncio.run(_test_select())
+
     def test_aio_connect_with_loop(self):
         loop = asyncio.new_event_loop()
 

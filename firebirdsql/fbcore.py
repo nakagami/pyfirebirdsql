@@ -813,6 +813,17 @@ class Transaction(object):
 
 
 class ConnectionResponseMixin:
+    def _wait_readable(self):
+        """Wait up to ``timeout`` for data from the server.
+
+        With wire compression, bytes already decompressed into the stream's
+        buffer are ready even though the socket has nothing more to read.
+        """
+        if self.timeout is None or getattr(self.sock, '_recv_buf', None):
+            return
+        if select.select([self.sock._sock], [], [], self.timeout)[0] == []:
+            raise TimeoutError("Pakcet recv timeout error")
+
     def _recv_channel(self, nbytes, word_alignment=False):
         n = nbytes
         if word_alignment and (n % 4):
@@ -824,8 +835,7 @@ class ConnectionResponseMixin:
             del self._recv_buf[:take]
             n -= take
         while n:
-            if (self.timeout is not None and select.select([self.sock._sock], [], [], self.timeout)[0] == []):
-                raise TimeoutError("Pakcet recv timeout error")
+            self._wait_readable()
             b = self.sock.recv(n)
             if not b:
                 break
@@ -976,9 +986,13 @@ class ConnectionResponseMixin:
         self.accept_type = bytes_to_bint(b[8:])
         self.lazy_response_count = 0
 
-        if self.accept_type & pflag_compress:
-            self.sock.enable_compression()
+        # Firebird sends the whole accept packet uncompressed and compresses what
+        # follows, so compression is enabled once the packet has been read.
+        compress = self.accept_type & pflag_compress
+        if compress:
             self.accept_type &= ptype_MASK
+            if op_code not in (self.op_cond_accept, self.op_accept_data):
+                self.sock.enable_compression()
 
         if op_code == self.op_cond_accept or op_code == self.op_accept_data:
             ln = bytes_to_bint(self._recv_channel(4))
@@ -990,6 +1004,8 @@ class ConnectionResponseMixin:
             is_authenticated = bytes_to_bint(self._recv_channel(4))
             ln = bytes_to_bint(self._recv_channel(4))
             self._recv_channel(ln, word_alignment=True)   # keys
+            if compress:
+                self.sock.enable_compression()
 
             if is_authenticated == 0:
                 if self.accept_plugin_name in (b'Srp256',  b'Srp'):
@@ -1200,8 +1216,7 @@ class ConnectionResponseMixin:
                     del buf[:pos]
                     pos = 0
                 while len(buf) < needed:
-                    if self.timeout is not None and select.select([self.sock._sock], [], [], self.timeout)[0] == []:
-                        raise TimeoutError("Pakcet recv timeout error")
+                    self._wait_readable()
                     is_compressed = getattr(self.sock, '_decompressor', None) is not None
                     read_size = (needed - len(buf)) if is_compressed else max(65536, needed - len(buf))
                     chunk = self.sock.recv(read_size)
