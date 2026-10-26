@@ -23,6 +23,40 @@ class AsyncTestCase(base.TestBase):
     def tearDown(self):
         pass
 
+    def test_aio_large_blob(self):
+        data = bytes(i * 7 % 256 for i in range(300000))
+        conn = firebirdsql.connect(
+            auth_plugin_name=self.auth_plugin_name,
+            wire_crypt=self.wire_crypt,
+            host=self.host,
+            port=self.port,
+            database=self.database,
+            user=self.user,
+            password=self.password,
+        )
+        cur = conn.cursor()
+        cur.execute("CREATE TABLE large_blob (b BLOB SUB_TYPE BINARY)")
+        conn.commit()
+        cur.execute("INSERT INTO large_blob VALUES (?)", (data,))
+        conn.commit()
+        conn.close()
+
+        async def _test():
+            conn = await firebirdsql.aio.connect(
+                auth_plugin_name=self.auth_plugin_name,
+                wire_crypt=self.wire_crypt,
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                user=self.user,
+                password=self.password,
+            )
+            cur = conn.cursor()
+            await cur.execute("SELECT b FROM large_blob")
+            self.assertEqual((await cur.fetchone())[0], data)
+            await conn.close()
+        asyncio.run(_test())
+
     def test_aio_connect(self):
         async def _test_select():
             conn = await firebirdsql.aio.connect(
