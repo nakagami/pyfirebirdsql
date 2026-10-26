@@ -380,4 +380,4 @@ Version 1.5.1
 
    - Fix 1.5.0 regressions #144
    - performance tuning #145
-
+   - Fix async inserts with large BLOB parameters #147
