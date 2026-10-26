@@ -37,8 +37,6 @@ class AsyncTestCase(base.TestBase):
         cur = conn.cursor()
         cur.execute("CREATE TABLE large_blob (b BLOB SUB_TYPE BINARY)")
         conn.commit()
-        cur.execute("INSERT INTO large_blob VALUES (?)", (data,))
-        conn.commit()
         conn.close()
 
         async def _test():
@@ -52,6 +50,8 @@ class AsyncTestCase(base.TestBase):
                 password=self.password,
             )
             cur = conn.cursor()
+            await cur.execute("INSERT INTO large_blob VALUES (?)", (data,))
+            await conn.commit()
             await cur.execute("SELECT b FROM large_blob")
             self.assertEqual((await cur.fetchone())[0], data)
             await conn.close()
