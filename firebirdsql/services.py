@@ -33,6 +33,44 @@ from firebirdsql.fbcore import Connection
 
 
 class Services(Connection):
+    # Output of a running service action is read in chunks of up to this many
+    # bytes (isc_info_svc_to_eof) instead of one line per round trip; within
+    # Firebird 2.5's signed 16-bit lengths.
+    output_buffer_length = 32767
+    # ... waiting at most this many seconds for each chunk, so a callback
+    # gets the lines of a long backup or restore while it runs.
+    output_timeout = 1
+
+    def _read_output(self, callback: Callable[[str], Any] | None = None) -> None:
+        """Read the output of the started service action until it ends,
+        passing each line to ``callback``."""
+        send = (bytes([isc_info_svc_timeout]) + int_to_bytes(4, 2)
+                + int_to_bytes(self.output_timeout, 4) + bytes([isc_info_end]))
+        rest = b''
+        while True:
+            self._op_service_info(send, bytes([isc_info_svc_to_eof]), self.output_buffer_length)
+            (h, oid, buf) = self._op_response()
+            i = 0
+            tag = None
+            while i < len(buf):
+                tag = buf[i]
+                if tag != isc_info_svc_to_eof:
+                    break
+                ln = int.from_bytes(buf[i+1:i+3], 'little')     # unsigned
+                if callback:
+                    rest += buf[i+3:i+3+ln]
+                i += 3 + ln
+            if callback and rest:
+                *lines, rest = rest.split(b'\n')
+                for line in lines:
+                    callback(self.bytes_to_str(line))
+            # a chunk ends with isc_info_truncated (more to come), isc_info_svc_timeout
+            # (nothing more yet) or isc_info_end (the service action has finished)
+            if tag == isc_info_end or tag is None:
+                break
+        if callback and rest:
+            callback(self.bytes_to_str(rest))
+
     def sweep(self, database_name: str, callback: Callable[[str], Any] | None = None) -> None:
         spb = bytes([isc_spb_rpr_validate_db | isc_spb_rpr_sweep_db])
         s = self.str_to_bytes(database_name)
@@ -44,14 +82,7 @@ class Services(Connection):
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
-        while True:
-            self._op_service_info(bytes([0x02]), bytes([0x3e]))
-            (h, oid, buf) = self._op_response()
-            if buf[:4] == bytes([0x3e, 0x00, 0x00, 0x01]):
-                break
-            if callback:
-                ln = bytes_to_int(buf[1:3])
-                callback(self.bytes_to_str(buf[3:3+ln]))
+        self._read_output(callback)
 
     def bringOnline(self, database_name: str, callback: Callable[[str], Any] | None = None) -> None:
         spb = bytes([isc_action_svc_properties])
@@ -65,14 +96,7 @@ class Services(Connection):
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
-        while True:
-            self._op_service_info(bytes([0x02]), bytes([0x3e]))
-            (h, oid, buf) = self._op_response()
-            if buf[:4] == bytes([0x3e, 0x00, 0x00, 0x01]):
-                break
-            if callback:
-                ln = bytes_to_int(buf[1:3])
-                callback(self.bytes_to_str(buf[3:3+ln]))
+        self._read_output(callback)
 
     def shutdown(
         self,
@@ -97,14 +121,7 @@ class Services(Connection):
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
-        while True:
-            self._op_service_info(bytes([0x02]), bytes([0x3e]))
-            (h, oid, buf) = self._op_response()
-            if buf[:4] == bytes([0x3e, 0x00, 0x00, 0x01]):
-                break
-            if callback:
-                ln = bytes_to_int(buf[1:3])
-                callback(self.bytes_to_str(buf[3:3+ln]))
+        self._read_output(callback)
 
     def backup_database(
         self,
@@ -145,14 +162,7 @@ class Services(Connection):
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
-        while True:
-            self._op_service_info(bytes([0x02]), bytes([0x3e]))
-            (h, oid, buf) = self._op_response()
-            if buf[:4] == bytes([0x3e, 0x00, 0x00, 0x01]):
-                break
-            if callback:
-                ln = bytes_to_int(buf[1:3])
-                callback(self.bytes_to_str(buf[3:3+ln]))
+        self._read_output(callback)
 
     def restore_database(
         self,
@@ -199,14 +209,7 @@ class Services(Connection):
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
-        while True:
-            self._op_service_info(bytes([0x02]), bytes([0x3e]))
-            (h, oid, buf) = self._op_response()
-            if buf[:4] == bytes([0x3e, 0x00, 0x00, 0x01]):
-                break
-            if callback:
-                ln = bytes_to_int(buf[1:3])
-                callback(self.bytes_to_str(buf[3:3+ln]))
+        self._read_output(callback)
 
     def trace_start(self, name: str | None = None, cfg: str | None = None, callback: Callable[[str], Any] | None = None) -> None:
         spb = bytes([isc_action_svc_trace_start])
@@ -323,15 +326,9 @@ class Services(Connection):
         self._op_service_start(spb)
         (h, oid, buf) = self._op_response()
         self.svc_handle = h
-        logs = ''
-        while True:
-            self._op_service_info(bytes([]), bytes([0x3e]))
-            (h, oid, buf) = self._op_response()
-            if buf[:4] == bytes([0x3e, 0x00, 0x00, 0x01]):
-                break
-            ln = bytes_to_int(buf[1:2])
-            logs += self.bytes_to_str(buf[3:3+ln]) + '\n'
-        return logs
+        lines: list[str] = []
+        self._read_output(lines.append)
+        return ''.join(line + '\n' for line in lines)
 
     def getServiceManagerVersion(self) -> int:
         return self._getIntegerVal(isc_info_svc_version)
