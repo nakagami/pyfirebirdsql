@@ -57,6 +57,35 @@ class AsyncTestCase(base.TestBase):
             await conn.close()
         asyncio.run(_test())
 
+    def test_aio_rowcount_and_errors(self):
+        async def _test():
+            conn = await firebirdsql.aio.connect(
+                auth_plugin_name=self.auth_plugin_name,
+                wire_crypt=self.wire_crypt,
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                user=self.user,
+                password=self.password,
+            )
+            cur = conn.cursor()
+            await cur.execute("CREATE TABLE aio_rc (id INTEGER NOT NULL PRIMARY KEY)")
+            await conn.commit()
+            for i in range(3):
+                await cur.execute("INSERT INTO aio_rc VALUES (?)", (i,))
+                self.assertEqual(cur.rowcount, 1)
+            await cur.execute("UPDATE aio_rc SET id = id + 10 WHERE id > 0")
+            self.assertEqual(cur.rowcount, 2)
+            with self.assertRaises(firebirdsql.IntegrityError):
+                await cur.execute("INSERT INTO aio_rc VALUES (0)")
+            with self.assertRaises(firebirdsql.DatabaseError):
+                await cur.execute("SELECT 1 / 0 FROM aio_rc")
+                await cur.fetchall()
+            await cur.execute("SELECT id FROM aio_rc ORDER BY id")
+            self.assertEqual(await cur.fetchall(), [(0,), (11,), (12,)])
+            await conn.close()
+        asyncio.run(_test())
+
     def test_aio_connect(self):
         async def _test_select():
             conn = await firebirdsql.aio.connect(

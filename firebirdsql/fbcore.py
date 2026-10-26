@@ -159,8 +159,7 @@ class Statement(object):
             self.plan = self.trans.connection.bytes_to_str(buf[i+3:i+3+ln])
             i += 3 + ln
         self.stmt_type, self.xsqlda, self.bind_xsqlda = parse_xsqlda(buf[i:], self.trans.connection, self.handle)
-        if self.stmt_type == isc_info_sql_stmt_select:
-            self._is_open = True
+        self._is_open = False       # opened by executing it
 
     def close(self):
         DEBUG_OUTPUT("Statement::close()", self.handle)
@@ -216,6 +215,13 @@ class PreparedStatement(object):
         self.stmt.close()
 
 
+class _Prepared(PreparedStatement):
+    """A statement a cursor has already prepared, executed like a PreparedStatement."""
+    def __init__(self, stmt: Statement, sql: str) -> None:
+        self.stmt = stmt
+        self.sql = sql
+
+
 class Cursor(object):
     def __init__(self, obj: 'ConnectionBase | Transaction', timeout: float | int | None = None) -> None:
         DEBUG_OUTPUT("Cursor::__init__()")
@@ -233,6 +239,7 @@ class Cursor(object):
         self.stmt: Statement | None = None
         self.arraysize: int = 1
         self.rowcount: int = -1
+        self._pending_rowcount: int | None = None
         self.statement_timeout: float | int | None = timeout if timeout is not None else getattr(conn, 'statement_timeout', None)
         self._fetch_records = None
         self._callproc_result = None
@@ -311,19 +318,34 @@ class Cursor(object):
                             )
             self._fetch_records = None
         else:
-            self.transaction.connection._op_execute(
+            # Send the requests together and read the replies afterwards: one
+            # round trip instead of three (SELECT) or two (other statements).
+            connection = self.transaction.connection
+            is_select = stmt.stmt_type == isc_info_sql_stmt_select
+            readers = []
+            if is_select and stmt._is_open:     # executed before: close its cursor first
+                connection._op_free_statement(stmt.handle, DSQL_close)
+                readers.append(connection._op_response_unless_closed)
+                stmt._is_open = False
+            connection._op_execute(
                 stmt.handle, self.transaction.trans_handle, cooked_params,
                 input_xsqlda=stmt.bind_xsqlda,
                 timeout=timeout)
-            (h, oid, buf) = self.transaction.connection._op_response()
-
-            if stmt.stmt_type == isc_info_sql_stmt_select:
+            readers.append(connection._op_response)
+            if is_select:
                 fetch_count = max(self.arraysize, DEFAULT_FETCH_COUNT)
-                self.transaction.connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda), fetch_count)
-                (rows, more_data) = self.transaction.connection._op_fetch_response(stmt.handle, stmt.xsqlda)
+                connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda), fetch_count)
+                readers.append(lambda: connection._op_fetch_response(stmt.handle, stmt.xsqlda))
+            connection._op_info_sql(stmt.handle, bytes([isc_info_sql_records]))
+            readers.append(connection._op_response)
+            replies = connection._read_responses(readers)
+            if is_select:
+                stmt._is_open = True
+                (rows, more_data) = replies[-2]
                 self._fetch_records = stmt.fetch_generator(rows, more_data, fetch_count)
             else:
                 self._fetch_records = None
+            self._pending_rowcount = self._parse_rowcount(stmt, replies[-1][2])
             self._callproc_result = None
 
         return self
@@ -339,8 +361,12 @@ class Cursor(object):
         DEBUG_OUTPUT("Cursor::execute()", query, params)
         eff_timeout = timeout if timeout is not None else self.statement_timeout
         try:
+            self._pending_rowcount = None
             self._execute(query, params, timeout=eff_timeout)
-            self.rowcount = self._rowcount()
+            if self._pending_rowcount is not None:
+                self.rowcount = self._pending_rowcount
+            else:
+                self.rowcount = self._rowcount()
             # DML with RETURNING returns a phantom row of NULLs when no rows
             # are affected. Clear it so fetchone()/fetchall() return nothing,
             # matching PEP 249. Don't clear for EXECUTE PROCEDURE statements.
@@ -522,11 +548,14 @@ class Cursor(object):
             finally:
                 self.transaction.is_dirty = True
 
+        # one statement for all rows: prepared once above
+        prepared = query if isinstance(query, PreparedStatement) else _Prepared(stmt, query)
         total = 0
         for params in param_list:
-            self.execute(query, params)
+            self.execute(prepared, params)
             if self.rowcount > 0:
                 total += self.rowcount
+        self.query = query
         self.rowcount = total
 
     def fetchone(self) -> tuple[Any, ...] | None:
@@ -660,9 +689,13 @@ class Cursor(object):
 
         self.transaction.connection._op_info_sql(self.stmt.handle, bytes([isc_info_sql_records]))
         (h, oid, buf) = self.transaction.connection._op_response()
+        return self._parse_rowcount(self.stmt, buf)
+
+    @staticmethod
+    def _parse_rowcount(stmt, buf) -> int:
         if buf[:3] != bytes([0x17, 0x1d, 0x00]):    # isc_info_sql_records
             count = -1
-        elif self.stmt.stmt_type == isc_info_sql_stmt_select:
+        elif stmt.stmt_type == isc_info_sql_stmt_select:
             assert buf[17:20] == bytes([0x0d, 0x04, 0x00])     # isc_info_req_select_count
             # select count
             count = bytes_to_int(buf[20:24])
@@ -919,6 +952,35 @@ class ConnectionResponseMixin:
         elif op_code != self.op_response:
             raise InternalError("_op_response:op_code = %d" % (op_code,))
         return self._parse_op_response()
+
+    def _read_responses(self, readers):
+        """Call the readers of replies to requests sent together, in order.
+        Every reply is read even if one reports an error; the first error is
+        raised afterwards, so the connection stays in step."""
+        results = []
+        first_exc = None
+        for read in readers:
+            try:
+                results.append(read())
+            except InternalError:
+                raise           # not a server error: the replies may be out of step
+            except (IntegrityError, DataError, OperationalError, ProgrammingError, DatabaseError) as e:
+                results.append(None)
+                if first_exc is None:
+                    first_exc = e
+        if first_exc is not None:
+            raise first_exc
+        return results
+
+    def _op_response_unless_closed(self):
+        """Reply to DSQL_close; a cursor already closed (by a commit or a
+        rollback) is fine."""
+        try:
+            return self._op_response()
+        except OperationalError as e:
+            if 335544577 not in e.gds_codes:    # isc_dsql_cursor_close_err
+                raise
+            return None
 
     def _receive_two_responses(self):
         first_exc = None
