@@ -82,6 +82,37 @@ class TestExecute(TestBase):
         self.assertEqual(self._alive(), 3)
         cur.close()
 
+    def test_reexecute_prepared_select_with_blob_param(self):
+        # a long text parameter is uploaded as a blob; the reply to closing
+        # the previous cursor must not be read as the upload's reply
+        cur = self.connection.cursor()
+        ps = PreparedStatement(
+            cur, "SELECT id FROM exec_t WHERE CHAR_LENGTH(CAST(? AS BLOB SUB_TYPE TEXT)) > id ORDER BY id")
+        long_text = 'x' * 40000
+        cur.execute(ps, (long_text,))
+        self.assertEqual(cur.fetchall(), [(1,), (2,), (3,)])
+        cur.execute(ps, (long_text,))
+        self.assertEqual(cur.fetchone(), (1,))
+        cur.execute(ps, (long_text,))       # one row read before
+        self.assertEqual(cur.fetchall(), [(1,), (2,), (3,)])
+        self.assertEqual(self._alive(), 3)
+        cur.close()
+
+    def test_reexecute_prepared_select_after_fetch_error(self):
+        # the first fetch fails but the cursor is open on the server: the
+        # next execution must close it first
+        cur = self.connection.cursor()
+        ps = PreparedStatement(cur, "SELECT 1 / (id - CAST(? AS INTEGER)) FROM exec_t ORDER BY id")
+        with self.assertRaises(DatabaseError):
+            cur.execute(ps, (1,))           # division by zero at id = 1
+        cur.execute(ps, (0,))
+        self.assertEqual(cur.fetchall(), [(1,), (0,), (0,)])
+        with self.assertRaises(DatabaseError):
+            cur.execute(ps, (1,))
+        ps.close()
+        self.assertEqual(self._alive(), 3)
+        cur.close()
+
     def test_executemany(self):
         cur = self.connection.cursor()
         rows = [(10 + i, 'm%d' % i) for i in range(50)]

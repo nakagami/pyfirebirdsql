@@ -322,16 +322,28 @@ class Cursor(object):
             # round trip instead of three (SELECT) or two (other statements).
             connection = self.transaction.connection
             is_select = stmt.stmt_type == isc_info_sql_stmt_select
+            # Build the execute packet first: it uploads large bytes/text and
+            # array parameters, reading each reply at once, so it must run
+            # before any request whose reply is read later.
+            execute_buf = connection._op_execute_buffer(
+                stmt.handle, self.transaction.trans_handle, cooked_params,
+                input_xsqlda=stmt.bind_xsqlda,
+                timeout=timeout)
             readers = []
             if is_select and stmt._is_open:     # executed before: close its cursor first
                 connection._op_free_statement(stmt.handle, DSQL_close)
                 readers.append(connection._op_response_unless_closed)
                 stmt._is_open = False
-            connection._op_execute(
-                stmt.handle, self.transaction.trans_handle, cooked_params,
-                input_xsqlda=stmt.bind_xsqlda,
-                timeout=timeout)
-            readers.append(connection._op_response)
+            connection.sock.send(execute_buf)
+
+            def read_execute():
+                r = connection._op_response()
+                if is_select:
+                    # the cursor is open on the server from here, even if
+                    # the first fetch fails
+                    stmt._is_open = True
+                return r
+            readers.append(read_execute)
             if is_select:
                 fetch_count = max(self.arraysize, DEFAULT_FETCH_COUNT)
                 connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda), fetch_count)
@@ -340,7 +352,6 @@ class Cursor(object):
             readers.append(connection._op_response)
             replies = connection._read_responses(readers)
             if is_select:
-                stmt._is_open = True
                 (rows, more_data) = replies[-2]
                 self._fetch_records = stmt.fetch_generator(rows, more_data, fetch_count)
             else:
