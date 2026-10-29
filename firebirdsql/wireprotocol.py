@@ -711,6 +711,13 @@ class WireProtocol(object):
 
     @wire_operation
     def _op_execute(self, stmt_handle, trans_handle, params, input_xsqlda=None, timeout=None, blob_ids=None):
+        self.sock.send(self._op_execute_buffer(
+            stmt_handle, trans_handle, params, input_xsqlda, timeout, blob_ids))
+
+    def _op_execute_buffer(self, stmt_handle, trans_handle, params, input_xsqlda=None, timeout=None, blob_ids=None):
+        """Build an op_execute packet without sending it. Large bytes/text and
+        array parameters are uploaded here, each waiting for its reply, so no
+        other reply may be pending when this is called."""
         p = Packer()
         p.pack_int(self.op_execute)
         p.pack_int(stmt_handle)
@@ -730,7 +737,7 @@ class WireProtocol(object):
         if self.accept_version >= PROTOCOL_VERSION16:
             timeout_ms = int(timeout * 1000) if timeout else 0
             buf += bint_to_bytes(timeout_ms, 4)
-        self.sock.send(buf)
+        return buf
 
     @wire_operation
     def _op_execute2(self, stmt_handle, trans_handle, params, output_blr, input_xsqlda=None, timeout=None, blob_ids=None):
