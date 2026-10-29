@@ -1,3 +1,4 @@
+import re
 import os
 import tempfile
 import firebirdsql
@@ -110,7 +111,9 @@ class TestBackup(TestBase):
             self.assertTrue(all(isinstance(line, str) and '\n' not in line for line in lines))
             self.assertTrue(all(line.startswith('gbak:') for line in lines if line))
             for i in range(50):
-                self.assertTrue(any(line.endswith('VERBOSE_OUTPUT_%d' % i) for line in lines), i)
+                # Firebird 6 quotes the name and adds its schema: "PUBLIC"."VERBOSE_OUTPUT_0"
+                name = re.compile(r'\bVERBOSE_OUTPUT_%d"?$' % i)
+                self.assertTrue(any(name.search(line) for line in lines), i)
 
         conn = firebirdsql.connect(
             auth_plugin_name=self.auth_plugin_name,
