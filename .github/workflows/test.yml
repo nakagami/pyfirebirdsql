@@ -13,11 +13,14 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    # Firebird 6 is not released yet: its snapshot image changes every day,
+    # so a failure there does not fail the run.
+    continue-on-error: ${{ matrix.firebird-version == '6-snapshot' }}
     strategy:
       fail-fast: false
       matrix:
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
-        firebird-version: ['2.5-sc', '2.5-ss', '3', '4', '5']
+        firebird-version: ['2.5-sc', '2.5-ss', '3', '4', '5', '6-snapshot']
         include:
           - firebird-version: '2.5-sc'
             firebird-image: 'jacobalberty/firebird:2.5-sc'
@@ -29,6 +32,8 @@ jobs:
             firebird-image: 'firebirdsql/firebird:4'
           - firebird-version: '5'
             firebird-image: 'firebirdsql/firebird:5'
+          - firebird-version: '6-snapshot'
+            firebird-image: 'firebirdsql/firebird:6-snapshot'
 
     services:
       firebird:
