@@ -35,7 +35,9 @@ class TestBase(unittest.TestCase):
                 user=self.user,
                 password=self.password,
                 page_size=self.page_size,
-                timeout=1)
+                # guards against a hang; 1 s was too short for creating a
+                # database on a busy CI runner
+                timeout=10)
 
     def tearDown(self):
         self.connection.close()
