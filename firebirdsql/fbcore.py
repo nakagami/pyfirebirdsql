@@ -292,6 +292,7 @@ class Cursor(object):
     def _execute(self, query: str | PreparedStatement, params: Sequence[Any] | None, timeout: float | int | None = None) -> 'Cursor':
         if params is None:
             params = []
+        self.transaction.connection._drop_deferred_statements()
         self.transaction.check_trans_handle()
         stmt = self._get_stmt(query)
         cooked_params = self._convert_params(params)
@@ -665,11 +666,17 @@ class Cursor(object):
         self.stmt = None
 
     def __del__(self) -> None:
+        # No network I/O here: the garbage collector can run this while the
+        # connection waits for replies to requests it has already sent, and
+        # a request sent now would put the replies out of step. The
+        # statement is dropped before the connection's next execute.
         try:
             if hasattr(self, 'stmt') and self.stmt and self.stmt.handle != -1:
                 if hasattr(self, '_transaction') and self._transaction:
-                    if self._transaction.connection and self._transaction.connection.sock is not None:
-                        self.close()
+                    connection = self._transaction.connection
+                    if connection and connection.sock is not None:
+                        connection._deferred_drops.append(self.stmt)
+                        self.stmt = None
         except Exception:
             pass
 
@@ -983,6 +990,15 @@ class ConnectionResponseMixin:
             raise first_exc
         return results
 
+    def _drop_deferred_statements(self):
+        """Drop the statements of cursors freed by the garbage collector.
+        Call it only when no reply is pending."""
+        drops = getattr(self, '_deferred_drops', None)
+        while drops:
+            stmt = drops.pop()
+            if self.sock is not None and stmt.handle != -1:
+                stmt.drop()
+
     def _op_response_unless_closed(self):
         """Reply to DSQL_close; a cursor already closed (by a commit or a
         rollback) is fine."""
@@ -1190,6 +1206,12 @@ class ConnectionResponseMixin:
         while bytes_to_bint(b) == self.op_dummy:
             b = self._recv_channel(4)
         op_code = bytes_to_bint(b)
+        while op_code == self.op_response and self.lazy_response_count:
+            # a reply left for later (lazy_send), e.g. to dropping a statement
+            self.lazy_response_count -= 1
+            self._parse_op_response()
+            b = self._recv_channel(4)
+            op_code = bytes_to_bint(b)
         if op_code != self.op_sql_response:
             if op_code == self.op_response:
                 self._parse_op_response()
@@ -1532,6 +1554,7 @@ class ConnectionBase(WireProtocol):
         self._autocommit = False
         self._transaction = None
         self._cursors = {}
+        self._deferred_drops = []      # statements of cursors freed by the garbage collector
 
         self.sock = SocketStream(self.hostname, self.port, self.timeout, self.cloexec)
 
