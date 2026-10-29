@@ -92,6 +92,10 @@ def dpd_to_int(dpd):
     return d[2] * 100 + d[1] * 10 + d[0]
 
 
+# Every 10-bit DPD declet decoded once: decoding is then one lookup per declet.
+_DPD_TO_INT = tuple(dpd_to_int(i) for i in range(1024))
+
+
 def calc_significand(prefix, dpd_bits, num_bits):
     """
     prefix: High bits integer value
@@ -99,17 +103,9 @@ def calc_significand(prefix, dpd_bits, num_bits):
     num_bits: bit length of dpd_bits
     """
     # https://en.wikipedia.org/wiki/Decimal128_floating-point_format#Densely_packed_decimal_significand_field
-    num_segments = num_bits // 10
-    segments = []
-    for i in range(num_segments):
-        segments.append(dpd_bits & 0b1111111111)
-        dpd_bits >>= 10
-    segments.reverse()
-
     v = prefix
-    for dpd in segments:
-        v = v * 1000 + dpd_to_int(dpd)
-
+    for shift in range(num_bits - 10, -1, -10):     # most significant declet first
+        v = v * 1000 + _DPD_TO_INT[(dpd_bits >> shift) & 0b1111111111]
     return v
 
 

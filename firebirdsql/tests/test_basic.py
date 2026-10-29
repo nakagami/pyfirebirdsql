@@ -489,6 +489,20 @@ class TestBasic(TestBase):
             self.assertEqual(df128, val)
         cur.close()
 
+        # all digits used, so every declet (including the 8/9 encodings) is decoded
+        cur = self.connection.cursor()
+        for s64, s128 in (
+            ('1234567890123456', '1234567890123456789012345678901234'),
+            ('7989898989898989', '7989898989898989898989898989898989'),
+            ('-1.000000000000099', '-0.000000000000000000000000000000009876543210'),
+            ('3.141592653589793E+300', '6.999999999999999999999999999999999E-6000'),
+        ):
+            cur.execute("SELECT CAST(? AS DECFLOAT(16)), CAST(? AS DECFLOAT(34)) FROM RDB$DATABASE", (s64, s128))
+            df64, df128 = cur.fetchone()
+            self.assertEqual(df64, Decimal(s64))
+            self.assertEqual(df128, Decimal(s128))
+        cur.close()
+
         self.connection.close()
 
     def test_selectable_proc_exception_propagation(self):
