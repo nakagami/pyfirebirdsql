@@ -154,22 +154,21 @@ class AsyncStatement(Statement):
             self.plan = self.trans.connection.bytes_to_str(buf[i+3:i+3+ln])
             i += 3 + ln
         self.stmt_type, self.xsqlda = await async_parse_xsqlda(buf[i:], self.trans.connection, self.handle)
-        if self.stmt_type == isc_info_sql_stmt_select:
-            self._is_open = True
+        self._is_open = False       # opened by executing it
 
     async def close(self):
         DEBUG_OUTPUT("AsyncStatement::close()", self.handle)
         if self.stmt_type == isc_info_sql_stmt_select and self._is_open:
-            await self.trans.connection._async_op_free_statement(self.handle, DSQL_close)
+            self.trans.connection._op_free_statement(self.handle, DSQL_close)
             if (self.trans.connection.accept_type & ptype_MASK) == ptype_lazy_send:
                 self.trans.connection.lazy_response_count += 1
             else:
-                (h, oid, buf) = await self.trans.connection._async_op_response()
+                await self.trans.connection._async_op_response_unless_closed()
         self._is_open = False
 
     async def drop(self):
         DEBUG_OUTPUT("AsyncStatement::drop()", self.handle)
-        if self.handle != -1 and self._is_open:
+        if self.handle != -1:
             self.trans.connection._op_free_statement(self.handle, DSQL_drop)
             if (self.trans.connection.accept_type & ptype_MASK) == ptype_lazy_send:
                 self.trans.connection.lazy_response_count += 1
@@ -180,12 +179,19 @@ class AsyncStatement(Statement):
 
 
 class AsyncPreparedStatement(PreparedStatement):
-    async def __init__(self, cur: 'AsyncCursor', sql: str, explain_plan: bool = False) -> None:
-        DEBUG_OUTPUT("AsyncPreparedStatement::__init__()")
-        await cur.transaction.check_trans_handle()
-        self.stmt = await AsyncStatement.create(cur.transaction)
-        await self.stmt.prepare(sql, explain_plan)
+    # __init__ cannot be a coroutine: create one with
+    # `await AsyncPreparedStatement.create(cur, sql)` or `await cur.prep(sql)`.
+    def __init__(self, stmt: AsyncStatement, sql: str) -> None:
+        self.stmt = stmt
         self.sql = sql
+
+    @classmethod
+    async def create(cls, cur: 'AsyncCursor', sql: str, explain_plan: bool = False) -> 'AsyncPreparedStatement':
+        DEBUG_OUTPUT("AsyncPreparedStatement::create()")
+        await cur.transaction.check_trans_handle()
+        stmt = await AsyncStatement.create(cur.transaction)
+        await stmt.prepare(sql, explain_plan)
+        return cls(stmt, sql)
 
     async def close(self) -> None:
         DEBUG_OUTPUT("AsyncPreparedStatement::close()")
@@ -243,7 +249,7 @@ class AsyncCursor(Cursor):
 
     async def prep(self, query: str, explain_plan: bool = False) -> AsyncPreparedStatement:
         DEBUG_OUTPUT("AcyncCursor::prep()")
-        prepared_statement = await AsyncPreparedStatement(self, query, explain_plan=explain_plan)
+        prepared_statement = await AsyncPreparedStatement.create(self, query, explain_plan=explain_plan)
         return prepared_statement
 
     async def _execute(self, query: str | PreparedStatement, params: Sequence[Any] | None) -> 'AsyncCursor':
@@ -277,10 +283,26 @@ class AsyncCursor(Cursor):
             # Send the requests together and read the replies afterwards: one
             # round trip instead of three (SELECT) or two (other statements).
             is_select = stmt.stmt_type == isc_info_sql_stmt_select
-            connection._op_execute(
+            # Build the execute packet before queuing any request: large
+            # bytes/text parameters are already uploaded above.
+            execute_buf = connection._op_execute_buffer(
                 stmt.handle, self.transaction.trans_handle, cooked_params,
                 timeout=timeout, blob_ids=blob_ids)
-            readers = [connection._async_op_response]
+            readers = []
+            if is_select and stmt._is_open:     # executed before: close its cursor first
+                connection._op_free_statement(stmt.handle, DSQL_close)
+                readers.append(connection._async_op_response_unless_closed)
+                stmt._is_open = False
+            connection.sock.send(execute_buf)
+
+            async def read_execute():
+                r = await connection._async_op_response()
+                if is_select:
+                    # the cursor is open on the server from here, even if
+                    # the first fetch fails
+                    stmt._is_open = True
+                return r
+            readers.append(read_execute)
             if is_select:
                 fetch_count = max(self.arraysize, DEFAULT_FETCH_COUNT)
                 connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda), fetch_count)
@@ -728,6 +750,16 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
             n = bytes_to_bint(await self._async_recv_channel(4))
 
         return (gds_codes, sql_code, message)
+
+    async def _async_op_response_unless_closed(self):
+        """Reply to DSQL_close; a cursor already closed (by a commit or a
+        rollback) is fine."""
+        try:
+            return await self._async_op_response()
+        except OperationalError as e:
+            if 335544577 not in e.gds_codes:    # isc_dsql_cursor_close_err
+                raise
+            return None
 
     async def _async_read_responses(self, readers):
         """Await the readers of replies to requests sent together, in order.
