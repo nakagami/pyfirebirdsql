@@ -113,6 +113,35 @@ class TestExecute(TestBase):
         self.assertEqual(self._alive(), 3)
         cur.close()
 
+    def test_cursor_freed_while_reading_replies(self):
+        # The garbage collector can free a cursor at any allocation, also
+        # while the connection waits for replies to requests already sent.
+        # Freeing it must not send a request then.
+        other = self.connection.cursor()
+        other.execute("SELECT id FROM exec_t")
+        other.fetchall()
+        conn = self.connection
+        read = conn._op_response
+        freed = []
+
+        def read_and_free():
+            if not freed:
+                freed.append(True)
+                other.__del__()
+            return read()
+        conn._op_response = read_and_free
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT id FROM exec_t ORDER BY id")
+            self.assertEqual(cur.fetchall(), [(1,), (2,), (3,)])
+        finally:
+            del conn._op_response
+        self.assertEqual(freed, [True])
+        self.assertEqual(len(conn._deferred_drops), 1)
+        self.assertEqual(self._alive(), 3)
+        self.assertEqual(conn._deferred_drops, [])      # dropped by the next execute
+        cur.close()
+
     def test_executemany(self):
         cur = self.connection.cursor()
         rows = [(10 + i, 'm%d' % i) for i in range(50)]
