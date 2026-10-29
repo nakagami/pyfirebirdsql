@@ -37,7 +37,7 @@ from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import Any
 from firebirdsql.fbcore import Statement, PreparedStatement, Cursor, Transaction, ConnectionBase, ConnectionResponseMixin
 from firebirdsql.fberrmsgs import messages
-from firebirdsql.err import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError
+from firebirdsql.err import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError, ProgrammingError, DatabaseError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
 from firebirdsql.wireprotocol import WireProtocol, get_crypt
@@ -209,6 +209,7 @@ class AsyncCursor(Cursor):
         self.stmt: AsyncStatement | None = None
         self.arraysize: int = 1
         self.rowcount: int = -1
+        self._pending_rowcount: int | None = None
         self.statement_timeout: float | int | None = getattr(conn, 'statement_timeout', None)
         self._fetch_records = None
         self._callproc_result = None
@@ -270,21 +271,29 @@ class AsyncCursor(Cursor):
             DEBUG_OUTPUT(
                 "AsyncCursor::execute() _op_execute()",
                 stmt.handle, self.transaction.trans_handle)
-            connection._op_execute(
-                stmt.handle, self.transaction.trans_handle, cooked_params,
-                timeout=timeout, blob_ids=blob_ids)
-            (h, oid, buf) = await connection._async_op_response()
-
             if self._fetch_records is not None and hasattr(self._fetch_records, 'aclose'):
                 await self._fetch_records.aclose()
 
-            if stmt.stmt_type == isc_info_sql_stmt_select:
+            # Send the requests together and read the replies afterwards: one
+            # round trip instead of three (SELECT) or two (other statements).
+            is_select = stmt.stmt_type == isc_info_sql_stmt_select
+            connection._op_execute(
+                stmt.handle, self.transaction.trans_handle, cooked_params,
+                timeout=timeout, blob_ids=blob_ids)
+            readers = [connection._async_op_response]
+            if is_select:
                 fetch_count = max(self.arraysize, DEFAULT_FETCH_COUNT)
-                self.transaction.connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda), fetch_count)
-                (rows, more_data) = await self.transaction.connection._async_op_fetch_response(stmt.handle, stmt.xsqlda)
+                connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda), fetch_count)
+                readers.append(lambda: connection._async_op_fetch_response(stmt.handle, stmt.xsqlda))
+            connection._op_info_sql(stmt.handle, bytes([isc_info_sql_records]))
+            readers.append(connection._async_op_response)
+            replies = await connection._async_read_responses(readers)
+            if is_select:
+                (rows, more_data) = replies[-2]
                 self._fetch_records = stmt.fetch_generator(rows, more_data, fetch_count)
             else:
                 self._fetch_records = None
+            self._pending_rowcount = self._parse_rowcount(stmt, replies[-1][2])
             self._callproc_result = None
 
         return self
@@ -292,8 +301,12 @@ class AsyncCursor(Cursor):
     async def execute(self, query: str | PreparedStatement, params: Sequence[Any] | None = None) -> 'AsyncCursor':
         DEBUG_OUTPUT("AsyncCursor::execute()", query, params)
         try:
+            self._pending_rowcount = None
             await self._execute(query, params)
-            self.rowcount = await self._rowcount()
+            if self._pending_rowcount is not None:
+                self.rowcount = self._pending_rowcount
+            else:
+                self.rowcount = await self._rowcount()
             # DML with RETURNING returns a phantom row of NULLs when no rows
             # are affected. Clear it so fetchone()/fetchall() return nothing,
             # matching PEP 249. Don't clear for EXECUTE PROCEDURE statements.
@@ -440,16 +453,7 @@ class AsyncCursor(Cursor):
 
         self.transaction.connection._op_info_sql(self.stmt.handle, bytes([isc_info_sql_records]))
         (h, oid, buf) = await self.transaction.connection._async_op_response()
-        if buf[:3] != bytes([0x17, 0x1d, 0x00]):    # isc_info_sql_records
-            count = -1
-        elif self.stmt.stmt_type == isc_info_sql_stmt_select:
-            assert buf[17:20] == bytes([0x0d, 0x04, 0x00])     # isc_info_req_select_count
-            # select count
-            count = bytes_to_int(buf[20:24])
-        else:
-            # insert count + update count + delete count
-            count = bytes_to_int(buf[27:31]) + bytes_to_int(buf[6:10]) + bytes_to_int(buf[13:17])
-        return count
+        return self._parse_rowcount(self.stmt, buf)
 
 
 class AsyncTransaction(Transaction):
@@ -724,6 +728,25 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
             n = bytes_to_bint(await self._async_recv_channel(4))
 
         return (gds_codes, sql_code, message)
+
+    async def _async_read_responses(self, readers):
+        """Await the readers of replies to requests sent together, in order.
+        Every reply is read even if one reports an error; the first error is
+        raised afterwards, so the connection stays in step."""
+        results = []
+        first_exc = None
+        for read in readers:
+            try:
+                results.append(await read())
+            except InternalError:
+                raise           # not a server error: the replies may be out of step
+            except (IntegrityError, DataError, OperationalError, ProgrammingError, DatabaseError) as e:
+                results.append(None)
+                if first_exc is None:
+                    first_exc = e
+        if first_exc is not None:
+            raise first_exc
+        return results
 
     async def _async_parse_op_response(self):
         b = await self._async_recv_channel(16)
