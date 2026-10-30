@@ -57,6 +57,90 @@ class AsyncTestCase(base.TestBase):
             await conn.close()
         asyncio.run(_test())
 
+    def test_aio_rowcount_and_errors(self):
+        async def _test():
+            conn = await firebirdsql.aio.connect(
+                auth_plugin_name=self.auth_plugin_name,
+                wire_crypt=self.wire_crypt,
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                user=self.user,
+                password=self.password,
+            )
+            cur = conn.cursor()
+            await cur.execute("CREATE TABLE aio_rc (id INTEGER NOT NULL PRIMARY KEY)")
+            await conn.commit()
+            for i in range(3):
+                await cur.execute("INSERT INTO aio_rc VALUES (?)", (i,))
+                self.assertEqual(cur.rowcount, 1)
+            await cur.execute("UPDATE aio_rc SET id = id + 10 WHERE id > 0")
+            self.assertEqual(cur.rowcount, 2)
+            with self.assertRaises(firebirdsql.IntegrityError):
+                await cur.execute("INSERT INTO aio_rc VALUES (0)")
+            with self.assertRaises(firebirdsql.DatabaseError):
+                await cur.execute("SELECT 1 / 0 FROM aio_rc")
+                await cur.fetchall()
+            await cur.execute("SELECT id FROM aio_rc ORDER BY id")
+            self.assertEqual(await cur.fetchall(), [(0,), (11,), (12,)])
+            await conn.close()
+        asyncio.run(_test())
+
+    def test_aio_reexecute_prepared_select(self):
+        async def _test():
+            conn = await firebirdsql.aio.connect(
+                auth_plugin_name=self.auth_plugin_name,
+                wire_crypt=self.wire_crypt,
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                user=self.user,
+                password=self.password,
+            )
+            cur = conn.cursor()
+            await cur.execute("CREATE TABLE aio_re (id INTEGER NOT NULL PRIMARY KEY)")
+            await conn.commit()
+            for i in range(1, 4):
+                await cur.execute("INSERT INTO aio_re VALUES (?)", (i,))
+            await conn.commit()
+            ps = await cur.prep("SELECT id FROM aio_re WHERE id <= ? ORDER BY id")
+            await cur.execute(ps, (1,))
+            self.assertEqual(await cur.fetchall(), [(1,)])
+            await cur.execute(ps, (2,))         # all rows read before
+            self.assertEqual(await cur.fetchall(), [(1,), (2,)])
+            await cur.execute(ps, (3,))
+            self.assertEqual(await cur.fetchone(), (1,))
+            await cur.execute(ps, (3,))         # only one row read before
+            self.assertEqual(await cur.fetchall(), [(1,), (2,), (3,)])
+            await conn.commit()                 # closes the cursor on the server
+            await cur.execute(ps, (2,))
+            self.assertEqual(await cur.fetchall(), [(1,), (2,)])
+            await conn.rollback()
+            await cur.execute(ps, (1,))
+            self.assertEqual(await cur.fetchall(), [(1,)])
+            await ps.close()
+            await cur.execute(ps, (2,))         # executed again after close()
+            self.assertEqual(await cur.fetchall(), [(1,), (2,)])
+
+            # the first fetch fails but the cursor is open on the server
+            ps2 = await cur.prep("SELECT 1 / (id - CAST(? AS INTEGER)) FROM aio_re ORDER BY id")
+            with self.assertRaises(firebirdsql.DatabaseError):
+                await cur.execute(ps2, (1,))
+            await cur.execute(ps2, (0,))
+            self.assertEqual(await cur.fetchall(), [(1,), (0,), (0,)])
+
+            # a long text parameter is sent as a blob before the close
+            ps3 = await cur.prep(
+                "SELECT id FROM aio_re WHERE CHAR_LENGTH(CAST(? AS BLOB SUB_TYPE TEXT)) > id ORDER BY id")
+            long_text = 'x' * 40000
+            for _ in range(3):
+                await cur.execute(ps3, (long_text,))
+                self.assertEqual(await cur.fetchone(), (1,))
+            await cur.execute("SELECT COUNT(*) FROM aio_re")
+            self.assertEqual(await cur.fetchone(), (3,))
+            await conn.close()
+        asyncio.run(_test())
+
     def test_aio_connect(self):
         async def _test_select():
             conn = await firebirdsql.aio.connect(
