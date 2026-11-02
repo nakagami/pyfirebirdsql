@@ -221,7 +221,7 @@ class XSQLVAR:
         elif self.sqltype == SQL_TYPE_DEC128:
             return decfloat.decimal128_to_decimal(raw_value)
         else:
-            return raw_value
+            return bytes(raw_value) if isinstance(raw_value, memoryview) else raw_value
 
 
 sqltype2blr = {
@@ -445,7 +445,7 @@ def parse_xsqlda(buf, connection, stmt_handle):
                     bytes([isc_info_sql_sqlda_start, 2]) + int_to_bytes(next_index, 2) + INFO_SQL_SELECT_DESCRIBE_VARS
                 )
                 (h, oid, buf2) = connection._op_response()
-                assert buf2[:2] == bytes([0x04, 0x07])
+                assert buf2[:2] == bytes([isc_info_sql_select, isc_info_sql_describe_vars])
                 ln2 = bytes_to_int(buf2[2:4])
                 assert bytes_to_int(buf2[4:4+ln2]) == col_len
                 next_index, _ = parse_select_items_with_offset(buf2, 4+ln2, xsqlda, connection)
@@ -463,7 +463,7 @@ def parse_xsqlda(buf, connection, stmt_handle):
                     bytes([isc_info_sql_sqlda_start, 2]) + int_to_bytes(next_index, 2) + INFO_SQL_BIND_DESCRIBE_VARS
                 )
                 (h, oid, buf2) = connection._op_response()
-                assert buf2[:2] == bytes([0x08, 0x07])
+                assert buf2[:2] == bytes([isc_info_sql_bind, isc_info_sql_describe_vars])
                 ln2 = bytes_to_int(buf2[2:4])
                 assert bytes_to_int(buf2[4:4+ln2]) == col_len
                 next_index, _ = parse_select_items_with_offset(buf2, 4+ln2, bind_xsqlda, connection)

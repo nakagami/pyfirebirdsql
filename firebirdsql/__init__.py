@@ -147,7 +147,7 @@ ARRAY = DBAPITypeObject(
 ROWID = DBAPITypeObject()
 
 
-__version__ = '1.4.7'
+__version__ = '1.5.1'
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'qmark'
@@ -173,6 +173,7 @@ def connect(
     timezone: str | None = None,
     wire_compress: bool = False,
     readonly: bool = False,
+    statement_timeout: float | None = None,
     **kwargs: Any,
 ) -> Connection:
     conn = Connection(
@@ -195,6 +196,7 @@ def connect(
         timezone=timezone,
         wire_compress=wire_compress,
         readonly=readonly,
+        statement_timeout=statement_timeout,
         **kwargs,
     )
     conn._initialize()
@@ -220,6 +222,7 @@ def create_database(
     timezone: str | None = None,
     wire_compress: bool = False,
     readonly: bool = False,
+    statement_timeout: float | None = None,
     **kwargs: Any,
 ) -> Connection:
     return connect(
@@ -242,6 +245,6 @@ def create_database(
         timezone=timezone,
         wire_compress=wire_compress,
         readonly=readonly,
+        statement_timeout=statement_timeout,
         **kwargs,
     )
-

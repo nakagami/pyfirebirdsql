@@ -16,6 +16,10 @@ It works on Python 3.10+.
 - TimeZone feature in Firebird 4.0+
 - asyncio API
 
+Wire encryption (Arc4, ChaCha) is done in pure Python. If pycryptodome
+(https://pypi.org/project/pycryptodome/) is installed, its C implementations
+are used instead, which is faster for Arc4 (Firebird 3) in particular.
+
 Example
 -----------
 

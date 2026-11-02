@@ -9,6 +9,21 @@ class TestIssues(TestBase):
         cur = self.connection.cursor()
         self.assertEqual(None, cur.description)
 
+    def test_large_blobs(self):
+        """BLOBs spanning many segments and get_segment responses."""
+        cur = self.connection.cursor()
+        cur.execute("CREATE TABLE large_blobs (b BLOB SUB_TYPE BINARY, t BLOB SUB_TYPE TEXT CHARACTER SET UTF8)")
+        self.connection.commit()
+        binary = bytes(i * 7 % 256 for i in range(1 << 20))
+        text = "Grüße, ほげ " * 20000
+        cur.execute("INSERT INTO large_blobs VALUES (?, ?)", (binary, text))
+        self.connection.commit()
+        cur.execute("SELECT b, t FROM large_blobs")
+        b, t = cur.fetchone()
+        self.assertEqual(b, binary)
+        self.assertEqual(t, text)
+        cur.close()
+
     def test_issue_40(self):
         cur = self.connection.cursor()
         cur.execute("SELECT RDB$INDEX_NAME FROM RDB$INDICES WHERE RDB$INDEX_NAME LIKE 'RDB$INDEX_%'")
@@ -170,3 +185,14 @@ WHERE doc.RFCEMPRESA = 'p2' and doc.NOSUCURSAL = 0 and doc.TIPO = 700 and doc.SE
         gc.collect()
         self.assertEqual(len(self.connection._cursors[self.connection._transaction]), 0)
 
+    def test_many_parameters(self):
+        """A parameter description that continues in a second info request
+        (isc_info_sql_bind, isc_info_sql_describe_vars) must be parsed."""
+        n = 60
+        cur = self.connection.cursor()
+        cur.execute("CREATE TABLE many_params (%s)" % ", ".join("c%d INTEGER" % i for i in range(n)))
+        self.connection.commit()
+        cur.execute("INSERT INTO many_params VALUES (%s)" % ", ".join("?" * n), list(range(n)))
+        cur.execute("SELECT * FROM many_params WHERE c0 = ? AND c%d = ?" % (n - 1), (0, n - 1))
+        self.assertEqual(list(cur.fetchone()), list(range(n)))
+        cur.close()

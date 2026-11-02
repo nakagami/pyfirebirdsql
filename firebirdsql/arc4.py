@@ -42,14 +42,20 @@ class ARC4:
 
     def translate(self, plain):
         state = self.state
-        enc = b''
-        for i in range(len(plain)):
-            self.x = (self.x + 1) % 256
-            self.y = (self.y + state[self.x]) % 256
-            (state[self.x], state[self.y]) = (state[self.y], state[self.x])
-            xorIndex = (state[self.x] + state[self.y]) % 256
-            enc += bytes([plain[i] ^ state[xorIndex]])
-        return enc
+        x = self.x
+        y = self.y
+        out = bytearray(plain)
+        for i in range(len(out)):
+            x = (x + 1) & 0xff
+            sx = state[x]
+            y = (y + sx) & 0xff
+            sy = state[y]
+            state[x] = sy
+            state[y] = sx
+            out[i] ^= state[(sx + sy) & 0xff]
+        self.x = x
+        self.y = y
+        return bytes(out)
 
     # PyCrypto compatible method
     @staticmethod

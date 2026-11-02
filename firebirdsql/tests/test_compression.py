@@ -1,3 +1,5 @@
+from firebirdsql.tests.base import TestBase
+import firebirdsql
 import unittest
 import zlib
 from unittest.mock import MagicMock, patch
@@ -91,3 +93,39 @@ class TestCompressionStream(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TestWireCompression(TestBase):
+    """Live connection with wire_compress=True (needs Firebird 3+)."""
+
+    def _connect(self):
+        return firebirdsql.connect(
+            auth_plugin_name=self.auth_plugin_name,
+            wire_crypt=self.wire_crypt,
+            wire_compress=True,
+            host=self.host,
+            port=self.port,
+            database=self.database,
+            user=self.user,
+            password=self.password,
+            timeout=1)
+
+    def test_compressed_connection(self):
+        cur = self.connection.cursor()
+        cur.execute("SELECT rdb$get_context('SYSTEM', 'ENGINE_VERSION') FROM rdb$database")
+        if int(cur.fetchone()[0].split('.')[0]) < 3:
+            self.skipTest("wire compression needs Firebird 3+")
+        conn = self._connect()
+        cur = conn.cursor()
+        cur.execute("SELECT RDB$GET_CONTEXT('SYSTEM', 'WIRE_COMPRESSED') FROM RDB$DATABASE")
+        self.assertEqual(cur.fetchone()[0], 'TRUE')
+        # many rows: decompressed bytes wait in the stream's buffer between reads,
+        # which must not be mistaken for a timeout
+        cur.execute("SELECT RDB$FIELD_NAME, RDB$FIELD_TYPE FROM RDB$FIELDS")
+        rows = cur.fetchall()
+        self.assertGreater(len(rows), 100)
+        cur.execute(
+            "SELECT RDB$RELATION_NAME, RDB$FIELD_NAME, RDB$FIELD_SOURCE "
+            "FROM RDB$RELATION_FIELDS ORDER BY 1, 2")
+        self.assertGreater(len(cur.fetchall()), 100)
+        conn.close()

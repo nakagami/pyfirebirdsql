@@ -414,3 +414,68 @@ class TestArrayIntegration(TestBase):
         # NULL element inside array
         with self.assertRaises(firebirdsql.OperationalError):
             cur.execute('INSERT INTO test_arr_basic (id, arr_int) VALUES (?, ?)', (99, [1, None, 3, 4, 5]))
+
+    def test_array_prepared_insert_reexecute(self):
+        # array parameters are uploaded before the execute, the row count
+        # request goes out with it
+        cur = self.connection.cursor()
+        ps = cur.prep('INSERT INTO test_arr_basic (id, arr_int) VALUES (?, ?)')
+        for i in range(5):
+            cur.execute(ps, (200 + i, [i, i + 1, i + 2, i + 3, i + 4]))
+            self.assertEqual(cur.rowcount, 1)
+        ps_upd = cur.prep('UPDATE test_arr_basic SET arr_int = ? WHERE id >= ?')
+        cur.execute(ps_upd, ([9, 9, 9, 9, 9], 203))
+        self.assertEqual(cur.rowcount, 2)
+        cur.execute(ps_upd, ([8, 8, 8, 8, 8], 204))
+        self.assertEqual(cur.rowcount, 1)
+        self.connection.commit()
+
+        cur.execute('SELECT id, arr_int FROM test_arr_basic WHERE id >= 200 ORDER BY id')
+        self.assertEqual(cur.fetchall(), [
+            (200, [0, 1, 2, 3, 4]),
+            (201, [1, 2, 3, 4, 5]),
+            (202, [2, 3, 4, 5, 6]),
+            (203, [9, 9, 9, 9, 9]),
+            (204, [8, 8, 8, 8, 8]),
+        ])
+
+    def test_array_prepared_select_reexecute(self):
+        # array columns are read after the cursor of the previous execution
+        # was closed in the same round trip as the execute
+        cur = self.connection.cursor()
+        for i in range(3):
+            cur.execute('INSERT INTO test_arr_basic (id, arr_int) VALUES (?, ?)', (210 + i, [i] * 5))
+        self.connection.commit()
+        ps = cur.prep('SELECT id, arr_int FROM test_arr_basic WHERE id >= ? ORDER BY id')
+        cur.execute(ps, (210,))
+        self.assertEqual(cur.fetchone(), (210, [0] * 5))
+        cur.execute(ps, (211,))     # only one row read before
+        self.assertEqual(cur.fetchall(), [(211, [1] * 5), (212, [2] * 5)])
+        cur.execute(ps, (210,))     # all rows read before
+        self.assertEqual(cur.fetchall(), [(210, [0] * 5), (211, [1] * 5), (212, [2] * 5)])
+        ps.close()
+
+    def test_array_param_error_on_reexecuted_select(self):
+        # an array parameter that cannot be sent raises before any request
+        # goes out, even when the cursor of the previous execution has to
+        # be closed first: the connection stays in step
+        cur = self.connection.cursor()
+        cur.execute('INSERT INTO test_arr_basic (id, arr_int) VALUES (?, ?)', (220, [1, 2, 3, 4, 5]))
+        self.connection.commit()
+        ps = cur.prep('SELECT id, arr_int FROM test_arr_basic WHERE id = ?')
+        cur.execute(ps, (220,))
+        self.assertEqual(cur.fetchall(), [(220, [1, 2, 3, 4, 5])])
+        with self.assertRaises(firebirdsql.OperationalError):
+            cur.execute(ps, ([1, 2, 3],))   # an array for an INTEGER parameter
+        cur.execute(ps, (220,))
+        self.assertEqual(cur.fetchall(), [(220, [1, 2, 3, 4, 5])])
+
+        # the same for a prepared INSERT
+        ps_ins = cur.prep('INSERT INTO test_arr_multi (id, arr_2d) VALUES (?, ?)')
+        with self.assertRaises(firebirdsql.OperationalError):
+            cur.execute(ps_ins, (221, [[1, 2], [3]]))   # ragged
+        cur.execute(ps_ins, (221, [[1, 2, 3], [4, 5, 6]]))
+        self.assertEqual(cur.rowcount, 1)
+        self.connection.commit()
+        cur.execute('SELECT arr_2d FROM test_arr_multi WHERE id = 221')
+        self.assertEqual(cur.fetchone(), ([[1, 2, 3], [4, 5, 6]],))

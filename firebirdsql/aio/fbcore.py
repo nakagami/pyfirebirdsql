@@ -26,6 +26,7 @@
 # Python DB-API 2.0 module for Firebird.
 ##############################################################################
 import sys
+import struct
 import asyncio
 import datetime
 import itertools
@@ -36,7 +37,7 @@ from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import Any
 from firebirdsql.fbcore import Statement, PreparedStatement, Cursor, Transaction, ConnectionBase, ConnectionResponseMixin
 from firebirdsql.fberrmsgs import messages
-from firebirdsql.err import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError
+from firebirdsql.err import InternalError, OperationalError, NotSupportedError, IntegrityError, DataError, ProgrammingError, DatabaseError
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
 from firebirdsql.wireprotocol import WireProtocol, get_crypt
@@ -103,21 +104,22 @@ class AsyncStatement(Statement):
                             h = -1
                         else:
                             (h, oid, buf) = await connection._async_op_response()
-                        v = bytes([])
+                        v = bytearray()
                         n = 1   # 0,1:mora data 2:no more data
                         while n != 2:
                             connection._op_get_segment(h)
                             (n, oid, buf) = await connection._async_op_response()
-                            while buf:
-                                ln = bytes_to_int(buf[:2])
-                                v += buf[2:ln+2]
-                                buf = buf[ln+2:]
+                            pos = 0
+                            while pos < len(buf):
+                                ln = bytes_to_int(buf[pos:pos+2])
+                                v += buf[pos+2:pos+2+ln]
+                                pos += ln + 2
                         connection._op_close_blob(h)
                         if (connection.accept_type & ptype_MASK)== ptype_lazy_send:
                             connection.lazy_response_count += 1
                         else:
                             (h, oid, buf) = await connection._async_op_response()
-                        r[i] = v
+                        r[i] = bytes(v)
                         if x.sqlsubtype == 1:    # TEXT
                             r[i] = connection.bytes_to_str(r[i])
                 yield tuple(r)
@@ -152,22 +154,21 @@ class AsyncStatement(Statement):
             self.plan = self.trans.connection.bytes_to_str(buf[i+3:i+3+ln])
             i += 3 + ln
         self.stmt_type, self.xsqlda = await async_parse_xsqlda(buf[i:], self.trans.connection, self.handle)
-        if self.stmt_type == isc_info_sql_stmt_select:
-            self._is_open = True
+        self._is_open = False       # opened by executing it
 
     async def close(self):
         DEBUG_OUTPUT("AsyncStatement::close()", self.handle)
         if self.stmt_type == isc_info_sql_stmt_select and self._is_open:
-            await self.trans.connection._async_op_free_statement(self.handle, DSQL_close)
+            self.trans.connection._op_free_statement(self.handle, DSQL_close)
             if (self.trans.connection.accept_type & ptype_MASK) == ptype_lazy_send:
                 self.trans.connection.lazy_response_count += 1
             else:
-                (h, oid, buf) = await self.trans.connection._async_op_response()
+                await self.trans.connection._async_op_response_unless_closed()
         self._is_open = False
 
     async def drop(self):
         DEBUG_OUTPUT("AsyncStatement::drop()", self.handle)
-        if self.handle != -1 and self._is_open:
+        if self.handle != -1:
             self.trans.connection._op_free_statement(self.handle, DSQL_drop)
             if (self.trans.connection.accept_type & ptype_MASK) == ptype_lazy_send:
                 self.trans.connection.lazy_response_count += 1
@@ -178,12 +179,19 @@ class AsyncStatement(Statement):
 
 
 class AsyncPreparedStatement(PreparedStatement):
-    async def __init__(self, cur: 'AsyncCursor', sql: str, explain_plan: bool = False) -> None:
-        DEBUG_OUTPUT("AsyncPreparedStatement::__init__()")
-        await cur.transaction.check_trans_handle()
-        self.stmt = await AsyncStatement.create(cur.transaction)
-        await self.stmt.prepare(sql, explain_plan)
+    # __init__ cannot be a coroutine: create one with
+    # `await AsyncPreparedStatement.create(cur, sql)` or `await cur.prep(sql)`.
+    def __init__(self, stmt: AsyncStatement, sql: str) -> None:
+        self.stmt = stmt
         self.sql = sql
+
+    @classmethod
+    async def create(cls, cur: 'AsyncCursor', sql: str, explain_plan: bool = False) -> 'AsyncPreparedStatement':
+        DEBUG_OUTPUT("AsyncPreparedStatement::create()")
+        await cur.transaction.check_trans_handle()
+        stmt = await AsyncStatement.create(cur.transaction)
+        await stmt.prepare(sql, explain_plan)
+        return cls(stmt, sql)
 
     async def close(self) -> None:
         DEBUG_OUTPUT("AsyncPreparedStatement::close()")
@@ -207,6 +215,10 @@ class AsyncCursor(Cursor):
         self.stmt: AsyncStatement | None = None
         self.arraysize: int = 1
         self.rowcount: int = -1
+        self._pending_rowcount: int | None = None
+        self.statement_timeout: float | int | None = getattr(conn, 'statement_timeout', None)
+        self._fetch_records = None
+        self._callproc_result = None
 
     def __del__(self) -> None:
         pass
@@ -237,7 +249,7 @@ class AsyncCursor(Cursor):
 
     async def prep(self, query: str, explain_plan: bool = False) -> AsyncPreparedStatement:
         DEBUG_OUTPUT("AcyncCursor::prep()")
-        prepared_statement = await AsyncPreparedStatement(self, query, explain_plan=explain_plan)
+        prepared_statement = await AsyncPreparedStatement.create(self, query, explain_plan=explain_plan)
         return prepared_statement
 
     async def _execute(self, query: str | PreparedStatement, params: Sequence[Any] | None) -> 'AsyncCursor':
@@ -246,29 +258,64 @@ class AsyncCursor(Cursor):
         await self.transaction.check_trans_handle()
         stmt = await self._get_stmt(query)
         cooked_params = self._convert_params(params)
+        connection = self.transaction.connection
+        blob_ids = {}
+        for i, param in enumerate(cooked_params):
+            if type(param) is bytes and len(param) > MAX_CHAR_LENGTH:
+                blob_ids[i] = await connection._async_create_blob(
+                    self.transaction.trans_handle, param)
+        timeout = self.statement_timeout
         if stmt.stmt_type == isc_info_sql_stmt_exec_procedure:
-            self.transaction.connection._op_execute2(
+            connection._op_execute2(
                 stmt.handle,
                 self.transaction.trans_handle, cooked_params,
-                calc_blr(stmt.xsqlda))
-            self._callproc_result = await self.transaction.connection._async_op_sql_response(stmt.xsqlda)
-            await self.transaction.connection._async_op_response()
+                calc_blr(stmt.xsqlda), timeout=timeout, blob_ids=blob_ids)
+            self._callproc_result = await connection._async_op_sql_response(stmt.xsqlda)
+            await connection._async_op_response()
             self._fetch_records = None
         else:
             DEBUG_OUTPUT(
                 "AsyncCursor::execute() _op_execute()",
                 stmt.handle, self.transaction.trans_handle)
-            self.transaction.connection._op_execute(
-                stmt.handle, self.transaction.trans_handle, cooked_params)
-            (h, oid, buf) = await self.transaction.connection._async_op_response()
+            if self._fetch_records is not None and hasattr(self._fetch_records, 'aclose'):
+                await self._fetch_records.aclose()
 
-            if stmt.stmt_type == isc_info_sql_stmt_select:
+            # Send the requests together and read the replies afterwards: one
+            # round trip instead of three (SELECT) or two (other statements).
+            is_select = stmt.stmt_type == isc_info_sql_stmt_select
+            # Build the execute packet before queuing any request: large
+            # bytes/text parameters are already uploaded above.
+            execute_buf = connection._op_execute_buffer(
+                stmt.handle, self.transaction.trans_handle, cooked_params,
+                timeout=timeout, blob_ids=blob_ids)
+            readers = []
+            if is_select and stmt._is_open:     # executed before: close its cursor first
+                connection._op_free_statement(stmt.handle, DSQL_close)
+                readers.append(connection._async_op_response_unless_closed)
+                stmt._is_open = False
+            connection.sock.send(execute_buf)
+
+            async def read_execute():
+                r = await connection._async_op_response()
+                if is_select:
+                    # the cursor is open on the server from here, even if
+                    # the first fetch fails
+                    stmt._is_open = True
+                return r
+            readers.append(read_execute)
+            if is_select:
                 fetch_count = max(self.arraysize, DEFAULT_FETCH_COUNT)
-                self.transaction.connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda), fetch_count)
-                (rows, more_data) = await self.transaction.connection._async_op_fetch_response(stmt.handle, stmt.xsqlda)
+                connection._op_fetch(stmt.handle, calc_blr(stmt.xsqlda), fetch_count)
+                readers.append(lambda: connection._async_op_fetch_response(stmt.handle, stmt.xsqlda))
+            connection._op_info_sql(stmt.handle, bytes([isc_info_sql_records]))
+            readers.append(connection._async_op_response)
+            replies = await connection._async_read_responses(readers)
+            if is_select:
+                (rows, more_data) = replies[-2]
                 self._fetch_records = stmt.fetch_generator(rows, more_data, fetch_count)
             else:
                 self._fetch_records = None
+            self._pending_rowcount = self._parse_rowcount(stmt, replies[-1][2])
             self._callproc_result = None
 
         return self
@@ -276,8 +323,12 @@ class AsyncCursor(Cursor):
     async def execute(self, query: str | PreparedStatement, params: Sequence[Any] | None = None) -> 'AsyncCursor':
         DEBUG_OUTPUT("AsyncCursor::execute()", query, params)
         try:
+            self._pending_rowcount = None
             await self._execute(query, params)
-            self.rowcount = await self._rowcount()
+            if self._pending_rowcount is not None:
+                self.rowcount = self._pending_rowcount
+            else:
+                self.rowcount = await self._rowcount()
             # DML with RETURNING returns a phantom row of NULLs when no rows
             # are affected. Clear it so fetchone()/fetchall() return nothing,
             # matching PEP 249. Don't clear for EXECUTE PROCEDURE statements.
@@ -317,8 +368,11 @@ class AsyncCursor(Cursor):
         # select statement
         try:
             result = tuple(await self._fetch_records.__anext__())
-        except StopIteration:
+        except (StopAsyncIteration, StopIteration):
             result = None
+            if hasattr(self._fetch_records, 'aclose'):
+                await self._fetch_records.aclose()
+            self._fetch_records = None
         DEBUG_OUTPUT("AsyncCursor::fetchone()", result)
         return result
 
@@ -328,7 +382,7 @@ class AsyncCursor(Cursor):
     async def __anext__(self) -> tuple[Any, ...]:
         r = await self.fetchone()
         if not r:
-            raise StopIteration()
+            raise StopAsyncIteration
         return r
 
     async def fetchall(self) -> list[tuple[Any, ...]] | None:
@@ -387,6 +441,10 @@ class AsyncCursor(Cursor):
         DEBUG_OUTPUT("AsyncCursor::close()")
         if self._transaction in self.transaction.connection._cursors:
             self.transaction.connection._cursors[self._transaction].discard(self)
+        if self._fetch_records is not None:
+            if hasattr(self._fetch_records, 'aclose'):
+                await self._fetch_records.aclose()
+            self._fetch_records = None
         if not self.stmt:
             return
         await self.stmt.drop()
@@ -417,16 +475,7 @@ class AsyncCursor(Cursor):
 
         self.transaction.connection._op_info_sql(self.stmt.handle, bytes([isc_info_sql_records]))
         (h, oid, buf) = await self.transaction.connection._async_op_response()
-        if buf[:3] != bytes([0x17, 0x1d, 0x00]):    # isc_info_sql_records
-            count = -1
-        elif self.stmt.stmt_type == isc_info_sql_stmt_select:
-            assert buf[17:20] == bytes([0x0d, 0x04, 0x00])     # isc_info_req_select_count
-            # select count
-            count = bytes_to_int(buf[20:24])
-        else:
-            # insert count + update count + delete count
-            count = bytes_to_int(buf[27:31]) + bytes_to_int(buf[6:10]) + bytes_to_int(buf[13:17])
-        return count
+        return self._parse_rowcount(self.stmt, buf)
 
 
 class AsyncTransaction(Transaction):
@@ -648,7 +697,12 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
         n = nbytes
         if word_alignment and (n % 4):
             n += 4 - nbytes % 4  # 4 bytes word alignment
-        r = bytes([])
+        r = bytearray()
+        if hasattr(self, '_recv_buf') and self._recv_buf:
+            take = min(n, len(self._recv_buf))
+            r.extend(self._recv_buf[:take])
+            del self._recv_buf[:take]
+            n -= take
         while n:
             if self.timeout is not None:
                 b = await asyncio.wait_for(self.sock.async_recv(n), timeout=self.timeout)
@@ -656,11 +710,11 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
                 b = await self.sock.async_recv(n)
             if not b:
                 break
-            r += b
+            r.extend(b)
             n -= len(b)
         if len(r) < nbytes:
             raise OperationalError('Can not recv() packets')
-        return r[:nbytes]
+        return bytes(r[:nbytes])
 
     async def _async_parse_status_vector(self):
         sql_code = 0
@@ -696,6 +750,35 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
             n = bytes_to_bint(await self._async_recv_channel(4))
 
         return (gds_codes, sql_code, message)
+
+    async def _async_op_response_unless_closed(self):
+        """Reply to DSQL_close; a cursor already closed (by a commit or a
+        rollback) is fine."""
+        try:
+            return await self._async_op_response()
+        except OperationalError as e:
+            if 335544577 not in e.gds_codes:    # isc_dsql_cursor_close_err
+                raise
+            return None
+
+    async def _async_read_responses(self, readers):
+        """Await the readers of replies to requests sent together, in order.
+        Every reply is read even if one reports an error; the first error is
+        raised afterwards, so the connection stays in step."""
+        results = []
+        first_exc = None
+        for read in readers:
+            try:
+                results.append(await read())
+            except InternalError:
+                raise           # not a server error: the replies may be out of step
+            except (IntegrityError, DataError, OperationalError, ProgrammingError, DatabaseError) as e:
+                results.append(None)
+                if first_exc is None:
+                    first_exc = e
+        if first_exc is not None:
+            raise first_exc
+        return results
 
     async def _async_parse_op_response(self):
         b = await self._async_recv_channel(16)
@@ -748,9 +831,13 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
         self.accept_type = bytes_to_bint(b[8:])
         self.lazy_response_count = 0
 
-        if self.accept_type & pflag_compress:
-            self.sock.enable_compression()
+        # Firebird sends the whole accept packet uncompressed and compresses what
+        # follows, so compression is enabled once the packet has been read.
+        compress = self.accept_type & pflag_compress
+        if compress:
             self.accept_type &= ptype_MASK
+            if op_code not in (self.op_cond_accept, self.op_accept_data):
+                self.sock.enable_compression()
 
         if op_code == self.op_cond_accept or op_code == self.op_accept_data:
             ln = bytes_to_bint(await self._async_recv_channel(4))
@@ -762,6 +849,8 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
             is_authenticated = bytes_to_bint(await self._async_recv_channel(4))
             ln = bytes_to_bint(await self._async_recv_channel(4))
             await self._async_recv_channel(ln, word_alignment=True)   # keys
+            if compress:
+                self.sock.enable_compression()
 
             if is_authenticated == 0:
                 if self.accept_plugin_name in (b'Srp256',  b'Srp'):
@@ -842,12 +931,12 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
                 if enc_plugin in (b'ChaCha64', b'ChaCha'):
                     k = hashlib.sha256(session_key).digest()
                     self.sock.set_translator(
-                        ChaCha20.new(k, nonce),
-                        ChaCha20.new(k, nonce),
+                        ChaCha20.new(key=k, nonce=nonce),
+                        ChaCha20.new(key=k, nonce=nonce),
                     )
                 elif enc_plugin == b'Arc4':
                     self.sock.set_translator(
-                        ARC4.new(session_key), ARC4.new(session_key))
+                        ARC4.new(key=session_key), ARC4.new(key=session_key))
                 else:
                     raise OperationalError(
                         'Unknown wirecrypt plugin %s' % (enc_plugin.encode("utf-8"))
@@ -911,64 +1000,161 @@ class AsyncConnectionResponseMixin(ConnectionResponseMixin):
         return r
 
     async def _async_op_fetch_response(self, stmt_handle, xsqlda):
-        op_code = bytes_to_bint(await self._async_recv_channel(4))
-        while op_code == self.op_dummy:
-            op_code = bytes_to_bint(await self._async_recv_channel(4))
+        if not hasattr(self, '_recv_buf'):
+            self._recv_buf = bytearray()
+        buf = self._recv_buf
+        pos = 0
+        mv = None
 
-        while op_code == self.op_response and self.lazy_response_count:
-            self.lazy_response_count -= 1
-            h, oid, buf = await self._async_parse_op_response()
-            op_code = bytes_to_bint(await self._async_recv_channel(4))
+        async def ensure(needed):
+            nonlocal pos, mv, raw_value
+            if len(buf) - pos < needed:
+                raw_value = None
+                mv = None
+                if pos > 0:
+                    del buf[:pos]
+                    pos = 0
+                while len(buf) < needed:
+                    read_size = needed - len(buf)
+                    if self.timeout is not None:
+                        chunk = await asyncio.wait_for(self.sock.async_recv(read_size), timeout=self.timeout)
+                    else:
+                        chunk = await self.sock.async_recv(read_size)
+                    if not chunk:
+                        raise OperationalError('Can not recv() packets')
+                    buf.extend(chunk)
+                mv = memoryview(buf)
+            elif mv is None:
+                mv = memoryview(buf)
 
-        if op_code != self.op_fetch_response:
-            if op_code == self.op_response:
-                await self._async_parse_op_response()
-            raise InternalError("op_fetch_response:op_code = %d" % (op_code,))
-        b = await self._async_recv_channel(8)
-        status = bytes_to_bint(b[:4])
-        count = bytes_to_bint(b[4:8])
-        rows = []
-        while count:
-            r = [None] * len(xsqlda)
-            if self.accept_version < PROTOCOL_VERSION13:
-                for i in range(len(xsqlda)):
-                    x = xsqlda[i]
-                    if x.wire_length() < 0:
-                        b = await self._async_recv_channel(4)
-                        ln = bytes_to_bint(b)
-                    else:
-                        ln = x.wire_length()
-                    raw_value = await self._async_recv_channel(ln, word_alignment=True)
-                    if await self._async_recv_channel(4) == bytes([0]) * 4:     # Not NULL
-                        r[i] = x.value(raw_value)
-            else:   # PROTOCOL_VERSION13
-                n = len(xsqlda) // 8
-                if len(xsqlda) % 8 != 0:
-                    n += 1
-                null_indicator = 0
-                for c in reversed(await self._async_recv_channel(n, word_alignment=True)):
-                    null_indicator <<= 8
-                    null_indicator += c
-                for i in range(len(xsqlda)):
-                    x = xsqlda[i]
-                    if null_indicator & (1 << i):
-                        continue
-                    if x.wire_length() < 0:
-                        b = await self._async_recv_channel(4)
-                        ln = bytes_to_bint(b)
-                    else:
-                        ln = x.wire_length()
-                    raw_value = await self._async_recv_channel(ln, word_alignment=True)
-                    r[i] = x.value(raw_value)
-            rows.append(r)
-            b = await self._async_recv_channel(12)
-            op_code = bytes_to_bint(b[:4])
-            status = bytes_to_bint(b[4:8])
-            count = bytes_to_bint(b[8:])
-        return rows, status != 100
+        try:
+            await ensure(4)
+            op_code = struct.unpack_from('>i', mv, pos)[0]
+            pos += 4
+            while op_code == self.op_dummy:
+                await ensure(4)
+                op_code = struct.unpack_from('>i', mv, pos)[0]
+                pos += 4
+
+            while op_code == self.op_response and self.lazy_response_count:
+                self.lazy_response_count -= 1
+                mv = None
+                del buf[:pos]
+                pos = 0
+                h, oid, b = await self._async_parse_op_response()
+                await ensure(4)
+                op_code = struct.unpack_from('>i', mv, pos)[0]
+                pos += 4
+
+            if op_code != self.op_fetch_response:
+                if op_code == self.op_response:
+                    mv = None
+                    del buf[:pos]
+                    pos = 0
+                    await self._async_parse_op_response()
+                raise InternalError("op_fetch_response:op_code = %d" % (op_code,))
+
+            await ensure(8)
+            status = struct.unpack_from('>i', mv, pos)[0]
+            count = struct.unpack_from('>i', mv, pos + 4)[0]
+            pos += 8
+
+            rows = []
+            num_cols = len(xsqlda)
+            n_null = num_cols // 8 + (1 if num_cols % 8 != 0 else 0)
+            aligned_null = n_null + (4 - n_null % 4 if n_null % 4 else 0)
+
+            while count:
+                r = [None] * num_cols
+                if self.accept_version >= PROTOCOL_VERSION13:
+                    await ensure(aligned_null)
+                    null_indicator = int.from_bytes(mv[pos : pos + n_null], byteorder='little')
+                    pos += aligned_null
+                    for i in range(num_cols):
+                        if null_indicator & (1 << i):
+                            continue
+                        x = xsqlda[i]
+                        io_len = x.wire_length()
+                        if io_len < 0:
+                            await ensure(4)
+                            ln = struct.unpack_from('>i', mv, pos)[0]
+                            pos += 4
+                        else:
+                            ln = io_len
+                        aligned_ln = ln + (4 - ln % 4 if ln % 4 else 0)
+                        await ensure(aligned_ln)
+                        raw_value = mv[pos : pos + ln]
+                        pos += aligned_ln
+                        if x.sqltype in (SQL_TYPE_BLOB, SQL_TYPE_ARRAY):
+                            r[i] = bytes(raw_value)
+                        else:
+                            r[i] = x.value(raw_value)
+                        raw_value = None
+                else:
+                    for i in range(num_cols):
+                        x = xsqlda[i]
+                        io_len = x.wire_length()
+                        if io_len < 0:
+                            await ensure(4)
+                            ln = struct.unpack_from('>i', mv, pos)[0]
+                            pos += 4
+                        else:
+                            ln = io_len
+                        aligned_ln = ln + (4 - ln % 4 if ln % 4 else 0)
+                        await ensure(aligned_ln + 4)
+                        raw_value = mv[pos : pos + ln]
+                        pos += aligned_ln
+                        is_not_null = (struct.unpack_from('>i', mv, pos)[0] == 0)
+                        pos += 4
+                        if is_not_null:
+                            if x.sqltype in (SQL_TYPE_BLOB, SQL_TYPE_ARRAY):
+                                r[i] = bytes(raw_value)
+                            else:
+                                r[i] = x.value(raw_value)
+                        raw_value = None
+                rows.append(r)
+
+                raw_value = None
+                await ensure(12)
+                next_op = struct.unpack_from('>i', mv, pos)[0]
+                pos += 4
+                if next_op == self.op_response:
+                    raw_value = None
+                    mv = None
+                    del buf[:pos]
+                    pos = 0
+                    await self._async_parse_op_response()
+                    raise InternalError("op_fetch_response:Internal Error")
+                if next_op != self.op_fetch_response:
+                    raise InternalError("op_fetch_response:op_code = %d" % (next_op,))
+                status = struct.unpack_from('>i', mv, pos)[0]
+                count = struct.unpack_from('>i', mv, pos + 4)[0]
+                pos += 8
+
+            return rows, status != 100
+        finally:
+            raw_value = None
+            mv = None
+            if pos > 0:
+                try:
+                    del buf[:pos]
+                except BufferError:
+                    self._recv_buf = bytearray(buf[pos:])
 
 
 class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
+    async def _async_create_blob(self, trans_handle, data: bytes) -> bytes:
+        self._op_create_blob2(trans_handle)
+        blob_handle, blob_id, buf = await self._async_op_response()
+
+        for offset in range(0, len(data), BLOB_SEGMENT_SIZE):
+            self._op_put_segment(blob_handle, data[offset:offset + BLOB_SEGMENT_SIZE])
+            await self._async_op_response()
+
+        self._op_close_blob(blob_handle)
+        await self._async_op_response()
+        return blob_id
+
     def cursor(self, factory: type[AsyncCursor] = AsyncCursor) -> AsyncCursor:
         DEBUG_OUTPUT("AsyncConnection::cursor()")
         self.last_usage = self.loop.time()
@@ -1144,4 +1330,3 @@ class AsyncConnection(ConnectionBase, AsyncConnectionResponseMixin):
             # Async close cannot be called from __del__
             # self.close()
             pass
-
