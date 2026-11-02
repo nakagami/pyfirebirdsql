@@ -1225,11 +1225,11 @@ class ConnectionResponseMixin:
         if self.accept_version < PROTOCOL_VERSION13:
             for i in range(len(xsqlda)):
                 x = xsqlda[i]
-                if x.io_length() < 0:
+                if x.wire_length() < 0:
                     b = self._recv_channel(4)
                     ln = bytes_to_bint(b)
                 else:
-                    ln = x.io_length()
+                    ln = x.wire_length()
                 raw_value = self._recv_channel(ln, word_alignment=True)
                 if self._recv_channel(4) == bytes([0]) * 4:     # Not NULL
                     r.append(x.value(raw_value))
@@ -1248,11 +1248,11 @@ class ConnectionResponseMixin:
                 if null_indicator & (1 << i):
                     r.append(None)
                 else:
-                    if x.io_length() < 0:
+                    if x.wire_length() < 0:
                         b = self._recv_channel(4)
                         ln = bytes_to_bint(b)
                     else:
-                        ln = x.io_length()
+                        ln = x.wire_length()
                     raw_value = self._recv_channel(ln, word_alignment=True)
                     r.append(x.value(raw_value))
 
@@ -1376,7 +1376,7 @@ class ConnectionResponseMixin:
                         if null_indicator & (1 << i):
                             continue
                         x = xsqlda[i]
-                        io_len = x.io_length()
+                        io_len = x.wire_length()
                         if io_len < 0:
                             ensure(4)
                             ln = struct.unpack_from('>i', mv, pos)[0]
@@ -1395,7 +1395,7 @@ class ConnectionResponseMixin:
                 else:
                     for i in range(num_cols):
                         x = xsqlda[i]
-                        io_len = x.io_length()
+                        io_len = x.wire_length()
                         if io_len < 0:
                             ensure(4)
                             ln = struct.unpack_from('>i', mv, pos)[0]

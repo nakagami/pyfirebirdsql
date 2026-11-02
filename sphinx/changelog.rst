@@ -383,4 +383,7 @@ Version 1.5.1
    - Fix async inserts with large BLOB parameters #147
    - Faster DECFLOAT decoding with a DPD lookup table- #149
    - Read service output in chunks instead of one line per round trip- #150
+   - fix "string right truncation" fetching CHARACTER SET NONE columns
+     over a multi-byte connection charset (e.g. the default UTF8) with
+     Firebird 6
 

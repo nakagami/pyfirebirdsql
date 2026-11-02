@@ -28,7 +28,7 @@
 from firebirdsql.consts import *    # noqa
 from firebirdsql.utils import *     # noqa
 from firebirdsql.wireprotocol import INFO_SQL_SELECT_DESCRIBE_VARS
-from firebirdsql.xsqlvar import parse_select_items
+from firebirdsql.xsqlvar import parse_select_items, widen_output_messages
 
 
 async def async_parse_xsqlda(buf, connection, stmt_handle):
@@ -58,4 +58,5 @@ async def async_parse_xsqlda(buf, connection, stmt_handle):
                 next_index = parse_select_items(buf[4+ln:], xsqlda, connection)
         else:
             break
+    widen_output_messages(xsqlda, connection)
     return stmt_type, xsqlda
